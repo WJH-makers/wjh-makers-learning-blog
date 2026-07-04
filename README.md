@@ -12,6 +12,7 @@
 - 本地 Markdown 只读内容：`content/posts/*.md`
 - 线上云数据库写入：MongoDB Atlas M0 Free Cluster
 - 无 ORM / 无 CMS：只使用 MongoDB 官方 Node.js Driver 直连
+- Vercel Functions 连接池管理：`@vercel/functions` 的 `attachDatabasePool`
 
 ## 常用命令
 
@@ -40,6 +41,7 @@ npm run post:new -- "今天学到的主题" --tags="Java, MySQL, 复盘"
 `/write` 是唯一的线上写作入口，目标是每天能快速写、快速发、快速复盘：
 
 - **直连**：Next.js Server Action 直接调用 MongoDB 官方 Node.js Driver，不引入 ORM、CMS 或额外后台。
+- **Serverless 连接池**：在 Vercel Functions 中把 `MongoClient` 交给 `attachDatabasePool`，避免函数挂起/恢复时连接泄漏。
 - **安全**：必须输入 `BLOG_ADMIN_TOKEN`，真实 token 只放在 Vercel / `.env.local`，不进 Git。
 - **可诊断**：页面会 ping MongoDB，并提示 `MONGODB_URI`、Atlas 用户、Network Access、Vercel 环境变量是否需要检查。
 - **写作模板**：默认正文按「今天学了什么 / 关键命令 / 遇到的问题 / 验证证据 / 明天继续」生成。
@@ -65,6 +67,8 @@ MONGODB_COLLECTION=learning_posts
 BLOG_ADMIN_TOKEN=一个很长的写入密钥
 NEXT_PUBLIC_SITE_URL=https://你的域名
 ```
+
+如果某个工具只给 `DATABASE_URL`，项目也能兼容读取；但 Vercel MongoDB 集成推荐保留 `MONGODB_URI`。
 
 本地开发同样复制环境变量模板：
 

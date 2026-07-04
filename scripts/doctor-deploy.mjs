@@ -6,7 +6,6 @@ const root = process.cwd();
 const envFiles = [".env.local", ".env", ".env.example"];
 const requiredKeys = [
   "NEXT_PUBLIC_SITE_URL",
-  "MONGODB_URI",
   "MONGODB_DB_NAME",
   "MONGODB_COLLECTION",
   "BLOG_ADMIN_TOKEN",
@@ -76,11 +75,15 @@ for (const key of requiredKeys) {
   console.log(`${status(ok)} ${key}: ${ok ? "set" : "missing or placeholder"}`);
 }
 
-if (!isPlaceholder(env.MONGODB_URI)) {
-  const result = await checkMongo(env.MONGODB_URI, env.MONGODB_DB_NAME);
+const databaseUrl = env.MONGODB_URI || env.DATABASE_URL;
+const hasDatabaseUrl = !isPlaceholder(databaseUrl);
+console.log(`${status(hasDatabaseUrl)} MONGODB_URI or DATABASE_URL: ${hasDatabaseUrl ? "set" : "missing or placeholder"}`);
+
+if (hasDatabaseUrl) {
+  const result = await checkMongo(databaseUrl, env.MONGODB_DB_NAME);
   console.log(`${status(result.ok)} MongoDB Atlas: ${result.message}`);
 } else {
-  console.log("ERR MongoDB Atlas: skip ping because MONGODB_URI is missing or placeholder");
+  console.log("ERR MongoDB Atlas: skip ping because database URL is missing or placeholder");
 }
 
 console.log("");

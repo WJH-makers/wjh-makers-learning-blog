@@ -1,4 +1,5 @@
-import { MongoClient, ServerApiVersion, type Collection, type WithId } from "mongodb";
+import { attachDatabasePool } from "@vercel/functions";
+import { MongoClient, ServerApiVersion, type Collection, type MongoClientOptions, type WithId } from "mongodb";
 import type { Post } from "@/lib/posts";
 
 type NewDatabasePost = {
@@ -23,8 +24,12 @@ type MongoPostDocument = {
 let clientPromise: Promise<MongoClient> | undefined;
 let indexesReady = false;
 
+function mongoUri(): string {
+  return process.env.MONGODB_URI?.trim() || process.env.DATABASE_URL?.trim() || "";
+}
+
 export function hasDatabaseConfig(): boolean {
-  return Boolean(process.env.MONGODB_URI);
+  return Boolean(mongoUri());
 }
 
 export function databaseProviderLabel(): string {
@@ -48,21 +53,25 @@ function publicErrorMessage(error: unknown): string {
 }
 
 function getClient(): Promise<MongoClient> {
-  const uri = process.env.MONGODB_URI;
+  const uri = mongoUri();
   if (!uri) {
-    throw new Error("缺少 MongoDB 配置：请设置 MONGODB_URI。");
+    throw new Error("缺少 MongoDB 配置：请设置 MONGODB_URI（或 DATABASE_URL）。");
   }
 
   if (!clientPromise) {
-    const client = new MongoClient(uri, {
+    const options: MongoClientOptions = {
+      appName: "wjh-makers-learning-blog.vercel",
       maxPoolSize: 10,
+      maxIdleTimeMS: 5000,
       serverSelectionTimeoutMS: 5000,
       serverApi: {
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
       },
-    });
+    };
+    const client = new MongoClient(uri, options);
+    attachDatabasePool(client);
     clientPromise = client.connect();
   }
 
@@ -87,7 +96,7 @@ export async function ensureSchema(): Promise<void> {
 
 export async function checkDatabaseConnection(): Promise<{ ok: boolean; message: string }> {
   if (!hasDatabaseConfig()) {
-    return { ok: false, message: "Missing MONGODB_URI" };
+    return { ok: false, message: "Missing MONGODB_URI or DATABASE_URL" };
   }
 
   try {
@@ -160,7 +169,7 @@ async function uniqueSlug(base: string): Promise<string> {
 
 export async function createDatabasePost(input: NewDatabasePost): Promise<Post> {
   if (!hasDatabaseConfig()) {
-    throw new Error("当前博客没有 MongoDB Atlas 配置，不能从网页写入。请先设置 MONGODB_URI。");
+    throw new Error("当前博客没有 MongoDB Atlas 配置，不能从网页写入。请先设置 MONGODB_URI（或 DATABASE_URL）。");
   }
 
   const title = input.title.trim();

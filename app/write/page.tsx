@@ -77,7 +77,7 @@ export default async function WritePage({ searchParams }: Props) {
   const { error } = await searchParams;
   const today = new Date().toISOString().slice(0, 10);
   const dbReady = hasDatabaseConfig();
-  const dbStatus = dbReady ? await checkDatabaseConnection() : { ok: false, message: "Missing MONGODB_URI" };
+  const dbStatus = dbReady ? await checkDatabaseConnection() : { ok: false, message: "Missing MONGODB_URI or DATABASE_URL" };
   const message = errorMessage(error);
 
   return (
@@ -95,7 +95,7 @@ export default async function WritePage({ searchParams }: Props) {
         <span>
           {dbStatus.ok
             ? `可以提交。连接检查：${dbStatus.message}`
-            : `当前只能显示静态 Markdown。请检查 MONGODB_URI、Atlas 用户、Network Access 白名单和 Vercel 环境变量。错误：${dbStatus.message}`}
+            : `当前只能显示静态 Markdown。请检查 MONGODB_URI（或 DATABASE_URL）、Atlas 用户、Network Access 白名单和 Vercel 环境变量。错误：${dbStatus.message}`}
         </span>
       </section>
 

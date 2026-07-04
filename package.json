@@ -12,6 +12,7 @@
     "post:new": "node scripts/new-post.mjs"
   },
   "dependencies": {
+    "@vercel/functions": "3.7.5",
     "mongodb": "7.4.0",
     "next": "16.2.10",
     "react": "19.2.7",
