@@ -78,6 +78,8 @@ export default async function WritePage({ searchParams }: Props) {
   const today = new Date().toISOString().slice(0, 10);
   const dbReady = hasDatabaseConfig();
   const dbStatus = dbReady ? await checkDatabaseConnection() : { ok: false, message: "Missing MONGODB_URI or DATABASE_URL" };
+  const tokenReady = Boolean(process.env.BLOG_ADMIN_TOKEN?.trim());
+  const publishingReady = dbStatus.ok && tokenReady;
   const message = errorMessage(error);
 
   return (
@@ -90,12 +92,12 @@ export default async function WritePage({ searchParams }: Props) {
         </p>
       </div>
 
-      <section className={dbStatus.ok ? "db-status ok" : "db-status warn"}>
-        <strong>{dbStatus.ok ? `Publishing Desk Ready：${databaseProviderLabel()}` : "MongoDB Atlas 尚未就绪"}</strong>
+      <section className={publishingReady ? "db-status ok" : "db-status warn"}>
+        <strong>{publishingReady ? `Publishing Desk Ready：${databaseProviderLabel()}` : "写作发布尚未就绪"}</strong>
         <span>
-          {dbStatus.ok
+          {publishingReady
             ? `可以提交。连接检查：${dbStatus.message}`
-            : `当前只能显示静态 Markdown。请检查 MONGODB_URI（或 DATABASE_URL）、Atlas 用户、Network Access 白名单和 Vercel 环境变量。错误：${dbStatus.message}`}
+            : `当前还不能发布。数据库：${dbStatus.message}；写入密钥：${tokenReady ? "BLOG_ADMIN_TOKEN 已配置" : "缺少 BLOG_ADMIN_TOKEN"}。请检查 MONGODB_URI（或 DATABASE_URL）、Atlas 用户、Network Access 白名单和 Vercel 环境变量。`}
         </span>
       </section>
 
