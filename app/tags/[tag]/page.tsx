@@ -11,6 +11,7 @@ export function generateStaticParams() {
 }
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tag } = await params;
@@ -30,12 +31,12 @@ export default async function TagPage({ params }: Props) {
     <div className="page-shell narrow">
       <Link className="back-link" href="/tags">← 返回标签</Link>
       <div className="page-title">
-        <p className="eyebrow">:tag {decoded}</p>
+        <p className="eyebrow">Topic Desk</p>
         <h1>{decoded}</h1>
         <p>{posts.length} 篇相关学习记录。</p>
       </div>
       <div className="post-list">
-        {posts.map((post) => (
+        {posts.length > 0 ? posts.map((post) => (
           <article className="list-item" key={post.slug}>
             <time>{post.date}</time>
             <div>
@@ -43,7 +44,13 @@ export default async function TagPage({ params }: Props) {
               <p>{post.summary}</p>
             </div>
           </article>
-        ))}
+        )) : (
+          <div className="empty-state">
+            <p className="eyebrow">Empty Topic</p>
+            <h3>这个主题暂时没有文章。</h3>
+            <Link className="button primary" href="/write">写一篇补上</Link>
+          </div>
+        )}
       </div>
     </div>
   );

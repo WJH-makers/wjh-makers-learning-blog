@@ -7,6 +7,7 @@ export const metadata = {
 };
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export default async function TagsPage() {
   const tags = await getAllPublishedTags();
@@ -14,14 +15,20 @@ export default async function TagsPage() {
   return (
     <div className="page-shell narrow">
       <div className="page-title">
-        <p className="eyebrow">:helptags</p>
+        <p className="eyebrow">Index Desk</p>
         <h1>标签</h1>
-        <p>用主题把每天的学习记录串起来。</p>
+        <p>用主题把每天的学习记录串起来。忘记某个知识点时，先按标签回到对应的学习轨道。</p>
       </div>
       <div className="tag-cloud">
-        {tags.map(({ tag, count }) => (
+        {tags.length > 0 ? tags.map(({ tag, count }) => (
           <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>{tag}<span>{count}</span></Link>
-        ))}
+        )) : (
+          <div className="empty-state">
+            <p className="eyebrow">No Index</p>
+            <h3>还没有可索引的标签。</h3>
+            <Link className="button primary" href="/write">写一篇并添加标签</Link>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -15,12 +15,22 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const date = new Intl.DateTimeFormat("zh-CN", {
+    dateStyle: "long",
+    timeZone: "Asia/Shanghai",
+  }).format(new Date());
+
   return (
     <html lang="zh-CN">
       <body>
         <header className="site-header">
+          <div className="edition-bar">
+            <span>Vol. 1</span>
+            <span>{date}</span>
+            <span>Wuhan Edition</span>
+          </div>
           <nav className="nav">
-            <Link className="brand" href="/">WJH Learning</Link>
+            <Link className="brand" href="/">The WJH Learning Gazette</Link>
             <div className="nav-links">
               <Link href="/posts">文章</Link>
               <Link href="/tags">标签</Link>
@@ -31,8 +41,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </header>
         <main>{children}</main>
         <footer className="footer">
-          <span>© {new Date().getFullYear()} WJH-makers</span>
-          <span>Built with Next.js · Deployed on Vercel</span>
+          <span>Edition: Vol 1.0 · Printed in UTC+8</span>
+          <span>© {new Date().getFullYear()} WJH-makers · Next.js · MongoDB Atlas · Vercel</span>
         </footer>
       </body>
     </html>

@@ -1,6 +1,7 @@
 import { getAllPublishedPosts, markdownToHtml, siteUrl } from "@/lib/posts";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
   const base = siteUrl();

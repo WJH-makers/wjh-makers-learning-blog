@@ -7,6 +7,7 @@ export const metadata = {
 };
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export default async function PostsPage() {
   const posts = await getAllPublishedPosts();
@@ -14,13 +15,13 @@ export default async function PostsPage() {
   return (
     <div className="page-shell narrow">
       <div className="page-title">
-        <p className="eyebrow">:oldfiles</p>
+        <p className="eyebrow">Archive Desk</p>
         <h1>全部文章</h1>
-        <p>按时间倒序记录每天的学习成果。</p>
+        <p>按时间倒序整理每日学习成果：问题、命令、验证证据和复盘都会进入这份个人工程报纸。</p>
       </div>
 
       <div className="post-list">
-        {posts.map((post) => (
+        {posts.length > 0 ? posts.map((post) => (
           <article className="list-item" key={post.slug}>
             <time>{post.date}</time>
             <div>
@@ -31,7 +32,13 @@ export default async function PostsPage() {
               </div>
             </div>
           </article>
-        ))}
+        )) : (
+          <div className="empty-state">
+            <p className="eyebrow">No Articles</p>
+            <h3>归档还没有文章。</h3>
+            <Link className="button primary" href="/write">去写第一篇</Link>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { getAllPublishedPosts, getAllPublishedTags } from "@/lib/posts";
 const writeRoute = "/write" as Route;
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export default async function HomePage() {
   const posts = await getAllPublishedPosts();
@@ -15,15 +16,21 @@ export default async function HomePage() {
     { name: "工程工具", desc: "Git · GitHub · Vercel · Neovim · Terminal", count: posts.filter((post) => post.tags.some((tag) => ["Git", "环境配置", "博客"].includes(tag))).length },
     { name: "AI 与系统", desc: "PyTorch · 遥感 VQA · OS · Compiler", count: posts.filter((post) => post.tags.some((tag) => ["AI", "系统", "复盘"].includes(tag))).length },
   ];
+  const tickerItems = [
+    "MongoDB Atlas 云数据库已接入",
+    `${posts.length} 篇学习记录正在出版`,
+    `${tags.length} 个知识标签已建索引`,
+    "Focus: Java · Git · MySQL · AI · Systems",
+  ];
 
   return (
     <div className="page-shell">
       <section className="hero">
         <div>
-          <p className="eyebrow">*daily-learning-journal*</p>
-          <h1>像读 Vim Tutor 一样复盘每天的学习</h1>
+          <p className="eyebrow">The Daily Learning Record</p>
+          <h1>把每天学到的东西印成一份工程报纸</h1>
           <p className="hero-text">
-            这里记录 Java 全栈、Git、数据库、AI、系统与工程化配置。每篇文章都尽量包含目标、命令、验证证据和复盘，像 Neovim help buffer 一样可检索、可跳转、可长期维护。
+            这里记录 Java 全栈、Git、数据库、AI、系统与工程化配置。每篇文章都尽量包含目标、命令、验证证据和复盘；不是碎片笔记，而是一份持续出版的个人工程日报。
           </p>
           <div className="hero-actions">
             <Link className="button primary" href="/posts">开始阅读</Link>
@@ -32,14 +39,24 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="hero-panel" aria-label="今日学习记录模板">
-          <span>:Tutor</span>
-          <strong>*daily-note-template*</strong>
+          <span>Inside This Edition</span>
+          <strong>Daily Note Template</strong>
           <ol>
             <li>目标：今天要解决什么？</li>
             <li>过程：用了哪些命令/资料？</li>
             <li>结果：验证证据是什么？</li>
             <li>复盘：下次如何更快？</li>
           </ol>
+        </div>
+      </section>
+
+      <section className="ticker" aria-label="学习快讯">
+        <div className="ticker-track">
+          {[...tickerItems, ...tickerItems].map((item, index) => (
+            <span key={`${item}-${index}`} aria-hidden={index >= tickerItems.length}>
+              {item}
+            </span>
+          ))}
         </div>
       </section>
 
@@ -51,7 +68,7 @@ export default async function HomePage() {
 
       <section className="section-head">
         <div>
-          <p className="eyebrow">|quickfix-list|</p>
+          <p className="eyebrow">Departments</p>
           <h2>学习轨道</h2>
         </div>
         <span className="muted">把零散学习变成长期路线图</span>
@@ -69,14 +86,14 @@ export default async function HomePage() {
 
       <section className="section-head">
         <div>
-          <p className="eyebrow">:newest</p>
+          <p className="eyebrow">Latest Dispatches</p>
           <h2>最新学习成果</h2>
         </div>
         <Link href="/posts">查看全部 →</Link>
       </section>
 
       <div className="post-grid">
-        {latest.map((post) => (
+        {latest.length > 0 ? latest.map((post) => (
           <article className="card" key={post.slug}>
             <p className="date">{post.date} · {post.readingMinutes} min</p>
             <h3><Link href={`/posts/${post.slug}`}>{post.title}</Link></h3>
@@ -85,11 +102,17 @@ export default async function HomePage() {
               {post.tags.map((tag) => <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>)}
             </div>
           </article>
-        ))}
+        )) : (
+          <div className="empty-state">
+            <p className="eyebrow">No Dispatches Yet</p>
+            <h3>先写下第一篇每日经验。</h3>
+            <Link className="button primary" href={writeRoute}>打开写作台</Link>
+          </div>
+        )}
       </div>
 
       <section className="review-panel">
-        <p className="eyebrow">:make review</p>
+        <p className="eyebrow">The Review Desk</p>
         <h2>我的每日复盘闭环</h2>
         <div className="review-steps">
           <div><strong>01</strong><span>写下问题</span></div>

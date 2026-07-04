@@ -39,6 +39,14 @@ function collectionName(): string {
   return process.env.MONGODB_COLLECTION?.trim() || "learning_posts";
 }
 
+function publicErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : "Unknown MongoDB connection error";
+  return raw
+    .replace(/mongodb(\+srv)?:\/\/[^@\s]+@/gi, "mongodb$1://<redacted>@")
+    .replace(/(password=)[^&\s]+/gi, "$1<redacted>")
+    .slice(0, 260);
+}
+
 function getClient(): Promise<MongoClient> {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
@@ -48,6 +56,7 @@ function getClient(): Promise<MongoClient> {
   if (!clientPromise) {
     const client = new MongoClient(uri, {
       maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
       serverApi: {
         version: ServerApiVersion.v1,
         strict: true,
@@ -74,6 +83,21 @@ export async function ensureSchema(): Promise<void> {
     collection.createIndex({ tags: 1 }, { name: "idx_learning_posts_tags" }),
   ]);
   indexesReady = true;
+}
+
+export async function checkDatabaseConnection(): Promise<{ ok: boolean; message: string }> {
+  if (!hasDatabaseConfig()) {
+    return { ok: false, message: "Missing MONGODB_URI" };
+  }
+
+  try {
+    const client = await getClient();
+    await client.db(databaseName()).command({ ping: 1 });
+    await ensureSchema();
+    return { ok: true, message: `${databaseName()}.${collectionName()} ready` };
+  } catch (error) {
+    return { ok: false, message: publicErrorMessage(error) };
+  }
 }
 
 function estimateReadingMinutes(content: string): number {

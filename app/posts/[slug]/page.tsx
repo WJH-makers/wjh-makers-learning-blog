@@ -12,6 +12,7 @@ export function generateStaticParams() {
 }
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -41,6 +42,11 @@ export default async function PostPage({ params }: Props) {
         </div>
       </header>
       <div className="article-content" dangerouslySetInnerHTML={{ __html: markdownToHtml(post.content) }} />
+      <nav className="article-actions" aria-label="文章操作">
+        <Link className="button primary" href="/write">写今日心得</Link>
+        <Link className="button" href="/posts">继续看归档</Link>
+        <Link className="button ghost" href="/tags">按标签检索</Link>
+      </nav>
     </article>
   );
 }
