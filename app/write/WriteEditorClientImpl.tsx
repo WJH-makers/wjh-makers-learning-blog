@@ -133,6 +133,8 @@ export default function WriteEditorClient({ initialDate, publishAction }: WriteE
 
   const contentInputRef = useRef<HTMLInputElement>(null);
   const programmaticChangeUntilRef = useRef(0);
+  const markdownCharCount = markdown.trim().length;
+  const sectionCount = (markdown.match(/^##\s/gm) ?? []).length;
 
   const editor = useCreateBlockNote({
     initialContent: KNOWLEDGE_CARD_TEMPLATE,
@@ -266,6 +268,12 @@ export default function WriteEditorClient({ initialDate, publishAction }: WriteE
     setDraftStatus("本地草稿已清空；刷新后不会恢复旧内容。");
   }
 
+  function handleResetTemplate() {
+    resetToTemplate();
+    setDraftDirty(true);
+    setDraftStatus("已重置为知识卡片模板，保存后会覆盖本地草稿。");
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     const nextMarkdown = syncMarkdown();
     const trimmedMarkdown = nextMarkdown.trim();
@@ -294,14 +302,48 @@ export default function WriteEditorClient({ initialDate, publishAction }: WriteE
   }
 
   return (
-    <div className="editor-layout">
+    <div className="editor-layout write-studio">
       <form className="editor-form" action={publishAction} onSubmit={handleSubmit}>
-        <label>
-          <span>写入密钥 BLOG_ADMIN_TOKEN</span>
-          <input name="token" type="password" autoComplete="off" required />
+        <div className="write-command">
+          <div>
+            <p className="eyebrow">Knowledge Card Studio</p>
+            <h2>先写清楚，再发布</h2>
+          </div>
+          <div className="write-status-strip" aria-label="写作状态">
+            <span>{draftDirty ? "Unsaved" : "Saved"}</span>
+            <span>{sectionCount} sections</span>
+            <span>{markdownCharCount} chars</span>
+          </div>
+        </div>
+
+        <label className="title-field">
+          <span>标题</span>
+          <input
+            name="title"
+            value={title}
+            onChange={(event) => {
+              setTitle(event.target.value);
+              markDirty();
+            }}
+            placeholder="今天真正掌握了什么？"
+            required
+          />
         </label>
 
-        <div className="form-grid">
+        <label>
+          <span>摘要</span>
+          <input
+            name="summary"
+            value={summary}
+            onChange={(event) => {
+              setSummary(event.target.value);
+              markDirty();
+            }}
+            placeholder="一句话沉淀结论；留空会自动截取正文。"
+          />
+        </label>
+
+        <div className="form-grid meta-grid">
           <label>
             <span>日期</span>
             <input
@@ -326,75 +368,44 @@ export default function WriteEditorClient({ initialDate, publishAction }: WriteE
               }}
             />
           </label>
+          <label>
+            <span>发布密钥</span>
+            <input name="token" type="password" autoComplete="off" placeholder="BLOG_ADMIN_TOKEN" required />
+          </label>
         </div>
-
-        <label>
-          <span>标题</span>
-          <input
-            name="title"
-            value={title}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              markDirty();
-            }}
-            placeholder="例如：今天把 Vercel 博客写作入口打通了"
-            required
-          />
-        </label>
-
-        <label>
-          <span>摘要</span>
-          <input
-            name="summary"
-            value={summary}
-            onChange={(event) => {
-              setSummary(event.target.value);
-              markDirty();
-            }}
-            placeholder="一句话说明今天沉淀了什么"
-          />
-        </label>
 
         <input ref={contentInputRef} type="hidden" name="content" defaultValue={markdown} />
 
         <section className="block-editor-field" aria-label="正文块编辑器">
           <div className="field-head">
-            <span>正文块编辑器</span>
-            <em>输入 / 打开块菜单，内容会在发布前转换为 Markdown。</em>
+            <span>正文</span>
+            <em>输入 / 打开块菜单；发布时自动转换 Markdown。</em>
           </div>
           <BlockNoteView editor={editor} theme="light" onChange={handleEditorChange} />
         </section>
 
         {validationMessage ? <p className="form-error">E43: {validationMessage}</p> : null}
 
-        <div className="hero-actions">
+        <div className="hero-actions publish-bar">
           <button className="button primary" type="submit">发布今日心得</button>
           <button className="button" type="button" onClick={() => saveDraft("草稿已手动保存：{time}")}>保存草稿</button>
-          <a className="button" href="/posts">查看归档</a>
+          <button className="button" type="button" onClick={handleResetTemplate}>重置模板</button>
         </div>
       </form>
 
       <aside className="editor-note" aria-label="知识卡片写作清单">
-        <p className="eyebrow">Knowledge Card</p>
-        <h2>写作清单</h2>
-        <ul>
-          <li><strong>概念</strong><span>今天学习的概念能否一句话说清楚？</span></li>
-          <li><strong>价值</strong><span>它解决什么真实问题，在哪些场景复用？</span></li>
-          <li><strong>知识点</strong><span>列出原理、步骤、边界和旧知识连接。</span></li>
-          <li><strong>示例</strong><span>保留命令、代码、报错和最小复现。</span></li>
-          <li><strong>易错</strong><span>写清楚误区、信号和下次避坑规则。</span></li>
-          <li><strong>验证</strong><span>用构建、测试、截图或日志证明结论。</span></li>
-          <li><strong>续写</strong><span>给明天留下一个明确的下一步。</span></li>
-        </ul>
+        <div className="editor-note-head">
+          <p className="eyebrow">Desk Tools</p>
+          <h2>只保留有用的</h2>
+        </div>
 
-        <div className="draft-panel">
+        <div className="draft-panel compact-card">
           <p className="eyebrow">Local Draft</p>
           <p>{draftStatus}</p>
-          <dl>
-            <div><dt>Key</dt><dd>{DRAFT_KEY}</dd></div>
-            <div><dt>Updated</dt><dd>{formatDraftTime(storedDraftAt)}</dd></div>
-            <div><dt>Markdown</dt><dd>{markdown.trim().length} chars</dd></div>
-          </dl>
+          <div className="draft-metrics">
+            <span>保存：{formatDraftTime(storedDraftAt)}</span>
+            <span>{markdownCharCount} 字符</span>
+          </div>
           <div className="draft-actions">
             <button className="button" type="button" onClick={() => saveDraft("草稿已手动保存：{time}")}>保存</button>
             <button className="button" type="button" onClick={() => restoreDraft()} disabled={!storedDraftAt}>恢复</button>
@@ -402,13 +413,30 @@ export default function WriteEditorClient({ initialDate, publishAction }: WriteE
           </div>
         </div>
 
-        <div className="markdown-panel">
-          <div className="field-head">
-            <span>Markdown 输出预览</span>
-            <em>发布时保存到 MongoDB 的正文。</em>
-          </div>
-          <textarea className="markdown-preview" value={markdown} readOnly rows={14} />
-        </div>
+        <details className="tips-panel" open>
+          <summary>知识卡片技巧</summary>
+          <ol>
+            <li><strong>先写概念</strong><span>第一段只回答“今天懂了什么”。</span></li>
+            <li><strong>再放证据</strong><span>命令、代码、截图结论比长解释更有用。</span></li>
+            <li><strong>最后留下一步</strong><span>给明天一个可执行动作，不写空口号。</span></li>
+          </ol>
+        </details>
+
+        <details className="tips-panel">
+          <summary>BlockNote 快捷用法</summary>
+          <ol>
+            <li><strong>/</strong><span>插入标题、列表、代码块。</span></li>
+            <li><strong>拖拽</strong><span>移动小节，先排序再精修。</span></li>
+            <li><strong>勾选</strong><span>用任务项记录验证是否完成。</span></li>
+          </ol>
+        </details>
+
+        <details className="markdown-panel">
+          <summary>Markdown 输出检查</summary>
+          <textarea className="markdown-preview" value={markdown} readOnly rows={12} />
+        </details>
+
+        <a className="button" href="/posts">查看归档</a>
       </aside>
     </div>
   );

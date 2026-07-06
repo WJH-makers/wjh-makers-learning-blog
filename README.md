@@ -9,6 +9,7 @@
 - Next.js App Router
 - TypeScript
 - Newsprint 报纸风格界面：强网格、无圆角、衬线标题、清晰主次按钮
+- BlockNote 块编辑器：`@blocknote/react` + `@blocknote/core` + `@blocknote/mantine`
 - 本地 Markdown 只读内容：`content/posts/*.md`
 - 线上云数据库写入：MongoDB Atlas M0 Free Cluster
 - 无 ORM / 无 CMS：只使用 MongoDB 官方 Node.js Driver 直连
@@ -44,8 +45,23 @@ npm run post:new -- "今天学到的主题" --tags="Java, MySQL, 复盘"
 - **Serverless 连接池**：在 Vercel Functions 中把 `MongoClient` 交给 `attachDatabasePool`，避免函数挂起/恢复时连接泄漏。
 - **安全**：必须输入 `BLOG_ADMIN_TOKEN`，真实 token 只放在 Vercel / `.env.local`，不进 Git。
 - **可诊断**：页面会 ping MongoDB，并提示 `MONGODB_URI`、Atlas 用户、Network Access、Vercel 环境变量是否需要检查。
-- **写作模板**：默认正文按「今天学了什么 / 关键命令 / 遇到的问题 / 验证证据 / 明天继续」生成。
-- **按钮规范**：主按钮只保留一个高优先级动作「发布今日心得」，次按钮回到归档；所有按钮保持至少 44px 触控尺寸、强边框、强焦点态和 Newsprint 零圆角风格。
+- **块编辑**：正文使用 BlockNote，发布前自动转换成 Markdown 存入 MongoDB，数据库结构不变。
+- **知识卡片模板**：默认按「概念 / 为什么重要 / 核心知识点 / 示例命令代码 / 易错点 / 练习验证 / 明天继续」生成。
+- **本地草稿**：浏览器 `localStorage` 自动保存，key 为 `wjh-learning-blog:write-draft:v1`。
+- **极简发布**：主动作保持「发布今日心得」，发布前会确认“写入 MongoDB 并公开到首页/文章/标签/RSS”。
+
+## `/write` 写作技巧
+
+新版写作台不是 CMS，而是一张“知识卡片”编辑桌。推荐这样用：
+
+1. **先写标题**：标题用“今天真正掌握了什么？”来写，不写流水账。
+2. **用 `/` 快速插块**：在正文里输入 `/`，插入标题、列表、代码块、任务项。
+3. **一段只讲一个概念**：每个 `##` 小节回答一个问题，避免把过程和结论混在一起。
+4. **代码和命令放进代码块**：关键命令、报错、SQL、Java 片段都放代码块，后续复盘更快。
+5. **用任务项做验证清单**：把“跑过构建/测试/命令”写成勾选项，避免只写感受。
+6. **先保存草稿再发布**：草稿只存在当前浏览器；换设备不会同步。
+7. **发布前看 Markdown 输出**：右侧展开“Markdown 输出检查”，确认会写入 MongoDB 的正文。
+8. **标签少而稳定**：标签用英文逗号分隔，例如 `Java, MySQL, 复盘`，不要每天造新标签。
 
 ## MongoDB Atlas 免费云数据库配置
 

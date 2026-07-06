@@ -87,9 +87,9 @@ export default async function WritePage({ searchParams }: Props) {
     <div className="page-shell editor-shell">
       <div className="page-title">
         <p className="eyebrow">Editorial Desk</p>
-        <h1>写今日头条</h1>
+        <h1>知识卡片写作台</h1>
         <p>
-          这里是部署在 Vercel 上的每日经验写作台。提交后文章会直连写入 MongoDB Atlas 的 <code>learning_posts</code> collection，并立即出现在首页、文章列表、标签页和 RSS 中。
+          聚焦标题、证据和下一步。发布后会写入 MongoDB Atlas，并同步出现在首页、文章、标签和 RSS。
         </p>
       </div>
 
@@ -98,7 +98,7 @@ export default async function WritePage({ searchParams }: Props) {
         <span>
           {publishingReady
             ? `可以提交。连接检查：${dbStatus.message}`
-            : `当前还不能发布。数据库：${dbStatus.message}；写入密钥：${tokenReady ? "BLOG_ADMIN_TOKEN 已配置" : "缺少 BLOG_ADMIN_TOKEN"}。请检查 MONGODB_URI（或 DATABASE_URL）、Atlas 用户、Network Access 白名单和 Vercel 环境变量。`}
+            : `数据库：${dbStatus.message}；密钥：${tokenReady ? "BLOG_ADMIN_TOKEN 已配置" : "缺少 BLOG_ADMIN_TOKEN"}。`}
         </span>
       </section>
 
