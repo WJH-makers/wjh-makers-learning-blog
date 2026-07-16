@@ -44,7 +44,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <main>{children}</main>
         <footer className="footer">
           <span>Edition: Vol 1.0 · Printed in UTC+8</span>
-          <span>© {new Date().getFullYear()} WJH-makers · Next.js · MongoDB Atlas · Vercel</span>
+          <span>&copy; {new Date().getFullYear()} WJH-makers · Next.js · MongoDB Atlas · Vercel</span>
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">鄂ICP备2026036494号-1</a>
         </footer>
       </body>
     </html>
