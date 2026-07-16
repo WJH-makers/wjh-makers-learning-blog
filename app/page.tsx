@@ -27,7 +27,7 @@ interface GitHubRepo {
   updated_at: string;
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 export const runtime = "nodejs";
 
 function StarIcon() {
