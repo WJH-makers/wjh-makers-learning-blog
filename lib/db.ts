@@ -10,6 +10,13 @@ type NewDatabasePost = {
   date: string;
 };
 
+type DatabasePostEdit = {
+  title: string;
+  summary: string;
+  tags: string[];
+  content: string;
+};
+
 type MongoPostDocument = {
   slug: string;
   title: string;
@@ -206,4 +213,51 @@ export async function createDatabasePost(input: NewDatabasePost): Promise<Post> 
     content,
     readingMinutes: estimateReadingMinutes(content),
   };
+}
+
+export async function updateDatabasePost(slug: string, input: DatabasePostEdit): Promise<Post> {
+  if (!hasDatabaseConfig()) {
+    throw new Error("当前博客没有 MongoDB Atlas 配置，不能从网页写入。请先设置 MONGODB_URI（或 DATABASE_URL）。");
+  }
+
+  const title = input.title.trim();
+  const content = input.content.trim();
+  const summary = input.summary.trim() || content.slice(0, 120);
+  const tags = input.tags.map((tag) => tag.trim()).filter(Boolean);
+
+  if (!title) throw new Error("标题不能为空。");
+  if (!content) throw new Error("正文不能为空。");
+
+  await ensureSchema();
+  const collection = await postsCollection();
+  const now = new Date();
+
+  const result = await collection.updateOne(
+    { slug },
+    { $set: { title, summary, tags, content, updatedAt: now } },
+  );
+
+  if (result.matchedCount === 0) {
+    throw new Error("找不到要更新的文章，可能已被删除，或它是内置 Markdown 文章而不在数据库中。");
+  }
+
+  const updated = await getDatabasePost(slug);
+  if (!updated) {
+    throw new Error("更新成功但无法读取最新文章内容。");
+  }
+  return updated;
+}
+
+export async function deleteDatabasePost(slug: string): Promise<void> {
+  if (!hasDatabaseConfig()) {
+    throw new Error("当前博客没有 MongoDB Atlas 配置，不能从网页删除。请先设置 MONGODB_URI（或 DATABASE_URL）。");
+  }
+
+  await ensureSchema();
+  const collection = await postsCollection();
+  const result = await collection.deleteOne({ slug });
+
+  if (result.deletedCount === 0) {
+    throw new Error("找不到要删除的文章，可能已被删除，或它是内置 Markdown 文章而不在数据库中。");
+  }
 }

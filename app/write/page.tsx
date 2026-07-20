@@ -2,7 +2,8 @@ import type { Route } from "next";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
-import { createDatabasePost, databaseProviderLabel, hasDatabaseConfig } from "@/lib/db";
+import { createDatabasePost, databaseProviderLabel, deleteDatabasePost, hasDatabaseConfig, updateDatabasePost } from "@/lib/db";
+import { getPublishedPost } from "@/lib/posts";
 import WriteEditorClient from "./WriteEditorClient";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export const metadata = {
 };
 
 type Props = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; slug?: string }>;
 };
 
 function parseTags(value: FormDataEntryValue | null): string[] {
@@ -32,9 +33,19 @@ function safeErrorForUrl(error: unknown): string {
     .slice(0, 180);
 }
 
-async function publishPost(formData: FormData) {
-  "use server";
+function revalidateBlog(slug?: string) {
+  revalidatePath("/");
+  revalidatePath("/posts");
+  revalidatePath("/tags");
+  revalidatePath("/rss.xml");
+  revalidatePath("/sitemap.xml");
+  if (slug) revalidatePath(`/posts/${slug}`);
+}
 
+// Exact same admin gate the create flow has always used: form token OR the
+// httpOnly `blog_admin_token` cookie, checked against BLOG_ADMIN_TOKEN. On the
+// first successful token submit it persists the cookie, mirroring /api/auth.
+async function requireAdminOrRedirect(formData: FormData): Promise<void> {
   const expectedToken = process.env.BLOG_ADMIN_TOKEN?.trim();
   const cookieStore = await cookies();
   const cookieToken = cookieStore.get("blog_admin_token")?.value?.trim();
@@ -58,33 +69,70 @@ async function publishPost(formData: FormData) {
       path: "/",
     });
   }
+}
+
+async function publishPost(formData: FormData) {
+  "use server";
+
+  await requireAdminOrRedirect(formData);
+
+  const editingSlug = String(formData.get("slug") ?? "").trim();
 
   let slug: string;
   try {
-    const post = await createDatabasePost({
+    const fields = {
       title: String(formData.get("title") ?? ""),
       summary: String(formData.get("summary") ?? ""),
       tags: parseTags(formData.get("tags")),
       content: String(formData.get("content") ?? ""),
-      date: String(formData.get("date") ?? ""),
-    });
-    slug = post.slug;
+    };
+    if (editingSlug) {
+      const post = await updateDatabasePost(editingSlug, fields);
+      slug = post.slug;
+    } else {
+      const post = await createDatabasePost({
+        ...fields,
+        date: String(formData.get("date") ?? ""),
+      });
+      slug = post.slug;
+    }
   } catch (error) {
-    redirect(`/write?error=${encodeURIComponent(safeErrorForUrl(error))}` as Route);
+    const message = encodeURIComponent(safeErrorForUrl(error));
+    const target = editingSlug
+      ? `/write?slug=${encodeURIComponent(editingSlug)}&error=${message}`
+      : `/write?error=${message}`;
+    redirect(target as Route);
   }
 
-  revalidatePath("/");
-  revalidatePath("/posts");
-  revalidatePath("/tags");
-  revalidatePath("/rss.xml");
-  revalidatePath("/sitemap.xml");
+  revalidateBlog(slug);
   redirect(`/posts/${slug}` as Route);
+}
+
+async function deletePost(formData: FormData) {
+  "use server";
+
+  await requireAdminOrRedirect(formData);
+
+  const slug = String(formData.get("slug") ?? "").trim();
+  if (!slug) {
+    redirect("/write?error=missing-slug" as Route);
+  }
+
+  try {
+    await deleteDatabasePost(slug);
+  } catch (error) {
+    redirect(`/write?slug=${encodeURIComponent(slug)}&error=${encodeURIComponent(safeErrorForUrl(error))}` as Route);
+  }
+
+  revalidateBlog(slug);
+  redirect("/posts" as Route);
 }
 
 function errorMessage(code?: string): string | undefined {
   if (!code) return undefined;
   if (code === "missing-token-env") return "缺少 BLOG_ADMIN_TOKEN：为了安全，网页写入必须先配置写入密钥。";
   if (code === "bad-token") return "写入密钥不正确。";
+  if (code === "missing-slug") return "缺少要操作的文章标识（slug）。";
   return decodeURIComponent(code);
 }
 
@@ -96,7 +144,7 @@ async function checkAuth(): Promise<boolean> {
 }
 
 export default async function WritePage({ searchParams }: Props) {
-  const { error } = await searchParams;
+  const { error, slug } = await searchParams;
   const today = new Date().toISOString().slice(0, 10);
   const dbReady = hasDatabaseConfig();
   const tokenReady = Boolean(process.env.BLOG_ADMIN_TOKEN?.trim());
@@ -104,13 +152,18 @@ export default async function WritePage({ searchParams }: Props) {
   const message = errorMessage(error);
   const isAuthenticated = await checkAuth();
 
+  // Only load an existing post for editing when the visitor is admin-authed.
+  const editingPost = slug && isAuthenticated ? await getPublishedPost(slug) : undefined;
+
   return (
     <div className="page-shell editor-shell">
       <div className="page-title">
-        <p className="eyebrow">Editorial Desk</p>
-        <h1>知识卡片写作台</h1>
+        <p className="eyebrow">{editingPost ? "Editing Desk" : "Editorial Desk"}</p>
+        <h1>{editingPost ? "编辑已发布文章" : "知识卡片写作台"}</h1>
         <p>
-          聚焦标题、证据和下一步。发布后会写入 MongoDB Atlas，并同步出现在首页、文章、标签和 RSS。
+          {editingPost
+            ? "修改标题、正文或标签后保存，会覆盖 MongoDB 中的这篇文章，并刷新首页、文章、标签和 RSS。"
+            : "聚焦标题、证据和下一步。发布后会写入 MongoDB Atlas，并同步出现在首页、文章、标签和 RSS。"}
         </p>
       </div>
 
@@ -125,7 +178,17 @@ export default async function WritePage({ searchParams }: Props) {
 
       {message ? <p className="form-error">E42: {message}</p> : null}
 
-      <WriteEditorClient initialDate={today} publishAction={publishPost} isAuthenticated={isAuthenticated} />
+      <WriteEditorClient
+        initialDate={editingPost ? editingPost.date : today}
+        publishAction={publishPost}
+        deleteAction={deletePost}
+        isAuthenticated={isAuthenticated}
+        editingSlug={editingPost?.slug}
+        initialTitle={editingPost?.title}
+        initialSummary={editingPost?.summary}
+        initialTags={editingPost ? editingPost.tags.join(", ") : undefined}
+        initialContent={editingPost?.content}
+      />
     </div>
   );
 }

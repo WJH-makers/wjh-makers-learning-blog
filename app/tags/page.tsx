@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllTags } from "@/lib/posts";
+import { getAllPublishedTags } from "@/lib/posts";
 
 export const metadata = {
   title: "标签",
@@ -9,8 +9,8 @@ export const metadata = {
 export const runtime = "nodejs";
 export const revalidate = 3600;
 
-export default function TagsPage() {
-  const tags = getAllTags();
+export default async function TagsPage() {
+  const tags = await getAllPublishedTags();
 
   return (
     <div className="page-shell narrow">

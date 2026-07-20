@@ -1,6 +1,15 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+export async function GET() {
+  const expected = process.env.BLOG_ADMIN_TOKEN?.trim();
+  const cookieStore = await cookies();
+  const token = cookieStore.get("blog_admin_token")?.value?.trim();
+  const authed = Boolean(expected) && token === expected;
+
+  return NextResponse.json({ authed });
+}
+
 export async function POST(request: Request) {
   const { token } = await request.json();
   const expected = process.env.BLOG_ADMIN_TOKEN?.trim();

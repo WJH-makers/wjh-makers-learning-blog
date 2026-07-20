@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllPosts, getPost, markdownToHtml, siteUrl } from "@/lib/posts";
+import { getAllPublishedPosts, getPublishedPost, markdownToHtml, siteUrl } from "@/lib/posts";
+import AdminEditLink from "./AdminEditLink";
 
 type Props = {
   params: Promise<{ slug: string }>;
 };
 
-export function generateStaticParams() {
-  return getAllPosts().map((post) => ({ slug: post.slug }));
+export async function generateStaticParams() {
+  return (await getAllPublishedPosts()).map((post) => ({ slug: post.slug }));
 }
 
 export const revalidate = 3600;
@@ -16,7 +17,7 @@ export const runtime = "nodejs";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPublishedPost(slug);
   if (!post) return {};
   return {
     title: post.title,
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PostPage({ params }: Props) {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPublishedPost(slug);
   if (!post) notFound();
 
   return (
@@ -43,6 +44,7 @@ export default async function PostPage({ params }: Props) {
       </header>
       <div className="article-content" dangerouslySetInnerHTML={{ __html: markdownToHtml(post.content) }} />
       <nav className="article-actions" aria-label="文章操作">
+        <AdminEditLink slug={post.slug} />
         <Link className="button primary" href="/write">写今日心得</Link>
         <Link className="button" href="/posts">继续看归档</Link>
         <Link className="button ghost" href="/tags">按标签检索</Link>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllPosts } from "@/lib/posts";
+import { getAllPublishedPosts } from "@/lib/posts";
 
 export const metadata = {
   title: "全部文章",
@@ -9,8 +9,8 @@ export const metadata = {
 export const revalidate = 3600;
 export const runtime = "nodejs";
 
-export default function PostsPage() {
-  const posts = getAllPosts();
+export default async function PostsPage() {
+  const posts = await getAllPublishedPosts();
 
   return (
     <div className="page-shell narrow">

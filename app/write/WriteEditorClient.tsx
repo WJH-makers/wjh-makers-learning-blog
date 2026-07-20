@@ -7,7 +7,13 @@ type PublishAction = (formData: FormData) => void | Promise<void>;
 type WriteEditorClientProps = {
   initialDate: string;
   publishAction: PublishAction;
+  deleteAction?: PublishAction;
   isAuthenticated: boolean;
+  editingSlug?: string;
+  initialTitle?: string;
+  initialSummary?: string;
+  initialTags?: string;
+  initialContent?: string;
 };
 
 const WriteEditorClientImpl = dynamic(() => import("./WriteEditorClientImpl"), {

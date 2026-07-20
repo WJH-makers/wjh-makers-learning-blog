@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllTags, getPostsByTag } from "@/lib/posts";
+import { getAllPublishedTags, getPublishedPostsByTag } from "@/lib/posts";
 
 type Props = {
   params: Promise<{ tag: string }>;
 };
 
-export function generateStaticParams() {
-  return getAllTags().map(({ tag }) => ({ tag: encodeURIComponent(tag) }));
+export async function generateStaticParams() {
+  return (await getAllPublishedTags()).map(({ tag }) => ({ tag: encodeURIComponent(tag) }));
 }
 
 export const runtime = "nodejs";
@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TagPage({ params }: Props) {
   const { tag } = await params;
   const decoded = decodeURIComponent(tag);
-  const posts = getPostsByTag(decoded);
+  const posts = await getPublishedPostsByTag(decoded);
 
   return (
     <div className="page-shell narrow">

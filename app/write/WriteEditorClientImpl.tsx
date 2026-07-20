@@ -76,7 +76,13 @@ type PublishAction = (formData: FormData) => void | Promise<void>;
 type WriteEditorClientProps = {
   initialDate: string;
   publishAction: PublishAction;
+  deleteAction?: PublishAction;
   isAuthenticated: boolean;
+  editingSlug?: string;
+  initialTitle?: string;
+  initialSummary?: string;
+  initialTags?: string;
+  initialContent?: string;
 };
 
 type Draft = {
@@ -121,7 +127,18 @@ function formatDraftTime(value?: string | null): string {
   }).format(date);
 }
 
-export default function WriteEditorClient({ initialDate, publishAction, isAuthenticated }: WriteEditorClientProps) {
+export default function WriteEditorClient({
+  initialDate,
+  publishAction,
+  deleteAction,
+  isAuthenticated,
+  editingSlug,
+  initialTitle = "",
+  initialSummary = "",
+  initialTags = "",
+  initialContent = "",
+}: WriteEditorClientProps) {
+  const isEditing = Boolean(editingSlug);
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [tags, setTags] = useState(DEFAULT_TAGS);
@@ -174,6 +191,14 @@ export default function WriteEditorClient({ initialDate, publishAction, isAuthen
       window.setTimeout(syncMarkdown, 0);
     },
     [editor, syncMarkdown],
+  );
+
+  const loadMarkdownIntoEditor = useCallback(
+    async (md: string) => {
+      const blocks = await editor.tryParseMarkdownToBlocks(md);
+      replaceEditorContent(blocks);
+    },
+    [editor, replaceEditorContent],
   );
 
   const restoreDraft = useCallback(
@@ -239,12 +264,21 @@ export default function WriteEditorClient({ initialDate, publishAction, isAuthen
   );
 
   useEffect(() => {
-    const stored = readStoredDraft();
-    if (stored) {
-      restoreDraft(stored);
+    if (isEditing) {
+      setTitle(initialTitle);
+      setSummary(initialSummary);
+      setTags(initialTags || DEFAULT_TAGS);
+      setDate(initialDate);
+      void loadMarkdownIntoEditor(initialContent);
+      setDraftStatus("正在编辑已发布的文章；保存后会覆盖数据库中的内容，本地草稿不受影响。");
     } else {
-      syncMarkdown();
-      setDraftStatus("已载入知识卡片模板；开始输入后会自动保存到本机。");
+      const stored = readStoredDraft();
+      if (stored) {
+        restoreDraft(stored);
+      } else {
+        syncMarkdown();
+        setDraftStatus("已载入知识卡片模板；开始输入后会自动保存到本机。");
+      }
     }
     const storedToken = window.localStorage.getItem(TOKEN_KEY);
     if (storedToken) {
@@ -252,17 +286,27 @@ export default function WriteEditorClient({ initialDate, publishAction, isAuthen
       setRememberToken(true);
     }
     setDraftLoaded(true);
-  }, [restoreDraft, syncMarkdown]);
+  }, [
+    isEditing,
+    initialTitle,
+    initialSummary,
+    initialTags,
+    initialContent,
+    initialDate,
+    loadMarkdownIntoEditor,
+    restoreDraft,
+    syncMarkdown,
+  ]);
 
   useEffect(() => {
-    if (!draftLoaded || !draftDirty) return undefined;
+    if (!draftLoaded || !draftDirty || isEditing) return undefined;
 
     const timeoutId = window.setTimeout(() => {
       saveDraft("草稿已自动保存：{time}");
     }, 700);
 
     return () => window.clearTimeout(timeoutId);
-  }, [draftDirty, draftLoaded, markdown, saveDraft]);
+  }, [draftDirty, draftLoaded, isEditing, markdown, saveDraft]);
 
   function handleEditorChange() {
     syncMarkdown();
@@ -327,10 +371,14 @@ export default function WriteEditorClient({ initialDate, publishAction, isAuthen
       return;
     }
 
-    const confirmed = window.confirm("发布后将写入 MongoDB，并公开到首页、文章页、标签页和 RSS。确认发布？");
+    const confirmed = window.confirm(
+      isEditing
+        ? "保存后将更新数据库中的这篇文章，并刷新首页、文章页、标签页和 RSS。确认保存？"
+        : "发布后将写入 MongoDB，并公开到首页、文章页、标签页和 RSS。确认发布？",
+    );
     if (!confirmed) {
       event.preventDefault();
-      setDraftStatus("已取消发布，本地草稿仍保留。");
+      setDraftStatus(isEditing ? "已取消保存修改。" : "已取消发布，本地草稿仍保留。");
       return;
     }
 
@@ -338,7 +386,9 @@ export default function WriteEditorClient({ initialDate, publishAction, isAuthen
       window.localStorage.setItem(TOKEN_KEY, savedToken);
     }
     setValidationMessage(null);
-    saveDraft("发布前已保存本地草稿：{time}");
+    if (!isEditing) {
+      saveDraft("发布前已保存本地草稿：{time}");
+    }
   }
 
   return (
@@ -445,6 +495,7 @@ export default function WriteEditorClient({ initialDate, publishAction, isAuthen
           </div>
         )}
 
+        {isEditing ? <input type="hidden" name="slug" value={editingSlug} /> : null}
         <input ref={contentInputRef} type="hidden" name="content" defaultValue={markdown} />
 
         <section className="block-editor-field" aria-label="正文块编辑器">
@@ -458,7 +509,7 @@ export default function WriteEditorClient({ initialDate, publishAction, isAuthen
         {validationMessage ? <p className="form-error">E43: {validationMessage}</p> : null}
 
         <div className="hero-actions publish-bar">
-          <button className="button primary" type="submit">发布今日心得</button>
+          <button className="button primary" type="submit">{isEditing ? "保存修改" : "发布今日心得"}</button>
           <button className="button" type="button" onClick={() => saveDraft("草稿已手动保存：{time}")}>保存草稿</button>
           <button className="button" type="button" onClick={handleResetTemplate}>重置模板</button>
         </div>
@@ -506,6 +557,25 @@ export default function WriteEditorClient({ initialDate, publishAction, isAuthen
           <summary>Markdown 输出检查</summary>
           <textarea className="markdown-preview" value={markdown} readOnly rows={12} />
         </details>
+
+        {isEditing && deleteAction ? (
+          <form
+            className="draft-panel compact-card"
+            action={deleteAction}
+            onSubmit={(event) => {
+              if (!window.confirm("确认删除这篇文章？删除后会从数据库永久移除，且无法从网页恢复。")) {
+                event.preventDefault();
+              }
+            }}
+          >
+            <p className="eyebrow">Danger Zone</p>
+            <p>删除后将从 MongoDB 永久移除这篇文章，并刷新首页、文章、标签和 RSS。</p>
+            <input type="hidden" name="slug" value={editingSlug} />
+            <div className="draft-actions">
+              <button className="button" type="submit">删除这篇文章</button>
+            </div>
+          </form>
+        ) : null}
 
         <a className="button" href="/posts">查看归档</a>
       </aside>
