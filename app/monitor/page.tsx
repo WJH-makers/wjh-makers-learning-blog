@@ -8,6 +8,8 @@ export default function MonitorLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const search = typeof window !== "undefined" ? window.location.search : "";
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -23,7 +25,6 @@ export default function MonitorLoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: username.trim(), password: password.trim() }),
-        redirect: "follow",
       });
 
       if (res.status === 429) {
@@ -32,13 +33,19 @@ export default function MonitorLoginPage() {
         return;
       }
 
-      if (res.redirected) {
+      if (res.redirected || res.ok) {
         window.location.href = "/monitor/view";
         return;
       }
 
-      const data = await res.json();
-      setError(data.message ?? "认证失败");
+      let message = "认证失败";
+      try { const data = await res.json(); message = data.message ?? message; } catch {}
+
+      if (res.status === 401) {
+        setError("用户名或密码错误");
+      } else {
+        setError(message);
+      }
       setLoading(false);
     } catch {
       setError("网络错误，请重试");

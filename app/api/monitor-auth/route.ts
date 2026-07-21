@@ -20,7 +20,9 @@ export async function POST(request: Request) {
     username = String(body.username ?? "").trim();
     password = String(body.password ?? "").trim();
   } catch {
-    return NextResponse.json({ ok: false, message: "请求格式错误" }, { status: 400 });
+    const form = await request.formData();
+    username = String(form.get("username") ?? "").trim();
+    password = String(form.get("password") ?? "").trim();
   }
 
   if (!username || !password) {
