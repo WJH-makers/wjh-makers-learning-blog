@@ -1037,3 +1037,8 @@ textarea:focus { outline: 0; background: var(--neutral-100); }
   .repo-meta { gap: 8px; }
   .tags a, .tag-cloud a { font-size: 0.65rem; padding: 5px 8px; }
 }
+
+.form-label { display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 6px; color: var(--foreground); letter-spacing: 0.04em; }
+.form-input { display: block; width: 100%; padding: 10px 14px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); font-size: 0.95rem; font-family: var(--font-mono, "JetBrains Mono", monospace); outline: none; box-sizing: border-box; }
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(204,0,0,0.15); }
+.form-error { color: var(--accent); font-size: 0.82rem; margin-top: 12px; padding: 8px 12px; background: rgba(204,0,0,0.06); border-left: 3px solid var(--accent); }
