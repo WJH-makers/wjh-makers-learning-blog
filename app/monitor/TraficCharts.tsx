@@ -23,7 +23,7 @@ function BarChart({ data }: { data: CfDay[] }) {
   );
 }
 
-function LineChart({ data, keys }: { data: { t: string; [k: string]: unknown }[]; keys: { key: string; color: string }[] }) {
+function LineChart({ data, keys }: { data: any[]; keys: { key: string; color: string }[] }) {
   if (!data || data.length < 2) return null;
   const w = 360; const h = 60; const pad = 28;
   const allMax = Math.max(1, ...data.flatMap(d => keys.map(k => Number(d[k.key]) || 0)));
