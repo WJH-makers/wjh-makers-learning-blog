@@ -23,14 +23,23 @@ export default function MonitorLoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: username.trim(), password: password.trim() }),
+        redirect: "follow",
       });
-      const data = await res.json();
-      if (!data.ok) {
-        setError(data.message ?? "认证失败");
+
+      if (res.status === 429) {
+        setError("尝试次数过多，请 1 分钟后重试");
         setLoading(false);
         return;
       }
-      window.location.href = "/monitor/view";
+
+      if (res.redirected) {
+        window.location.href = "/monitor/view";
+        return;
+      }
+
+      const data = await res.json();
+      setError(data.message ?? "认证失败");
+      setLoading(false);
     } catch {
       setError("网络错误，请重试");
       setLoading(false);
