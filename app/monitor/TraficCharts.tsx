@@ -67,8 +67,8 @@ export default function TraficCharts({ week, month, today }: { week: CfDay[]; mo
             <div className="chart-label" style={{ color: "var(--accent-blue)" }}>Requests / Day</div>
             <BarChart data={week} />
           </div>
-          <div className="chart-card">
-            <div className="chart-label" style={{ color: "var(--text-dim)" }}>Views & Uniques</div>
+        <div className="chart-card">
+          <div className="chart-label" style={{ color: "var(--accent-green)" }}>Views & Uniques</div>
             {LineChart({ data: week, keys: [{ key: "views", color: "var(--accent-green)" }, { key: "uniques", color: "var(--accent-yellow)" }] })}
           </div>
           <div className="chart-card">
