@@ -204,7 +204,7 @@ time,
   font-size: clamp(1rem, 1.8vw, 1.22rem);
   text-align: justify;
 }
-.hero-text::first-letter {
+.article-content > p:first-of-type::first-letter {
   float: left;
   margin: 0.04em 0.1em 0 0;
   color: var(--accent);
@@ -960,7 +960,7 @@ textarea:focus { outline: 0; background: var(--neutral-100); }
   .nav-links { border-left: 0; flex-wrap: wrap; border-top: 1px solid var(--border); }
   .nav-links a { flex: 1 1 50%; border-top: 0; }
   .hero > div { border-right: 1px solid var(--border); }
-  .hero-text::first-letter { font-size: 4.5rem; }
+  .article-content > p:first-of-type::first-letter { font-size: 4.5rem; }
   .article-content > p:first-of-type::first-letter { font-size: 4rem; }
   h1 { font-size: clamp(3rem, 11vw, 5.4rem); }
   h2 { font-size: clamp(2rem, 5vw, 3.6rem); }
@@ -1013,7 +1013,7 @@ textarea:focus { outline: 0; background: var(--neutral-100); }
   h1 { font-size: clamp(2.4rem, 14vw, 3.8rem); }
   h2 { font-size: clamp(1.6rem, 6vw, 2.4rem); }
   h3 { font-size: clamp(1.2rem, 3.5vw, 1.6rem); }
-  .hero-text::first-letter { font-size: 2.8rem; line-height: 0.9; }
+  .article-content > p:first-of-type::first-letter { font-size: 2.8rem; line-height: 0.9; }
   .article-content > p:first-of-type::first-letter { font-size: 2.5rem; }
   .editor-shell .page-title h1 { font-size: clamp(2.2rem, 12vw, 3.6rem); }
 
