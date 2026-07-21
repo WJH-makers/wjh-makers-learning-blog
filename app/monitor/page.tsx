@@ -56,7 +56,7 @@ export default function MonitorLoginPage() {
           className="form-input"
           type="text"
           autoComplete="username"
-          placeholder="wjh"
+          placeholder="用户名"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
