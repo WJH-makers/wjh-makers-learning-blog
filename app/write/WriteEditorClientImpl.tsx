@@ -1,5 +1,7 @@
 "use client";
 
+import "@blocknote/core/fonts/inter.css";
+import "@blocknote/mantine/style.css";
 import type { Block, PartialBlock } from "@blocknote/core";
 import { BlockNoteView } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";

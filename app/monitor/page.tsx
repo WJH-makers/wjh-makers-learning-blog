@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 
+const MONITOR_URL = "https://monitor.wwjjhh.online";
+
 export default function MonitorLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const search = typeof window !== "undefined" ? window.location.search : "";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,20 +33,13 @@ export default function MonitorLoginPage() {
         return;
       }
 
-      if (res.redirected || res.ok) {
-        window.location.href = "/monitor/view";
-        return;
-      }
-
-      let message = "认证失败";
-      try { const data = await res.json(); message = data.message ?? message; } catch {}
-
-      if (res.status === 401) {
-        setError("用户名或密码错误");
+      const data = await res.json();
+      if (data.ok) {
+        window.location.href = MONITOR_URL;
       } else {
-        setError(message);
+        setError(data.message ?? "用户名或密码错误");
+        setLoading(false);
       }
-      setLoading(false);
     } catch {
       setError("网络错误，请重试");
       setLoading(false);

@@ -33,8 +33,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "用户名或密码错误" }, { status: 401 });
   }
 
-  const url = new URL("/monitor/view", process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online");
-  const res = NextResponse.redirect(url, 303);
+  const res = NextResponse.json({ ok: true });
   res.cookies.set("monitor_token", Buffer.from(`${MONITOR_USER}:${MONITOR_PASS}`).toString("base64"), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

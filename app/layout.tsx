@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
-import "@blocknote/core/fonts/inter.css";
-import "@blocknote/mantine/style.css";
+import { Playfair_Display, Lora, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+
+const playfair = Playfair_Display({ subsets: ["latin"], style: ["normal", "italic"], variable: "--font-playfair", display: "swap" });
+const lora = Lora({ subsets: ["latin"], style: ["normal", "italic"], variable: "--font-lora", display: "swap" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
+
+const fontVars = `${playfair.variable} ${lora.variable} ${inter.variable} ${jetbrainsMono.variable}`;
 
 const writeRoute = "/write" as Route;
 
@@ -29,7 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   }).format(new Date());
 
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" className={fontVars}>
       <body>
         <header className="site-header">
           <div className="edition-bar">
