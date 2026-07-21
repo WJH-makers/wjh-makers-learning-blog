@@ -1,18 +1,20 @@
-const ipHits = new Map<string, { count: number; resetAt: number }>();
+const hits = new Map<string, { count: number; resetAt: number }>();
 
-const WINDOW_MS = 60_000;
-const MAX_HITS = 5;
+function getKey(ip: string, scope?: string): string {
+  return scope ? `${scope}:${ip}` : ip;
+}
 
-export function checkRateLimit(ip: string): { allowed: boolean } {
+export function checkRateLimit(ip: string, scope?: string): { allowed: boolean } {
+  const key = getKey(ip, scope);
   const now = Date.now();
-  const entry = ipHits.get(ip);
+  const entry = hits.get(key);
 
   if (!entry || now > entry.resetAt) {
-    ipHits.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    hits.set(key, { count: 1, resetAt: now + 60_000 });
     return { allowed: true };
   }
 
-  if (entry.count >= MAX_HITS) {
+  if (entry.count >= (scope === "login" ? 10 : 5)) {
     return { allowed: false };
   }
 

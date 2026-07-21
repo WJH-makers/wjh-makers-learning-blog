@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   const headersList = await headers();
   const ip = headersList.get("x-forwarded-for") ?? headersList.get("x-real-ip") ?? "unknown";
 
-  if (!checkRateLimit(ip).allowed) {
+  if (!checkRateLimit(ip, "login").allowed) {
     return NextResponse.json({ ok: false, message: "尝试次数过多，请 1 分钟后重试" }, { status: 429 });
   }
 
