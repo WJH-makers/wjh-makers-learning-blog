@@ -6,7 +6,7 @@ import AdminEditLink from "./AdminEditLink";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 };
 
 export async function generateStaticParams() {
@@ -35,11 +35,12 @@ function splitSections(markdown: string): string[] {
 
 export default async function PostPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const { page: pageParam } = await searchParams;
   const post = await getPublishedPost(slug);
   if (!post) notFound();
 
   const sections = splitSections(post.content);
-  const rawPage = parseInt(searchParams.page ?? "1", 10);
+  const rawPage = parseInt(pageParam ?? "1", 10);
   const page = Math.max(1, Math.min(sections.length, isNaN(rawPage) ? 1 : rawPage));
   const content = sections[page - 1];
   const contentHtml = await markdownToHtml(content);
