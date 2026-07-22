@@ -16,14 +16,26 @@ export async function generateStaticParams() {
 export const revalidate = 3600;
 export const runtime = "nodejs";
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const { page } = await searchParams;
   const post = await getPublishedPost(slug);
   if (!post) return {};
+  const suffix = page && page !== "1" ? `?page=${page}` : "";
+  const url = `${siteUrl()}/posts/${post.slug}${suffix}`;
   return {
     title: post.title,
     description: post.summary,
-    alternates: { canonical: `${siteUrl()}/posts/${post.slug}` },
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      title: post.title,
+      description: post.summary,
+      url,
+      publishedTime: post.date,
+      tags: post.tags,
+    },
+    twitter: { card: "summary", title: post.title, description: post.summary },
   };
 }
 
@@ -62,6 +74,10 @@ function splitSections(markdown: string): string[] {
   return result.length > 0 ? result : [markdown];
 }
 
+function sectionLabel(section: string, i: number): string {
+  return section.match(/^#{1,3}\s+(.+)/m)?.[1]?.trim() ?? `第 ${i + 1} 节`;
+}
+
 export default async function PostPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const { page: pageParam } = await searchParams;
@@ -70,38 +86,67 @@ export default async function PostPage({ params, searchParams }: Props) {
 
   const sections = splitSections(post.content);
   const rawPage = parseInt(pageParam ?? "1", 10);
-  const page = Math.max(1, Math.min(sections.length, isNaN(rawPage) ? 1 : rawPage));
+  const page = Math.max(1, Math.min(sections.length, Number.isNaN(rawPage) ? 1 : rawPage));
   const content = sections[page - 1];
   const contentHtml = await markdownToHtml(content);
-  const sectionTitle = content.match(/^#{1,2} (.+)/m)?.[1] ?? "";
+  const sectionTitle = sectionLabel(content, page - 1);
+  const multi = sections.length > 1;
+
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.summary,
+    datePublished: post.date,
+    keywords: post.tags.join(", "),
+    author: { "@type": "Person", name: "万佳泓", url: "https://github.com/WJH-makers" },
+    mainEntityOfPage: `${siteUrl()}/posts/${post.slug}`,
+  };
 
   return (
     <article className="page-shell article-shell">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
       <Link className="back-link" href="/posts">← 返回文章列表</Link>
       <header className="article-header">
         <p className="date">{post.date} · {post.readingMinutes} min read</p>
         <h1>{post.title}</h1>
-        {sectionTitle && <p className="eyebrow" style={{ marginTop: 8 }}>§ {sectionTitle}</p>}
+        {multi && sectionTitle && <p className="eyebrow" style={{ marginTop: 8 }}>§ {sectionTitle}</p>}
         <p>{post.summary}</p>
         <div className="tags">
           {post.tags.map((tag) => <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>)}
         </div>
       </header>
+
+      {multi && (
+        <nav className="section-toc" aria-label="章节目录">
+          {sections.map((s, i) => {
+            const n = i + 1;
+            return (
+              <Link
+                key={n}
+                href={`/posts/${slug}?page=${n}`}
+                className={n === page ? "toc-item active" : "toc-item"}
+                aria-current={n === page ? "page" : undefined}
+              >
+                <span className="toc-n">{String(n).padStart(2, "0")}</span>
+                {sectionLabel(s, i)}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+
       <div className="article-content" dangerouslySetInnerHTML={{ __html: contentHtml }} />
 
-      {sections.length > 1 && (
-        <nav className="pagination">
-          {page > 1 && (
-            <Link className="pagination-prev" href={`/posts/${slug}?page=${page - 1}`}>
-              ← 上一节
-            </Link>
-          )}
+      {multi && (
+        <nav className="pagination" aria-label="分节翻页">
+          {page > 1 ? (
+            <Link className="pagination-prev" href={`/posts/${slug}?page=${page - 1}`}>← 上一节</Link>
+          ) : <span aria-hidden />}
           <span className="pagination-info">{page} / {sections.length}</span>
-          {page < sections.length && (
-            <Link className="pagination-next" href={`/posts/${slug}?page=${page + 1}`}>
-              下一节 →
-            </Link>
-          )}
+          {page < sections.length ? (
+            <Link className="pagination-next" href={`/posts/${slug}?page=${page + 1}`}>下一节 →</Link>
+          ) : <span aria-hidden />}
         </nav>
       )}
 

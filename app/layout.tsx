@@ -12,22 +12,52 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jet
 const fontVars = `${playfair.variable} ${lora.variable} ${inter.variable} ${jetbrainsMono.variable}`;
 
 const writeRoute = "/write" as Route;
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online";
+const SITE_NAME = "WJH-makers · 学习博客";
+const SITE_DESC = "CS本科 · 遥感视觉问答 · MoE · 全栈学习记录";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online"),
+  metadataBase: new URL(SITE),
   title: {
-    default: "WJH-makers · 学习博客",
+    default: SITE_NAME,
     template: "%s | WJH-makers",
   },
-  description: "CS本科 · 遥感视觉问答 · MoE · 全栈学习记录",
+  description: SITE_DESC,
   robots: { index: true, follow: true },
   alternates: { types: { "application/rss+xml": "/rss.xml" } },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_NAME,
+    description: SITE_DESC,
+    locale: "zh_CN",
+    url: "/",
+  },
+  twitter: {
+    card: "summary",
+    title: SITE_NAME,
+    description: SITE_DESC,
+  },
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE,
+  inLanguage: "zh-CN",
+  author: {
+    "@type": "Person",
+    name: "万佳泓",
+    alternateName: "WJH-makers",
+    url: "https://github.com/WJH-makers",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -39,6 +69,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="zh-CN" className={fontVars}>
       <body>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
         <header className="site-header">
           <div className="edition-bar">
             <span>Vol. 1</span>
@@ -52,6 +83,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <Link href="/posts">博客</Link>
               <Link href="/tags">标签</Link>
               <Link href="/monitor">监控</Link>
+              <a href="https://api.wwjjhh.online" target="_blank" rel="noreferrer">API</a>
               <a href="https://dash.cloudflare.com" target="_blank" rel="noreferrer">流量</a>
               <Link href={writeRoute}>写心得</Link>
             </div>

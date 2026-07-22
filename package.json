@@ -9,7 +9,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "deploy:doctor": "node scripts/doctor-deploy.mjs",
-    "post:new": "node scripts/new-post.mjs"
+    "post:new": "node scripts/new-post.mjs",
+    "migrate:md": "node scripts/migrate-md-to-db.mjs"
   },
   "dependencies": {
     "@blocknote/core": "0.51.4",

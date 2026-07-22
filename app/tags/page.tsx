@@ -9,19 +9,30 @@ export const metadata = {
 export const runtime = "nodejs";
 export const revalidate = 3600;
 
+function sizeClass(count: number, max: number): string {
+  const r = count / max;
+  if (r > 0.75) return "tag-xl";
+  if (r > 0.5) return "tag-lg";
+  if (r > 0.25) return "tag-md";
+  return "tag-sm";
+}
+
 export default async function TagsPage() {
   const tags = await getAllPublishedTags();
+  const max = Math.max(1, ...tags.map((t) => t.count));
 
   return (
     <div className="page-shell narrow">
       <div className="page-title">
         <p className="eyebrow">Index Desk</p>
         <h1>标签</h1>
-        <p>用主题把每天的学习记录串起来。忘记某个知识点时，先按标签回到对应的学习轨道。</p>
+        <p>用主题把每天的学习记录串起来。字号越大 = 相关文章越多；忘记某个知识点时，先按标签回到对应的学习轨道。</p>
       </div>
       <div className="tag-cloud">
         {tags.length > 0 ? tags.map(({ tag, count }) => (
-          <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>{tag}<span>{count}</span></Link>
+          <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`} className={sizeClass(count, max)}>
+            {tag}<span>{count}</span>
+          </Link>
         )) : (
           <div className="empty-state">
             <p className="eyebrow">No Index</p>

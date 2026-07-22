@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 
 // 口令来自环境变量,不再硬编码。未配置则拒绝登录(fail-closed)。
 const MONITOR_USER = process.env.MONITOR_USER ?? "";
@@ -16,7 +16,7 @@ function safeEqual(a: string, b: string): boolean {
 
 export async function POST(request: Request) {
   const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for") ?? headersList.get("x-real-ip") ?? "unknown";
+  const ip = clientIp(headersList);
 
   if (!checkRateLimit(ip, "login").allowed) {
     return NextResponse.json({ ok: false, message: "尝试次数过多，请 1 分钟后重试" }, { status: 429 });

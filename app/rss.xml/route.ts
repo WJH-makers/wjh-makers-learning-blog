@@ -1,11 +1,13 @@
 import { getAllPublishedPosts, markdownToHtml, siteUrl } from "@/lib/posts";
 
-export const dynamic = "force-dynamic";
+// RSS 变化频率低(仅发文时),用 ISR 缓存;write 发布会 revalidatePath('/rss.xml') 主动刷新。
+export const revalidate = 3600;
 export const runtime = "nodejs";
 
 export async function GET() {
   const base = siteUrl();
-  const posts = await getAllPublishedPosts();
+  // 最近 30 篇全文(content:encoded 保留全文阅读体验),防文章增多后 RSS 无限膨胀。
+  const posts = (await getAllPublishedPosts()).slice(0, 30);
   const items = (await Promise.all(
     posts.map(async (post) => `
       <item>

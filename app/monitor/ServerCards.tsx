@@ -34,17 +34,17 @@ function AreaChart({ data, maxH, color, yKey, label }: { data: Point[]; maxH?: n
       </defs>
       {[mn, mid, peak].map((v, i) => {
         const y = (h - 16 - ((v - mn) / range) * (h - 26)).toFixed(1);
-        return <line key={i} x1={pad} y1={y} x2={w - pad} y2={y} stroke="#f3f4f6" strokeWidth="0.5" />;
+        return <line key={i} x1={pad} y1={y} x2={w - pad} y2={y} stroke="var(--muted)" strokeWidth="0.5" />;
       })}
       <polygon points={`${pad},${h - 16} ${area} ${w - pad},${h - 16}`} fill={`url(#${gradId})`} />
       <polyline points={area} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <text x={pad - 6} y={h - 4} fill="#9ca3af" fontSize="9" textAnchor="end">
+      <text x={pad - 6} y={h - 4} fill="var(--neutral-500)" fontSize="9" textAnchor="end">
         {fmtTime(data[0].t, data.length > 200 ? "week" : "day")}
       </text>
-      <text x={w - pad + 4} y={h - 4} fill="#9ca3af" fontSize="9">
+      <text x={w - pad + 4} y={h - 4} fill="var(--neutral-500)" fontSize="9">
         {fmtTime(data[data.length - 1].t, data.length > 200 ? "week" : "day")}
       </text>
-      <text x={pad + 2} y={12} fill="#9ca3af" fontSize="9">{label} · max {Math.round(mxVal)}</text>
+      <text x={pad + 2} y={12} fill="var(--neutral-500)" fontSize="9">{label} · max {Math.round(mxVal)}</text>
     </svg>
   );
 }
@@ -104,15 +104,15 @@ export default function ServerCards({ srv: initial }: { srv: Srv }) {
       <div className="chart-row">
         <div className="chart-card">
           <div className="chart-label" style={{ color: "#2563eb" }}>CPU</div>
-          {d.day && <AreaChart data={d.day} color="#2563eb" yKey="cpu" label="CPU %" />}
+          {d.day && <AreaChart data={d.day} color="var(--foreground)" yKey="cpu" label="CPU %" />}
         </div>
         <div className="chart-card">
           <div className="chart-label" style={{ color: "var(--accent-blue)" }}>Memory</div>
-          {d.day && <AreaChart data={d.day} color="#059669" yKey="mem" label="MEM %" />}
+          {d.day && <AreaChart data={d.day} color="var(--foreground)" yKey="mem" label="MEM %" />}
         </div>
         <div className="chart-card">
           <div className="chart-label" style={{ color: "var(--accent-yellow)" }}>Load</div>
-          {d.day && <AreaChart data={d.day} maxH={Math.max(2, ...d.day.map(p => p.load))} color="#7c3aed" yKey="load" label="Load" />}
+          {d.day && <AreaChart data={d.day} maxH={Math.max(2, ...d.day.map(p => p.load))} color="var(--foreground)" yKey="load" label="Load" />}
         </div>
       </div>
 
@@ -120,15 +120,15 @@ export default function ServerCards({ srv: initial }: { srv: Srv }) {
       <div className="chart-row">
         <div className="chart-card">
           <div className="chart-label" style={{ color: "#2563eb" }}>CPU</div>
-          {d.week && <AreaChart data={d.week} color="#2563eb" yKey="cpu" label="CPU %" />}
+          {d.week && <AreaChart data={d.week} color="var(--foreground)" yKey="cpu" label="CPU %" />}
         </div>
         <div className="chart-card">
           <div className="chart-label" style={{ color: "var(--accent-blue)" }}>Memory</div>
-          {d.week && <AreaChart data={d.week} color="#059669" yKey="mem" label="MEM %" />}
+          {d.week && <AreaChart data={d.week} color="var(--foreground)" yKey="mem" label="MEM %" />}
         </div>
         <div className="chart-card">
           <div className="chart-label" style={{ color: "var(--accent-yellow)" }}>Load</div>
-          {d.week && <AreaChart data={d.week} maxH={Math.max(2, ...d.week.map(p => p.load))} color="#7c3aed" yKey="load" label="Load" />}
+          {d.week && <AreaChart data={d.week} maxH={Math.max(2, ...d.week.map(p => p.load))} color="var(--foreground)" yKey="load" label="Load" />}
         </div>
       </div>
     </>

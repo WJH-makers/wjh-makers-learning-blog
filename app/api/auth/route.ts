@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 
 const encoder = new TextEncoder();
 
@@ -22,7 +22,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for") ?? headersList.get("x-real-ip") ?? "unknown";
+  const ip = clientIp(headersList);
 
   if (!checkRateLimit(ip, "login").allowed) {
     return NextResponse.json({ ok: false }, { status: 429 });

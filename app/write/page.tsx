@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { createDatabasePost, databaseProviderLabel, deleteDatabasePost, hasDatabaseConfig, updateDatabasePost } from "@/lib/db";
 import { getPublishedPost } from "@/lib/posts";
 import WriteEditorClient from "./WriteEditorClient";
+import { timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,6 +46,13 @@ function revalidateBlog(slug?: string) {
 // Exact same admin gate the create flow has always used: form token OR the
 // httpOnly `blog_admin_token` cookie, checked against BLOG_ADMIN_TOKEN. On the
 // first successful token submit it persists the cookie, mirroring /api/auth.
+function safeEqualToken(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
+
 async function requireAdminOrRedirect(formData: FormData): Promise<void> {
   const expectedToken = process.env.BLOG_ADMIN_TOKEN?.trim();
   const cookieStore = await cookies();
@@ -56,7 +64,7 @@ async function requireAdminOrRedirect(formData: FormData): Promise<void> {
     redirect("/write?error=missing-token-env" as Route);
   }
 
-  if (token !== expectedToken) {
+  if (!safeEqualToken(token, expectedToken)) {
     redirect("/write?error=bad-token" as Route);
   }
 
@@ -140,7 +148,7 @@ async function checkAuth(): Promise<boolean> {
   const expected = process.env.BLOG_ADMIN_TOKEN?.trim();
   if (!expected) return false;
   const cookieStore = await cookies();
-  return cookieStore.get("blog_admin_token")?.value?.trim() === expected;
+  return safeEqualToken(cookieStore.get("blog_admin_token")?.value?.trim() ?? "", expected);
 }
 
 export default async function WritePage({ searchParams }: Props) {

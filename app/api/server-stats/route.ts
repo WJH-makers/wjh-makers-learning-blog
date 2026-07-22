@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isMonitorAuthed } from "@/lib/monitor-auth";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { readFileSync, writeFileSync, existsSync } from "fs";
@@ -103,6 +104,10 @@ function downsample(data: Point[], buckets: number): Point[] {
 }
 
 export async function GET() {
+  if (!(await isMonitorAuthed())) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   if (cache && Date.now() - cache.at < CACHE_MS) {
     return NextResponse.json(cache.body);
   }

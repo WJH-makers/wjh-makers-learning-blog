@@ -79,7 +79,11 @@ function getClient(): Promise<MongoClient> {
     };
     const client = new MongoClient(uri, options);
     attachDatabasePool(client);
-    clientPromise = client.connect();
+    // 连接失败时重置单例,避免把被拒绝的 promise 永久缓存导致后续全部失败
+    clientPromise = client.connect().catch((err) => {
+      clientPromise = undefined;
+      throw err;
+    });
   }
 
   return clientPromise;

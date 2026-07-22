@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isMonitorAuthed } from "@/lib/monitor-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -19,6 +20,10 @@ interface CfDayGroup {
 }
 
 export async function GET() {
+  if (!(await isMonitorAuthed())) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const token = process.env.CLOUDFLARE_TOKEN;
   const zone = process.env.CLOUDFLARE_ZONE_ID;
 
