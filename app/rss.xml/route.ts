@@ -23,7 +23,7 @@ export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8" ?>
     <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
       <channel>
-        <title>万佳泓的学习日志</title>
+        <title>WJH-makers的学习日志</title>
         <link>${base}</link>
         <description>记录每天学习成果的个人博客</description>
         ${items}

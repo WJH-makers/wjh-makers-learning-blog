@@ -56,7 +56,7 @@ const websiteJsonLd = {
   inLanguage: "zh-CN",
   author: {
     "@type": "Person",
-    name: "万佳泓",
+    name: "WJH-makers",
     alternateName: "WJH-makers",
     url: "https://github.com/WJH-makers",
   },
