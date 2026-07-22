@@ -74,7 +74,7 @@ git sparse-checkout init --cone && git sparse-checkout set services/order
 
 ---
 
-# 四、Markdown 标签（难度 × 频次）
+# Docker 命令速查
 
 ## Docker · S 极高频
 
@@ -187,7 +187,7 @@ services:
 
 ---
 
-# 九、Maven / Gradle 构建（难度 × 频次）
+# SSH / SCP 远程连接
 
 ## SSH / SCP · S 极高频
 
@@ -236,5 +236,5 @@ Host prod-api
 
 ---
 
-# 十二、systemctl / 服务管理（难度 × 频次）
+# systemctl 服务管理
 
