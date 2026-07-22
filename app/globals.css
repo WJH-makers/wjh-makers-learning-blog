@@ -465,11 +465,11 @@ body::after {
 @keyframes fx-scan { from { background-position: 0 0; } to { background-position: 0 6px; } }
 .fx-cursor { position: fixed; top: 0; left: 0; z-index: 99999; pointer-events: none; margin: -15px 0 0 -15px; display: none; mix-blend-mode: difference; will-change: transform; }
 body.fx-cursor-on .fx-cursor { display: block; }
-.fx-cursor-ring { display: block; width: 30px; height: 30px; border: 1px solid var(--accent); transition: transform 0.16s ease-out; }
+.fx-cursor-ring { display: block; width: 30px; height: 30px; border: 1px solid var(--accent); box-shadow: 0 0 10px rgba(217,119,87,0.5), inset 0 0 6px rgba(217,119,87,0.28); transition: transform 0.16s ease-out, box-shadow 0.16s; }
 .fx-cursor-ring::before, .fx-cursor-ring::after { content: ""; position: absolute; background: var(--accent); }
 .fx-cursor-ring::before { top: 50%; left: -6px; right: -6px; height: 1px; transform: translateY(-50%); }
 .fx-cursor-ring::after { left: 50%; top: -6px; bottom: -6px; width: 1px; transform: translateX(-50%); }
-body.fx-cursor-hot .fx-cursor-ring { transform: scale(1.55); }
+body.fx-cursor-hot .fx-cursor-ring { transform: scale(1.55); box-shadow: 0 0 20px rgba(217,119,87,0.75), inset 0 0 8px rgba(217,119,87,0.4); }
 @media (hover: hover) and (pointer: fine) {
   body.fx-cursor-on, body.fx-cursor-on a, body.fx-cursor-on button, body.fx-cursor-on [role=button], body.fx-cursor-on input, body.fx-cursor-on textarea, body.fx-cursor-on select { cursor: none; }
 }
