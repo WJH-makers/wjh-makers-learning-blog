@@ -112,7 +112,7 @@ export default async function PostPage({ params, searchParams }: Props) {
     datePublished: post.date,
     author: {
       "@type": "Person",
-      name: "万佳泓",
+      name: "WJH-makers",
       alternateName: "WJH-makers",
       url: "https://github.com/WJH-makers",
     },
