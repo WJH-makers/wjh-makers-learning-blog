@@ -454,6 +454,29 @@ a:focus-visible {
 .tag-clusters { display: flex; flex-direction: column; gap: 26px; }
 .tag-group-title { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; font-family: var(--font-mono); font-size: 0.8rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: var(--foreground); }
 .tag-group-title span { color: var(--accent); font-size: 0.72rem; }
+
+/* ── 报纸 × 科技:数据粒子背景 + 十字准星光标 + CRT 扫描线 ── */
+.fx-particles { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(var(--ink-rgb),0.03) 0, rgba(var(--ink-rgb),0.03) 1px, transparent 1px, transparent 3px);
+  animation: fx-scan 9s linear infinite;
+}
+@keyframes fx-scan { from { background-position: 0 0; } to { background-position: 0 6px; } }
+.fx-cursor { position: fixed; top: 0; left: 0; z-index: 99999; pointer-events: none; margin: -15px 0 0 -15px; display: none; mix-blend-mode: difference; will-change: transform; }
+body.fx-cursor-on .fx-cursor { display: block; }
+.fx-cursor-ring { display: block; width: 30px; height: 30px; border: 1px solid var(--accent); transition: transform 0.16s ease-out; }
+.fx-cursor-ring::before, .fx-cursor-ring::after { content: ""; position: absolute; background: var(--accent); }
+.fx-cursor-ring::before { top: 50%; left: -6px; right: -6px; height: 1px; transform: translateY(-50%); }
+.fx-cursor-ring::after { left: 50%; top: -6px; bottom: -6px; width: 1px; transform: translateX(-50%); }
+body.fx-cursor-hot .fx-cursor-ring { transform: scale(1.55); }
+@media (hover: hover) and (pointer: fine) {
+  body.fx-cursor-on, body.fx-cursor-on a, body.fx-cursor-on button, body.fx-cursor-on [role=button], body.fx-cursor-on input, body.fx-cursor-on textarea, body.fx-cursor-on select { cursor: none; }
+}
+.stats-grid strong, .hero-panel strong { text-shadow: 0 0 14px rgba(217, 119, 87, 0.22); }
+.hero .eyebrow::after { content: "▊"; margin-left: 5px; color: var(--accent); opacity: 0.7; animation: fx-blink 1.15s step-end infinite; }
+@keyframes fx-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { body::after, .hero .eyebrow::after { animation: none; } }
 .tag-cloud { display: flex; flex-wrap: wrap; border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
 .tag-cloud span { color: var(--accent); }
 .back-link { display: inline-flex; min-height: 44px; align-items: center; margin-bottom: 18px; font-family: var(--font-mono); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
