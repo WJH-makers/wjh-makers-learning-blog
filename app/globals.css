@@ -20,7 +20,7 @@
   --font-mono: var(--font-jetbrains), Cascadia Code, JetBrains Mono, Consolas, monospace;
 }
 
-* { box-sizing: border-box; border-radius: 0 !important; }
+* { box-sizing: border-box;  }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
@@ -376,7 +376,7 @@ a:focus-visible {
 .card { padding: clamp(16px, 2.5vw, 24px); transition: all 160ms ease-out; }
 .card:hover,
 .track-card:hover,
-.list-item:hover { background: var(--neutral-100); box-shadow: 4px 4px 0 0 var(--foreground); transform: translate(-2px, -2px); }
+.list-item:hover { background: var(--neutral-100); box-shadow: 0 1px 3px rgba(var(--ink-rgb), 0.06); }
 .card h3 { font-size: clamp(1rem, 1.5vw, 1.25rem); margin: 0 0 6px; line-height: 1.3; }
 .card h3 a,
 .list-item h2 a { color: var(--foreground); text-decoration: none; }
@@ -521,6 +521,13 @@ body.fx-cursor-hot .fx-cursor-ring { transform: scale(1.55); box-shadow: 0 0 20p
 .article-content > :first-child { margin-top: 0; }
 .article-content h2 { padding-bottom: 8px; border-bottom: 1px solid var(--border); }
 .article-content p { margin: 1em 0; text-align: justify; }
+.article-content img {
+  box-sizing: border-box;
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5em auto;
+}
 .article-content ul { padding-left: 24px; }
 .article-content ol { padding-left: 24px; }
 .article-content h4 { margin: 1.2em 0 0.4em; font-weight: 700; }
@@ -955,7 +962,7 @@ textarea:focus { outline: 0; background: var(--neutral-100); }
   background: rgba(var(--paper-rgb),0.9);
   transition: all 160ms ease-out;
 }
-.repo-card:hover { background: var(--neutral-100); box-shadow: 4px 4px 0 0 var(--foreground); transform: translate(-2px, -2px); }
+.repo-card:hover { background: var(--neutral-100); box-shadow: 0 1px 3px rgba(var(--ink-rgb), 0.06); }
 .repo-head h3 {
   font-size: clamp(1.1rem, 2.2vw, 1.6rem);
   letter-spacing: -0.04em;

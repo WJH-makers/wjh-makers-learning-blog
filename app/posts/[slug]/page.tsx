@@ -51,8 +51,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 function splitSections(markdown: string): string[] {
-  const splitByHeading = (text: string, level: 1 | 2): string[] => {
-    const re = level === 1 ? /^# / : /^## /;
+  const splitByHeading = (text: string, level: 1 | 2 | 3): string[] => {
+    const re = level === 1 ? /^# / : level === 2 ? /^## / : /^### /;
     const lines = text.split(/\r?\n/);
     const out: string[] = [];
     let cur: string[] = [];
@@ -69,18 +69,21 @@ function splitSections(markdown: string): string[] {
     return out;
   };
 
-  const MAX_LINES = 220;
+  const MAX_LINES = 120;
   const blocks = splitByHeading(markdown, 1);
   if (blocks.length === 0) return [markdown];
 
   const result: string[] = [];
   for (const block of blocks) {
-    if (block.split("\n").length <= MAX_LINES) {
-      result.push(block);
-    } else {
-      const subs = splitByHeading(block, 2);
-      result.push(...(subs.length > 1 ? subs : [block]));
+    let pages = [block];
+    for (const level of [2, 3] as const) {
+      pages = pages.flatMap((page) => {
+        if (page.split("\n").length <= MAX_LINES) return [page];
+        const sections = splitByHeading(page, level);
+        return sections.length > 1 ? sections : [page];
+      });
     }
+    result.push(...pages);
   }
   return result.length > 0 ? result : [markdown];
 }
