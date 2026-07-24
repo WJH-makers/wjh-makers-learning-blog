@@ -152,11 +152,25 @@ function inlineMarkdown(value: string): string {
   const escaped = escapeHtml(value);
   return escaped
     .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />')
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
-    .replace(/\[([^\]]+)\]\((?!https?:)([^\s)]+)\)/g, '<a href="$2" rel="noreferrer">$1</a>')
+    .replace(/!\[([^\]]*)\]\(([^\s)]+)\)/g, (_match, alt, rawUrl) => {
+      const url = safeContentUrl(rawUrl);
+      return url ? `<img src="${url}" alt="${alt}" loading="lazy" />` : alt;
+    })
+    .replace(/\[([^\]]+)\]\(([^\s)]+)\)/g, (_match, label, rawUrl) => {
+      const url = safeContentUrl(rawUrl);
+      if (!url) return label;
+      return /^https?:\/\//i.test(url)
+        ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`
+        : `<a href="${url}" rel="noreferrer">${label}</a>`;
+    })
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+}
+
+function safeContentUrl(value: string): string | undefined {
+  if (/^https?:\/\//i.test(value)) return value;
+  if (/^\/(?!\/)/.test(value) || value.startsWith("#")) return value;
+  return undefined;
 }
 
 const highlightCache = new Map<string, string>();
@@ -326,5 +340,5 @@ export async function markdownToHtml(markdown: string): Promise<string> {
 }
 
 export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://wjh-makers-learning-blog.vercel.app").replace(/\/$/, "");
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online").replace(/\/$/, "");
 }

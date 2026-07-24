@@ -20,11 +20,11 @@ interface CfStats {
 async function get<T>(path: string): Promise<T | null> {
   try {
     const base = process.env.NODE_ENV === "production" ? "http://127.0.0.1:3001" : "http://localhost:3000";
-    // SSR loopback 自调:手动透传 monitor_token,过 API 的鉴权 gate。
-    const token = (await cookies()).get("monitor_token")?.value;
+    // SSR loopback 自调：显式透传受签名保护的监控会话。
+    const token = (await cookies()).get("monitor_session")?.value;
     const r = await fetch(`${base}${path}`, {
       cache: "no-store",
-      headers: token ? { cookie: `monitor_token=${token}` } : undefined,
+      headers: token ? { cookie: `monitor_session=${token}` } : undefined,
     });
     return r.ok ? await r.json() : null;
   } catch { return null; }

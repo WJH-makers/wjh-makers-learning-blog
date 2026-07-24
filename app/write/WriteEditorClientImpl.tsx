@@ -8,7 +8,6 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 const DRAFT_KEY = "wjh-learning-blog:write-draft:v1";
-const TOKEN_KEY = "wjh-learning-blog:admin-token";
 const DEFAULT_TAGS = "Java, Git, MySQL, 复盘";
 
 const KNOWLEDGE_CARD_TEMPLATE = [
@@ -152,7 +151,6 @@ export default function WriteEditorClient({
   const [draftStatus, setDraftStatus] = useState("正在准备本地写作台……");
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [savedToken, setSavedToken] = useState("");
-  const [rememberToken, setRememberToken] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
 
   const contentInputRef = useRef<HTMLInputElement>(null);
@@ -282,11 +280,6 @@ export default function WriteEditorClient({
         setDraftStatus("已载入知识卡片模板；开始输入后会自动保存到本机。");
       }
     }
-    const storedToken = window.localStorage.getItem(TOKEN_KEY);
-    if (storedToken) {
-      setSavedToken(storedToken);
-      setRememberToken(true);
-    }
     setDraftLoaded(true);
   }, [
     isEditing,
@@ -343,9 +336,7 @@ export default function WriteEditorClient({
         body: JSON.stringify({ token: savedToken.trim() }),
       });
       if (res.ok) {
-        if (rememberToken) {
-          window.localStorage.setItem(TOKEN_KEY, savedToken.trim());
-        }
+        setSavedToken("");
         window.location.reload();
       } else {
         setValidationMessage("密钥不正确，登录失败。");
@@ -383,9 +374,10 @@ export default function WriteEditorClient({
       setDraftStatus(isEditing ? "已取消保存修改。" : "已取消发布，本地草稿仍保留。");
       return;
     }
-
-    if (!isAuthenticated && rememberToken && savedToken) {
-      window.localStorage.setItem(TOKEN_KEY, savedToken);
+    if (!isAuthenticated) {
+      event.preventDefault();
+      setValidationMessage("请先使用发布密钥登录；密钥不会保存到浏览器。" );
+      return;
     }
     setValidationMessage(null);
     if (!isEditing) {
@@ -472,7 +464,6 @@ export default function WriteEditorClient({
               <label>
                 <span>发布密钥</span>
                 <input
-                  name="token"
                   type="password"
                   autoComplete="off"
                   placeholder="BLOG_ADMIN_TOKEN"
@@ -481,10 +472,6 @@ export default function WriteEditorClient({
                   onChange={(e) => setSavedToken(e.target.value)}
                 />
               </label>
-              <label className="remember-token">
-                <input type="checkbox" checked={rememberToken} onChange={(e) => setRememberToken(e.target.checked)} />
-                <span>记住密钥</span>
-              </label>
             </>
           )}
         </div>
@@ -492,7 +479,7 @@ export default function WriteEditorClient({
         {isAuthenticated ? null : (
           <div className="hero-actions login-bar">
             <button className="button primary" type="button" disabled={loggingIn} onClick={handleLogin}>
-              {loggingIn ? "登录中……" : "登录并记住凭证"}
+              {loggingIn ? "登录中……" : "登录后发布"}
             </button>
           </div>
         )}

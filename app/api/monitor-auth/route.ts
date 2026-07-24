@@ -1,7 +1,7 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { createSession, MONITOR_AUTH_COOKIE } from "@/lib/auth-session";
 
 // 口令来自环境变量,不再硬编码。未配置则拒绝登录(fail-closed)。
 const MONITOR_USER = process.env.MONITOR_USER ?? "";
@@ -15,10 +15,7 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 export async function POST(request: Request) {
-  const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for") ?? headersList.get("x-real-ip") ?? "unknown";
-
-  if (!checkRateLimit(ip, "login").allowed) {
+  if (!checkRateLimit("monitor-login", "login").allowed) {
     return NextResponse.json({ ok: false, message: "尝试次数过多，请 1 分钟后重试" }, { status: 429 });
   }
 
@@ -51,13 +48,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "用户名或密码错误" }, { status: 401 });
   }
 
+  const session = createSession("monitor", 60 * 60 * 8);
+  if (!session) return NextResponse.json({ ok: false, message: "监控登录未配置" }, { status: 503 });
   const res = NextResponse.json({ ok: true });
-  res.cookies.set("monitor_token", Buffer.from(`${MONITOR_USER}:${MONITOR_PASS}`).toString("base64url"), {
+  res.cookies.set(MONITOR_AUTH_COOKIE, session, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 60 * 60 * 8,
     path: "/",
   });
+  res.cookies.set("monitor_token", "", { httpOnly: true, maxAge: 0, path: "/" });
   return res;
 }

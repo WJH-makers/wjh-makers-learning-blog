@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { isMonitorAuthed } from "@/lib/monitor-auth";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, renameSync } from "fs";
+import * as os from "node:os";
 
 const execAsync = promisify(exec);
 
@@ -19,6 +20,9 @@ const MAX_FILE_SIZE = 512_000;
 // 结果缓存:避免每次请求(SSR + 客户端 60s 轮询)都 fork 子进程,兼作 DoS 缓冲。
 let cache: { at: number; body: unknown } | null = null;
 const CACHE_MS = 5000;
+
+type CpuTicks = { idle: number; total: number };
+let previousCpu: CpuTicks | undefined;
 
 // 异步执行,永不阻塞事件循环;失败返回空串由调用方兜底。
 async function sh(cmd: string, timeout: number): Promise<string> {
@@ -39,8 +43,17 @@ function loadHistory(): Point[] {
     const cutoff = Date.now() - 8 * 86400000;
     return data.filter((p) => p.t > cutoff);
   } catch {
-    try { writeFileSync(DATA_FILE, "[]"); } catch {}
     return [];
+  }
+}
+
+function writeHistory(json: string) {
+  const tempFile = `${DATA_FILE}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    writeFileSync(tempFile, json, { encoding: "utf8", mode: 0o600 });
+    renameSync(tempFile, DATA_FILE);
+  } catch {
+    try { writeFileSync(tempFile, "", { flag: "w" }); } catch {}
   }
 }
 
@@ -48,38 +61,35 @@ function saveHistory(data: Point[]) {
   const trimmed = data.length > MAX_POINTS ? data.slice(-MAX_POINTS) : data;
   const json = JSON.stringify(trimmed);
   if (json.length > MAX_FILE_SIZE) {
-    try { writeFileSync(DATA_FILE, JSON.stringify(trimmed.slice(-5000))); } catch {}
+    writeHistory(JSON.stringify(trimmed.slice(-5000)));
     return;
   }
-  try { writeFileSync(DATA_FILE, json); } catch {}
+  writeHistory(json);
 }
 
-async function collect(): Promise<Point> {
-  let cpu = 0;
-  let memPct = 0;
-  let load = 0;
-
-  const topRaw = await sh("top -bn1 -d0.3 | grep '%Cpu' | head -1", 6000);
-  const m = topRaw.match(/(\d+\.?\d*)\s*id/);
-  cpu = m ? Math.round(100 - parseFloat(m[1])) : 0;
-
-  const mraw = await sh("free -m | grep Mem:", 3000);
-  if (mraw) {
-    const parts = mraw.trim().split(/\s+/);
-    const total = parseInt(parts[1], 10);
-    const used = parseInt(parts[2], 10);
-    memPct = total ? Math.round((used / total) * 100) : 0;
-  }
-
-  const la = await sh("cat /proc/loadavg", 3000);
-  if (la) load = parseFloat(la.split(/\s+/)[0]) || 0;
-
-  return { t: Date.now(), cpu, mem: memPct, load };
+function cpuTicks(): CpuTicks {
+  return os.cpus().reduce<CpuTicks>((sum, cpu) => {
+    const times = cpu.times;
+    sum.idle += times.idle;
+    sum.total += times.user + times.nice + times.sys + times.idle + times.irq;
+    return sum;
+  }, { idle: 0, total: 0 });
 }
 
-async function parseUptime(): Promise<string> {
-  const s = parseInt((await sh("cat /proc/uptime", 3000)).split(" ")[0], 10);
-  return Number.isNaN(s) ? "?" : `${Math.floor(s / 86400)}d ${Math.floor((s % 86400) / 3600)}h`;
+function collect(): Point {
+  const currentCpu = cpuTicks();
+  const totalDelta = currentCpu.total - (previousCpu?.total ?? currentCpu.total);
+  const idleDelta = currentCpu.idle - (previousCpu?.idle ?? currentCpu.idle);
+  previousCpu = currentCpu;
+  const cpu = totalDelta > 0 ? Math.round(100 - (idleDelta / totalDelta) * 100) : 0;
+  const totalMemory = os.totalmem();
+  const mem = totalMemory ? Math.round(((totalMemory - os.freemem()) / totalMemory) * 100) : 0;
+  return { t: Date.now(), cpu, mem, load: Math.round(os.loadavg()[0] * 10) / 10 };
+}
+
+function parseUptime(): string {
+  const seconds = Math.floor(os.uptime());
+  return `${Math.floor(seconds / 86400)}d ${Math.floor((seconds % 86400) / 3600)}h`;
 }
 
 async function parseDisk(): Promise<string> {
@@ -116,7 +126,7 @@ export async function GET() {
   let history = loadHistory();
   const lastTs = history.length > 0 ? history[history.length - 1].t : 0;
 
-  const point = await collect();
+  const point = collect();
 
   const gaps = Math.min(Math.floor((now - lastTs) / 60000), 60);
   if (gaps > 0 && lastTs > 0) {
@@ -136,7 +146,7 @@ export async function GET() {
     cpu: point.cpu,
     mem: point.mem,
     load: point.load,
-    uptime: await parseUptime(),
+    uptime: parseUptime(),
     disk: await parseDisk(),
     day: downsample(history.filter((p) => p.t >= dayAgo), 48),
     week: downsample(history.filter((p) => p.t >= weekAgo), 56),
