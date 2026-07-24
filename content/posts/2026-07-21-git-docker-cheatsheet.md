@@ -74,7 +74,7 @@ git sparse-checkout init --cone && git sparse-checkout set services/order
 
 ---
 
-# Docker 命令速查
+## Docker 命令速查
 
 ## Docker · S 极高频
 
@@ -187,7 +187,7 @@ services:
 
 ---
 
-# SSH / SCP 远程连接
+## SSH / SCP 远程连接
 
 ## SSH / SCP · S 极高频
 
@@ -236,5 +236,17 @@ Host prod-api
 
 ---
 
-# systemctl 服务管理
+## systemctl 服务管理
+
+> 从[全栈指令速查大全](/posts/2026-07-15-command-reference-cheatsheet)拆分。
+
+| 难度 | 命令 | 作用 |
+|------|------|------|
+| ★★ | `systemctl start/stop/restart 服务` | 启停服务 |
+| ★★ | `systemctl enable/disable 服务` | 开机自启/禁用 |
+| ★★ | `systemctl status 服务` | 查看运行状态 |
+| ★★★ | `journalctl -u 服务 -f` | 实时日志跟踪 |
+| ★★★ | `systemctl daemon-reload` | 重载 unit 配置 |
+| ★★★ | `systemctl list-units --state=failed` | 查看失败服务 |
+
 

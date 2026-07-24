@@ -1252,7 +1252,7 @@ selectedcontent img {
 
 ---
 
+
 ---
 
-# 六、MySQL 命令（难度 × 频次）
-
+> MySQL 命令已独立成篇 → [MySQL &amp; Redis 高频命令速查](/posts/2026-07-21-mysql-redis-cheatsheet)。

@@ -30,6 +30,38 @@ git status -> git diff -> git add -p -> git commit -> git push
 - `where node` / `where java` / `where opencode`
 - `tldr git undo`
 
+## 环境检查清单
+
+### 环境清单（可直接复制排查）
+
+```bash
+# 1. JDK
+java --version  # 预期: GraalVM JDK 25 / OpenJDK 17+
+
+# 2. Maven
+mvn --version   # 预期: 3.9+
+
+# 3. Git
+git --version   # 预期: 2.40+
+
+# 4. VS Code 插件
+code --list-extensions | grep -i "java\|spring\|git\|docker"
+
+# 5. Podman (代替 Docker Desktop)
+podman version
+# 注意: Windows Podman 需要 WSL2 + podman machine start
+# docker 命令别名: alias docker=podman
+```
+
+### 常见坑
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| `mvn` 不是命令 | 环境变量 `MAVEN_HOME` 未设 | 系统属性 → 环境变量 → Path |
+| Podman 启动失败 | WSL2 未装 / 内核版本旧 | `wsl --update` |
+| `localhost:6379` 被占 | 上次 Redis 容器未清理 | `wsl --shutdown` 重开 |
+| VS Code Java 报红 | Maven 未下载完依赖 | `Ctrl+Shift+P` → Java: Clean Workspace |
+
 ## 明天继续
 
 - 把个人博客部署到 Vercel。

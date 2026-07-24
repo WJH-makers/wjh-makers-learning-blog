@@ -152,7 +152,13 @@ tags: [Linux, Windows, 命令速查]
 
 ---
 
-# 三、Git 指令（难度 × 频次）
+## Git 常用指令
 
-> 桌面原稿未单列 Git，以下为开发高频全集（按频次×难度）。
+> Git 已独立成篇 → [Git + Docker + SSH 命令速查](/posts/2026-07-21-git-docker-cheatsheet)。
 
+| 难度 | 命令 | 作用 |
+|------|------|------|
+| ★★ | `git status / add / commit -m` | 三板斧 |
+| ★★ | `git log --oneline --graph` | 可视化历史 |
+| ★★★ | `git branch / checkout / merge` | 分支管理 |
+| ★★★★ | `git rebase -i / stash / cherry-pick` | 进阶整理 |
