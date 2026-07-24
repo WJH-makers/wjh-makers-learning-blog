@@ -1,14 +1,14 @@
-FROM docker.m.daocloud.io/library/node:20-alpine AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-FROM docker.m.daocloud.io/library/node:20-alpine AS build-deps
+FROM node:20-alpine AS build-deps
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-FROM docker.m.daocloud.io/library/node:20-alpine AS builder
+FROM node:20-alpine AS builder
 ARG NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 WORKDIR /app
@@ -16,7 +16,7 @@ COPY --from=build-deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build && rm -rf .next/cache
 
-FROM docker.m.daocloud.io/library/node:20-alpine AS runner
+FROM node:20-alpine AS runner
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001 -G nodejs
 WORKDIR /app
 ENV NODE_ENV=production \
