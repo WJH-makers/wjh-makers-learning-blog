@@ -1182,6 +1182,37 @@ textarea:focus { outline: 0; background: var(--neutral-100); }
 .pagination a { font-weight: 600; font-size: 0.9rem; }
 .pagination-info { font-size: 0.82rem; color: var(--neutral-500); }
 
+/* ===== 文章小节目录 + 带标题翻页(glassmorphism) ===== */
+.section-toc {
+  margin: 28px 0;
+  padding: clamp(16px, 2.5vw, 22px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: rgba(24, 24, 27, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.section-toc .eyebrow { margin: 0 0 12px; }
+.section-toc ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; counter-reset: toc; }
+.section-toc li { counter-increment: toc; font-size: 0.9rem; line-height: 1.5; }
+.section-toc li::before { content: counter(toc, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.74rem; color: var(--neutral-500); margin-right: 10px; }
+.section-toc a { color: var(--foreground); text-decoration: none; transition: color 0.2s; }
+.section-toc a:hover { color: var(--accent); text-shadow: 0 0 12px var(--accent-glow); }
+.section-toc li.current { font-weight: 700; }
+.section-toc li.current span, .section-toc li.current::before { color: var(--accent); text-shadow: 0 0 12px var(--accent-glow); }
+
+.article-pagination { justify-content: space-between; align-items: stretch; gap: 16px; }
+.article-pagination a {
+  display: flex; flex-direction: column; gap: 3px; max-width: 46%;
+  padding: 12px 16px; border: 1px solid var(--border); border-radius: 16px;
+  background: rgba(24, 24, 27, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.article-pagination a:hover { border-color: rgba(255,255,255,0.15); background: rgba(39, 39, 42, 0.6); transform: translateY(-3px); box-shadow: 0 0 20px rgba(139, 92, 246, 0.1); }
+.article-pagination .pagination-next { text-align: right; align-items: flex-end; }
+.article-pagination .pg-dir { font-weight: 700; font-size: 0.88rem; color: var(--accent); }
+.article-pagination .pg-title { font-size: 0.8rem; color: var(--neutral-500); font-weight: 400; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ===== Dark mode · 夜间版报纸(自动跟随系统) ===== */
 @media (prefers-color-scheme: dark) {
   :root {

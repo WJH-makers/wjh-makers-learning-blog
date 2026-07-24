@@ -1,20 +1,36 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllPublishedPosts } from "@/lib/posts";
-
-export const metadata = {
-  title: "全部文章",
-  description: "学习记录文章列表。",
-};
+import { getAllPublishedPosts, siteUrl } from "@/lib/posts";
 
 export const revalidate = 604800;
 export const runtime = "nodejs";
 
 const PAGE_SIZE = 6;
 
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const posts = await getAllPublishedPosts();
+  const totalPages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
+  const raw = parseInt(sp.page ?? "1", 10);
+  const page = Math.max(1, Math.min(totalPages, isNaN(raw) ? 1 : raw));
+  const base = `${siteUrl()}/posts`;
+  return {
+    title: page > 1 ? `全部文章 · 第 ${page} 页` : "全部文章",
+    description: "学习记录文章列表。",
+    alternates: { canonical: page > 1 ? `${base}?page=${page}` : base },
+    // 第 2 页起不重复进索引,第一页为规范入口
+    robots: page > 1 ? { index: false, follow: true } : undefined,
+  };
+}
+
 export default async function PostsPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
   const sp = await searchParams;
   const posts = await getAllPublishedPosts();

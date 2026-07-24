@@ -218,6 +218,62 @@ function renderTable(header: string[], aligns: string[], rows: string[][]): stri
   return `<div class="table-scroll"><table>${thead}${tbody}</table></div>`;
 }
 
+export type PostSection = { title: string; content: string };
+
+/**
+ * 把长文章切成便于翻页的小节:先按 H1 切,单块超 MAX_LINES 行再按 H2 细分,
+ * 过短的碎片并入前一节以免翻页零碎。每节附带首个标题,供分页导航/目录显示。
+ * 代码围栏内的 # 不当作标题,避免误切。
+ */
+export function splitSections(markdown: string): PostSection[] {
+  const MAX_LINES = 220;
+  const MIN_LINES = 6;
+
+  const splitByHeading = (text: string, level: 1 | 2): string[] => {
+    const re = level === 1 ? /^# / : /^## /;
+    const lines = text.split(/\r?\n/);
+    const out: string[] = [];
+    let cur: string[] = [];
+    let fence = false;
+    for (const line of lines) {
+      if (line.startsWith("```")) fence = !fence;
+      if (!fence && re.test(line) && cur.some((l) => l.trim())) {
+        out.push(cur.join("\n"));
+        cur = [];
+      }
+      cur.push(line);
+    }
+    if (cur.some((l) => l.trim())) out.push(cur.join("\n"));
+    return out;
+  };
+
+  const expanded: string[] = [];
+  for (const block of splitByHeading(markdown, 1)) {
+    if (block.split("\n").length <= MAX_LINES) {
+      expanded.push(block);
+    } else {
+      const subs = splitByHeading(block, 2);
+      expanded.push(...(subs.length > 1 ? subs : [block]));
+    }
+  }
+
+  const merged: string[] = [];
+  for (const block of expanded) {
+    const lineCount = block.split("\n").filter((l) => l.trim()).length;
+    if (merged.length > 0 && lineCount < MIN_LINES) {
+      merged[merged.length - 1] += "\n\n" + block;
+    } else {
+      merged.push(block);
+    }
+  }
+
+  const blocks = merged.length > 0 ? merged : [markdown];
+  return blocks.map((content) => ({
+    title: content.match(/^#{1,2}\s+(.+)$/m)?.[1]?.trim() ?? "",
+    content,
+  }));
+}
+
 export async function markdownToHtml(markdown: string): Promise<string> {
   const lines = markdown.split(/\r?\n/);
   const html: string[] = [];

@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllPublishedPosts, getPublishedPost, markdownToHtml, siteUrl } from "@/lib/posts";
+import { getAllPublishedPosts, getPublishedPost, markdownToHtml, siteUrl, splitSections } from "@/lib/posts";
 import AdminEditLink from "./AdminEditLink";
 
 type Props = {
@@ -9,33 +9,46 @@ type Props = {
   searchParams: Promise<{ page?: string }>;
 };
 
+// page 是 searchParams(query),不是路由段,故只需按 slug 预生成;分页由 searchParams 处理。
 export async function generateStaticParams() {
   const posts = await getAllPublishedPosts();
-  const params: { slug: string; page?: string }[] = [];
-  for (const post of posts) {
-    params.push({ slug: post.slug });
-    const sections = splitSections(post.content);
-    for (let p = 2; p <= sections.length; p++) {
-      params.push({ slug: post.slug, page: String(p) });
-    }
-  }
-  return params;
+  return posts.map((post) => ({ slug: post.slug }));
 }
 
 export const revalidate = 604800;
 export const runtime = "nodejs";
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+function resolvePage(param: string | undefined, total: number): number {
+  const raw = parseInt(param ?? "1", 10);
+  return Math.max(1, Math.min(total, isNaN(raw) ? 1 : raw));
+}
+
+// 第一页用干净 URL(不带 ?page=1),与 canonical 保持一致
+function pageHref(slug: string, p: number): Route {
+  return (p <= 1 ? `/posts/${slug}` : `/posts/${slug}?page=${p}`) as Route;
+}
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params;
+  const { page: pageParam } = await searchParams;
   const post = await getPublishedPost(slug);
   if (!post) return {};
-  const url = `${siteUrl()}/posts/${post.slug}`;
+
+  const sections = splitSections(post.content);
+  const page = resolvePage(pageParam, sections.length);
+  const base = `${siteUrl()}/posts/${post.slug}`;
+  const url = page > 1 ? `${base}?page=${page}` : base;
+  const sectionTitle = sections[page - 1]?.title;
+  const title = page > 1 && sectionTitle ? `${post.title} · ${sectionTitle}` : post.title;
+
   return {
-    title: post.title,
+    title,
     description: post.summary,
     alternates: { canonical: url },
+    // 分页小节不单独进索引,避免与完整文章重复内容;第一页为规范入口
+    robots: page > 1 ? { index: false, follow: true } : undefined,
     openGraph: {
-      title: post.title,
+      title,
       description: post.summary,
       url,
       type: "article",
@@ -44,45 +57,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary",
-      title: post.title,
+      title,
       description: post.summary,
     },
   };
-}
-
-function splitSections(markdown: string): string[] {
-  const splitByHeading = (text: string, level: 1 | 2): string[] => {
-    const re = level === 1 ? /^# / : /^## /;
-    const lines = text.split(/\r?\n/);
-    const out: string[] = [];
-    let cur: string[] = [];
-    let fence = false;
-    for (const line of lines) {
-      if (line.startsWith("```")) fence = !fence;
-      if (!fence && re.test(line) && cur.some((l) => l.trim())) {
-        out.push(cur.join("\n"));
-        cur = [];
-      }
-      cur.push(line);
-    }
-    if (cur.some((l) => l.trim())) out.push(cur.join("\n"));
-    return out;
-  };
-
-  const MAX_LINES = 220;
-  const blocks = splitByHeading(markdown, 1);
-  if (blocks.length === 0) return [markdown];
-
-  const result: string[] = [];
-  for (const block of blocks) {
-    if (block.split("\n").length <= MAX_LINES) {
-      result.push(block);
-    } else {
-      const subs = splitByHeading(block, 2);
-      result.push(...(subs.length > 1 ? subs : [block]));
-    }
-  }
-  return result.length > 0 ? result : [markdown];
 }
 
 export default async function PostPage({ params, searchParams }: Props) {
@@ -91,6 +69,9 @@ export default async function PostPage({ params, searchParams }: Props) {
   const post = await getPublishedPost(slug);
   if (!post) notFound();
 
+  const sections = splitSections(post.content);
+  const page = resolvePage(pageParam, sections.length);
+  const current = sections[page - 1];
   const url = `${siteUrl()}/posts/${post.slug}`;
 
   const breadcrumbJsonLd = {
@@ -108,7 +89,7 @@ export default async function PostPage({ params, searchParams }: Props) {
     "@type": "BlogPosting",
     headline: post.title,
     description: post.summary,
-    url: `${siteUrl()}/posts/${post.slug}`,
+    url,
     datePublished: post.date,
     author: {
       "@type": "Person",
@@ -120,17 +101,14 @@ export default async function PostPage({ params, searchParams }: Props) {
     inLanguage: "zh-CN",
   };
 
-  const sections = splitSections(post.content);
-  const rawPage = parseInt(pageParam ?? "1", 10);
-  const page = Math.max(1, Math.min(sections.length, isNaN(rawPage) ? 1 : rawPage));
-  const content = sections[page - 1];
-  // 正文首行若是与文章标题重复的 H1,去掉(article-header 已展示 H1,避免三重标题)
-  const contentLines = content.split("\n");
+  // 正文首行若是与文章标题重复的 H1,去掉(header 已展示,避免三重标题)
+  const contentLines = current.content.split("\n");
   if (contentLines[0]?.replace(/^#\s+/, "").trim() === post.title.trim()) {
     contentLines.shift();
   }
   const contentHtml = await markdownToHtml(contentLines.join("\n").replace(/^\s+/, ""));
-  const sectionTitle = content.match(/^#{1,2} (.+)/m)?.[1] ?? "";
+  const sectionTitle = current.title;
+  const multi = sections.length > 1;
 
   return (
     <article className="page-shell article-shell">
@@ -138,7 +116,7 @@ export default async function PostPage({ params, searchParams }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <Link className="back-link" href="/posts">← 返回文章列表</Link>
       <header className="article-header">
-        <p className="date">{post.date} · {post.readingMinutes} min read</p>
+        <p className="date">{post.date} · {post.readingMinutes} min read{multi ? ` · 共 ${sections.length} 节` : ""}</p>
         <h1>{post.title}</h1>
         {sectionTitle && sectionTitle !== post.title && <p className="eyebrow" style={{ marginTop: 8 }}>§ {sectionTitle}</p>}
         <p>{post.summary}</p>
@@ -146,21 +124,41 @@ export default async function PostPage({ params, searchParams }: Props) {
           {post.tags.map((tag) => <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>)}
         </div>
       </header>
+
+      {multi && (
+        <nav className="section-toc" aria-label="小节目录">
+          <p className="eyebrow">本文目录</p>
+          <ol>
+            {sections.map((s, i) => {
+              const n = i + 1;
+              const label = s.title || `第 ${n} 节`;
+              return (
+                <li key={n} className={n === page ? "current" : ""} aria-current={n === page ? "true" : undefined}>
+                  {n === page ? <span>{label}</span> : <Link href={pageHref(slug, n)}>{label}</Link>}
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+      )}
+
       <div className="article-content" dangerouslySetInnerHTML={{ __html: contentHtml }} />
 
-      {sections.length > 1 && (
-        <nav className="pagination">
-          {page > 1 && (
-            <Link className="pagination-prev" href={`/posts/${slug}?page=${page - 1}`}>
-              ← 上一节
+      {multi && (
+        <nav className="pagination article-pagination" aria-label="小节翻页">
+          {page > 1 ? (
+            <Link className="pagination-prev" href={pageHref(slug, page - 1)} rel="prev">
+              <span className="pg-dir">← 上一节</span>
+              {sections[page - 2].title && <span className="pg-title">{sections[page - 2].title}</span>}
             </Link>
-          )}
+          ) : <span aria-hidden />}
           <span className="pagination-info">{page} / {sections.length}</span>
-          {page < sections.length && (
-            <Link className="pagination-next" href={`/posts/${slug}?page=${page + 1}`}>
-              下一节 →
+          {page < sections.length ? (
+            <Link className="pagination-next" href={pageHref(slug, page + 1)} rel="next">
+              <span className="pg-dir">下一节 →</span>
+              {sections[page].title && <span className="pg-title">{sections[page].title}</span>}
             </Link>
-          )}
+          ) : <span aria-hidden />}
         </nav>
       )}
 
