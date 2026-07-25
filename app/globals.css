@@ -544,6 +544,14 @@ pre code { padding: 0; background: transparent; border: 0; color: inherit; }
 .comment-actions-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .comment-error { color: var(--accent); font-size: 0.85rem; }
 .comment-ok { color: var(--foreground); font-size: 0.85rem; font-weight: 700; }
+.share-bar { display: flex; align-items: center; gap: 10px; margin: 1.5rem 0 0; padding-top: 1rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.share-label { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--neutral-500); }
+.share-btn { font-family: var(--font-mono); font-size: 0.8rem; padding: 4px 12px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); cursor: pointer; text-decoration: none; }
+.share-btn:hover { border-color: var(--accent); color: var(--accent); }
+.follow-card { margin: 2.5rem 0 0; padding: clamp(18px, 3vw, 28px); border: 2px solid var(--foreground); background: var(--neutral-100); }
+.follow-card .eyebrow { margin-bottom: 6px; }
+.follow-text { margin: 0 0 14px; color: var(--neutral-700); }
+.follow-links { display: flex; gap: 10px; flex-wrap: wrap; }
 .article-actions {
   display: flex;
   flex-wrap: wrap;

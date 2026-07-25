@@ -6,6 +6,7 @@ import { episodeBySlug, neighborsOf, SEASONS, SERIES_META, CHAPTER_TYPE_LABEL } 
 import AdminEditLink from "./AdminEditLink";
 import EpisodeProgress from "./EpisodeProgress";
 import Comments from "./Comments";
+import ShareBar from "./ShareBar";
 import { getComments } from "@/lib/comments";
 
 type Props = {
@@ -172,6 +173,8 @@ export default async function PostPage({ params }: Props) {
 
       <div className="article-content" dangerouslySetInnerHTML={{ __html: htmlWithIds }} />
 
+      <ShareBar url={url} title={post.title} />
+
       {episode && season && (
         <section className="series-footer">
           <EpisodeProgress
@@ -223,6 +226,15 @@ export default async function PostPage({ params }: Props) {
         <Link className="button" href="/posts">更多文章 →</Link>
         <Link className="button ghost" href="/tags">按标签检索</Link>
       </nav>
+
+      <aside className="follow-card">
+        <p className="eyebrow">觉得有用?</p>
+        <p className="follow-text">关注更新、源码在 GitHub,或用 RSS 订阅《从零开始学 Java》连载。</p>
+        <div className="follow-links">
+          <a href="https://github.com/WJH-makers" target="_blank" rel="noreferrer" className="button">GitHub @WJH-makers</a>
+          <a href="/rss.xml" className="button ghost">RSS 订阅</a>
+        </div>
+      </aside>
 
       <Comments slug={post.slug} initial={comments} />
     </article>
