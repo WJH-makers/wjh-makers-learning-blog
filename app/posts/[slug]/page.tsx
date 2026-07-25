@@ -5,6 +5,8 @@ import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, markdownToHtml
 import { episodeBySlug, neighborsOf, SEASONS, SERIES_META, CHAPTER_TYPE_LABEL } from "@/lib/series";
 import AdminEditLink from "./AdminEditLink";
 import EpisodeProgress from "./EpisodeProgress";
+import Comments from "./Comments";
+import { getComments } from "@/lib/comments";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -128,6 +130,7 @@ export default async function PostPage({ params }: Props) {
   }, fullHtml);
 
   const related = await getRelatedPosts(post.slug, post.tags);
+  const comments = await getComments(post.slug);
 
   return (
     <article className="page-shell article-shell">
@@ -220,6 +223,8 @@ export default async function PostPage({ params }: Props) {
         <Link className="button" href="/posts">更多文章 →</Link>
         <Link className="button ghost" href="/tags">按标签检索</Link>
       </nav>
+
+      <Comments slug={post.slug} initial={comments} />
     </article>
   );
 }

@@ -90,6 +90,12 @@ async function postsCollection(): Promise<Collection<MongoPostDocument>> {
   return client.db(databaseName()).collection<MongoPostDocument>(collectionName());
 }
 
+/** 供评论等其它集合复用同一个连接池(不新建连接)。 */
+export async function getDb() {
+  const client = await getClient();
+  return client.db(databaseName());
+}
+
 export async function ensureSchema(): Promise<void> {
   if (indexesReady) return;
   const collection = await postsCollection();
