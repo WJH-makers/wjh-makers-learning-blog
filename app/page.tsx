@@ -2,6 +2,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { getAllPublishedPosts } from "@/lib/posts";
 import { SERIES_META, publishedEpisodes, totalEpisodeCount } from "@/lib/series";
+import { CLI_SERIES_META, cliAllEpisodes, cliPublishedEpisodes } from "@/lib/series-cli";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -28,7 +29,21 @@ export default async function HomePage() {
 
       <section className="section-head">
         <div>
-          <p className="eyebrow">Flagship Series · 连载特刊</p>
+          <p className="eyebrow">Now Serializing · 连载中 · 周更</p>
+          <h2>从零开始玩命令行</h2>
+        </div>
+        <Link href={"/cli" as Route}>查看全卷地图 →</Link>
+      </section>
+      <Link href={"/cli" as Route} className="card series-hero-card">
+        <p className="series-hero-lead">{CLI_SERIES_META.tagline}</p>
+        <p className="muted">
+          已连载 {cliPublishedEpisodes().length} / 规划 {cliAllEpisodes().length} 话 · 每话附 🪟 Linux ↔ PowerShell 双系统对照
+        </p>
+      </Link>
+
+      <section className="section-head">
+        <div>
+          <p className="eyebrow">Flagship Series · 全 56 话完结</p>
           <h2>从零开始学 Java</h2>
         </div>
         <Link href={"/java" as Route}>查看全卷地图 →</Link>

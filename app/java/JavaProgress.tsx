@@ -4,24 +4,21 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 
-const STORAGE_KEY = "java-academy:completed";
-
 type SeasonProg = { code: string; title: string; slugs: string[] };
 
 // 读 localStorage 里的已读话,渲染总进度 + 每卷完成度 + 继续下一话。纯客户端,不涉后端。
-export default function JavaProgress({ seasons }: { seasons: SeasonProg[] }) {
-  // 初始为空(SSR 与客户端首渲一致 → 无 hydration 冲突、无布局跳动),
-  // 挂载后读 localStorage,进度条平滑过渡到真实值。
+// storageKey 由各连载传入(注册表统一管理),组件跨系列复用。
+export default function JavaProgress({ seasons, storageKey = "java-academy:completed" }: { seasons: SeasonProg[]; storageKey?: string }) {
   const [completed, setCompleted] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(storageKey);
       setCompleted(new Set<string>(raw ? (JSON.parse(raw) as string[]) : []));
     } catch {
       /* 忽略 */
     }
-  }, []);
+  }, [storageKey]);
 
   const allSlugs = seasons.flatMap((s) => s.slugs);
   const total = allSlugs.length;

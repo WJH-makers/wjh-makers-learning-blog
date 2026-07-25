@@ -2,21 +2,19 @@
 
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "java-academy:completed";
-
-function readCompleted(): string[] {
+function readCompleted(storageKey: string): string[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     return raw ? (JSON.parse(raw) as string[]) : [];
   } catch {
     return [];
   }
 }
 
-function writeCompleted(slugs: string[]) {
+function writeCompleted(storageKey: string, slugs: string[]) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...new Set(slugs)]));
+    window.localStorage.setItem(storageKey, JSON.stringify([...new Set(slugs)]));
   } catch {
     /* localStorage 不可用时静默降级 */
   }
@@ -27,15 +25,17 @@ type Props = {
   seasonLabel: string;
   /** 本季全部已发布话次的 slug,用于算进度 */
   seasonSlugs: string[];
+  /** 各连载独立的进度 key(注册表提供) */
+  storageKey: string;
 };
 
-export default function EpisodeProgress({ slug, seasonLabel, seasonSlugs }: Props) {
+export default function EpisodeProgress({ slug, seasonLabel, seasonSlugs, storageKey }: Props) {
   // 初始空(SSR 与首渲一致,消除布局跳动),挂载后读 localStorage 平滑更新。
   const [completed, setCompleted] = useState<string[]>([]);
 
   useEffect(() => {
-    setCompleted(readCompleted());
-  }, []);
+    setCompleted(readCompleted(storageKey));
+  }, [storageKey]);
 
   const done = completed.includes(slug);
   const seasonDone = seasonSlugs.filter((s) => completed.includes(s)).length;
@@ -43,7 +43,7 @@ export default function EpisodeProgress({ slug, seasonLabel, seasonSlugs }: Prop
   function toggle() {
     const next = done ? completed.filter((s) => s !== slug) : [...completed, slug];
     setCompleted(next);
-    writeCompleted(next);
+    writeCompleted(storageKey, next);
   }
 
   const pct = seasonSlugs.length > 0 ? Math.round((seasonDone / seasonSlugs.length) * 100) : 0;

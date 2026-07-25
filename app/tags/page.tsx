@@ -23,6 +23,7 @@ const TAG_CLUSTERS: { title: string; emoji: string; tags: string[] }[] = [
   { title: "JVM & 性能", emoji: "🏛️", tags: ["JVM", "JDK", "OOM", "CPU"] },
   { title: "Spring & 后端", emoji: "🌱", tags: ["Spring", "Spring Boot", "SpringBoot", "HTTP", "REST", "MyBatis", "JPA", "Spring Security", "鉴权"] },
   { title: "数据库", emoji: "🗄️", tags: ["数据库", "MySQL", "Redis"] },
+  { title: "命令行 & 终端", emoji: "⌨️", tags: ["命令行", "终端漫画", "ssh", "shell", "阿零与特米"] },
   { title: "系统 & 运维", emoji: "🖥️", tags: ["Linux", "Windows", "Docker", "SSH", "systemctl", "Vim", "环境配置"] },
   { title: "前端 & 标记", emoji: "🎨", tags: ["前端", "HTML", "Markdown"] },
   { title: "连载 & 项目", emoji: "📖", tags: ["Java漫画", "阿零与豆豆", "项目实战", "控制台程序", "重构"] },

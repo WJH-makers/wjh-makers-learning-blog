@@ -2,7 +2,8 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, markdownToHtml, siteUrl, splitSections } from "@/lib/posts";
-import { episodeBySlug, neighborsOf, SEASONS, SERIES_META, CHAPTER_TYPE_LABEL } from "@/lib/series";
+import { CHAPTER_TYPE_LABEL } from "@/lib/series";
+import { findEpisodeInfo } from "@/lib/series-registry";
 import AdminEditLink from "./AdminEditLink";
 import EpisodeProgress from "./EpisodeProgress";
 import Comments from "./Comments";
@@ -61,13 +62,10 @@ export default async function PostPage({ params }: Props) {
   const post = await getPublishedPost(slug);
   if (!post) notFound();
 
-  // 若本文是 Java 连载的某一话,准备系列信息(顶部 banner + 上一话/下一话 + 进度)
-  const episode = episodeBySlug(post.slug);
-  const season = episode ? SEASONS.find((s) => s.season === episode.season) : undefined;
-  const seriesNav = episode ? neighborsOf(post.slug) : {};
-  const seasonSlugs = season
-    ? season.episodes.filter((e) => e.status === "published" && e.slug).map((e) => e.slug as string)
-    : [];
+  // 若本文属于任一连载,从注册表拿系列信息(banner + 上一话/下一话 + 进度)
+  const info = findEpisodeInfo(post.slug);
+  const episode = info?.episode;
+  const season = info?.season;
 
   const url = `${siteUrl()}/posts/${post.slug}`;
 
@@ -98,11 +96,11 @@ export default async function PostPage({ params }: Props) {
     keywords: post.tags.join(", "),
     inLanguage: "zh-CN",
     articleSection: season ? `第${season.season}卷 · ${season.title}` : undefined,
-    isPartOf: episode
+    isPartOf: info
       ? {
           "@type": "CreativeWorkSeries",
-          name: SERIES_META.title,
-          url: `${siteUrl()}/java`,
+          name: info.series.title,
+          url: `${siteUrl()}${info.series.route}`,
         }
       : undefined,
     mainEntityOfPage: {
@@ -147,10 +145,10 @@ export default async function PostPage({ params }: Props) {
         </div>
       </header>
 
-      {episode && season && (
+      {info && episode && season && (
         <aside className="series-banner">
           <p className="eyebrow">
-            <Link href={"/java" as Route}>{SERIES_META.title}</Link> · 第{season.season}卷「{season.title}」
+            <Link href={info.series.route as Route}>{info.series.title}</Link> · 第{season.season}卷「{season.title}」
           </p>
           <p>
             第 {episode.episode} 话 · {CHAPTER_TYPE_LABEL[episode.chapterType]} · 项目阶段:{episode.projectStage}
@@ -175,30 +173,31 @@ export default async function PostPage({ params }: Props) {
 
       <ShareBar url={url} title={post.title} />
 
-      {episode && season && (
+      {info && season && (
         <section className="series-footer">
           <EpisodeProgress
             slug={post.slug}
             seasonLabel={`第${season.season}卷`}
-            seasonSlugs={seasonSlugs}
+            seasonSlugs={info.seasonSlugs}
+            storageKey={info.series.storageKey}
           />
           <nav className="series-pager" aria-label="连载导航">
-            {seriesNav.prev?.slug ? (
-              <Link className="series-pager-link prev" href={`/posts/${seriesNav.prev.slug}`}>
+            {info.prev?.slug ? (
+              <Link className="series-pager-link prev" href={`/posts/${info.prev.slug}`}>
                 <span className="eyebrow">上一话</span>
-                <span>{seriesNav.prev.title}</span>
+                <span>{info.prev.title}</span>
               </Link>
             ) : (
               <span />
             )}
-            <Link className="series-pager-link map" href={"/java" as Route}>
+            <Link className="series-pager-link map" href={info.series.route as Route}>
               <span className="eyebrow">目录</span>
               <span>全卷地图</span>
             </Link>
-            {seriesNav.next?.slug ? (
-              <Link className="series-pager-link next" href={`/posts/${seriesNav.next.slug}`}>
+            {info.next?.slug ? (
+              <Link className="series-pager-link next" href={`/posts/${info.next.slug}`}>
                 <span className="eyebrow">下一话</span>
-                <span>{seriesNav.next.title}</span>
+                <span>{info.next.title}</span>
               </Link>
             ) : (
               <span />
