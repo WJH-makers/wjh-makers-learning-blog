@@ -1,7 +1,7 @@
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllPublishedPosts, getPublishedPost, markdownToHtml, siteUrl, splitSections } from "@/lib/posts";
+import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, markdownToHtml, siteUrl, splitSections } from "@/lib/posts";
 import { episodeBySlug, neighborsOf, SEASONS, SERIES_META, CHAPTER_TYPE_LABEL } from "@/lib/series";
 import AdminEditLink from "./AdminEditLink";
 import EpisodeProgress from "./EpisodeProgress";
@@ -94,6 +94,14 @@ export default async function PostPage({ params }: Props) {
     },
     keywords: post.tags.join(", "),
     inLanguage: "zh-CN",
+    articleSection: season ? `第${season.season}卷 · ${season.title}` : undefined,
+    isPartOf: episode
+      ? {
+          "@type": "CreativeWorkSeries",
+          name: SERIES_META.title,
+          url: `${siteUrl()}/java`,
+        }
+      : undefined,
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": url,
@@ -118,6 +126,8 @@ export default async function PostPage({ params }: Props) {
     const h2Regex = new RegExp(`<h2>${escapeHtml(item.title)}</h2>`);
     return html.replace(h2Regex, `<h2 id="${item.id}">${item.title}</h2>`);
   }, fullHtml);
+
+  const related = await getRelatedPosts(post.slug, post.tags);
 
   return (
     <article className="page-shell article-shell">
@@ -188,6 +198,20 @@ export default async function PostPage({ params }: Props) {
               <span />
             )}
           </nav>
+        </section>
+      )}
+
+      {related.length > 0 && (
+        <section className="related-posts">
+          <p className="eyebrow">相关阅读</p>
+          <ul>
+            {related.map((p) => (
+              <li key={p.slug}>
+                <Link href={`/posts/${p.slug}`}>{p.title}</Link>
+                <span>{p.tags.filter((t) => !["Java", "Java漫画", "阿零与豆豆"].includes(t)).slice(0, 3).join(" · ")}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

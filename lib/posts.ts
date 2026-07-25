@@ -400,6 +400,22 @@ async function renderLines(lines: string[]): Promise<string> {
   return html.join("\n");
 }
 
+/** 按共享的「具体主题标签」推荐相关文章(忽略 Java/Java漫画 等泛标签,避免连载话彼此刷屏)。 */
+const RELATED_STOP_TAGS = new Set(["Java", "Java漫画", "阿零与豆豆", "命令速查"]);
+
+export async function getRelatedPosts(slug: string, tags: string[], limit = 4): Promise<Post[]> {
+  const topical = tags.filter((t) => !RELATED_STOP_TAGS.has(t));
+  if (topical.length === 0) return [];
+  const all = await getAllPublishedPosts();
+  return all
+    .filter((p) => p.slug !== slug)
+    .map((p) => ({ post: p, score: p.tags.filter((t) => topical.includes(t)).length }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || b.post.date.localeCompare(a.post.date))
+    .slice(0, limit)
+    .map((x) => x.post);
+}
+
 export function siteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online").replace(/\/$/, "");
 }

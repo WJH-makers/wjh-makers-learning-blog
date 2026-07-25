@@ -15,12 +15,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     : new Date("2026-07-04");
 
   const entries: MetadataRoute.Sitemap = [
-    { url: base, lastModified: latestDate },
-    { url: `${base}/posts`, lastModified: latestDate },
-    { url: `${base}/tags`, lastModified: latestDate },
+    { url: base, lastModified: latestDate, changeFrequency: "daily", priority: 1 },
+    { url: `${base}/java`, lastModified: latestDate, changeFrequency: "weekly", priority: 0.9 },
+    { url: `${base}/posts`, lastModified: latestDate, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${base}/tags`, lastModified: latestDate, changeFrequency: "weekly", priority: 0.5 },
     ...posts.map((post) => ({
       url: `${base}/posts/${post.slug}`,
       lastModified: new Date(post.date),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
     })),
   ];
 
@@ -30,6 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       entries.push({
         url: `${base}/tags/${encodeURIComponent(tag)}`,
         lastModified: latestDate,
+        changeFrequency: "weekly",
+        priority: 0.4,
       });
     }
   }
