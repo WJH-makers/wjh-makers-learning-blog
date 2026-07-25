@@ -9,6 +9,7 @@ import EpisodeProgress from "./EpisodeProgress";
 import Comments from "./Comments";
 import ShareBar from "./ShareBar";
 import { getComments } from "@/lib/comments";
+import { jsonLdSafe } from "@/lib/jsonld";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -123,9 +124,12 @@ export default async function PostPage({ params }: Props) {
     .filter((s) => s.title);
 
   // 为 h2 标签注入 id 用于锚点
+  // 为 h2 注入锚点 id：用转义后的标题匹配与回填(不撤销渲染器的转义),
+  // 并对正则源做转义,防止标题里的特殊字符构造畸形正则或 $ 反向引用。
   const htmlWithIds = tocItems.reduce((html, item) => {
-    const h2Regex = new RegExp(`<h2>${escapeHtml(item.title)}</h2>`);
-    return html.replace(h2Regex, `<h2 id="${item.id}">${item.title}</h2>`);
+    const escTitle = escapeHtml(item.title);
+    const pattern = escTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return html.replace(new RegExp(`<h2>${pattern}</h2>`), () => `<h2 id="${item.id}">${escTitle}</h2>`);
   }, fullHtml);
 
   const related = await getRelatedPosts(post.slug, post.tags);
@@ -133,8 +137,8 @@ export default async function PostPage({ params }: Props) {
 
   return (
     <article className="page-shell article-shell">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(articleJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(breadcrumbJsonLd) }} />
       <Link className="back-link" href="/posts">← 返回文章列表</Link>
       <header className="article-header">
         <p className="date">{post.date} · {post.readingMinutes} min read</p>

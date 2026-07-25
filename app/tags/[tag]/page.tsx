@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPublishedTags, getPublishedPostsByTag, siteUrl } from "@/lib/posts";
+import { jsonLdSafe } from "@/lib/jsonld";
 
 type Props = {
   params: Promise<{ tag: string }>;
@@ -68,7 +69,7 @@ export default async function TagPage({ params }: Props) {
 
   return (
     <div className="page-shell narrow">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(collectionJsonLd) }} />
       <Link className="back-link" href="/tags">← 返回标签</Link>
       <div className="page-title">
         <p className="eyebrow">Topic Desk · {posts.length} 篇</p>

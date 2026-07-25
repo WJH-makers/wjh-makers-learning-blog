@@ -154,7 +154,8 @@ function inlineMarkdown(value: string): string {
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />')
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
-    .replace(/\[([^\]]+)\]\((?!https?:)([^\s)]+)\)/g, '<a href="$2" rel="noreferrer">$1</a>')
+    .replace(/\[([^\]]+)\]\((?!https?:)([^\s)]+)\)/g, (_m, text: string, url: string) =>
+      /^(\/|#|mailto:)/i.test(url) ? `<a href="${url}" rel="noreferrer">${text}</a>` : text)
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/\*([^*]+)\*/g, "<em>$1</em>");
 }

@@ -22,6 +22,28 @@ const nextConfig: NextConfig = {
   ],
   headers: async () => [
     {
+      source: "/(.*)",
+      headers: [
+        {
+          key: "Content-Security-Policy",
+          value: [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.clarity.ms",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: https:",
+            "font-src 'self' data:",
+            "connect-src 'self' https://challenges.cloudflare.com https://www.clarity.ms",
+            "frame-src https://challenges.cloudflare.com",
+            "object-src 'none'",
+            "base-uri 'none'",
+            "frame-ancestors 'none'",
+            "upgrade-insecure-requests",
+          ].join("; "),
+        },
+        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      ],
+    },
+    {
       source: "/_next/static/:path*",
       headers: [
         { key: "Cache-Control", value: "public, max-age=31536000, immutable" },

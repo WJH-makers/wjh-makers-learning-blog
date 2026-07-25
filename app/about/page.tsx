@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { siteUrl } from "@/lib/posts";
+import { jsonLdSafe } from "@/lib/jsonld";
 
 export const runtime = "nodejs";
 
@@ -30,7 +31,7 @@ export default function AboutPage() {
 
   return (
     <div className="page-shell narrow">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(personJsonLd) }} />
       <div className="page-title">
         <p className="eyebrow">About</p>
         <h1>关于</h1>
