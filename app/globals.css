@@ -147,8 +147,9 @@ h1, h2, h3 {
   line-height: 0.92;
   letter-spacing: -0.07em;
 }
-h1 { font-size: clamp(3.5rem, 11vw, 8.5rem); }
+h1 { font-size: clamp(1.6rem, 4.5vw, 2.8rem); }
 .hero h1 {
+  font-size: clamp(2.8rem, 10vw, 6rem);
   background: linear-gradient(135deg, var(--foreground) 0%, var(--accent) 50%, var(--foreground) 100%);
   background-size: 200% 200%;
   -webkit-background-clip: text;
@@ -156,8 +157,10 @@ h1 { font-size: clamp(3.5rem, 11vw, 8.5rem); }
   -webkit-text-fill-color: transparent;
   animation: heroGradient 6s ease-in-out infinite;
 }
-h2 { font-size: clamp(2.5rem, 6vw, 4.75rem); }
-h3 { font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1; }
+h2 { font-size: clamp(1.25rem, 3vw, 1.85rem); }
+h3 { font-size: clamp(1.05rem, 2vw, 1.4rem); line-height: 1.15; }
+.article-content h2 { font-size: clamp(1.35rem, 3.2vw, 2rem); }
+.article-content h3 { font-size: clamp(1.1rem, 2.2vw, 1.5rem); margin: 1.4em 0 0.45em; }
 
 .eyebrow,
 .date,
@@ -978,8 +981,8 @@ textarea:focus { outline: 0; background: var(--neutral-100); }
   .hero > div { border-right: 1px solid var(--border); }
   .article-content > p:first-of-type::first-letter { font-size: 4.5rem; }
   .article-content > p:first-of-type::first-letter { font-size: 4rem; }
-  h1 { font-size: clamp(3rem, 11vw, 5.4rem); }
-  h2 { font-size: clamp(2rem, 5vw, 3.6rem); }
+  h1 { font-size: clamp(1.5rem, 5.5vw, 2.4rem); }
+  h2 { font-size: clamp(1.2rem, 4vw, 1.7rem); }
   .editor-shell .page-title { grid-template-columns: 1fr; }
   .nav-links a { font-size: 0.7rem; padding: 0 10px; }
 
@@ -1026,9 +1029,9 @@ textarea:focus { outline: 0; background: var(--neutral-100); }
   .page-shell { width: calc(100% - 16px); }
 
   .brand { font-size: 1.35rem; padding: 10px 14px; }
-  h1 { font-size: clamp(2.4rem, 14vw, 3.8rem); }
-  h2 { font-size: clamp(1.6rem, 6vw, 2.4rem); }
-  h3 { font-size: clamp(1.2rem, 3.5vw, 1.6rem); }
+  h1 { font-size: clamp(1.4rem, 8vw, 2.2rem); }
+  h2 { font-size: clamp(1.15rem, 5vw, 1.6rem); }
+  h3 { font-size: clamp(1rem, 3.5vw, 1.3rem); }
   .article-content > p:first-of-type::first-letter { font-size: 2.8rem; line-height: 0.9; }
   .article-content > p:first-of-type::first-letter { font-size: 2.5rem; }
   .editor-shell .page-title h1 { font-size: clamp(2.2rem, 12vw, 3.6rem); }
