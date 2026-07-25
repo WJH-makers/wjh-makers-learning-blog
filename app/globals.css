@@ -437,8 +437,20 @@ a:focus-visible {
 .tag-group-title { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; font-family: var(--font-mono); font-size: 0.8rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: var(--foreground); }
 .tag-group-title span { color: var(--accent); font-size: 0.72rem; }
 .tag-cloud { display: flex; flex-wrap: wrap; border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
-.tag-cloud span { color: var(--accent); }
+.tag-cloud span { color: var(--accent); margin-left: 4px; font-size: 0.72rem; font-weight: 700; }
+.tag-cloud a {
+  animation: fadeInUp 0.4s ease-out both;
+}
 .back-link { display: inline-flex; min-height: 44px; align-items: center; margin-bottom: 18px; font-family: var(--font-mono); font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.related-tags {
+  margin-bottom: 28px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  background: rgba(var(--paper-rgb), 0.92);
+}
+.related-tags .eyebrow { margin-bottom: 10px; display: block; }
+.related-tags .tag-cloud { border: 0; }
 
 .article-shell { max-width: 980px; }
 .article-header {

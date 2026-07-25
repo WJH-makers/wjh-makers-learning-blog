@@ -20,9 +20,15 @@ const TAG_CLUSTERS: { title: string; emoji: string; tags: string[] }[] = [
   { title: "方法 & 随笔", emoji: "📝", tags: ["学习方法", "复盘", "博客"] },
 ];
 
+function tagFontSize(count: number, maxCount: number): string {
+  const ratio = count / maxCount;
+  return `${0.72 + ratio * 0.45}rem`;
+}
+
 export default async function TagsPage() {
   const tags = await getAllPublishedTags();
   const countByTag = new Map(tags.map((t) => [t.tag, t.count]));
+  const maxCount = Math.max(...tags.map((t) => t.count), 1);
 
   // 每组只取确有文章的标签,保留聚类定义顺序。
   const groups = TAG_CLUSTERS.map((c) => ({
@@ -39,6 +45,8 @@ export default async function TagsPage() {
   if (others.length > 0) {
     groups.push({ title: "其他", emoji: "📌", items: others });
   }
+
+  let globalIdx = 0;
 
   return (
     <div className="page-shell narrow">
@@ -57,11 +65,15 @@ export default async function TagsPage() {
                 <span>{group.items.reduce((s, i) => s + i.count, 0)}</span>
               </h2>
               <div className="tag-cloud">
-                {group.items.map(({ tag, count }) => (
-                  <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>
-                    {tag}<span>{count}</span>
-                  </Link>
-                ))}
+                {group.items.map(({ tag, count }) => {
+                  const idx = globalIdx++;
+                  return (
+                    <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`} style={{ fontSize: tagFontSize(count, maxCount), animationDelay: `${0.03 * idx}s` }}>
+                      {tag}
+                      <span>{count}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </section>
           ))}
