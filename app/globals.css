@@ -552,6 +552,11 @@ pre code { padding: 0; background: transparent; border: 0; color: inherit; }
 .comment-error { color: var(--accent); font-size: 0.85rem; }
 .comment-ok { color: var(--foreground); font-size: 0.85rem; font-weight: 700; }
 .comment-privacy { font-family: var(--font-mono); font-size: 0.68rem; color: var(--neutral-500); margin-left: auto; }
+.comment-body .comment-code { margin: 6px 0; padding: 8px 10px; background: var(--neutral-100); border: 1px solid var(--border); overflow-x: auto; font-size: 0.82rem; }
+.comment-body .comment-code code { padding: 0; background: transparent; border: 0; color: inherit; white-space: pre; }
+.comment-body code { padding: 0.08em 0.3em; background: var(--neutral-100); border: 1px solid var(--border); font-size: 0.88em; }
+.comment-toggle { display: inline-block; margin: 0 0 1.5rem; padding: 6px 14px; font-family: var(--font-mono); font-size: 0.78rem; background: transparent; border: 1px solid var(--border); color: var(--accent); cursor: pointer; }
+.comment-toggle:hover { border-color: var(--accent); }
 .share-bar { display: flex; align-items: center; gap: 10px; margin: 1.5rem 0 0; padding-top: 1rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
 .share-label { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--neutral-500); }
 .share-btn { font-family: var(--font-mono); font-size: 0.8rem; padding: 4px 12px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); cursor: pointer; text-decoration: none; }

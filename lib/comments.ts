@@ -100,6 +100,7 @@ export type SubmitResult = { ok: true; comment: Comment } | { ok: false; error: 
 
 export async function submitComment(input: SubmitInput): Promise<SubmitResult> {
   if (!hasDatabaseConfig()) return { ok: false, error: "评论功能暂未启用。" };
+  if (!input.slug || input.slug.length > 200) return { ok: false, error: "非法的文章标识。" };
 
   // 1) 蜜罐:机器人往往会填满所有字段,填了就静默丢弃、伪装成功
   if (input.honeypot.trim()) {
@@ -136,6 +137,9 @@ export async function submitComment(input: SubmitInput): Promise<SubmitResult> {
   // 4c) 5 分钟内不允许相同内容(防刷屏)
   const dup = await col.findOne({ ipHash, body, createdAt: { $gte: new Date(Date.now() - 300_000) } });
   if (dup) return { ok: false, error: "请勿重复发送相同内容。" };
+  // 4d) 每篇文章评论上限,防止单页无限膨胀占用存储
+  const perPost = await col.countDocuments({ slug: input.slug });
+  if (perPost >= 500) return { ok: false, error: "本文评论已达上限。" };
 
   // 5) 落库(status: visible;如需先审后发,改成 "pending")
   const doc: CommentDoc = { slug: input.slug, name, body, ipHash, status: "visible", createdAt: new Date() };
