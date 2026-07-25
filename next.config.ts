@@ -13,6 +13,13 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
   },
+  redirects: async () => [
+    {
+      source: "/security.txt",
+      destination: "/.well-known/security.txt",
+      permanent: true,
+    },
+  ],
   headers: async () => [
     {
       source: "/_next/static/:path*",
