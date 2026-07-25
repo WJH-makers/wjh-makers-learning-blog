@@ -1,5 +1,10 @@
 const hits = new Map<string, { count: number; resetAt: number }>();
 
+// 注意：内存 Map 在 Vercel Serverless 冷启动时会被重置。
+// 自托管 Docker 部署下此限流持续有效；Serverless 场景如需可靠限流，
+// 建议迁移至 Vercel KV 或 Upstash Redis。
+// 当前实现对 Docker 部署和低频 Serverless 调用仍然有效。
+
 function getKey(ip: string, scope?: string): string {
   return scope ? `${scope}:${ip}` : ip;
 }

@@ -7,20 +7,34 @@ import { isMonitorAuthed } from "@/lib/monitor-auth";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+export const metadata = {
+  title: "站点监控",
+  description: "WJH-makers 站点运行状态与流量监控。",
+  robots: { index: false, follow: false },
+};
+
 interface Point { t: number; cpu: number; mem: number; load: number }
 interface Srv { cpu: number; mem: number; load: number; uptime: string; disk: string; day: Point[]; week: Point[] }
 
 interface CfDay { t: string; requests: number; views: number; threats: number; bytes: number; uniques: number }
 interface CfStats {
-  today: { requests: string; bandwidth: string; views: string; threats: number; uniques: number };
+  now: string;
+  today: { requests: string; requestsRaw: number; bandwidth: string; views: string; viewsRaw: number; threats: number; uniques: number };
+  yesterday: { requests: number; views: number; uniques: number; threats: number };
+  dayOverDay: string;
+  week: { totalRequests: number; totalViews: number; totalUniques: number; threats: number; dailyAvg: number };
+  prevWeek: { totalRequests: number; totalViews: number; totalUniques: number };
+  wow: { requests: string; views: string; uniques: string };
+  peakDay: { date: string; requests: number } | null;
+  periodRequests: number;
   week_chart: CfDay[];
   month_chart: { t: string; requests: number; threats: number }[];
+  prev_week_chart: { t: string; requests: number; views: number }[];
 }
 
 async function get<T>(path: string): Promise<T | null> {
   try {
     const base = process.env.NODE_ENV === "production" ? "http://127.0.0.1:3001" : "http://localhost:3000";
-    // SSR loopback 自调:手动透传 monitor_token,过 API 的鉴权 gate。
     const token = (await cookies()).get("monitor_token")?.value;
     const r = await fetch(`${base}${path}`, {
       cache: "no-store",
@@ -40,36 +54,68 @@ export default async function MonitorPage() {
   return (
     <>
       <style>{`
-        :root { --card-bg: #ffffff; --card-border: #e5e7eb; --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04); --text-dim: #6b7280; --text-bright: #111827; --accent-green: #059669; --accent-red: #dc2626; --accent-blue: #2563eb; --accent-yellow: #d97706; --accent-purple: #7c3aed; }
+        :root {
+          --card-bg: rgba(var(--paper-rgb),0.9);
+          --text-dim: var(--neutral-500);
+          --text-bright: var(--foreground);
+          --accent-green: #6f8a5e;
+          --accent-red: var(--accent);
+          --accent-blue: #5a7d9a;
+          --accent-yellow: #b8923c;
+          --accent-purple: #7a6b8c;
+          --monitor-grid: var(--neutral-200);
+          --monitor-axis: var(--neutral-400);
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --accent-blue: #7a9dba;
+            --accent-green: #8aaa7e;
+            --accent-yellow: #c8a24c;
+            --accent-purple: #9a8bac;
+          }
+        }
         .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 12px 0; }
-        .dash-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 18px 20px; box-shadow: var(--card-shadow); }
-        .dash-card .label { font-size: 0.72rem; color: var(--text-dim); font-weight: 500; letter-spacing: 0.04em; margin-bottom: 8px; }
-        .dash-card .value { font-size: 1.75rem; font-weight: 700; color: var(--text-bright); font-variant-numeric: tabular-nums; line-height: 1.1; }
-        .dash-card .sub { font-size: 0.72rem; color: var(--text-dim); margin-top: 6px; }
-        .dash-section { display: flex; align-items: center; justify-content: space-between; margin: 24px 0 10px; }
-        .dash-section h2 { font-size: 1.05rem; font-weight: 600; color: var(--text-bright); }
-        .dash-section .muted { font-size: 0.75rem; color: var(--text-dim); }
-        .chart-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 8px; }
-        .chart-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 14px 16px 10px; box-shadow: var(--card-shadow); }
-        .chart-card .chart-label { font-size: 0.68rem; color: var(--text-dim); font-weight: 500; letter-spacing: 0.04em; margin-bottom: 6px; }
-        .chart-card svg { width: 100%; }
-        @media (max-width: 600px) { .dash-grid { grid-template-columns: repeat(2, 1fr); } .dash-card .value { font-size: 1.4rem; } }
+        .dash-card { background: var(--card-bg); border: 1px solid var(--border); padding: 16px 18px; transition: box-shadow .2s,transform .2s; }
+        .dash-card:hover { box-shadow: 4px 4px 0 0 var(--foreground); transform: translate(-2px,-2px); }
+        .dash-card .label { font-size: .68rem; color: var(--text-dim); font-weight: 600; letter-spacing: .06em; margin-bottom: 6px; font-family: var(--font-mono); text-transform: uppercase; }
+        .dash-card .value { font-size: 1.65rem; font-weight: 700; color: var(--foreground); font-variant-numeric: tabular-nums; line-height: 1.15; }
+        .dash-card .sub { font-size: .72rem; color: var(--text-dim); margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--border); font-family: var(--font-sans); }
+        .dash-section { display: flex; align-items: center; justify-content: space-between; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--foreground); }
+        .dash-section h2 { font-size: 1rem; font-weight: 700; color: var(--foreground); letter-spacing: .02em; font-family: var(--font-serif); }
+        .dash-section .muted { font-size: .72rem; color: var(--text-dim); font-family: var(--font-mono); }
+        .chart-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 12px; margin-bottom: 8px; }
+        .chart-card { background: var(--card-bg); border: 1px solid var(--border); padding: 14px 16px 10px; transition: box-shadow .2s,transform .2s; }
+        .chart-card:hover { box-shadow: 4px 4px 0 0 var(--foreground); transform: translate(-2px,-2px); }
+        .chart-card .chart-label { font-size: .68rem; color: var(--text-dim); font-weight: 600; letter-spacing: .06em; margin-bottom: 6px; font-family: var(--font-mono); text-transform: uppercase; }
+        .chart-card svg { width: 100%; display: block; overflow: visible; }
+        @media (max-width:600px) { .dash-grid { grid-template-columns: repeat(2,1fr); } .dash-card .value { font-size: 1.3rem; } }
       `}</style>
       <div className="page-shell" style={{ maxWidth: 1080, margin: "0 auto", padding: "0 16px 40px" }}>
-        <div className="dash-section" style={{ marginTop: 0 }}>
-          <div>
-            <h2>瞭望台</h2>
-            {srv && <span className="muted">运行 {srv.uptime} · CPU {srv.cpu}% · MEM {srv.mem}% · Load {srv.load.toFixed(1)}</span>}
+        <div style={{ marginTop: 0, marginBottom: 20, paddingBottom: 14, borderBottom: "2px solid var(--foreground)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: ".72rem", fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--neutral-500)" }}>
+                站点曝光 · Watchtower
+              </span>
+              <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.7rem", fontWeight: 700, margin: "2px 0 0", lineHeight: 1.15, letterSpacing: "-.02em" }}>
+                瞭望塔
+              </h1>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <a href="https://monitor.wwjjhh.online" target="_blank" rel="noreferrer" className="button" style={{ fontSize: ".7rem", padding: "3px 10px", minHeight: 32 }}>Netdata</a>
+              <a href="https://status.wwjjhh.online" target="_blank" rel="noreferrer" className="button" style={{ fontSize: ".7rem", padding: "3px 10px", minHeight: 32 }}>Kuma</a>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <a href="https://monitor.wwjjhh.online" target="_blank" rel="noreferrer" className="button" style={{ fontSize: "0.75rem", padding: "4px 10px" }}>Netdata</a>
-            <a href="https://status.wwjjhh.online" target="_blank" rel="noreferrer" className="button" style={{ fontSize: "0.75rem", padding: "4px 10px" }}>Kuma</a>
-          </div>
+          {srv && (
+            <p style={{ margin: "8px 0 0", color: "var(--neutral-600)", fontSize: ".85rem", fontFamily: "var(--font-sans)" }}>
+              运行 {srv.uptime} · CPU {srv.cpu}% · MEM {srv.mem}% · Load {srv.load.toFixed(1)}
+            </p>
+          )}
         </div>
 
         {srv && <ServerCards srv={srv} />}
 
-        {cf && <TraficCharts week={cf.week_chart} month={cf.month_chart} today={cf.today} />}
+        {cf && <TraficCharts {...cf} />}
       </div>
     </>
   );

@@ -7,7 +7,10 @@ type Props = {
 };
 
 export async function generateStaticParams() {
-  return (await getAllPublishedTags()).map(({ tag }) => ({ tag: encodeURIComponent(tag) }));
+  // 只生成有 ≥2 篇文章的标签页，避免薄内容进入索引
+  return (await getAllPublishedTags())
+    .filter(({ count }) => count >= 2)
+    .map(({ tag }) => ({ tag: encodeURIComponent(tag) }));
 }
 
 export const runtime = "nodejs";
@@ -16,9 +19,11 @@ export const revalidate = 3600;
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tag } = await params;
   const decoded = decodeURIComponent(tag);
+  const posts = await getPublishedPostsByTag(decoded);
   return {
     title: `标签：${decoded}`,
-    description: `浏览 ${decoded} 相关学习记录。`,
+    description: `${decoded} 主题，共 ${posts.length} 篇文章。`,
+    robots: posts.length < 2 ? { index: false, follow: true } : undefined,
     openGraph: {
       title: `标签：${decoded} | WJH-makers`,
       description: `${decoded} 主题下的学习记录集合`,

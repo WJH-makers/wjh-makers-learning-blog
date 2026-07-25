@@ -157,7 +157,11 @@ mvn install:install-file \
 
 # 十一、SSH / SCP 远程连接（难度 × 频次）
 
-## systemctl · S 极高频（运行时）
+---
+
+# 十二、systemctl 服务管理（难度 × 频次）
+
+## S 极高频（运行时）
 
 | 难度 | 命令 | 作用 |
 |------|------|------|
@@ -176,7 +180,7 @@ mvn install:install-file \
 
 **关键认知**：`start/stop` 与 `enable/disable` 相互独立——只 `stop` 不 `disable`，下次开机还会自动启动。
 
-## systemctl · A 高频（状态与日志）
+## A 高频（状态与日志）
 
 | 难度 | 命令 | 作用 |
 |------|------|------|

@@ -2,14 +2,14 @@ import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllPublishedPosts, getPublishedPost, markdownToHtml, siteUrl, splitSections } from "@/lib/posts";
+import { episodeBySlug, neighborsOf, SEASONS, SERIES_META, CHAPTER_TYPE_LABEL } from "@/lib/series";
 import AdminEditLink from "./AdminEditLink";
+import EpisodeProgress from "./EpisodeProgress";
 
 type Props = {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string }>;
 };
 
-// page 是 searchParams(query),不是路由段,故只需按 slug 预生成;分页由 searchParams 处理。
 export async function generateStaticParams() {
   const posts = await getAllPublishedPosts();
   return posts.map((post) => ({ slug: post.slug }));
@@ -18,60 +18,54 @@ export async function generateStaticParams() {
 export const revalidate = 604800;
 export const runtime = "nodejs";
 
-function resolvePage(param: string | undefined, total: number): number {
-  const raw = parseInt(param ?? "1", 10);
-  return Math.max(1, Math.min(total, isNaN(raw) ? 1 : raw));
-}
-
-// 第一页用干净 URL(不带 ?page=1),与 canonical 保持一致
-function pageHref(slug: string, p: number): Route {
-  return (p <= 1 ? `/posts/${slug}` : `/posts/${slug}?page=${p}`) as Route;
-}
-
-export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const { page: pageParam } = await searchParams;
   const post = await getPublishedPost(slug);
   if (!post) return {};
 
-  const sections = splitSections(post.content);
-  const page = resolvePage(pageParam, sections.length);
-  const base = `${siteUrl()}/posts/${post.slug}`;
-  const url = page > 1 ? `${base}?page=${page}` : base;
-  const sectionTitle = sections[page - 1]?.title;
-  const title = page > 1 && sectionTitle ? `${post.title} · ${sectionTitle}` : post.title;
+  const url = `${siteUrl()}/posts/${post.slug}`;
 
   return {
-    title,
+    title: post.title,
     description: post.summary,
     alternates: { canonical: url },
-    // 分页小节不单独进索引,避免与完整文章重复内容;第一页为规范入口
-    robots: page > 1 ? { index: false, follow: true } : undefined,
     openGraph: {
-      title,
+      title: post.title,
       description: post.summary,
       url,
       type: "article",
       publishedTime: post.date,
+      modifiedTime: post.date,
       tags: post.tags,
     },
     twitter: {
-      card: "summary",
-      title,
+      card: "summary_large_image",
+      title: post.title,
       description: post.summary,
     },
   };
 }
 
-export default async function PostPage({ params, searchParams }: Props) {
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export default async function PostPage({ params }: Props) {
   const { slug } = await params;
-  const { page: pageParam } = await searchParams;
   const post = await getPublishedPost(slug);
   if (!post) notFound();
 
-  const sections = splitSections(post.content);
-  const page = resolvePage(pageParam, sections.length);
-  const current = sections[page - 1];
+  // 若本文是 Java 连载的某一话,准备系列信息(顶部 banner + 上一话/下一话 + 进度)
+  const episode = episodeBySlug(post.slug);
+  const season = episode ? SEASONS.find((s) => s.season === episode.season) : undefined;
+  const seriesNav = episode ? neighborsOf(post.slug) : {};
+  const seasonSlugs = season
+    ? season.episodes.filter((e) => e.status === "published" && e.slug).map((e) => e.slug as string)
+    : [];
+
   const url = `${siteUrl()}/posts/${post.slug}`;
 
   const breadcrumbJsonLd = {
@@ -91,6 +85,7 @@ export default async function PostPage({ params, searchParams }: Props) {
     description: post.summary,
     url,
     datePublished: post.date,
+    dateModified: post.date,
     author: {
       "@type": "Person",
       name: "WJH-makers",
@@ -99,16 +94,30 @@ export default async function PostPage({ params, searchParams }: Props) {
     },
     keywords: post.tags.join(", "),
     inLanguage: "zh-CN",
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": url,
+    },
   };
 
-  // 正文首行若是与文章标题重复的 H1,去掉(header 已展示,避免三重标题)
-  const contentLines = current.content.split("\n");
+  // 去除文章首行 H1（如果与标题重复）
+  const contentLines = post.content.split("\n");
   if (contentLines[0]?.replace(/^#\s+/, "").trim() === post.title.trim()) {
     contentLines.shift();
   }
-  const contentHtml = await markdownToHtml(contentLines.join("\n").replace(/^\s+/, ""));
-  const sectionTitle = current.title;
-  const multi = sections.length > 1;
+  const fullHtml = await markdownToHtml(contentLines.join("\n").replace(/^\s+/, ""));
+
+  // 提取章节标题用于 TOC（仅 h2）
+  const sections = splitSections(post.content);
+  const tocItems = sections
+    .map((s, i) => ({ title: s.title, index: i, id: slugify(s.title) }))
+    .filter((s) => s.title);
+
+  // 为 h2 标签注入 id 用于锚点
+  const htmlWithIds = tocItems.reduce((html, item) => {
+    const h2Regex = new RegExp(`<h2>${escapeHtml(item.title)}</h2>`);
+    return html.replace(h2Regex, `<h2 id="${item.id}">${item.title}</h2>`);
+  }, fullHtml);
 
   return (
     <article className="page-shell article-shell">
@@ -116,58 +125,85 @@ export default async function PostPage({ params, searchParams }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <Link className="back-link" href="/posts">← 返回文章列表</Link>
       <header className="article-header">
-        <p className="date">{post.date} · {post.readingMinutes} min read{multi ? ` · 共 ${sections.length} 节` : ""}</p>
+        <p className="date">{post.date} · {post.readingMinutes} min read</p>
         <h1>{post.title}</h1>
-        {sectionTitle && sectionTitle !== post.title && <p className="eyebrow" style={{ marginTop: 8 }}>§ {sectionTitle}</p>}
         <p>{post.summary}</p>
         <div className="tags">
           {post.tags.map((tag) => <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>)}
         </div>
       </header>
 
-      {multi && (
-        <nav className="section-toc" aria-label="小节目录">
-          <p className="eyebrow">本文目录</p>
+      {episode && season && (
+        <aside className="series-banner">
+          <p className="eyebrow">
+            <Link href={"/java" as Route}>{SERIES_META.title}</Link> · 第{season.season}卷「{season.title}」
+          </p>
+          <p>
+            第 {episode.episode} 话 · {CHAPTER_TYPE_LABEL[episode.chapterType]} · 项目阶段:{episode.projectStage}
+          </p>
+        </aside>
+      )}
+
+      {tocItems.length > 1 && (
+        <nav className="section-toc" aria-label="目录">
+          <p className="eyebrow">目录</p>
           <ol>
-            {sections.map((s, i) => {
-              const n = i + 1;
-              const label = s.title || `第 ${n} 节`;
-              return (
-                <li key={n} className={n === page ? "current" : ""} aria-current={n === page ? "true" : undefined}>
-                  {n === page ? <span>{label}</span> : <Link href={pageHref(slug, n)}>{label}</Link>}
-                </li>
-              );
-            })}
+            {tocItems.map((item) => (
+              <li key={item.index}>
+                <a href={`#${item.id}`}>{item.title}</a>
+              </li>
+            ))}
           </ol>
         </nav>
       )}
 
-      <div className="article-content" dangerouslySetInnerHTML={{ __html: contentHtml }} />
+      <div className="article-content" dangerouslySetInnerHTML={{ __html: htmlWithIds }} />
 
-      {multi && (
-        <nav className="pagination article-pagination" aria-label="小节翻页">
-          {page > 1 ? (
-            <Link className="pagination-prev" href={pageHref(slug, page - 1)} rel="prev">
-              <span className="pg-dir">← 上一节</span>
-              {sections[page - 2].title && <span className="pg-title">{sections[page - 2].title}</span>}
+      {episode && season && (
+        <section className="series-footer">
+          <EpisodeProgress
+            slug={post.slug}
+            seasonLabel={`第${season.season}卷`}
+            seasonSlugs={seasonSlugs}
+          />
+          <nav className="series-pager" aria-label="连载导航">
+            {seriesNav.prev?.slug ? (
+              <Link className="series-pager-link prev" href={`/posts/${seriesNav.prev.slug}`}>
+                <span className="eyebrow">上一话</span>
+                <span>{seriesNav.prev.title}</span>
+              </Link>
+            ) : (
+              <span />
+            )}
+            <Link className="series-pager-link map" href={"/java" as Route}>
+              <span className="eyebrow">目录</span>
+              <span>全卷地图</span>
             </Link>
-          ) : <span aria-hidden />}
-          <span className="pagination-info">{page} / {sections.length}</span>
-          {page < sections.length ? (
-            <Link className="pagination-next" href={pageHref(slug, page + 1)} rel="next">
-              <span className="pg-dir">下一节 →</span>
-              {sections[page].title && <span className="pg-title">{sections[page].title}</span>}
-            </Link>
-          ) : <span aria-hidden />}
-        </nav>
+            {seriesNav.next?.slug ? (
+              <Link className="series-pager-link next" href={`/posts/${seriesNav.next.slug}`}>
+                <span className="eyebrow">下一话</span>
+                <span>{seriesNav.next.title}</span>
+              </Link>
+            ) : (
+              <span />
+            )}
+          </nav>
+        </section>
       )}
 
       <nav className="article-actions" aria-label="文章操作">
         <AdminEditLink slug={post.slug} />
-        <Link className="button primary" href="/write">写今日心得</Link>
-        <Link className="button" href="/posts">继续看归档</Link>
+        <Link className="button" href="/posts">更多文章 →</Link>
         <Link className="button ghost" href="/tags">按标签检索</Link>
       </nav>
     </article>
   );
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }

@@ -21,11 +21,15 @@ export async function GET() {
   )).join("");
 
   const xml = `<?xml version="1.0" encoding="UTF-8" ?>
-    <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"
+         xmlns:atom="http://www.w3.org/2005/Atom">
       <channel>
-        <title>WJH-makers的学习日志</title>
+        <title>WJH-makers 的技术学习与工程实践</title>
         <link>${base}</link>
-        <description>记录每天学习成果的个人博客</description>
+        <atom:link href="${base}/rss.xml" rel="self" type="application/rss+xml"/>
+        <description>Java 全栈、系统实践、遥感 VQA 与 MoE 研究记录</description>
+        <language>zh-CN</language>
+        <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
         ${items}
       </channel>
     </rss>`;

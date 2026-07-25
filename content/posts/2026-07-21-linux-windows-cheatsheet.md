@@ -150,9 +150,3 @@ tags: [Linux, Windows, 命令速查]
 
 **CMD vs PowerShell**：CMD 传文本；PowerShell 传 .NET 对象（`动词-名词` cmdlet）。
 
----
-
-# 三、Git 指令（难度 × 频次）
-
-> 桌面原稿未单列 Git，以下为开发高频全集（按频次×难度）。
-

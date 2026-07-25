@@ -13,6 +13,7 @@ export const runtime = "nodejs";
 export const metadata = {
   title: "写今日心得",
   description: "从网页直接写入每日学习心得到 MongoDB Atlas 云数据库。",
+  robots: { index: false, follow: false },
 };
 
 type Props = {

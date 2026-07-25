@@ -1,5 +1,7 @@
+import type { Route } from "next";
 import Link from "next/link";
 import { getAllPublishedPosts } from "@/lib/posts";
+import { SERIES_META, publishedEpisodes, totalEpisodeCount } from "@/lib/series";
 
 interface GitHubUser {
   login: string;
@@ -107,6 +109,7 @@ export default async function HomePage() {
   const totalStars = getTotalStars(repos);
   const topLangs = getTopLanguages(repos);
   const latestPosts = posts.slice(0, 3);
+  const seriesDone = publishedEpisodes().length;
 
   return (
     <div className="page-shell">
@@ -138,6 +141,20 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <section className="section-head">
+        <div>
+          <p className="eyebrow">Flagship Series · 连载特刊</p>
+          <h2>从零开始学 Java</h2>
+        </div>
+        <Link href={"/java" as Route}>查看全卷地图 →</Link>
+      </section>
+      <Link href={"/java" as Route} className="card series-hero-card">
+        <p className="series-hero-lead">{SERIES_META.tagline}</p>
+        <p className="muted">
+          已连载 {seriesDone} / {totalEpisodeCount()} 话 · 跟着阿零和豆豆,把「豆豆咖啡站」从一行输出建成完整系统
+        </p>
+      </Link>
 
       <section className="stats-grid">
         <div>
