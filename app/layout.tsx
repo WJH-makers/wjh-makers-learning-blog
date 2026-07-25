@@ -34,12 +34,6 @@ export const metadata: Metadata = {
     shortcut: "/favicon.svg",
   },
   openGraph: {
-    images: [{
-      url: "https://avatars.githubusercontent.com/u/136443811?v=4",
-      width: 460,
-      height: 460,
-      alt: SITE_NAME,
-    }],
     type: "website",
     siteName: SITE_NAME,
     title: `${SITE_NAME} · ${SITE_TAGLINE}`,
@@ -48,7 +42,6 @@ export const metadata: Metadata = {
     url: SITE,
   },
   twitter: {
-    images: ["https://avatars.githubusercontent.com/u/136443811?v=4"],
     card: "summary_large_image",
     title: `${SITE_NAME} · ${SITE_TAGLINE}`,
     description: SITE_DESC,
