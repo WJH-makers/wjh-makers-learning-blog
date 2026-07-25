@@ -10,8 +10,9 @@ type SeasonProg = { code: string; title: string; slugs: string[] };
 
 // 读 localStorage 里的已读话,渲染总进度 + 每卷完成度 + 继续下一话。纯客户端,不涉后端。
 export default function JavaProgress({ seasons }: { seasons: SeasonProg[] }) {
+  // 初始为空(SSR 与客户端首渲一致 → 无 hydration 冲突、无布局跳动),
+  // 挂载后读 localStorage,进度条平滑过渡到真实值。
   const [completed, setCompleted] = useState<Set<string>>(new Set());
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     try {
@@ -20,10 +21,7 @@ export default function JavaProgress({ seasons }: { seasons: SeasonProg[] }) {
     } catch {
       /* 忽略 */
     }
-    setMounted(true);
   }, []);
-
-  if (!mounted) return null;
 
   const allSlugs = seasons.flatMap((s) => s.slugs);
   const total = allSlugs.length;

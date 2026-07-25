@@ -30,12 +30,11 @@ type Props = {
 };
 
 export default function EpisodeProgress({ slug, seasonLabel, seasonSlugs }: Props) {
+  // 初始空(SSR 与首渲一致,消除布局跳动),挂载后读 localStorage 平滑更新。
   const [completed, setCompleted] = useState<string[]>([]);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setCompleted(readCompleted());
-    setMounted(true);
   }, []);
 
   const done = completed.includes(slug);
@@ -46,9 +45,6 @@ export default function EpisodeProgress({ slug, seasonLabel, seasonSlugs }: Prop
     setCompleted(next);
     writeCompleted(next);
   }
-
-  // 未挂载前不渲染依赖 localStorage 的状态,避免 hydration 不一致
-  if (!mounted) return null;
 
   const pct = seasonSlugs.length > 0 ? Math.round((seasonDone / seasonSlugs.length) * 100) : 0;
 

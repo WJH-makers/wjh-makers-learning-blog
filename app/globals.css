@@ -475,7 +475,8 @@ a:focus-visible {
 .article-content h2,
 .article-content h3 { margin: 1.35em 0 0.5em; }
 .article-content > :first-child { margin-top: 0; }
-.article-content h2 { padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.article-content h2 { padding-bottom: 8px; border-bottom: 1px solid var(--border); scroll-margin-top: 96px; }
+.article-content h1, .article-content h3 { scroll-margin-top: 96px; }
 .article-content p { margin: 1em 0; text-align: justify; }
 .article-content ul { padding-left: 24px; }
 .article-content ol { padding-left: 24px; }
