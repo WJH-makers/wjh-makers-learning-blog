@@ -39,7 +39,7 @@ export default function AboutPage() {
       <section style={{ marginTop: 32, borderLeft: "1px solid var(--border)", borderRight: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "clamp(20px, 4vw, 40px)" }}>
         <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)", marginBottom: 20 }}>WJH-makers</h2>
         <p style={{ fontSize: "1.03rem", lineHeight: 1.75, color: "var(--neutral-600)", textAlign: "justify" }}>
-          我是 WJH-makers，CS 本科在读，目前专注于 Java 全栈开发、系统实践和遥感视觉问答研究。
+          我是 WJH-makers，CS 科班毕业、目前已在业界工作，专注于 Java 全栈开发、系统实践和遥感视觉问答研究。
         </p>
         <p style={{ fontSize: "1.03rem", lineHeight: 1.75, color: "var(--neutral-600)", textAlign: "justify", marginTop: 16 }}>
           这个博客记录我的技术学习路径：从 Java 基础到 Spring 工程实践，从 Linux 运维到 AI 系统调优。

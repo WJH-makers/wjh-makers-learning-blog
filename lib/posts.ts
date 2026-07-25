@@ -275,7 +275,16 @@ export function splitSections(markdown: string): PostSection[] {
 }
 
 export async function markdownToHtml(markdown: string): Promise<string> {
-  const lines = markdown.split(/\r?\n/);
+  return renderLines(markdown.split(/\r?\n/));
+}
+
+/**
+ * 逐行渲染一段 markdown。
+ * blockquote 采用块级聚合:把连续的 `>` 行(含空 `>` 行)收成一块,去掉 `> ` 前缀后
+ * 递归调用本函数渲染块内容 —— 因此引用块内部支持代码围栏、列表、段落、加粗等完整语法,
+ * 修复了漫画里 `> ```代码围栏``` ` 被当字面文本显示、空 `>` 行输出裸 `>` 的问题。
+ */
+async function renderLines(lines: string[]): Promise<string> {
   const html: string[] = [];
   let inCode = false;
   let codeLines: string[] = [];
@@ -316,6 +325,19 @@ export async function markdownToHtml(markdown: string): Promise<string> {
       continue;
     }
 
+    // 引用块:聚合连续的 `>` 行(含空 `>`),整体去前缀后递归渲染,支持块内围栏/列表/段落
+    if (line.startsWith(">")) {
+      closeList();
+      const inner: string[] = [];
+      while (i < lines.length && lines[i].startsWith(">")) {
+        inner.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      i--;
+      html.push(`<blockquote>${await renderLines(inner)}</blockquote>`);
+      continue;
+    }
+
     // GFM 表格:当前行含 | 且下一行是分隔行(|---|---|)
     if (line.includes("|") && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
       closeList();
@@ -344,9 +366,6 @@ export async function markdownToHtml(markdown: string): Promise<string> {
     } else if (line.startsWith("# ")) {
       closeList();
       html.push(`<h1>${inlineMarkdown(line.slice(2))}</h1>`);
-    } else if (line.startsWith("> ")) {
-      closeList();
-      html.push(`<blockquote>${inlineMarkdown(line.slice(2))}</blockquote>`);
     } else if (/^\d+\.\s+/.test(line)) {
       if (listType !== "ol") {
         closeList();

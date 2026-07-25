@@ -159,8 +159,8 @@ h1 { font-size: clamp(1.6rem, 4.5vw, 2.8rem); }
 }
 h2 { font-size: clamp(1.25rem, 3vw, 1.85rem); }
 h3 { font-size: clamp(1.05rem, 2vw, 1.4rem); line-height: 1.15; }
-.article-content h2 { font-size: clamp(1.35rem, 3.2vw, 2rem); }
-.article-content h3 { font-size: clamp(1.1rem, 2.2vw, 1.5rem); margin: 1.4em 0 0.45em; }
+.article-content h2 { font-size: clamp(1.3rem, 2.6vw, 1.7rem); }
+.article-content h3 { font-size: clamp(1.05rem, 1.8vw, 1.3rem); margin: 1.4em 0 0.45em; }
 
 .eyebrow,
 .date,
@@ -214,15 +214,6 @@ time,
   margin: 20px 0 0;
   font-size: clamp(1rem, 1.8vw, 1.22rem);
   text-align: justify;
-}
-.article-content > p:first-of-type::first-letter {
-  float: left;
-  margin: 0.04em 0.1em 0 0;
-  color: var(--accent);
-  font-family: var(--font-serif);
-  font-size: 5.5rem;
-  font-weight: 900;
-  line-height: 0.76;
 }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
 
@@ -476,9 +467,9 @@ a:focus-visible {
   margin: 0.02em 0.1em 0 0;
   color: var(--accent);
   font-family: var(--font-serif);
-  font-size: 5rem;
+  font-size: 3.4rem;
   font-weight: 900;
-  line-height: 0.8;
+  line-height: 0.82;
 }
 .article-content h1,
 .article-content h2,
@@ -512,6 +503,16 @@ a:focus-visible {
   background: var(--neutral-100);
   font-style: italic;
 }
+/* 引用块内已是块级递归渲染:首尾元素去外边距,内嵌代码块恢复正体并与引用底色区分 */
+.article-content blockquote > :first-child { margin-top: 0; }
+.article-content blockquote > :last-child { margin-bottom: 0; }
+.article-content blockquote p { margin: 0.5em 0; }
+.article-content blockquote pre {
+  font-style: normal;
+  margin: 12px 0;
+  background: rgba(var(--paper-rgb), 0.85);
+}
+.article-content blockquote code { font-style: normal; }
 pre {
   overflow-x: auto;
   padding: 16px;
