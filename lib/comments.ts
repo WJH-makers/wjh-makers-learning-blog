@@ -123,12 +123,19 @@ export async function submitComment(input: SubmitInput): Promise<SubmitResult> {
     return { ok: false, error: "人机验证未通过,请重试。" };
   }
 
-  // 4) 限流:同 IP 60 秒最多 1 条
+  // 4) 限流:三层
   const ipHash = hashIp(input.ip);
   await ensureIndex();
   const col = await commentsCollection();
+  // 4a) 60 秒内最多 1 条
   const recent = await col.findOne({ ipHash, createdAt: { $gte: new Date(Date.now() - 60_000) } });
   if (recent) return { ok: false, error: "评论太频繁,请稍后再试。" };
+  // 4b) 1 小时内最多 10 条
+  const hourCount = await col.countDocuments({ ipHash, createdAt: { $gte: new Date(Date.now() - 3_600_000) } });
+  if (hourCount >= 10) return { ok: false, error: "发言太多啦,休息一下再来。" };
+  // 4c) 5 分钟内不允许相同内容(防刷屏)
+  const dup = await col.findOne({ ipHash, body, createdAt: { $gte: new Date(Date.now() - 300_000) } });
+  if (dup) return { ok: false, error: "请勿重复发送相同内容。" };
 
   // 5) 落库(status: visible;如需先审后发,改成 "pending")
   const doc: CommentDoc = { slug: input.slug, name, body, ipHash, status: "visible", createdAt: new Date() };

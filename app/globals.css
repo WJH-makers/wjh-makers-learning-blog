@@ -530,20 +530,27 @@ pre code { padding: 0; background: transparent; border: 0; color: inherit; }
 .comments { margin: 3rem 0 0; padding-top: 1.5rem; border-top: 2px solid var(--foreground); }
 .comments-title { font-family: var(--font-serif); font-size: clamp(1.3rem, 2.6vw, 1.7rem); margin: 0 0 1.2rem; }
 .comments-title span { font-family: var(--font-mono); color: var(--accent); font-size: 0.9rem; }
-.comment-list { list-style: none; padding: 0; margin: 0 0 2rem; display: grid; gap: 1rem; }
-.comment-list li { padding: 12px 16px; border-left: 3px solid var(--border); background: var(--neutral-100); }
-.comment-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+.comment-list { list-style: none; padding: 0; margin: 0 0 2rem; display: grid; gap: 0.85rem; }
+.comment-item { display: flex; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); background: rgba(var(--paper-rgb), 0.6); }
+.comment-avatar { flex-shrink: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: #fff; font-family: var(--font-serif); font-weight: 800; font-size: 1.1rem; }
+.comment-body { flex: 1; min-width: 0; }
+.comment-meta { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
 .comment-meta strong { font-size: 0.95rem; }
-.comment-meta time { font-family: var(--font-mono); font-size: 0.7rem; color: var(--neutral-500); white-space: nowrap; }
-.comment-list li p { margin: 0; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
-.comment-empty { color: var(--neutral-500); font-style: italic; }
+.comment-floor { font-family: var(--font-mono); font-size: 0.7rem; color: var(--accent); font-weight: 700; }
+.comment-meta time { font-family: var(--font-mono); font-size: 0.7rem; color: var(--neutral-500); margin-left: auto; }
+.comment-body p { margin: 0; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.comment-empty { color: var(--neutral-500); font-style: italic; padding: 14px 16px; border: 1px dashed var(--border); }
 .comment-form { display: grid; gap: 10px; }
 .comment-honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .comment-input, .comment-textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); font-family: var(--font-body); font-size: 0.95rem; box-sizing: border-box; }
-.comment-textarea { resize: vertical; }
+.comment-input:focus, .comment-textarea:focus { outline: none; border-color: var(--accent); }
+.comment-textarea-wrap { position: relative; }
+.comment-textarea { resize: vertical; display: block; }
+.comment-counter { position: absolute; right: 10px; bottom: 8px; font-family: var(--font-mono); font-size: 0.68rem; color: var(--neutral-500); pointer-events: none; }
 .comment-actions-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .comment-error { color: var(--accent); font-size: 0.85rem; }
 .comment-ok { color: var(--foreground); font-size: 0.85rem; font-weight: 700; }
+.comment-privacy { font-family: var(--font-mono); font-size: 0.68rem; color: var(--neutral-500); margin-left: auto; }
 .share-bar { display: flex; align-items: center; gap: 10px; margin: 1.5rem 0 0; padding-top: 1rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
 .share-label { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--neutral-500); }
 .share-btn { font-family: var(--font-mono); font-size: 0.8rem; padding: 4px 12px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); cursor: pointer; text-decoration: none; }
@@ -552,6 +559,19 @@ pre code { padding: 0; background: transparent; border: 0; color: inherit; }
 .follow-card .eyebrow { margin-bottom: 6px; }
 .follow-text { margin: 0 0 14px; color: var(--neutral-700); }
 .follow-links { display: flex; gap: 10px; flex-wrap: wrap; }
+.java-progress { margin: 1.5rem 0 0; padding: clamp(18px, 3vw, 26px); border: 2px solid var(--foreground); background: rgba(var(--paper-rgb), 0.6); }
+.jp-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.jp-big { margin: 4px 0 0; font-family: var(--font-serif); font-size: clamp(1.4rem, 3vw, 2rem); }
+.jp-big strong { color: var(--accent); }
+.jp-done { font-weight: 700; color: var(--accent); }
+.jp-bar { height: 10px; background: var(--neutral-100); border: 1px solid var(--border); overflow: hidden; }
+.jp-fill { height: 100%; background: var(--accent); transition: width 0.4s ease; }
+.jp-seasons { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 14px; }
+.jp-season { display: flex; align-items: center; gap: 6px; }
+.jp-season-code { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; min-width: 28px; }
+.jp-season-bar { flex: 1; height: 6px; background: var(--neutral-100); border: 1px solid var(--border); overflow: hidden; }
+.jp-season-fill { height: 100%; background: var(--foreground); }
+.jp-season-num { font-family: var(--font-mono); font-size: 0.68rem; color: var(--neutral-500); white-space: nowrap; }
 .article-actions {
   display: flex;
   flex-wrap: wrap;

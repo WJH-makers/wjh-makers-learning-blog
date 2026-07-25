@@ -10,6 +10,7 @@ import {
   publishedEpisodes,
 } from "@/lib/series";
 import { siteUrl } from "@/lib/posts";
+import JavaProgress from "./JavaProgress";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -35,6 +36,11 @@ const STATUS_LABEL: Record<string, string> = {
 export default function JavaSeriesPage() {
   const total = allEpisodes().length;
   const done = publishedEpisodes().length;
+  const progressSeasons = SEASONS.map((s) => ({
+    code: s.code,
+    title: s.title,
+    slugs: s.episodes.filter((e) => e.status === "published" && e.slug).map((e) => e.slug as string),
+  })).filter((s) => s.slugs.length > 0);
 
   return (
     <div className="page-shell">
@@ -65,6 +71,8 @@ export default function JavaSeriesPage() {
           </p>
         </div>
       </section>
+
+      <JavaProgress seasons={progressSeasons} />
 
       <section className="section-head">
         <div>
