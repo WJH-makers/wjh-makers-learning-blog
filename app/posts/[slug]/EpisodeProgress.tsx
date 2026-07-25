@@ -50,14 +50,19 @@ export default function EpisodeProgress({ slug, seasonLabel, seasonSlugs }: Prop
   // 未挂载前不渲染依赖 localStorage 的状态,避免 hydration 不一致
   if (!mounted) return null;
 
+  const pct = seasonSlugs.length > 0 ? Math.round((seasonDone / seasonSlugs.length) * 100) : 0;
+
   return (
     <div className="episode-progress">
       <button type="button" className={`button${done ? " ghost" : " primary"}`} onClick={toggle}>
         {done ? "✓ 本话已完成(点击取消)" : "标记本话完成"}
       </button>
-      <span className="muted">
-        {seasonLabel}进度 {seasonDone} / {seasonSlugs.length}
-      </span>
+      <div className="progress-track">
+        <div className="progress-bar" style={{ width: `${pct}%` }} />
+        <span className="muted">
+          {seasonLabel}进度 {seasonDone} / {seasonSlugs.length}（{pct}%）
+        </span>
+      </div>
     </div>
   );
 }
