@@ -2,11 +2,12 @@ import { ImageResponse } from "next/og";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getPublishedPost } from "@/lib/posts";
-import { episodeBySlug, SEASONS, SERIES_META } from "@/lib/series";
+import { findEpisodeInfo } from "@/lib/series-registry";
 
 // 文章级社交分享图:报纸风 + 卷话信息 + 中文标题。
 // 中文字体用本地思源黑体子集(satori 不支持 woff2,故用子集 ttf)。
-export const alt = "从零开始学 Java · WJH-makers";
+// 系列信息走多连载注册表:Java / CLI / Cafe 三条线统一取系列名+卷次。
+export const alt = "WJH-makers · 连载与笔记";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -16,13 +17,12 @@ const fontData = readFileSync(join(process.cwd(), "public", "fonts", "noto-sc-bo
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPublishedPost(slug);
-  const rawTitle = post?.title ?? "从零开始学 Java";
-  // 去掉《从零开始学 Java》NN · 前缀,只留话名
-  const title = rawTitle.replace(/^《从零开始学 Java》\s*\d+\s*·\s*/, "");
-  const ep = episodeBySlug(slug);
-  const season = ep ? SEASONS.find((s) => s.season === ep.season) : undefined;
-  const eyebrow = season
-    ? `${SERIES_META.title} · 第${season.season}卷 ${season.title}`
+  const rawTitle = post?.title ?? "WJH-makers";
+  // 去掉《系列名》NN · 前缀,只留话名
+  const title = rawTitle.replace(/^《[^》]+》\s*\d+\s*·\s*/, "");
+  const info = findEpisodeInfo(slug);
+  const eyebrow = info
+    ? `${info.series.title} · 第${info.season.season}卷 ${info.season.title}`
     : "WJH-makers · 技术笔记";
 
   return new ImageResponse(

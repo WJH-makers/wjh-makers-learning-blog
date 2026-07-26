@@ -1,6 +1,7 @@
 import { attachDatabasePool } from "@vercel/functions";
 import { MongoClient, ServerApiVersion, type Collection, type MongoClientOptions, type WithId } from "mongodb";
 import type { Post } from "@/lib/posts";
+import { estimateReadingMinutes } from "@/lib/text";
 
 type NewDatabasePost = {
   title: string;
@@ -69,7 +70,9 @@ function getClient(): Promise<MongoClient> {
     const options: MongoClientOptions = {
       appName: "wjh-makers-blog",
       maxPoolSize: 10,
-      maxIdleTimeMS: 5000,
+      // 自有长驻服务器(非 serverless):留热连接,免得稀疏查询每次都重做 Atlas TLS 握手
+      minPoolSize: 1,
+      maxIdleTimeMS: 60000,
       serverSelectionTimeoutMS: 5000,
       serverApi: {
         version: ServerApiVersion.v1,
@@ -120,12 +123,6 @@ export async function checkDatabaseConnection(): Promise<{ ok: boolean; message:
   } catch (error) {
     return { ok: false, message: publicErrorMessage(error) };
   }
-}
-
-function estimateReadingMinutes(content: string): number {
-  const words = content.trim().split(/\s+/).filter(Boolean).length;
-  const cjk = (content.match(/[\u4e00-\u9fff]/g) ?? []).length;
-  return Math.max(1, Math.ceil((words + cjk / 2) / 220));
 }
 
 function docToPost(doc: WithId<MongoPostDocument>): Post {

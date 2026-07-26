@@ -1,10 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllPublishedTags } from "@/lib/posts";
+import { getAllPublishedTags, siteUrl } from "@/lib/posts";
 
 export const metadata = {
   title: "标签",
   description: "按主题浏览学习记录。",
-};
+  alternates: { canonical: `${siteUrl()}/tags` },
+} satisfies Metadata;
 
 export const runtime = "nodejs";
 export const revalidate = 3600;
@@ -93,7 +95,7 @@ export default async function TagsPage() {
         <div className="empty-state">
           <p className="eyebrow">No Index</p>
           <h3>还没有可索引的标签。</h3>
-          <Link className="button primary" href="/write">写一篇并添加标签</Link>
+          <Link className="button primary" href="/posts">去看全部文章</Link>
         </div>
       )}
     </div>

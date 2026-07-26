@@ -12,9 +12,10 @@ function avatarColor(name: string): string {
   return AVATAR_BG[h % AVATAR_BG.length];
 }
 function fmt(iso: string): string {
-  const d = new Date(iso);
+  // 固定 UTC+8 格式化:服务端(UTC 容器)与任意时区客户端逐字节一致,消除 hydration 时间差。
+  const d = new Date(Date.parse(iso) + 8 * 3600_000);
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
 }
 
 // 安全 Markdown 子集 → React 节点(不用 dangerouslySetInnerHTML,内容全走 JSX 自动转义,零 XSS)。
@@ -61,6 +62,26 @@ export default function Comments({ slug, initial }: { slug: string; initial: Com
   const [len, setLen] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  // Turnstile 脚本 + widget iframe 不进文章首屏:评论区接近视口(或聚焦输入)才挂载。
+  // 多数读者不滚到页尾,每篇文章省一个第三方脚本与 iframe。
+  const [tsReady, setTsReady] = useState(false);
+  useEffect(() => {
+    if (!siteKey || tsReady) return;
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setTsReady(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setTsReady(true);
+      },
+      { rootMargin: "600px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [siteKey, tsReady]);
 
   useEffect(() => {
     if (state?.ok && state.comment.body) {
@@ -77,10 +98,10 @@ export default function Comments({ slug, initial }: { slug: string; initial: Com
   const hidden = list.length - visible.length;
 
   return (
-    <section className="comments" aria-label="评论区">
+    <section className="comments" aria-label="评论区" ref={sectionRef}>
       <h2 className="comments-title">评论 <span>{list.length}</span></h2>
 
-      <ol className="comment-list">
+      <ol className="comment-list" id="comment-list">
         {list.length === 0 && <li className="comment-empty">还没有评论,来抢沙发 🛋️</li>}
         {visible.map((c, i) => (
           <li key={c.id} className="comment-item">
@@ -100,12 +121,12 @@ export default function Comments({ slug, initial }: { slug: string; initial: Com
       </ol>
 
       {hidden > 0 && (
-        <button type="button" className="comment-toggle" onClick={() => setExpanded(true)}>
+        <button type="button" className="comment-toggle" aria-expanded={expanded} aria-controls="comment-list" onClick={() => setExpanded(true)}>
           展开剩余 {hidden} 条评论 ▾
         </button>
       )}
       {expanded && list.length > PREVIEW && (
-        <button type="button" className="comment-toggle" onClick={() => setExpanded(false)}>
+        <button type="button" className="comment-toggle" aria-expanded={expanded} aria-controls="comment-list" onClick={() => setExpanded(false)}>
           收起 ▴
         </button>
       )}
@@ -113,29 +134,37 @@ export default function Comments({ slug, initial }: { slug: string; initial: Com
       <form ref={formRef} action={action} className="comment-form">
         <input type="hidden" name="slug" value={slug} />
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="comment-honeypot" aria-hidden="true" />
-        <input name="name" placeholder="昵称(免登录,不收集邮箱)" maxLength={24} required className="comment-input" />
+        <input name="name" aria-label="昵称" placeholder="昵称(免登录,不收集邮箱)" maxLength={24} required className="comment-input" />
         <div className="comment-textarea-wrap">
           <textarea
             name="body"
+            aria-label="评论内容"
             placeholder="友善发言 · 支持 `代码` **粗体** ```代码块``` 与换行"
             maxLength={1000}
             required
             rows={3}
             className="comment-textarea"
             onInput={(e) => setLen(e.currentTarget.value.length)}
+            onFocus={() => setTsReady(true)}
           />
           <span className="comment-counter">{len}/1000</span>
         </div>
-        {siteKey && <div className="cf-turnstile" data-sitekey={siteKey} data-theme="auto" />}
+        {siteKey && tsReady && <div className="cf-turnstile" data-sitekey={siteKey} data-theme="auto" />}
         <div className="comment-actions-row">
           <button type="submit" disabled={pending} className="button primary">{pending ? "提交中…" : "发表评论"}</button>
-          {state && !state.ok && <span className="comment-error">{state.error}</span>}
-          {state?.ok && state.comment.body && <span className="comment-ok">已发布 ✓</span>}
+          {/* 常驻 live region:提交结果(成功/失败)自动向读屏播报,容器始终在 DOM 中 */}
+          <span role="status">
+            {state && !state.ok ? (
+              <span className="comment-error">{state.error}</span>
+            ) : state?.ok && state.comment.body ? (
+              <span className="comment-ok">已发布 ✓</span>
+            ) : null}
+          </span>
           <span className="comment-privacy">🔒 匿名发言 · 不存邮箱 · IP 仅加密用于反刷</span>
         </div>
       </form>
 
-      {siteKey && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />}
+      {siteKey && tsReady && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />}
     </section>
   );
 }

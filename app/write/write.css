@@ -1,0 +1,393 @@
+/* 从 app/globals.css 迁出：仅 /write 编辑器路由（editor / write / BlockNote）使用的样式，公开页不再下发。 */
+
+.editor-shell { max-width: 1220px; }
+
+.db-status strong,
+.editor-form label span,
+.field-head span,
+.draft-panel dt {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.db-status span {
+  color: var(--neutral-600);
+}
+
+.editor-shell .page-title {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 440px);
+  align-items: end;
+  gap: 18px;
+}
+.editor-shell .page-title .eyebrow {
+  grid-column: 1 / -1;
+}
+.editor-shell .page-title h1 {
+  font-size: clamp(3.25rem, 7vw, 6.6rem);
+}
+.editor-shell .page-title p:not(.eyebrow) {
+  max-width: none;
+  margin: 0;
+  padding: 12px 0 4px;
+  font-size: 0.98rem;
+}
+
+.db-status,
+.editor-form,
+.editor-note {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: rgba(var(--paper-rgb),0.9);
+}
+
+.db-status { display: grid; gap: 6px; margin: 22px 0; padding: 16px; border-left: 6px solid var(--border); }
+.db-status.ok { border-left-color: var(--foreground); }
+.db-status.warn { border-left-color: var(--accent); }
+.editor-shell .db-status {
+  margin: 16px 0;
+  padding: 12px 14px;
+  background: rgba(var(--paper-rgb),0.72);
+}
+/* .form-error 同时被 /write 与 /monitor（登录墙）使用，不再全局下发，两个路由各带一份（见 app/monitor/monitor.css）。 */
+.form-error { padding: 12px 14px; border: 2px solid var(--accent); color: var(--accent); background: var(--paper); font-family: var(--font-mono); font-weight: 800; }
+.auth-status { padding: 10px 14px; border-left: 4px solid var(--foreground); background: rgba(239,246,233,0.8); font-size: 0.9rem; }
+.login-bar { margin-top: -8px; }
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 16px;
+}
+.editor-form {
+  display: grid;
+  gap: 16px;
+  padding: clamp(18px, 2.5vw, 30px);
+}
+.editor-note {
+  align-self: start;
+  padding: clamp(16px, 2vw, 22px);
+  background: rgba(245,245,245,0.92);
+}
+.editor-note h2 {
+  margin-bottom: 20px;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.05;
+}
+.editor-note ul {
+  display: grid;
+  gap: 0;
+  margin: 0 0 22px;
+  padding: 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+}
+.editor-note li {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.editor-note strong {
+  padding: 10px;
+  color: var(--paper);
+  background: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.editor-note li span { padding: 10px 12px; color: var(--neutral-600); }
+.editor-note p:last-child { text-align: justify; }
+.form-grid { display: grid; grid-template-columns: 190px 1fr; gap: 16px; }
+.editor-form label { display: grid; gap: 7px; }
+/* 自 globals.css 迁入:编辑器大文本框专属(原全局 textarea 规则泄漏进评论区,评论框回落 44px 基线) */
+.editor-form textarea {
+  min-height: 380px;
+  resize: vertical;
+  line-height: 1.7;
+  border: 2px solid var(--border);
+  background: rgba(255,255,255,0.35);
+}
+.write-studio {
+  margin-top: 18px;
+  border-left: 0;
+}
+.write-studio .editor-form,
+.write-studio .editor-note {
+  border: 1px solid var(--border);
+  box-shadow: 7px 7px 0 rgba(var(--ink-rgb),0.08);
+}
+.write-command {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 18px;
+  padding-bottom: 14px;
+  border-bottom: 3px solid var(--border);
+}
+.write-command h2 {
+  font-size: clamp(2.15rem, 5vw, 4.4rem);
+}
+.write-status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+.write-status-strip span {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 10px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.title-field input {
+  min-height: 64px;
+  padding-inline: 0;
+  border-bottom-width: 4px;
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 5vw, 4.6rem);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+.title-field input::placeholder {
+  color: rgba(var(--ink-rgb),0.28);
+}
+.meta-grid {
+  grid-template-columns: 160px minmax(160px, 1fr) minmax(180px, 0.9fr);
+  align-items: end;
+}
+.block-editor-field {
+  display: grid;
+  gap: 10px;
+}
+.field-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.field-head em {
+  color: var(--neutral-500);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 700;
+}
+.block-editor-field .bn-container {
+  min-height: 620px;
+  border: 2px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.72), rgba(var(--paper-rgb),0.92)),
+    var(--paper);
+}
+.block-editor-field .bn-editor {
+  min-height: 616px;
+  padding: clamp(18px, 3vw, 34px);
+  color: var(--foreground);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 1.02rem;
+}
+.block-editor-field .bn-editor h1,
+.block-editor-field .bn-editor h2,
+.block-editor-field .bn-editor h3 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.04em;
+}
+.draft-panel,
+.markdown-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.editor-note-head h2 {
+  margin-bottom: 12px;
+  font-size: clamp(1.9rem, 3.2vw, 2.65rem);
+}
+.draft-panel p {
+  margin: 0;
+  color: var(--neutral-600);
+}
+.compact-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  background: var(--paper);
+}
+.draft-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.draft-metrics span {
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  background: var(--neutral-100);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.draft-panel dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+.draft-panel dl div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+}
+.draft-panel dt,
+.draft-panel dd {
+  margin: 0;
+  padding: 8px 10px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.draft-panel dt {
+  color: var(--paper);
+  background: var(--foreground);
+}
+.draft-panel dd {
+  overflow-wrap: anywhere;
+  color: var(--neutral-600);
+  background: rgba(var(--paper-rgb),0.75);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+.draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.draft-actions .button,
+.editor-note > .button {
+  min-height: 38px;
+  padding: 8px 10px;
+  font-size: 0.68rem;
+}
+.tips-panel {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  background: var(--paper);
+}
+.tips-panel summary,
+.markdown-panel summary {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.tips-panel:not([open]) summary,
+.markdown-panel:not([open]) summary {
+  border-bottom: 0;
+}
+.tips-panel ol {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tips-panel li {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  border-bottom: 1px solid var(--muted);
+}
+.tips-panel li:last-child {
+  border-bottom: 0;
+}
+.tips-panel strong {
+  padding: 9px;
+  color: var(--paper);
+  background: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+.tips-panel span {
+  padding: 9px 10px;
+  color: var(--neutral-600);
+  font-size: 0.88rem;
+}
+.markdown-panel {
+  padding-top: 0;
+  border: 1px solid var(--border);
+  background: var(--paper);
+}
+.markdown-preview {
+  min-height: 260px;
+  max-height: 430px;
+  border: 0;
+  color: var(--neutral-700);
+  background: rgba(var(--paper-rgb),0.75);
+  font-size: 0.78rem;
+}
+.publish-bar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 15;
+  margin-top: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  background: rgba(var(--paper-rgb),0.94);
+  backdrop-filter: blur(10px);
+  box-shadow: 5px 5px 0 rgba(var(--ink-rgb),0.12);
+}
+
+/* ===== Tablet ===== */
+@media (max-width: 860px) {
+  .editor-layout { grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); }
+  .form-grid { grid-template-columns: 160px 1fr; }
+  .meta-grid { grid-template-columns: 140px 1fr 1fr; }
+  .editor-shell .page-title { grid-template-columns: 1fr; }
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 640px) {
+  .form-grid,
+  .editor-layout,
+  .meta-grid,
+  .editor-shell .page-title,
+  .write-command {
+    grid-template-columns: 1fr;
+  }
+  .editor-shell .page-title h1 { font-size: clamp(2.2rem, 12vw, 3.6rem); }
+  .draft-panel dl div { grid-template-columns: 70px 1fr; }
+  .db-status { border-left-width: 4px; }
+}
+
+/* ===== Dark mode ===== */
+@media (prefers-color-scheme: dark) {
+  .auth-status { background: rgba(46, 60, 40, 0.55); }
+  .editor-form textarea { background: rgba(255, 255, 255, 0.04); }
+  .title-field input::placeholder { color: rgba(233, 231, 223, 0.32); }
+  .block-editor-field .bn-container {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(var(--paper-rgb), 0.92)),
+      var(--paper);
+  }
+}

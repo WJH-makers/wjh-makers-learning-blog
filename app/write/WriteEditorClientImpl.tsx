@@ -5,6 +5,7 @@ import "@blocknote/mantine/style.css";
 import type { Block, PartialBlock } from "@blocknote/core";
 import { BlockNoteView } from "@blocknote/mantine";
 import { useCreateBlockNote } from "@blocknote/react";
+import Link from "next/link";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 const DRAFT_KEY = "wjh-learning-blog:write-draft:v1";
@@ -562,7 +563,7 @@ export default function WriteEditorClient({
           </form>
         ) : null}
 
-        <a className="button" href="/posts">查看归档</a>
+        <Link href="/posts" className="button">查看归档</Link>
       </aside>
     </div>
   );

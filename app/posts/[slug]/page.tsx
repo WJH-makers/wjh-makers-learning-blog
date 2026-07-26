@@ -1,4 +1,4 @@
-import type { Metadata, Route } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, renderMarkdown, siteUrl } from "@/lib/posts";
@@ -9,12 +9,21 @@ import EpisodeProgress from "./EpisodeProgress";
 import EpisodeExercises from "./EpisodeExercises";
 import Comments from "./Comments";
 import ShareBar from "./ShareBar";
+import CodeCopy from "./CodeCopy";
 import { getComments } from "@/lib/comments";
 import { jsonLdSafe } from "@/lib/jsonld";
 
 type Props = {
   params: Promise<{ slug: string }>;
 };
+
+// JSON-LD wordCount 用:与 lib/text.ts estimateReadingMinutes 同源的统计口径
+// (英文按空白分词 + CJK 每字计 1 词),但输出词数本身而非折算分钟。
+function countWords(content: string): number {
+  const words = content.trim().split(/\s+/).filter(Boolean).length;
+  const cjk = (content.match(/[一-鿿]/g) ?? []).length;
+  return words + cjk;
+}
 
 export async function generateStaticParams() {
   const posts = await getAllPublishedPosts();
@@ -36,6 +45,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: post.summary,
     alternates: { canonical: url },
     openGraph: {
+      // Next 对 openGraph 是整体替换而非深合并:siteName/locale 需在页面级补齐,否则丢失
+      siteName: "WJH-makers",
+      locale: "zh_CN",
       title: post.title,
       description: post.summary,
       url,
@@ -80,6 +92,8 @@ export default async function PostPage({ params }: Props) {
     headline: post.title,
     description: post.summary,
     url,
+    image: `${url}/opengraph-image`,
+    wordCount: countWords(post.content),
     datePublished: post.date,
     dateModified: post.date,
     author: {
@@ -111,11 +125,13 @@ export default async function PostPage({ params }: Props) {
   }
   // 渲染器直出标题锚点 id 并返回结构化 headings —— TOC 与正文锚点天然一致,
   // 不再用正则反解析渲染后的 HTML 回填(含行内语法/重名标题时会静默失效)。
-  const { html: fullHtml, headings } = await renderMarkdown(contentLines.join("\n").replace(/^\s+/, ""));
+  // 渲染 / 相关文章 / 评论三者互不依赖,并行取(冷渲染与 ISR 再生约省 1/3 延迟)
+  const [{ html: fullHtml, headings }, related, comments] = await Promise.all([
+    renderMarkdown(contentLines.join("\n").replace(/^\s+/, "")),
+    getRelatedPosts(post.slug, post.tags),
+    getComments(post.slug),
+  ]);
   const tocItems = headings.filter((h) => h.level === 2);
-
-  const related = await getRelatedPosts(post.slug, post.tags);
-  const comments = await getComments(post.slug);
 
   return (
     <article className="page-shell article-shell">
@@ -134,7 +150,7 @@ export default async function PostPage({ params }: Props) {
       {info && episode && season && (
         <aside className="series-banner">
           <p className="eyebrow">
-            <Link href={info.series.route as Route}>{info.series.title}</Link> · 第{season.season}卷「{season.title}」
+            <Link href={info.series.route}>{info.series.title}</Link> · 第{season.season}卷「{season.title}」
           </p>
           <p>
             第 {episode.episode} 话 · {CHAPTER_TYPE_LABEL[episode.chapterType]} · 项目阶段:{episode.projectStage}
@@ -166,6 +182,7 @@ export default async function PostPage({ params }: Props) {
       )}
 
       <div className="article-content" dangerouslySetInnerHTML={{ __html: fullHtml }} />
+      <CodeCopy />
 
       <ShareBar url={url} title={post.title} />
 
@@ -186,7 +203,7 @@ export default async function PostPage({ params }: Props) {
             ) : (
               <span />
             )}
-            <Link className="series-pager-link map" href={info.series.route as Route}>
+            <Link className="series-pager-link map" href={info.series.route}>
               <span className="eyebrow">目录</span>
               <span>全卷地图</span>
             </Link>
@@ -230,6 +247,8 @@ export default async function PostPage({ params }: Props) {
         <AdminEditLink slug={post.slug} />
         <Link className="button" href="/posts">更多文章 →</Link>
         <Link className="button ghost" href="/tags">按标签检索</Link>
+        {/* 零 JS 返回顶部:fragment "top" 无对应元素时按 HTML 规范滚到文档顶,吃全站 scroll-behavior: smooth */}
+        <a className="button ghost" href="#top">↑ 回到顶部</a>
       </nav>
 
       <aside className="follow-card">

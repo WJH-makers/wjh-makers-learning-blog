@@ -20,6 +20,8 @@ export async function GET() {
 - [文章索引](${base}/posts)
 - [Java 漫画课程](${base}/java)
 - [CLI 学习系列](${base}/cli)
+- [豆豆咖啡站(温情工程漫画)](${base}/cafe)
+- [标签索引](${base}/tags)
 - [关于作者](${base}/about)
 
 ## 机器可读格式

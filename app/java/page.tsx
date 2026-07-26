@@ -6,10 +6,14 @@ import {
   PROJECT_STAGES,
   SIDE_QUESTS,
   CHAPTER_TYPE_LABEL,
+  STATUS_LABEL,
   allEpisodes,
   publishedEpisodes,
+  seasonPublishedSlugs,
 } from "@/lib/series";
 import { siteUrl } from "@/lib/posts";
+import { jsonLdSafe } from "@/lib/jsonld";
+import { OG_BASE } from "@/lib/og-base";
 import JavaProgress from "./JavaProgress";
 import SeriesMap from "./SeriesMap";
 
@@ -21,17 +25,12 @@ export const metadata: Metadata = {
   description: SERIES_META.tagline,
   alternates: { canonical: `${siteUrl()}/java` },
   openGraph: {
+    ...OG_BASE,
     title: "从零开始学 Java · 阿零与豆豆生态学院",
     description: SERIES_META.tagline,
     url: `${siteUrl()}/java`,
     type: "website",
   },
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  published: "已连载",
-  draft: "草稿",
-  planned: "规划中",
 };
 
 export default function JavaSeriesPage() {
@@ -40,11 +39,34 @@ export default function JavaSeriesPage() {
   const progressSeasons = SEASONS.map((s) => ({
     code: s.code,
     title: s.title,
-    slugs: s.episodes.filter((e) => e.status === "published" && e.slug).map((e) => e.slug as string),
+    slugs: seasonPublishedSlugs(s),
   })).filter((s) => s.slugs.length > 0);
+
+  // 系列主实体:与文章页 isPartOf 里的 CreativeWorkSeries 引用(name/url)严格一致,形成双向闭环。
+  const seriesJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWorkSeries",
+    name: SERIES_META.title,
+    url: `${siteUrl()}/java`,
+    description: SERIES_META.tagline,
+    inLanguage: "zh-CN",
+    author: {
+      "@type": "Person",
+      name: "WJH-makers",
+      alternateName: "WJH-makers",
+      url: "https://github.com/WJH-makers",
+    },
+    hasPart: publishedEpisodes().map((ep, i) => ({
+      "@type": "BlogPosting",
+      position: i + 1,
+      name: ep.title,
+      url: `${siteUrl()}/posts/${ep.slug}`,
+    })),
+  };
 
   return (
     <div className="page-shell">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(seriesJsonLd) }} />
       <section className="hero">
         <div>
           <p className="eyebrow">连载特刊 · Serialized</p>
@@ -164,7 +186,7 @@ export default function JavaSeriesPage() {
               </thead>
               <tbody>
                 {season.episodes.map((ep) => (
-                  <tr key={ep.episode}>
+                  <tr key={ep.episode} className={ep.status === "published" ? undefined : "row-planned"}>
                     <td>{String(ep.episode).padStart(2, "0")}</td>
                     <td>
                       {ep.status === "published" && ep.slug ? (

@@ -1,14 +1,8 @@
 import { cookies } from "next/headers";
-import { timingSafeEqual } from "crypto";
+import { safeCompare } from "@/lib/safe-compare";
 
 // monitor 登录成功后 cookie 存 base64(user:pass)(见 app/api/monitor-auth/route.ts)。
 // 此处按同法重算期望值并恒定时间比对,避免计时侧信道。
-function safeEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a);
-  const bb = Buffer.from(b);
-  if (ab.length !== bb.length) return false;
-  return timingSafeEqual(ab, bb);
-}
 
 /**
  * monitor 子系统(/monitor 页 + server-stats/cf-stats API)是否已鉴权。
@@ -22,5 +16,5 @@ export async function isMonitorAuthed(): Promise<boolean> {
   const expected = Buffer.from(`${user}:${pass}`).toString("base64url");
   const cookieStore = await cookies();
   const token = cookieStore.get("monitor_token")?.value ?? "";
-  return safeEqual(token, expected);
+  return safeCompare(token, expected);
 }

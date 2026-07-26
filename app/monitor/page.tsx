@@ -1,6 +1,8 @@
+import "./monitor.css";
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import ServerCards from "./ServerCards";
-import TraficCharts from "./TraficCharts";
+import ServerCards, { type Srv } from "./ServerCards";
+import TraficCharts, { type CfStats } from "./TraficCharts";
 import MonitorLogin from "./MonitorLogin";
 import { isMonitorAuthed } from "@/lib/monitor-auth";
 
@@ -11,26 +13,7 @@ export const metadata = {
   title: "站点监控",
   description: "WJH-makers 站点运行状态与流量监控。",
   robots: { index: false, follow: false },
-};
-
-interface Point { t: number; cpu: number; mem: number; load: number }
-interface Srv { cpu: number; mem: number; load: number; uptime: string; disk: string; day: Point[]; week: Point[] }
-
-interface CfDay { t: string; requests: number; views: number; threats: number; bytes: number; uniques: number }
-interface CfStats {
-  now: string;
-  today: { requests: string; requestsRaw: number; bandwidth: string; views: string; viewsRaw: number; threats: number; uniques: number };
-  yesterday: { requests: number; views: number; uniques: number; threats: number };
-  dayOverDay: string;
-  week: { totalRequests: number; totalViews: number; totalUniques: number; threats: number; dailyAvg: number };
-  prevWeek: { totalRequests: number; totalViews: number; totalUniques: number };
-  wow: { requests: string; views: string; uniques: string };
-  peakDay: { date: string; requests: number } | null;
-  periodRequests: number;
-  week_chart: CfDay[];
-  month_chart: { t: string; requests: number; threats: number }[];
-  prev_week_chart: { t: string; requests: number; views: number }[];
-}
+} satisfies Metadata;
 
 async function get<T>(path: string): Promise<T | null> {
   try {

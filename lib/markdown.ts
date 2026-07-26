@@ -1,4 +1,5 @@
-import { codeToHtml } from "shiki";
+import { createHighlighterCore, type HighlighterCore } from "shiki/core";
+import { createOnigurumaEngine } from "shiki/engine/oniguruma";
 import comicManifest from "./comic-manifest.json" with { type: "json" };
 
 /**
@@ -171,6 +172,37 @@ function renderTcpFlowDiagram(code: string): string | null {
   return `<figure class="protocol-diagram tcp-flow"><figcaption><span>${names.client}</span><b>TCP 连接与字节流</b><span>${names.server}</span></figcaption><ol class="tcp-flow__steps">${stepHtml}</ol><ol class="tcp-flow__layers" aria-label="网络分层">${layerHtml}</ol></figure>`;
 }
 
+/**
+ * Shiki 细粒度按需加载:全量入口会把 ~200 种语法 + ~60 主题打进 standalone 产物。
+ * 全站实测仅用到下面这些语言;未注册语言由 catch 回退纯文本(与旧行为一致)。
+ * 新文章引入新语言时在此补一行 import 即可。
+ */
+let highlighterPromise: Promise<HighlighterCore> | null = null;
+function getHighlighter(): Promise<HighlighterCore> {
+  highlighterPromise ??= createHighlighterCore({
+    themes: [import("shiki/themes/github-light.mjs"), import("shiki/themes/github-dark.mjs")],
+    langs: [
+      import("shiki/langs/java.mjs"),
+      import("shiki/langs/javascript.mjs"),
+      import("shiki/langs/typescript.mjs"),
+      import("shiki/langs/shellscript.mjs"), // bash / sh / shell / zsh
+      import("shiki/langs/powershell.mjs"),
+      import("shiki/langs/html.mjs"),
+      import("shiki/langs/css.mjs"),
+      import("shiki/langs/json.mjs"),
+      import("shiki/langs/yaml.mjs"),
+      import("shiki/langs/xml.mjs"),
+      import("shiki/langs/sql.mjs"),
+      import("shiki/langs/docker.mjs"), // dockerfile
+      import("shiki/langs/diff.mjs"),
+      import("shiki/langs/nginx.mjs"),
+      import("shiki/langs/ini.mjs"), // properties(注:conf 不是 ini 别名,未注册语言走回退)
+    ],
+    engine: createOnigurumaEngine(import("shiki/wasm")),
+  });
+  return highlighterPromise;
+}
+
 async function highlightCode(code: string, lang: string): Promise<string> {
   const cacheKey = `${lang}:${code}`;
   const cached = cacheGet(cacheKey);
@@ -190,14 +222,17 @@ async function highlightCode(code: string, lang: string): Promise<string> {
     return diagram;
   }
 
-  const language = lang.trim() || "text";
+  // lowercase 硬化:shiki 的 lang 名大小写敏感,```Java 会误走纯文本回退
+  const language = lang.trim().toLowerCase() || "text";
   const opts = { themes: { light: "github-light", dark: "github-dark" }, defaultColor: false } as const;
+  const highlighter = await getHighlighter();
   try {
-    const result = await codeToHtml(code, { lang: language, ...opts });
+    const result = highlighter.codeToHtml(code, { lang: language, ...opts });
     cachePut(cacheKey, result);
     return result;
   } catch {
-    const fallbackResult = await codeToHtml(code, { lang: "text", ...opts });
+    // 未注册/未知语言回退纯文本("text" 为 shiki 内置,无需注册)
+    const fallbackResult = highlighter.codeToHtml(code, { lang: "text", ...opts });
     cachePut(cacheKey, fallbackResult);
     return fallbackResult;
   }
@@ -445,7 +480,12 @@ async function renderLines(lines: string[], ctx: RenderCtx, depth: number): Prom
 export async function renderMarkdown(markdown: string): Promise<{ html: string; headings: Heading[] }> {
   const ctx: RenderCtx = { headings: [], usedIds: new Map() };
   const html = await renderLines(markdown.split(/\r?\n/), ctx, 0);
-  return { html, headings: ctx.headings };
+  // LCP 后处理:首图(漫画话即第一格)不该 lazy——String.replace 天然只替换第一处,
+  // 首图提为 eager + 高优先级,其余图片保持懒加载。
+  return {
+    html: html.replace('loading="lazy"', 'loading="eager" fetchpriority="high"'),
+    headings: ctx.headings,
+  };
 }
 
 export async function markdownToHtml(markdown: string): Promise<string> {

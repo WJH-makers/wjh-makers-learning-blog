@@ -1,24 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-function readCompleted(storageKey: string): string[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(storageKey);
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeCompleted(storageKey: string, slugs: string[]) {
-  try {
-    window.localStorage.setItem(storageKey, JSON.stringify([...new Set(slugs)]));
-  } catch {
-    /* localStorage 不可用时静默降级 */
-  }
-}
+import { readCompleted, writeCompleted } from "@/lib/progress-client";
 
 type Props = {
   slug: string;
@@ -31,17 +14,19 @@ type Props = {
 
 export default function EpisodeProgress({ slug, seasonLabel, seasonSlugs, storageKey }: Props) {
   // 初始空(SSR 与首渲一致,消除布局跳动),挂载后读 localStorage 平滑更新。
-  const [completed, setCompleted] = useState<string[]>([]);
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setCompleted(readCompleted(storageKey));
   }, [storageKey]);
 
-  const done = completed.includes(slug);
-  const seasonDone = seasonSlugs.filter((s) => completed.includes(s)).length;
+  const done = completed.has(slug);
+  const seasonDone = seasonSlugs.filter((s) => completed.has(s)).length;
 
   function toggle() {
-    const next = done ? completed.filter((s) => s !== slug) : [...completed, slug];
+    const next = new Set(completed);
+    if (done) next.delete(slug);
+    else next.add(slug);
     setCompleted(next);
     writeCompleted(storageKey, next);
   }
@@ -50,8 +35,9 @@ export default function EpisodeProgress({ slug, seasonLabel, seasonSlugs, storag
 
   return (
     <div className="episode-progress">
-      <button type="button" className={`button${done ? " ghost" : " primary"}`} onClick={toggle}>
-        {done ? "✓ 本话已完成(点击取消)" : "标记本话完成"}
+      {/* done 态用带边框的默认 .button(ghost 边框透明,可撤销的交互暗示会随完成一起消失) */}
+      <button type="button" className={`button${done ? "" : " primary"}`} onClick={toggle}>
+        {done ? "✓ 已完成 · 点击撤销" : "标记本话完成"}
       </button>
       <div className="progress-track">
         <div className="progress-bar" style={{ width: `${pct}%` }} />

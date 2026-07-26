@@ -258,3 +258,14 @@ export const CHAPTER_TYPE_LABEL: Record<ChapterType, string> = {
   incident: "事故",
   project: "项目",
 };
+
+export const STATUS_LABEL: Record<EpisodeStatus, string> = {
+  published: "已连载",
+  draft: "草稿",
+  planned: "规划中",
+};
+
+/** 一卷内已发布话的 slug 列表(flatMap 窄化,免去 as string 断言)。 */
+export function seasonPublishedSlugs(season: JavaSeason): string[] {
+  return season.episodes.flatMap((e) => (e.status === "published" && e.slug ? [e.slug] : []));
+}

@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import { siteUrl } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
+import { OG_BASE } from "@/lib/og-base";
 
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
   title: "关于",
   description: "WJH-makers 的技术学习与工程实践。",
+  alternates: { canonical: `${siteUrl()}/about` },
   openGraph: {
+    ...OG_BASE,
     title: "关于 | WJH-makers",
     description: "WJH-makers 的技术学习与工程实践",
     url: `${siteUrl()}/about`,

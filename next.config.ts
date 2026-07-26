@@ -9,10 +9,6 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["@blocknote/core", "@blocknote/mantine"],
   },
-  images: {
-    formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 86400,
-  },
   redirects: async () => [
     {
       source: "/security.txt",

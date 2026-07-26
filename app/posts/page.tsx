@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import type { Route } from "next";
 import Link from "next/link";
 import { getAllPublishedPosts, siteUrl, type Post } from "@/lib/posts";
 import { publishedEpisodes, totalEpisodeCount } from "@/lib/series";
 import { cliAllEpisodes, cliPublishedEpisodes } from "@/lib/series-cli";
+import { cafeAllEpisodes, cafePublishedEpisodes } from "@/lib/series-cafe";
 
 export const revalidate = 604800;
 export const runtime = "nodejs";
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 // 连载话次单独有 /java /cli 地图,不塞进列表;速查与笔记分区展示。
 function isSeriesEpisode(p: Post): boolean {
-  return /(java|cli)-s\d/.test(p.slug);
+  return /(java|cli|cafe)-s\d/.test(p.slug);
 }
 function isCheatsheet(p: Post): boolean {
   return p.slug.includes("cheatsheet") || p.tags.some((t) => t === "命令速查" || t === "速查");
@@ -60,13 +60,17 @@ export default async function PostsPage() {
         <span className="muted">故事化的长篇教程</span>
       </section>
       <div className="post-grid">
-        <Link href={"/java" as Route} className="card series-hero-card">
+        <Link href="/java" className="card series-hero-card">
           <p className="series-hero-lead">从零开始学 Java</p>
           <p className="muted">已完结 {publishedEpisodes().length} / {totalEpisodeCount()} 话 · 阿零与豆豆 · 咖啡站 v0→v7</p>
         </Link>
-        <Link href={"/cli" as Route} className="card series-hero-card">
+        <Link href="/cli" className="card series-hero-card">
           <p className="series-hero-lead">从零开始玩命令行</p>
           <p className="muted">连载中 {cliPublishedEpisodes().length} / {cliAllEpisodes().length} 话 · 阿零与特米 · Linux↔PowerShell</p>
+        </Link>
+        <Link href="/cafe" className="card series-hero-card">
+          <p className="series-hero-lead">豆豆咖啡站</p>
+          <p className="muted">连载中 {cafePublishedEpisodes().length} / {cafeAllEpisodes().length} 话 · 阿零与豆豆 · 温情工程物语</p>
         </Link>
       </div>
 

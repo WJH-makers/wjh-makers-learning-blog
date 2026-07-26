@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { cache } from "react";
 import { getDatabasePost, getDatabasePosts } from "@/lib/db";
+import { estimateReadingMinutes } from "@/lib/text";
 
 // 渲染引擎已拆到 lib/markdown.ts(纯函数、可单测);此处 re-export 保持既有 import 路径不变。
 export { markdownToHtml, renderMarkdown } from "@/lib/markdown";
@@ -50,12 +51,6 @@ function parseTags(value: string | undefined): string[] {
     .filter(Boolean);
 }
 
-function readingMinutes(content: string): number {
-  const words = content.trim().split(/\s+/).filter(Boolean).length;
-  const cjk = (content.match(/[一-鿿]/g) ?? []).length;
-  return Math.max(1, Math.ceil((words + cjk / 2) / 220));
-}
-
 function postFromFile(fileName: string): Post {
   const slug = fileName.replace(/\.md$/, "");
   const filePath = path.join(postsDirectory, fileName);
@@ -68,7 +63,7 @@ function postFromFile(fileName: string): Post {
     date: data.date ?? new Date().toISOString().slice(0, 10),
     summary: data.summary ?? "学习记录",
     tags: parseTags(data.tags),
-    readingMinutes: readingMinutes(content),
+    readingMinutes: estimateReadingMinutes(content),
     content,
   };
 }
@@ -152,7 +147,7 @@ export async function getPublishedPostsByTag(tag: string): Promise<Post[]> {
 }
 
 /** 按共享的「具体主题标签」推荐相关文章(忽略 Java/Java漫画 等泛标签,避免连载话彼此刷屏)。 */
-const RELATED_STOP_TAGS = new Set(["Java", "Java漫画", "阿零与豆豆", "命令速查"]);
+const RELATED_STOP_TAGS = new Set(["Java", "Java漫画", "阿零与豆豆", "命令速查", "豆豆咖啡站", "治愈", "编程漫画"]);
 
 export async function getRelatedPosts(slug: string, tags: string[], limit = 4): Promise<Post[]> {
   const topical = tags.filter((t) => !RELATED_STOP_TAGS.has(t));

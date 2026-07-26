@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPublishedTags, getPublishedPostsByTag, siteUrl } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
+import { OG_BASE } from "@/lib/og-base";
 
 type Props = {
   params: Promise<{ tag: string }>;
@@ -23,7 +24,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `标签：${decoded}`,
     description: `${decoded} 主题，共 ${posts.length} 篇文章。`,
     robots: posts.length < 2 ? { index: false, follow: true } : undefined,
+    // 与 sitemap 生成的 URL 严格一致,归一大小写/编码变体
+    alternates: { canonical: `${siteUrl()}/tags/${encodeURIComponent(decoded)}` },
     openGraph: {
+      ...OG_BASE,
       title: `标签：${decoded} | WJH-makers`,
       description: `${decoded} 主题下的学习记录集合`,
     },
@@ -41,7 +45,7 @@ export default async function TagPage({ params }: Props) {
   const relatedCounts = new Map<string, number>();
   for (const post of posts) {
     for (const t of post.tags) {
-      if (t !== decoded) relatedCounts.set(t, (relatedCounts.get(t) || 0) + 1);
+      if (t !== decoded) relatedCounts.set(t, (relatedCounts.get(t) ?? 0) + 1);
     }
   }
   const relatedTags = [...relatedCounts.entries()]
@@ -108,7 +112,8 @@ export default async function TagPage({ params }: Props) {
           <div className="empty-state">
             <p className="eyebrow">Empty Topic</p>
             <h3>这个主题暂时没有文章。</h3>
-            <Link className="button primary" href="/write">写一篇补上</Link>
+            <Link className="button primary" href="/posts">去看全部文章</Link>
+            <Link className="button" href="/tags">换个主题</Link>
           </div>
         )}
       </div>

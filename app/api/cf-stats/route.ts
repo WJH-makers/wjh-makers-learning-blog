@@ -13,6 +13,21 @@ interface CfDayGroup {
   dimensions: { date: string };
 }
 
+interface CfGraphQLResponse {
+  data?: {
+    viewer?: {
+      zones?: {
+        today?: CfDayGroup[];
+        yesterday?: CfDayGroup[];
+        week_days?: CfDayGroup[];
+        prev_week?: CfDayGroup[];
+        month_days?: CfDayGroup[];
+        all_time?: CfDayGroup[];
+      }[];
+    };
+  } | null;
+}
+
 function fmt(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
   if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
@@ -66,15 +81,15 @@ export async function GET() {
       body: query,
     });
 
-    const json = await res.json();
+    const json: CfGraphQLResponse = await res.json();
     const zd = json?.data?.viewer?.zones?.[0];
 
-    const todayGroup = (zd?.today ?? [])[0] as CfDayGroup | undefined;
-    const yesterdayGroup = (zd?.yesterday ?? [])[0] as CfDayGroup | undefined;
-    const weekDays = (zd?.week_days ?? []) as CfDayGroup[];
-    const prevWeekDays = (zd?.prev_week ?? []) as CfDayGroup[];
-    const monthDays = (zd?.month_days ?? []) as CfDayGroup[];
-    const allTime = (zd?.all_time ?? [])[0] as CfDayGroup | undefined;
+    const todayGroup = (zd?.today ?? [])[0];
+    const yesterdayGroup = (zd?.yesterday ?? [])[0];
+    const weekDays = zd?.week_days ?? [];
+    const prevWeekDays = zd?.prev_week ?? [];
+    const monthDays = zd?.month_days ?? [];
+    const allTime = (zd?.all_time ?? [])[0];
 
     // 本周总和
     const weekRequests = weekDays.reduce((a, d) => a + sumDay(d, "requests"), 0);
@@ -99,7 +114,7 @@ export async function GET() {
 
     // 本月峰值日
     const peakDay = monthDays.length > 0
-      ? monthDays.reduce((a, b) => (sumDay(a as CfDayGroup, "requests") > sumDay(b as CfDayGroup, "requests") ? a : b))
+      ? monthDays.reduce((a, b) => (sumDay(a, "requests") > sumDay(b, "requests") ? a : b))
       : null;
 
     // 总览（60 天）
@@ -140,7 +155,7 @@ export async function GET() {
         views: `${wowViews.startsWith("-") ? "" : "+"}${wowViews}%`,
         uniques: `${wowUniques.startsWith("-") ? "" : "+"}${wowUniques}%`,
       },
-      peakDay: peakDay ? { date: peakDay.dimensions.date, requests: sumDay(peakDay as CfDayGroup, "requests") } : null,
+      peakDay: peakDay ? { date: peakDay.dimensions.date, requests: sumDay(peakDay, "requests") } : null,
       periodRequests,
       week_chart: weekDays.map(d => ({
         t: d.dimensions.date,

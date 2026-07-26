@@ -22,6 +22,10 @@ type CommentDoc = {
   createdAt: Date;
 };
 
+/** 单文章评论上限:落库门槛(submitComment 4d)与渲染取数(getComments 默认 limit)共用,
+ *  两处若不一致会出现「被受理却永不渲染」的缝隙。 */
+const MAX_COMMENTS_PER_POST = 500;
+
 async function commentsCollection(): Promise<Collection<CommentDoc>> {
   const db = await getDb();
   return db.collection<CommentDoc>(process.env.MONGODB_COMMENTS_COLLECTION?.trim() || "comments");
@@ -38,7 +42,7 @@ async function ensureIndex(): Promise<void> {
   indexReady = true;
 }
 
-export async function getComments(slug: string, limit = 200): Promise<Comment[]> {
+export async function getComments(slug: string, limit = MAX_COMMENTS_PER_POST): Promise<Comment[]> {
   if (!hasDatabaseConfig()) return [];
   try {
     await ensureIndex();
@@ -124,28 +128,34 @@ export async function submitComment(input: SubmitInput): Promise<SubmitResult> {
     return { ok: false, error: "人机验证未通过,请重试。" };
   }
 
-  // 4) 限流:三层
-  const ipHash = hashIp(input.ip);
-  await ensureIndex();
-  const col = await commentsCollection();
-  // 4a) 60 秒内最多 1 条
-  const recent = await col.findOne({ ipHash, createdAt: { $gte: new Date(Date.now() - 60_000) } });
-  if (recent) return { ok: false, error: "评论太频繁,请稍后再试。" };
-  // 4b) 1 小时内最多 10 条
-  const hourCount = await col.countDocuments({ ipHash, createdAt: { $gte: new Date(Date.now() - 3_600_000) } });
-  if (hourCount >= 10) return { ok: false, error: "发言太多啦,休息一下再来。" };
-  // 4c) 5 分钟内不允许相同内容(防刷屏)
-  const dup = await col.findOne({ ipHash, body, createdAt: { $gte: new Date(Date.now() - 300_000) } });
-  if (dup) return { ok: false, error: "请勿重复发送相同内容。" };
-  // 4d) 每篇文章评论上限,防止单页无限膨胀占用存储
-  const perPost = await col.countDocuments({ slug: input.slug });
-  if (perPost >= 500) return { ok: false, error: "本文评论已达上限。" };
+  // 4)–5) 数据库整段收口:Mongo 掉线/超时不再向上 throw(server action rejection 会
+  // 触发 Next 默认错误页整页替换),降级为可重试的表单错误,评论内容仍留在输入框里。
+  try {
+    // 4) 限流:三层
+    const ipHash = hashIp(input.ip);
+    await ensureIndex();
+    const col = await commentsCollection();
+    // 4a) 60 秒内最多 1 条
+    const recent = await col.findOne({ ipHash, createdAt: { $gte: new Date(Date.now() - 60_000) } });
+    if (recent) return { ok: false, error: "评论太频繁,请稍后再试。" };
+    // 4b) 1 小时内最多 10 条
+    const hourCount = await col.countDocuments({ ipHash, createdAt: { $gte: new Date(Date.now() - 3_600_000) } });
+    if (hourCount >= 10) return { ok: false, error: "发言太多啦,休息一下再来。" };
+    // 4c) 5 分钟内不允许相同内容(防刷屏)
+    const dup = await col.findOne({ ipHash, body, createdAt: { $gte: new Date(Date.now() - 300_000) } });
+    if (dup) return { ok: false, error: "请勿重复发送相同内容。" };
+    // 4d) 每篇文章评论上限,防止单页无限膨胀占用存储
+    const perPost = await col.countDocuments({ slug: input.slug });
+    if (perPost >= MAX_COMMENTS_PER_POST) return { ok: false, error: "本文评论已达上限。" };
 
-  // 5) 落库(status: visible;如需先审后发,改成 "pending")
-  const doc: CommentDoc = { slug: input.slug, name, body, ipHash, status: "visible", createdAt: new Date() };
-  const { insertedId } = await col.insertOne(doc);
-  return {
-    ok: true,
-    comment: { id: insertedId.toString(), slug: input.slug, name, body, createdAt: doc.createdAt.toISOString() },
-  };
+    // 5) 落库(status: visible;如需先审后发,改成 "pending")
+    const doc: CommentDoc = { slug: input.slug, name, body, ipHash, status: "visible", createdAt: new Date() };
+    const { insertedId } = await col.insertOne(doc);
+    return {
+      ok: true,
+      comment: { id: insertedId.toString(), slug: input.slug, name, body, createdAt: doc.createdAt.toISOString() },
+    };
+  } catch {
+    return { ok: false, error: "服务暂时不可用,请稍后重试。" };
+  }
 }

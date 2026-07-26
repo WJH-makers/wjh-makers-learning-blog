@@ -1,7 +1,5 @@
-"use client";
-
-interface CfDay { t: string; requests: number; views: number; threats: number; bytes: number; uniques: number }
-interface CfStats {
+export interface CfDay { t: string; requests: number; views: number; threats: number; bytes: number; uniques: number }
+export interface CfStats {
   now: string;
   today: { requests: string; requestsRaw: number; bandwidth: string; views: string; viewsRaw: number; threats: number; uniques: number };
   yesterday: { requests: number; views: number; uniques: number; threats: number };
@@ -60,12 +58,12 @@ function BarChart({ data, prevData }: { data: CfDay[]; prevData?: { t: string; r
         return <rect key={i} x={x} y={y} width={barW} height={bh} fill="var(--accent-blue)" opacity="0.7"/>;
       })}
       <text x={pad} y={h - 2} fill="var(--text-dim)" fontSize="8">{fmtDate(data[0].t)}</text>
-      <text x={w - pad} y={h - 2} fill="var(--text-dim)" fontSize="8" textAnchor="end">{fmtDate(data[data.length - 1].t)}</text>
+      <text x={w - pad} y={h - 2} fill="var(--text-dim)" fontSize="8" textAnchor="end">{fmtDate(data.at(-1)!.t)}</text>
     </svg>
   );
 }
 
-function LineChart({ data, keys }: { data: any[]; keys: { key: string; color: string }[] }) {
+function LineChart<T extends { t: string }>({ data, keys }: { data: T[]; keys: { key: keyof T & string; color: string }[] }) {
   if (!data || data.length < 2) return null;
   const w = 360; const h = 60; const pad = 28;
   const allMax = Math.max(1, ...data.flatMap(d => keys.map(k => Number(d[k.key]) || 0)));
@@ -82,7 +80,7 @@ function LineChart({ data, keys }: { data: any[]; keys: { key: string; color: st
         return <polyline key={k.key} points={pts} fill="none" stroke={k.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={ki > 0 ? "3 2" : "0"}/>;
       })}
       <text x={pad} y={h - 2} fill="var(--text-dim)" fontSize="8">{fmtDate(data[0].t)}</text>
-      <text x={w - pad} y={h - 2} fill="var(--text-dim)" fontSize="8" textAnchor="end">{fmtDate(data[data.length - 1].t)}</text>
+      <text x={w - pad} y={h - 2} fill="var(--text-dim)" fontSize="8" textAnchor="end">{fmtDate(data.at(-1)!.t)}</text>
     </svg>
   );
 }
@@ -176,11 +174,11 @@ export default function TraficCharts({ now, today, yesterday, dayOverDay, week: 
             </div>
             <div className="chart-card">
               <div className="chart-label" style={{ color: "var(--accent-green)" }}>Views & Uniques</div>
-              {LineChart({ data: week_chart, keys: [{ key: "views", color: "var(--accent-green)" }, { key: "uniques", color: "var(--accent-yellow)" }] })}
+              <LineChart data={week_chart} keys={[{ key: "views", color: "var(--accent-green)" }, { key: "uniques", color: "var(--accent-yellow)" }]} />
             </div>
             <div className="chart-card">
               <div className="chart-label" style={{ color: "var(--accent-red)" }}>Threats</div>
-              {LineChart({ data: week_chart, keys: [{ key: "threats", color: "var(--accent-red)" }] })}
+              <LineChart data={week_chart} keys={[{ key: "threats", color: "var(--accent-red)" }]} />
             </div>
           </div>
         </>
@@ -192,7 +190,7 @@ export default function TraficCharts({ now, today, yesterday, dayOverDay, week: 
           <div className="dash-section"><h2>Traffic · 30 Days</h2></div>
           <div className="chart-card" style={{ maxWidth: 700 }}>
             <div className="chart-label" style={{ color: "var(--text-dim)" }}>Requests & Threats</div>
-            {LineChart({ data: month_chart, keys: [{ key: "requests", color: "var(--accent-blue)" }, { key: "threats", color: "var(--accent-red)" }] })}
+            <LineChart data={month_chart} keys={[{ key: "requests", color: "var(--accent-blue)" }, { key: "threats", color: "var(--accent-red)" }]} />
           </div>
         </>
       )}

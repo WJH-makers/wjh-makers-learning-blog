@@ -1,11 +1,17 @@
-import type { Route } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllPublishedPosts } from "@/lib/posts";
+import { getAllPublishedPosts, siteUrl } from "@/lib/posts";
 import { SERIES_META, publishedEpisodes, totalEpisodeCount } from "@/lib/series";
 import { CLI_SERIES_META, cliAllEpisodes, cliPublishedEpisodes } from "@/lib/series-cli";
+import { CAFE_SERIES_META, cafeAllEpisodes, cafePublishedEpisodes } from "@/lib/series-cafe";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
+
+// title/description/OG 沿用 layout 默认;首页只需补 canonical 这一环。
+export const metadata: Metadata = {
+  alternates: { canonical: siteUrl() },
+};
 
 export default async function HomePage() {
   const posts = await getAllPublishedPosts();
@@ -29,12 +35,26 @@ export default async function HomePage() {
 
       <section className="section-head">
         <div>
+          <p className="eyebrow">New Series · 连载中 · 第三部</p>
+          <h2>豆豆咖啡站</h2>
+        </div>
+        <Link href="/cafe">查看故事地图 →</Link>
+      </section>
+      <Link href="/cafe" className="card series-hero-card">
+        <p className="series-hero-lead">{CAFE_SERIES_META.tagline}</p>
+        <p className="muted">
+          已连载 {cafePublishedEpisodes().length} / 规划 {cafeAllEpisodes().length} 话 · 删掉所有技术名词,这一话仍然值得阅读
+        </p>
+      </Link>
+
+      <section className="section-head">
+        <div>
           <p className="eyebrow">Now Serializing · 连载中 · 周更</p>
           <h2>从零开始玩命令行</h2>
         </div>
-        <Link href={"/cli" as Route}>查看全卷地图 →</Link>
+        <Link href="/cli">查看全卷地图 →</Link>
       </section>
-      <Link href={"/cli" as Route} className="card series-hero-card">
+      <Link href="/cli" className="card series-hero-card">
         <p className="series-hero-lead">{CLI_SERIES_META.tagline}</p>
         <p className="muted">
           已连载 {cliPublishedEpisodes().length} / 规划 {cliAllEpisodes().length} 话 · 每话附 🪟 Linux ↔ PowerShell 双系统对照
@@ -46,9 +66,9 @@ export default async function HomePage() {
           <p className="eyebrow">Flagship Series · 全 56 话完结</p>
           <h2>从零开始学 Java</h2>
         </div>
-        <Link href={"/java" as Route}>查看全卷地图 →</Link>
+        <Link href="/java">查看全卷地图 →</Link>
       </section>
-      <Link href={"/java" as Route} className="card series-hero-card">
+      <Link href="/java" className="card series-hero-card">
         <p className="series-hero-lead">{SERIES_META.tagline}</p>
         <p className="muted">
           已连载 {seriesDone} / {totalEpisodeCount()} 话 · 跟着阿零和豆豆,把「豆豆咖啡站」从一行输出建成完整系统

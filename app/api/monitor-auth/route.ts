@@ -1,18 +1,11 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { safeCompare } from "@/lib/safe-compare";
 
 // 口令来自环境变量,不再硬编码。未配置则拒绝登录(fail-closed)。
 const MONITOR_USER = process.env.MONITOR_USER ?? "";
 const MONITOR_PASS = process.env.MONITOR_PASS ?? "";
-
-function safeEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a);
-  const bb = Buffer.from(b);
-  if (ab.length !== bb.length) return false;
-  return timingSafeEqual(ab, bb);
-}
 
 export async function POST(request: Request) {
   const headersList = await headers();
@@ -46,7 +39,7 @@ export async function POST(request: Request) {
   }
 
   // 恒定时间比较,避免计时侧信道;两项都算完再判,不短路。
-  const ok = safeEqual(username, MONITOR_USER) && safeEqual(password, MONITOR_PASS);
+  const ok = safeCompare(username, MONITOR_USER) && safeCompare(password, MONITOR_PASS);
   if (!ok) {
     return NextResponse.json({ ok: false, message: "用户名或密码错误" }, { status: 401 });
   }

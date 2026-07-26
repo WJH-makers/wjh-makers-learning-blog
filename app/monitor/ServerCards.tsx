@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
-interface Point { t: number; cpu: number; mem: number; load: number }
-interface Srv { cpu: number; mem: number; load: number; uptime: string; disk: string; day: Point[]; week: Point[] }
+export interface Point { t: number; cpu: number; mem: number; load: number }
+export interface Srv { cpu: number; mem: number; load: number; uptime: string; disk: string; day: Point[]; week: Point[] }
 
 function AreaChart({ data, maxH, color, yKey, label }: { data: Point[]; maxH?: number; color: string; yKey: "cpu" | "mem" | "load"; label: string }) {
+  const gradId = useId();
   if (!data || data.length < 2) return null;
   const w = 360; const h = 72; const pad = 36;
   const vals = data.map(d => d[yKey]);
@@ -13,7 +14,6 @@ function AreaChart({ data, maxH, color, yKey, label }: { data: Point[]; maxH?: n
   const mxVal = maxH ? Math.max(5, maxH) : Math.max(5, ...vals);
   const range = Math.max(mxVal - mn, 1);
   const step = (w - pad * 2) / (data.length - 1);
-  const gradId = `g-${Math.random().toString(36).slice(2, 8)}`;
 
   const area = data.map((d, i) => {
     const v = d[yKey];
@@ -53,10 +53,6 @@ function fmtTime(ts: number, mode: string): string {
   const d = new Date(ts);
   return mode === "week" ? `${d.getMonth() + 1}/${d.getDate()}` : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
-
-function metric(cpu: number) { return cpu.toString(); }
-function loadMetric(l: number) { return l.toString(); }
-function memMetric(m: number) { return m.toString(); }
 
 export default function ServerCards({ srv: initial }: { srv: Srv }) {
   const [d, setD] = useState(initial);

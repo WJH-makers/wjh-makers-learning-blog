@@ -1,15 +1,8 @@
 import { cookies } from "next/headers";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
 import { checkRateLimit } from "@/lib/rate-limit";
-
-const encoder = new TextEncoder();
-
-function safeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(encoder.encode(a), encoder.encode(b));
-}
+import { safeCompare } from "@/lib/safe-compare";
 
 export async function GET() {
   const expected = process.env.BLOG_ADMIN_TOKEN?.trim();

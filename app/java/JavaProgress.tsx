@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Route } from "next";
+import { readCompleted } from "@/lib/progress-client";
 
 type SeasonProg = { code: string; title: string; slugs: string[] };
 
@@ -12,12 +12,7 @@ export default function JavaProgress({ seasons, storageKey = "java-academy:compl
   const [completed, setCompleted] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      setCompleted(new Set<string>(raw ? (JSON.parse(raw) as string[]) : []));
-    } catch {
-      /* 忽略 */
-    }
+    setCompleted(readCompleted(storageKey));
   }, [storageKey]);
 
   const allSlugs = seasons.flatMap((s) => s.slugs);
@@ -34,7 +29,7 @@ export default function JavaProgress({ seasons, storageKey = "java-academy:compl
           <p className="jp-big"><strong>{doneCount}</strong> / {total} 话 · {pct}%</p>
         </div>
         {nextUnread ? (
-          <Link className="button primary" href={`/posts/${nextUnread}` as Route}>
+          <Link className="button primary" href={`/posts/${nextUnread}`}>
             {doneCount === 0 ? "开始阅读 →" : "继续下一话 →"}
           </Link>
         ) : (

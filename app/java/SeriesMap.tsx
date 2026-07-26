@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Route } from "next";
+import { readCompleted } from "@/lib/progress-client";
 
 type Ep = {
   season: number;
@@ -37,12 +37,7 @@ export default function SeriesMap({
 }) {
   const [done, setDone] = useState<Set<string>>(new Set());
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(storageKey);
-      setDone(new Set<string>(raw ? (JSON.parse(raw) as string[]) : []));
-    } catch {
-      /* 忽略 */
-    }
+    setDone(readCompleted(storageKey));
   }, [storageKey]);
 
   return (
@@ -68,7 +63,7 @@ export default function SeriesMap({
                 <p className="eyebrow">{season.code} · {season.subtitle}</p>
                 <h3>第{season.season}卷 · {season.title}</h3>
               </div>
-              <span className="map-progress">{readCount} / {season.episodes.length}</span>
+              <span className="map-progress"><span className="sr-only">本卷已读 </span>{readCount} / {season.episodes.length}</span>
             </div>
             <div className="map-nodes">
               {season.episodes.map((ep) => {
@@ -80,7 +75,12 @@ export default function SeriesMap({
                     <div className="map-node-top">
                       <span className="map-node-no">{String(ep.episode).padStart(2, "0")}</span>
                       <span className={`map-node-mark ${mark.cls}`}>{mark.label}</span>
-                      {isRead && <span className="map-node-check">✓</span>}
+                      {isRead && (
+                        <>
+                          <span className="map-node-check" aria-hidden="true">✓</span>
+                          <span className="sr-only">已读</span>
+                        </>
+                      )}
                     </div>
                     <p className="map-node-title">{ep.title}</p>
                     <div className="map-node-techs">
@@ -91,15 +91,16 @@ export default function SeriesMap({
                 return clickable ? (
                   <Link
                     key={ep.episode}
-                    href={`/posts/${ep.slug}` as Route}
+                    href={`/posts/${ep.slug}`}
                     className={`map-node${isRead ? " read" : ""}`}
                     title={ep.summary}
                   >
                     {inner}
                   </Link>
                 ) : (
-                  <div key={ep.episode} className="map-node planned" title={ep.summary}>
+                  <div key={ep.episode} className="map-node planned" title={ep.summary} aria-disabled="true">
                     {inner}
+                    <span className="sr-only">(规划中,未发布)</span>
                   </div>
                 );
               })}

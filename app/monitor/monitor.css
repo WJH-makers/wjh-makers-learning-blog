@@ -1,0 +1,15 @@
+/* 从 app/globals.css 迁出：仅 /monitor 监控路由使用的样式，公开页不再下发。 */
+
+.monitor-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  grid-template-columns: unset;
+  padding: 2rem 0;
+}
+.monitor-hero h1 { font-size: clamp(2rem, 6vw, 3.5rem); }
+.monitor-hero .hero-text { text-align: center; }
+
+/* .form-error 同时被 /monitor（登录墙 MonitorLogin）与 /write 使用，不再全局下发，两个路由各带一份（见 app/write/write.css）。 */
+.form-error { padding: 12px 14px; border: 2px solid var(--accent); color: var(--accent); background: var(--paper); font-family: var(--font-mono); font-weight: 800; }
