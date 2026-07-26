@@ -45,12 +45,12 @@ export const CAFE_SEASONS: JavaSeason[] = [
     episodes: [
       { season: 1, episode: 1, title: "她记得每一个人", summary: "走投无路的阿零撞进一家快关门的咖啡站,教它学会记住每一个客人——却在深夜唤醒了它自己都忘了的东西。", chapterType: "comic", projectStage: "一家重新有人气的店", technologies: ["记住客人", "变量/对象"], jobSkills: ["把需求变成数据"], status: "published", slug: "2026-11-01-cafe-s01e01-remember" },
       { season: 1, episode: 2, title: "会员规则拒绝了最老的客人", summary: "阿零随手写的一条会员优惠规则,把这条街最念旧的老主顾挡在了门外;而豆豆的反应,激烈得反常。", chapterType: "comic", projectStage: "更懂人情的店", technologies: ["条件判断", "边界"], jobSkills: ["规则的业务含义"], status: "published", slug: "2026-11-02-cafe-s01e02-oldest-guest" },
-      { season: 1, episode: 3, title: "找零,一分都不能多收", summary: "算优惠时阿零多收了老顾客一块钱没人发现;豆豆却较真到底——宁可自己吃亏,不占客人便宜。", chapterType: "comic", projectStage: "算得清账的店", technologies: ["运算符", "整数除法"], jobSkills: ["数值边界"], status: "planned" },
-      { season: 1, episode: 4, title: "菜单上那道没人点的隐藏款", summary: "菜单深处躺着一道停售了十年、谁也没点过的旧配方。阿零想删掉它,豆豆却拦住了。", chapterType: "comic", projectStage: "藏着往事的菜单", technologies: ["switch", "分支穿透"], jobSkills: ["分支控制"], status: "planned" },
-      { season: 1, episode: 5, title: "做一百杯一样的咖啡", summary: "开业在即,阿零想把出杯全自动化、一百杯一模一样;豆豆偏要给每一杯留一点点不同。", chapterType: "comic", projectStage: "能量产也留手艺的店", technologies: ["循环"], jobSkills: ["重复与自动化"], status: "planned" },
-      { season: 1, episode: 6, title: "一张订单,好多杯", summary: "一家人来团圆,一张订单点了七杯各不相同——怎么不漏不错地一次记全?", chapterType: "comic", projectStage: "接得住大单的店", technologies: ["数组"], jobSkills: ["批量数据"], status: "planned" },
-      { season: 1, episode: 7, title: "阿零不在时,谁来做这杯", summary: "阿零病倒了一天。把一杯咖啡的做法完整交给豆豆——手艺,第一次被传下去。", chapterType: "comic", projectStage: "离了谁都能开的店", technologies: ["方法", "复用"], jobSkills: ["封装步骤"], status: "planned" },
-      { season: 1, episode: 8, title: "七天后,重新营业", summary: "重开业当天,第一位真实顾客一通乱按几乎让系统崩掉。阿零和豆豆一起,稳稳接住了它——而地下室那台旧机器,悄悄亮了一下。", chapterType: "project", projectStage: "重新营业的豆豆咖啡站 v1", technologies: ["整合", "顾客输入", "调试"], jobSkills: ["交付一个能用的系统"], status: "planned" },
+      { season: 1, episode: 3, title: "找零,一分都不能多收", summary: "算优惠时阿零多收了客人一块钱没人发现;豆豆当场停业对账,还说出一句连它自己都解释不了的话:这家店可以穷,不能欠。", chapterType: "comic", projectStage: "算得清账的店", technologies: ["运算符", "整数除法"], jobSkills: ["数值边界"], status: "published", slug: "2026-11-03-cafe-s01e03-exact-change" },
+      { season: 1, episode: 4, title: "菜单上那道没人点的隐藏款", summary: "一次分支穿透,做出了一杯停售十年、谁也点不到的咖啡;桂皮香起的一瞬,老人认出了一台机器的招牌。", chapterType: "comic", projectStage: "藏着往事的菜单", technologies: ["switch", "分支穿透"], jobSkills: ["分支控制"], status: "published", slug: "2026-11-04-cafe-s01e04-hidden-item" },
+      { season: 1, episode: 5, title: "做一百杯一样的咖啡", summary: "阿零的完美流水线,被豆豆一杯一杯地改——直到他看清那份捣乱清单上,每一条都有名有姓。", chapterType: "comic", projectStage: "能量产也留手艺的店", technologies: ["循环"], jobSkills: ["重复与自动化"], status: "published", slug: "2026-11-05-cafe-s01e05-hundred-cups" },
+      { season: 1, episode: 6, title: "一张订单,好多杯", summary: "八十大寿的团圆桌,一张订单七杯各不相同;七杯终于各就各位时,爷爷那句「一家人一个都不少」,让豆豆的屏幕安静地亮了一下。", chapterType: "comic", projectStage: "接得住大单的店", technologies: ["数组"], jobSkills: ["批量数据"], status: "published", slug: "2026-11-06-cafe-s01e06-family-order" },
+      { season: 1, episode: 7, title: "阿零不在时,谁来做这杯", summary: "开业日清晨阿零高烧病倒,豆豆第一次独自撑店——它发现七天学的不是一百个动作,而是一张张接得起来的步骤卡。", chapterType: "comic", projectStage: "离了谁都能开的店", technologies: ["方法", "复用"], jobSkills: ["封装步骤"], status: "published", slug: "2026-11-07-cafe-s01e07-whos-making" },
+      { season: 1, episode: 8, title: "七天后,重新营业", summary: "第一卷终:重新亮灯的店被一个乱按大王考了个满分;满店的名字都回来了,只有一个写着「老周」的杯套没人来领。而深夜里,一台旧机器悄悄说:还差一杯。", chapterType: "project", projectStage: "重新营业的豆豆咖啡站 v1", technologies: ["整合", "顾客输入", "调试"], jobSkills: ["交付一个能用的系统"], status: "published", slug: "2026-11-08-cafe-s01e08-reopening" },
     ],
   },
   {
