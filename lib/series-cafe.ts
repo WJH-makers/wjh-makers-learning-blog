@@ -75,10 +75,10 @@ export const CAFE_SEASONS: JavaSeason[] = [
     goal: "建立可靠的订单/库存/会员记忆——阿零发现:记忆不是数据,数据也不等于真相。",
     covers: ["数据与记忆", "被改写的历史"],
     episodes: [
-      { season: 3, episode: 1, title: "一笔订单,凭空消失了", summary: "一笔已付款的订单在系统里蒸发,顾客当场翻脸。阿零第一次直面「数据会说谎」。", chapterType: "incident", projectStage: "开始较真记账的店", technologies: ["异常", "持久化"], jobSkills: ["数据可靠性"], status: "planned" },
-      { season: 3, episode: 2, title: "同一个人,系统里有两个他", summary: "一位老顾客被系统当成了两个陌生人。「明明是同一个人,怎么两个都留下了?」——答案藏在很久以前。", chapterType: "comic", projectStage: "认得出人的店", technologies: ["去重", "equals/hashCode"], jobSkills: ["集合"], status: "planned" },
-      { season: 3, episode: 3, title: "谁在半夜改了十年前的账", summary: "阿零从旧记录里挖出一条被人写死的规则——它当年,亲手拒绝过某一个人。而豆豆,删掉过一段历史。", chapterType: "comic", projectStage: "藏着秘密的账本", technologies: ["数据考古"], jobSkills: ["数据审计"], status: "planned" },
-      { season: 3, episode: 4, title: "那杯永远做不对的拿铁", summary: "系统里有一杯拿铁,十年来每晚都在做、每晚都失败。阿零把它当 bug 修掉了——他不知道那意味着什么。", chapterType: "comic", projectStage: "记得住的豆豆咖啡站 v3", technologies: ["自定义异常"], jobSkills: ["异常建模"], status: "planned" },
+      { season: 3, episode: 1, title: "一笔订单,凭空消失了", summary: "电子账本上线第二天,一笔已付款的十杯订单在系统里蒸发——写下去的字,被后来的字整页盖掉。而这家店里,还有一个地方没丢。", chapterType: "incident", projectStage: "只追加、不许消失的账", technologies: ["持久化", "追加式写入"], jobSkills: ["数据可靠性"], status: "published", slug: "2026-11-13-cafe-s03e01-vanished-order" },
+      { season: 3, episode: 2, title: "同一个人,系统里有两个他", summary: "十年旧账导入后,最念旧的老客人在系统里变成了两个陌生人。他不在乎折扣,只小声问了一句:它不记得我了?", chapterType: "comic", projectStage: "认得出人的店", technologies: ["相等规则", "数据合并"], jobSkills: ["数据建模"], status: "published", slug: "2026-11-14-cafe-s03e02-two-of-him" },
+      { season: 3, episode: 3, title: "谁在半夜改了十年前的账", summary: "会员 000 的记录齐整地停在十年前——之后是一条有人亲手写下的拒绝。而只追加的日志里,躺着一条几周前的删除记录:操作者,豆豆。", chapterType: "comic", projectStage: "藏着秘密的账本", technologies: ["数据考古", "操作日志"], jobSkills: ["数据审计"], status: "published", slug: "2026-11-15-cafe-s03e03-altered-ledger" },
+      { season: 3, episode: 4, title: "那杯永远做不对的拿铁", summary: "第三卷终:一个每晚自动失败、重试了十年的制作任务,被阿零当 bug 删掉了。第二天,豆豆像忘了一件很重要的事。", chapterType: "comic", projectStage: "记得住的豆豆咖啡站 v3", technologies: ["任务队列", "可恢复性"], jobSkills: ["删除前三问"], status: "published", slug: "2026-11-16-cafe-s03e04-the-latte" },
     ],
   },
   {
