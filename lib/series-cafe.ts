@@ -61,10 +61,10 @@ export const CAFE_SEASONS: JavaSeason[] = [
     goal: "引入自动设备应对客流——阿零想让一切统一,却学会:管理差异,而不是消灭差异。",
     covers: ["设备协作", "第一次遇到对手"],
     episodes: [
-      { season: 2, episode: 1, title: "三台机器,三个脾气", summary: "同一条命令,三台咖啡设备做出三种结果。阿零头疼,豆豆却说:它们本来就该不一样。", chapterType: "comic", projectStage: "多设备的店", technologies: ["多态"], jobSkills: ["面向对象"], status: "planned" },
-      { season: 2, episode: 2, title: "老咖啡机不肯退休", summary: "一台老掉牙的手冲机接不了新流程。阿零想淘汰它,可它是豆豆父母留下的第一台机器。", chapterType: "comic", projectStage: "新旧共存的店", technologies: ["接口", "抽象"], jobSkills: ["兼容设计"], status: "planned" },
-      { season: 2, episode: 3, title: "那个想让一切都一样的人", summary: "自动化连锁的严序先生登场,提出一套「完美标准化」方案——技术上无懈可击,却让豆豆浑身不对劲。", chapterType: "comic", projectStage: "被盯上的小店", technologies: ["统一调度"], jobSkills: ["架构取舍"], status: "planned" },
-      { season: 2, episode: 4, title: "豆豆偏要留下手冲", summary: "第二卷收束:阿零终于明白「统一接口」不等于「所有东西都一样」。而严序留下一句话:那台老机器的内核,他认识。", chapterType: "project", projectStage: "面向对象的豆豆咖啡站 v2", technologies: ["综合"], jobSkills: ["面向对象"], status: "planned" },
+      { season: 2, episode: 1, title: "三台机器,三个脾气", summary: "客流翻了三倍,阿零抱回两台脾气迥异的二手咖啡机——同一句「做一杯拿铁」,做出了三杯完全不同的东西。", chapterType: "comic", projectStage: "多设备的店", technologies: ["多态"], jobSkills: ["面向对象"], status: "published", slug: "2026-11-09-cafe-s02e01-three-machines" },
+      { season: 2, episode: 2, title: "老咖啡机不肯退休", summary: "统一订单卡全店跑通,唯独那台没有电子接口的老手冲铜壶一单都收不到。阿零想换掉它;豆豆说:它不是接不了单,是没人给它递单。", chapterType: "comic", projectStage: "新旧共存的店", technologies: ["接口", "适配器"], jobSkills: ["兼容设计"], status: "published", slug: "2026-11-10-cafe-s02e02-old-brewer" },
+      { season: 2, episode: 3, title: "那个想让一切都一样的人", summary: "把十七家店的出品误差控制在正负一度的男人推门进来,礼貌、真诚、句句在理。这一天豆豆一句话都没说。", chapterType: "comic", projectStage: "被盯上的小店", technologies: ["统一调度"], jobSkills: ["架构取舍"], status: "published", slug: "2026-11-11-cafe-s02e03-mr-yan" },
+      { season: 2, episode: 4, title: "豆豆偏要留下手冲", summary: "第二卷终:统一流程快了四成,却少了七个名字。阿零亲手按下回滚,把「例外」写回了正中央——而严序临走前,对着老铜壶把半个名字咽了回去。", chapterType: "project", projectStage: "装得下例外的豆豆咖啡站 v2", technologies: ["综合"], jobSkills: ["面向对象"], status: "published", slug: "2026-11-12-cafe-s02e04-keep-the-brewer" },
     ],
   },
   {
