@@ -68,25 +68,35 @@ HttpMessageConverter 把返回值写进响应体 → 浏览器收到
 
 ## 五、配置与代码:三个文件起一个服务
 
-`pom.xml`(继承 Spring Boot 父 POM,统一依赖版本):
+下面是**可直接保存并运行的完整** `pom.xml`（继承 Spring Boot 父 POM，统一依赖版本）：
 
 ```xml
-<parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.0</version>   <!-- 基于 Spring Framework 7 / Jakarta EE 11,Java 17+ -->
-</parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-<properties>
-    <java.version>25</java.version>
-</properties>
-
-<dependencies>
-    <dependency>
+    <parent>
         <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>   <!-- 带来内嵌 Tomcat + Spring MVC -->
-    </dependency>
-</dependencies>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.0</version>   <!-- 基于 Spring Framework 7 / Jakarta EE 11,Java 17+ -->
+    </parent>
+
+    <groupId>cafe.doudou</groupId>
+    <artifactId>coffee-api</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <properties>
+        <java.version>25</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>   <!-- 带来内嵌 Tomcat + Spring MVC -->
+        </dependency>
+    </dependencies>
+</project>
 ```
 
 启动类 `CafeApplication.java`:

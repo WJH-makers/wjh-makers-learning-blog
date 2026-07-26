@@ -46,19 +46,16 @@ tags: [Java, Java漫画, 网络, TCP, Socket, 阿零与豆豆]
 
 ## 四、原理图:从 Socket 到 HTTP
 
-```text
-客户端                          服务器
-  │   SYN ─────────────▶         │   三次握手建立 TCP 连接
-  │   ◀──────── SYN-ACK │
-  │   ACK ─────────────▶         │
-  │                              │
-  │  Socket(IP:随机端口)  ⇄  ServerSocket 监听(IP:8080)
-  │                              │
-  │  字节流(HTTP 文本就在流里跑)  │
-
-分层:  应用层 HTTP(第四季)
-        └── 传输层 TCP(三次握手、可靠有序) ← 本话
-              └── 网络层 IP(找到对方机器)
+```tcp-flow
+client -> server: SYN | 三次握手建立 TCP 连接
+server -> client: SYN-ACK
+client -> server: ACK
+client <-> server: Socket（IP: 随机端口）⇄ ServerSocket（IP: 8080）
+client <-> server: 字节流（HTTP 文本就在流里跑）
+---
+应用层 | HTTP（第四季）
+传输层 | TCP（三次握手、可靠有序） | 本话
+网络层 | IP（找到对方机器）
 ```
 
 ---

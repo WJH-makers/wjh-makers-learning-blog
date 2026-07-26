@@ -72,6 +72,22 @@ export default function JavaSeriesPage() {
         </div>
       </section>
 
+      <section className="comic-intro" aria-labelledby="comic-cast-title">
+        <div>
+          <p className="eyebrow">Comic Cast · 漫画设定</p>
+          <h2 id="comic-cast-title">遇见阿零与豆豆</h2>
+          <p>
+            阿零负责把每个初学者真的会问的问题问出来；豆豆则用一杯咖啡、一次翻车和一句吐槽，把抽象的 Java 概念拆到能亲手验证。
+          </p>
+          <p className="muted">从第一话开始，所有代码都会在「豆豆咖啡站」这个项目里持续生长。</p>
+        </div>
+        <img
+          src="/comics/java/alings-and-doudou-character-sheet.png"
+          alt="阿零与豆豆的角色设定图：阿零、豆豆、javac 编译官与 Java JVM 城主，以及深夜工作台场景"
+          loading="lazy"
+        />
+      </section>
+
       <JavaProgress seasons={progressSeasons} />
 
       <section className="section-head">
