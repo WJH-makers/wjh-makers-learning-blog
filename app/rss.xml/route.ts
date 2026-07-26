@@ -6,17 +6,20 @@ export const runtime = "nodejs";
 
 export async function GET() {
   const base = siteUrl();
-  // 最近 30 篇全文(content:encoded 保留全文阅读体验),防文章增多后 RSS 无限膨胀。
+  // 最近 30 篇进 feed;全文(content:encoded)只给最近 FULL_COUNT 篇,其余仅摘要。
+  // rss.xml 是站内最大单一响应(30 篇全文未压缩 ~860KB),阅读器/爬虫高频拉取时
+  // 是纯带宽支出,而轻量服务器出口带宽是全站并发的硬瓶颈。
+  const FULL_COUNT = 12;
   const posts = (await getAllPublishedPosts()).slice(0, 30);
   const items = (await Promise.all(
-    posts.map(async (post) => `
+    posts.map(async (post, i) => `
       <item>
         <title><![CDATA[${post.title}]]></title>
         <link>${base}/posts/${post.slug}</link>
         <guid>${base}/posts/${post.slug}</guid>
         <pubDate>${new Date(post.date).toUTCString()}</pubDate>
         <description><![CDATA[${post.summary}]]></description>
-        <content:encoded><![CDATA[${await markdownToHtml(post.content)}]]></content:encoded>
+        ${i < FULL_COUNT ? `<content:encoded><![CDATA[${await markdownToHtml(post.content)}]]></content:encoded>` : ""}
       </item>`)
   )).join("");
 

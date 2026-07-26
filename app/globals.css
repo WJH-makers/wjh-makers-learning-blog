@@ -63,7 +63,7 @@ code, pre { font-family: var(--font-mono); }
   top: 0;
   z-index: 40;
   border-bottom: 1px solid var(--border);
-  background: rgba(250,249,245,0.96);
+  background: rgba(var(--paper-rgb), 0.96);
 }
 
 .edition-bar,
@@ -514,6 +514,34 @@ a:focus-visible {
   background: rgba(var(--paper-rgb), 0.85);
 }
 .article-content blockquote code { font-style: normal; }
+/* ===== 便利贴 sticky notes ===== */
+.article-content .sticky { position: relative; margin: 22px 0; padding: 18px 18px 14px; border: 1px solid rgba(0,0,0,0.08); box-shadow: 2px 4px 10px rgba(0,0,0,0.12); transform: rotate(-0.7deg); color: #2a2a2a; }
+.article-content .sticky::before { content: ""; position: absolute; top: -9px; left: 50%; transform: translateX(-50%) rotate(2.5deg); width: 64px; height: 18px; background: rgba(190,190,190,0.45); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+.article-content .sticky-tag { display: inline-block; font-family: var(--font-mono); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 8px; padding: 2px 9px; }
+.article-content .sticky-body { font-family: var(--font-body); }
+.article-content .sticky-body p { margin: 0.25em 0; }
+.article-content .sticky-body p:first-child { margin-top: 0; }
+.article-content .sticky-body p:last-child { margin-bottom: 0; }
+.article-content .sticky-emphasis { background: #fff7cc; }
+.article-content .sticky-emphasis .sticky-tag { color: #8a5a00; background: #ffe999; }
+.article-content .sticky-grumble { background: #ffe1e1; transform: rotate(0.9deg); }
+.article-content .sticky-grumble .sticky-tag { color: #a52a2a; background: #ffcaca; }
+.article-content .sticky-fun { background: #e2f0ff; transform: rotate(-1.1deg); }
+.article-content .sticky-fun .sticky-tag { color: #1f5f9e; background: #c9e4ff; }
+.article-content .sticky-warn { background: #fff0d9; }
+.article-content .sticky-warn .sticky-tag { color: #a55600; background: #ffdca8; }
+.article-content .sticky-note { background: #fffceb; }
+.article-content .sticky-note .sticky-tag { color: var(--neutral-600); background: var(--neutral-100); }
+@media (prefers-reduced-motion: reduce) { .article-content .sticky { transform: none; } }
+/* ===== 随堂练习:折叠答案 ===== */
+.article-content .quiz-answer { margin: 10px 0 18px; border: 1px solid var(--border); background: rgba(var(--paper-rgb), 0.6); }
+.article-content .quiz-answer summary { cursor: pointer; padding: 9px 14px; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 800; color: var(--accent); user-select: none; list-style: none; }
+.article-content .quiz-answer summary::-webkit-details-marker { display: none; }
+.article-content .quiz-answer summary:hover { background: rgba(var(--paper-rgb), 0.4); }
+.article-content .quiz-answer[open] summary { border-bottom: 1px solid var(--border); }
+.article-content .quiz-answer-body { padding: 12px 16px; }
+.article-content .quiz-answer-body p { margin: 0.35em 0; }
+.article-content .quiz-answer-body p:first-child { margin-top: 0; }
 pre {
   overflow-x: auto;
   padding: 16px;
@@ -1330,6 +1358,32 @@ textarea:focus { outline: 0; background: var(--neutral-100); }
   .series-pager-link.next { text-align: left; }
 }
 
+/* ===== 知识大陆版图 SeriesMap ===== */
+.series-map { margin: 1.5rem 0 0; }
+.map-highway { display: flex; align-items: center; flex-wrap: wrap; gap: 0; margin: 0 0 2rem; padding: 14px 16px; border: 1px solid var(--border); background: rgba(var(--paper-rgb), 0.6); overflow-x: auto; }
+.map-milestone { display: flex; align-items: center; flex-shrink: 0; }
+.map-dot { width: 10px; height: 10px; background: var(--accent); border-radius: 0; flex-shrink: 0; }
+.map-stage { font-family: var(--font-mono); font-size: 0.7rem; color: var(--neutral-600); margin: 0 6px; white-space: nowrap; }
+.map-road { width: 28px; height: 2px; background: var(--border); flex-shrink: 0; }
+.map-continent { margin-top: 2rem; }
+.map-continent-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; padding-bottom: 10px; margin-bottom: 14px; border-bottom: 2px solid var(--foreground); }
+.map-continent-head h3 { margin: 2px 0 0; font-family: var(--font-serif); font-size: clamp(1.15rem, 2.4vw, 1.5rem); }
+.map-progress { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 800; color: var(--accent); white-space: nowrap; }
+.map-nodes { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.map-node { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--border); background: rgba(var(--paper-rgb), 0.9); text-decoration: none; color: var(--foreground); transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; }
+.map-node:not(.planned):hover { border-color: var(--accent); transform: translate(-2px, -2px); box-shadow: 3px 3px 0 0 var(--foreground); }
+.map-node.read { border-left: 3px solid var(--accent); background: var(--neutral-100); }
+.map-node.planned { opacity: 0.5; cursor: default; }
+.map-node-top { display: flex; align-items: center; gap: 6px; }
+.map-node-no { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 800; color: var(--neutral-500); }
+.map-node-mark { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 800; padding: 1px 5px; border: 1px solid var(--border); letter-spacing: 0.05em; }
+.map-node-mark.m-incident { color: #fff; background: var(--accent); border-color: var(--accent); }
+.map-node-mark.m-lab { color: var(--foreground); background: var(--neutral-100); }
+.map-node-mark.m-project { color: var(--paper); background: var(--foreground); border-color: var(--foreground); }
+.map-node-check { margin-left: auto; color: var(--accent); font-weight: 800; font-size: 0.85rem; }
+.map-node-title { margin: 0; font-family: var(--font-serif); font-weight: 700; font-size: 0.92rem; line-height: 1.3; }
+.map-node-techs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; }
+.map-node-techs span { font-family: var(--font-mono); font-size: 0.62rem; color: var(--neutral-600); background: var(--neutral-100); padding: 1px 5px; border: 1px solid var(--border); }
 .series-hero-card {
   display: block;
   border-left: 3px solid var(--accent);

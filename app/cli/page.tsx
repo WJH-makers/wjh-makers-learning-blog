@@ -4,6 +4,7 @@ import { CHAPTER_TYPE_LABEL } from "@/lib/series";
 import { CLI_SEASONS, CLI_SERIES_META, cliAllEpisodes, cliPublishedEpisodes } from "@/lib/series-cli";
 import { siteUrl } from "@/lib/posts";
 import JavaProgress from "../java/JavaProgress";
+import SeriesMap from "../java/SeriesMap";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -65,6 +66,15 @@ export default function CliSeriesPage() {
       {progressSeasons.length > 0 && (
         <JavaProgress seasons={progressSeasons} storageKey={CLI_SERIES_META.storageKey} />
       )}
+
+      <section className="section-head" style={{ marginTop: "2.5rem" }}>
+        <div>
+          <p className="eyebrow">Knowledge Map · 知识地图</p>
+          <h2>脉络版图</h2>
+        </div>
+        <span className="muted">点节点直达 · 读过的自动打勾</span>
+      </section>
+      <SeriesMap seasons={CLI_SEASONS} storageKey={CLI_SERIES_META.storageKey} />
 
       {CLI_SEASONS.map((season) => (
         <section key={season.season} style={{ marginTop: "2.5rem" }}>

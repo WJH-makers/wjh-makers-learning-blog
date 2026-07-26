@@ -28,11 +28,11 @@ const nextConfig: NextConfig = {
           key: "Content-Security-Policy",
           value: [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.clarity.ms",
+            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.clarity.ms https://scripts.clarity.ms",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "font-src 'self' data:",
-            "connect-src 'self' https://challenges.cloudflare.com https://www.clarity.ms",
+            "connect-src 'self' https://challenges.cloudflare.com https://*.clarity.ms",
             "frame-src https://challenges.cloudflare.com",
             "object-src 'none'",
             "base-uri 'none'",

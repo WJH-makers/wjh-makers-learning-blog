@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { cache } from "react";
 import { getDatabasePost, getDatabasePosts } from "@/lib/db";
 import { codeToHtml } from "shiki";
 
@@ -69,20 +70,28 @@ function postFromFile(fileName: string): Post {
   };
 }
 
+// 生产环境 md 文件随镜像不可变,进程级缓存一次读取;dev 下每次重读以便热更内容。
+// 没有它,每次 getAllPosts 都全量重读 75+ 个文件,文章页一次渲染(metadata/正文/相关阅读)要跑多遍。
+let mdPostsCache: Post[] | undefined;
+
 export function getAllPosts(): Post[] {
+  if (process.env.NODE_ENV === "production" && mdPostsCache) return mdPostsCache;
   if (!fs.existsSync(postsDirectory)) return [];
-  return fs
+  const posts = fs
     .readdirSync(postsDirectory)
     .filter((file) => file.endsWith(".md"))
     .map(postFromFile)
     .sort((a, b) => b.date.localeCompare(a.date));
+  if (process.env.NODE_ENV === "production") mdPostsCache = posts;
+  return posts;
 }
 
 export function getPost(slug: string): Post | undefined {
   return getAllPosts().find((post) => post.slug === slug);
 }
 
-export async function getAllPublishedPosts(): Promise<Post[]> {
+// React cache():同一次请求/再生内去重(generateMetadata 与页面组件各查一次 → 只打一次 DB)。
+export const getAllPublishedPosts = cache(async (): Promise<Post[]> => {
   const markdownPosts = getAllPosts();
   let databasePosts: Post[] = [];
 
@@ -97,9 +106,9 @@ export async function getAllPublishedPosts(): Promise<Post[]> {
   for (const post of databasePosts) merged.set(post.slug, post);
 
   return [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
-}
+});
 
-export async function getPublishedPost(slug: string): Promise<Post | undefined> {
+export const getPublishedPost = cache(async (slug: string): Promise<Post | undefined> => {
   try {
     const databasePost = await getDatabasePost(slug);
     if (databasePost) return databasePost;
@@ -107,7 +116,7 @@ export async function getPublishedPost(slug: string): Promise<Post | undefined> 
     console.warn("[learning-blog] database post read failed, falling back to Markdown:", error);
   }
   return getPost(slug);
-}
+});
 
 export function getAllTags(): { tag: string; count: number }[] {
   const counts = new Map<string, number>();
@@ -152,7 +161,7 @@ function inlineMarkdown(value: string): string {
   const escaped = escapeHtml(value);
   return escaped
     .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />')
+    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" decoding="async" />')
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
     .replace(/\[([^\]]+)\]\((?!https?:)([^\s)]+)\)/g, (_m, text: string, url: string) =>
       /^(\/|#|mailto:)/i.test(url) ? `<a href="${url}" rel="noreferrer">${text}</a>` : text)
@@ -285,6 +294,14 @@ export async function markdownToHtml(markdown: string): Promise<string> {
  * 递归调用本函数渲染块内容 —— 因此引用块内部支持代码围栏、列表、段落、加粗等完整语法,
  * 修复了漫画里 `> ```代码围栏``` ` 被当字面文本显示、空 `>` 行输出裸 `>` 的问题。
  */
+// 便利贴:markdown 里用 > [!类型] 内容 触发,渲染成手写贴纸风的强调/吐槽/打趣卡片。
+const STICKY_CLASS: Record<string, string> = {
+  强调: "sticky-emphasis", 重点: "sticky-emphasis", TIP: "sticky-emphasis",
+  吐槽: "sticky-grumble", 诉苦: "sticky-grumble",
+  打趣: "sticky-fun", 彩蛋: "sticky-fun",
+  警告: "sticky-warn", 坑: "sticky-warn",
+};
+
 async function renderLines(lines: string[]): Promise<string> {
   const html: string[] = [];
   let inCode = false;
@@ -335,7 +352,19 @@ async function renderLines(lines: string[]): Promise<string> {
         i++;
       }
       i--;
-      html.push(`<blockquote>${await renderLines(inner)}</blockquote>`);
+      const alert = inner[0]?.match(/^\[!(.+?)\]\s*(.*)$/);
+      if (alert) {
+        const type = alert[1].trim();
+        const body = await renderLines([alert[2] ?? "", ...inner.slice(1)]);
+        if (type === "答案" || type === "解析" || type === "参考答案") {
+          html.push(`<details class="quiz-answer"><summary>▸ 查看答案与解析</summary><div class="quiz-answer-body">${body}</div></details>`);
+        } else {
+          const cls = STICKY_CLASS[type] ?? "sticky-note";
+          html.push(`<aside class="sticky ${cls}"><span class="sticky-tag">${escapeHtml(type)}</span><div class="sticky-body">${body}</div></aside>`);
+        }
+      } else {
+        html.push(`<blockquote>${await renderLines(inner)}</blockquote>`);
+      }
       continue;
     }
 

@@ -11,6 +11,7 @@ import {
 } from "@/lib/series";
 import { siteUrl } from "@/lib/posts";
 import JavaProgress from "./JavaProgress";
+import SeriesMap from "./SeriesMap";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -101,6 +102,15 @@ export default function JavaSeriesPage() {
           </tbody>
         </table>
       </div>
+
+      <section className="section-head" style={{ marginTop: "2.5rem" }}>
+        <div>
+          <p className="eyebrow">Knowledge Map · 知识地图</p>
+          <h2>脉络版图</h2>
+        </div>
+        <span className="muted">点节点直达 · 读过的自动打勾</span>
+      </section>
+      <SeriesMap seasons={SEASONS} storageKey="java-academy:completed" stages={PROJECT_STAGES.map((s) => ({ season: s.season, stage: s.stage }))} />
 
       {SEASONS.map((season) => (
         <section key={season.season} style={{ marginTop: "2.5rem" }}>
