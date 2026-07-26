@@ -384,11 +384,13 @@ export async function markdownToHtml(markdown: string): Promise<string> {
  * 修复了漫画里 `> ```代码围栏``` ` 被当字面文本显示、空 `>` 行输出裸 `>` 的问题。
  */
 // 便利贴:markdown 里用 > [!类型] 内容 触发,渲染成手写贴纸风的强调/吐槽/打趣卡片。
+// 同时兼容 GitHub alert 英文类型(NOTE/TIP/IMPORTANT/WARNING),旧文章无需改写。
 const STICKY_CLASS: Record<string, string> = {
-  强调: "sticky-emphasis", 重点: "sticky-emphasis", TIP: "sticky-emphasis",
+  强调: "sticky-emphasis", 重点: "sticky-emphasis", TIP: "sticky-emphasis", IMPORTANT: "sticky-emphasis",
   吐槽: "sticky-grumble", 诉苦: "sticky-grumble",
   打趣: "sticky-fun", 彩蛋: "sticky-fun",
-  警告: "sticky-warn", 坑: "sticky-warn",
+  警告: "sticky-warn", 坑: "sticky-warn", WARNING: "sticky-warn", CAUTION: "sticky-warn",
+  NOTE: "sticky-note",
 };
 
 async function renderLines(lines: string[]): Promise<string> {

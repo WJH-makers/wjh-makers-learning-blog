@@ -221,7 +221,8 @@ export default async function PostPage({ params }: Props) {
         </section>
       )}
 
-      {info?.series.route === "/java" && episode && (
+      {/* 模板练习只做兜底:正文里已有手写「随堂练习」的话不再重复渲染 */}
+      {info?.series.route === "/java" && episode && !post.content.includes("随堂练习") && (
         <EpisodeExercises
           title={episode.title}
           summary={episode.summary}

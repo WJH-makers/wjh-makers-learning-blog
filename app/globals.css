@@ -697,6 +697,8 @@ a:focus-visible {
 .article-content .sticky-note { background: #fffceb; }
 .article-content .sticky-note .sticky-tag { color: var(--neutral-600); background: var(--neutral-100); }
 @media (prefers-reduced-motion: reduce) { .article-content .sticky { transform: none; } }
+/* 暗色下贴纸仍保留"亮色纸片"的隐喻,但压低亮度饱和,避免成为刺眼补丁。 */
+@media (prefers-color-scheme: dark) { .article-content .sticky { filter: brightness(0.82) saturate(0.78); box-shadow: 2px 4px 10px rgba(0,0,0,0.45); } }
 /* ===== 随堂练习:折叠答案 ===== */
 .article-content .quiz-answer { margin: 10px 0 18px; border: 1px solid var(--border); background: rgba(var(--paper-rgb), 0.6); }
 .article-content .quiz-answer summary { cursor: pointer; padding: 9px 14px; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 800; color: var(--accent); user-select: none; list-style: none; }
