@@ -1,11 +1,15 @@
 import { codeToHtml } from "shiki";
+import comicManifest from "./comic-manifest.json" with { type: "json" };
 
 /**
  * Markdown 渲染引擎(纯函数,零 fs/db 依赖,可被 node --test 直测)。
  * 从 lib/posts.ts 拆出;posts.ts re-export 保持原有 import 路径兼容。
+ * comic-manifest.json 是构建期静态数据(scripts/build-comic-variants.mjs 产出),不破坏纯函数性。
  *
  * 方言说明:单个换行 = 新段落(非 CommonMark 软换行合并)——全站存量文章依赖此行为,勿改。
  */
+
+const COMIC_SIZES: Record<string, { w: number; h: number }> = comicManifest;
 
 export function escapeHtml(value: string): string {
   return value
@@ -48,8 +52,20 @@ function inlineMarkdown(value: string): string {
     .replace(/`([^`]+)`/g, (_m, code: string) => stash(`<code>${code}</code>`))
     .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (_m, alt: string, src: string) =>
       stash(`<img class="post-image" src="${src}" alt="${alt}" loading="lazy" decoding="async" />`))
-    .replace(/!\[([^\]]*)\]\((\/comics\/java\/([A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\.png)\)/g, (_m, alt: string, src: string, stem: string) =>
-      stash(`<picture><source srcset="/comics/java/${stem}.webp" type="image/webp" /><img class="post-image comic-image" src="${src}" alt="${alt}" width="1024" height="1536" loading="lazy" decoding="async" /></picture>`))
+    .replace(/!\[([^\]]*)\]\((\/comics\/java\/([A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\.png)\)/g, (_m, alt: string, _src: string, stem: string) => {
+      // AVIF 优先、512w 移动变体、webp 兜底(png 原档不再进 serve 路径,现代覆盖率已 ~100%);
+      // 尺寸取 manifest 真实值(源图有 1055x1491/887x1774/1024x1536 三种,写死会让占位比例失真)。
+      // 变体与 manifest 由 scripts/build-comic-variants.mjs 生成,新增漫画后需重跑一次。
+      const base = `/comics/java/${stem}`;
+      const { w, h } = COMIC_SIZES[stem] ?? { w: 1024, h: 1536 };
+      const sizes = "(max-width: 960px) 94vw, 900px";
+      return stash(
+        `<picture>` +
+        `<source type="image/avif" srcset="${base}-512.avif 512w, ${base}.avif ${w}w" sizes="${sizes}" />` +
+        `<source type="image/webp" srcset="${base}-512.webp 512w, ${base}.webp ${w}w" sizes="${sizes}" />` +
+        `<img class="post-image comic-image" src="${base}.webp" alt="${alt}" width="${w}" height="${h}" loading="lazy" decoding="async" />` +
+        `</picture>`);
+    })
     .replace(/!\[([^\]]*)\]\((\/(?!\/)[A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\)/g, (_m, alt: string, src: string) =>
       stash(`<img class="post-image" src="${src}" alt="${alt}" loading="lazy" decoding="async" />`))
     // URL 支持一层平衡括号(维基/MDN 的 /Foo_(bar) 不再截断)
@@ -355,6 +371,9 @@ async function renderLines(lines: string[], ctx: RenderCtx, depth: number): Prom
         const body = await renderLines([alert[2] ?? "", ...inner.slice(1)], ctx, depth + 1);
         if (type === "答案" || type === "解析" || type === "参考答案") {
           html.push(`<details class="quiz-answer"><summary>▸ 查看答案与解析</summary><div class="quiz-answer-body">${body}</div></details>`);
+        } else if (type === "文字版" || type === "文字漫画") {
+          // 漫画图的文字原稿:默认折叠,读屏/慢网/搜索引擎仍可及(图片 alt 只有一句摘要)。
+          html.push(`<details class="quiz-answer comic-transcript"><summary>▸ 文字版漫画(无图环境与读屏可读)</summary><div class="quiz-answer-body">${body}</div></details>`);
         } else {
           const cls = STICKY_CLASS[type] ?? "sticky-note";
           html.push(`<aside class="sticky ${cls}"><span class="sticky-tag">${escapeHtml(type)}</span><div class="sticky-body">${body}</div></aside>`);

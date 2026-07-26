@@ -494,9 +494,8 @@ a:focus-visible {
 }
 
 .article-content .comic-image {
-  aspect-ratio: 2 / 3;
   content-visibility: auto;
-  contain-intrinsic-size: auto 1536px;
+  contain-intrinsic-size: auto 1300px;
 }
 
 .learning-prerequisite {
