@@ -2,12 +2,14 @@
  * 多连载注册表:跨系列统一查询,文章页 banner / 上下话导航 / 进度 key 都走这里。
  * 新开一条连载 = 写一个 series-xxx.ts + 在 SERIES_LIST 挂一行,页面零改动。
  */
+import type { Route } from "next";
 import { SEASONS, SERIES_META, type JavaEpisode, type JavaSeason } from "@/lib/series";
 import { CLI_SEASONS, CLI_SERIES_META } from "@/lib/series-cli";
+import { CAFE_SEASONS, CAFE_SERIES_META } from "@/lib/series-cafe";
 
 export type SeriesRef = {
   title: string;
-  route: string; // 系列首页路由,如 /java、/cli
+  route: Route; // 系列首页路由(typedRoutes 校验),如 /java、/cli、/cafe
   storageKey: string; // localStorage 进度 key
   seasons: JavaSeason[];
 };
@@ -15,6 +17,7 @@ export type SeriesRef = {
 export const SERIES_LIST: SeriesRef[] = [
   { title: SERIES_META.title, route: "/java", storageKey: "java-academy:completed", seasons: SEASONS },
   { title: CLI_SERIES_META.title, route: "/cli", storageKey: CLI_SERIES_META.storageKey, seasons: CLI_SEASONS },
+  { title: CAFE_SERIES_META.title, route: "/cafe", storageKey: CAFE_SERIES_META.storageKey, seasons: CAFE_SEASONS },
 ];
 
 export type EpisodeInfo = {
