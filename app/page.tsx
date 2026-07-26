@@ -63,7 +63,7 @@ export default async function HomePage() {
 
       <section className="section-head">
         <div>
-          <p className="eyebrow">Flagship Series · 全 56 话完结</p>
+          <p className="eyebrow">Flagship Series · 主线 56 话完结 · 番外三卷 34 话</p>
           <h2>从零开始学 Java</h2>
         </div>
         <Link href="/java">查看全卷地图 →</Link>
