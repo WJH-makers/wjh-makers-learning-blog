@@ -1,7 +1,7 @@
 ---
 title: "《从零开始学 Java》82 · 类加载与双亲委派"
 date: 2026-11-08
-summary: "阿零想给 String 加个 brewLatte,货箱刚进类加载站就被 Bootstrap 原路退回——双亲委派第一课。更凶的在后面:静态块深夜炸过一次,那个类从此只回一句 NoClassDefFoundError,阿零却满世界找根本没丢的 jar。"
+summary: "阿零想给 String 加个 brewLatte,货箱刚进类加载站就被 Bootstrap 原路退回——双亲委派第一课。更凶的:静态块深夜炸过一次,那个类只回一句 NoClassDefFoundError,阿零却满世界找根本没丢的 jar。"
 tags: [Java, Java漫画, JVM, 类加载, 双亲委派, 番外, 阿零与豆豆]
 ---
 

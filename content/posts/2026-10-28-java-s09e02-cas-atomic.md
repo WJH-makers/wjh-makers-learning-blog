@@ -1,7 +1,7 @@
 ---
 title: "《从零开始学 Java》71 · 无锁计数:CAS 与原子家族"
 date: 2026-10-28
-summary: "压测二十万单,volatile 计数还是丢了几千笔:count++ 是读-改-写三步棋,可见性罩不住原子性。CAS 用一条硬件指令赌值未变、赌输自旋重试,AtomicLong 把账扶正;热点空转再升 LongAdder 分散记账,ABA 幽灵用版本戳锁死。"
+summary: "压测二十万单,volatile 计数还是丢了几千笔:count++ 是三步棋,可见性罩不住原子性。CAS 一条硬件指令赌值未变、赌输自旋重试,AtomicLong 把账扶正;热点再升 LongAdder 分散记账,ABA 用版本戳锁死。"
 tags: [Java, Java漫画, CAS, 原子类, LongAdder, 番外, 阿零与豆豆]
 ---
 

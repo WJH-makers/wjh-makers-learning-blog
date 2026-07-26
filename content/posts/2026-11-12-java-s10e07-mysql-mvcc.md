@@ -101,7 +101,7 @@ SELECT * FROM member WHERE phone = '13812345678' FOR UPDATE;  -- 当前读:读�
 UPDATE/DELETE/INSERT 全是**当前读**。而锁,加在**索引记录**上——
 
 ```sql
-UPDATE member SET points = points + 10 WHERE name = '阿零';
+UPDATE member SET level = level + 1 WHERE name = '阿零';
 -- name 无索引:定位不到"某一行",只能全表逐条上锁 ≈ 锁全表(回看第 85 话:索引还管锁粒度)
 ```
 
@@ -193,7 +193,7 @@ class MemberServiceTest {
 
 ---
 
-## 九、项目检查点 · 豆豆咖啡站 · 技术债第三页
+## 九、项目检查点 · 豆豆咖啡站 v10.7
 
 ```text
 咖啡站形态:会员注册在并发下幂等,账本的时间机器看得懂、锁的形状摸得清

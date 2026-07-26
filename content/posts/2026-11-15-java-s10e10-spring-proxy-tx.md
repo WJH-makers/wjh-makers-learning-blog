@@ -72,7 +72,7 @@ CGLIB 代理(本体子类;Boot 默认 proxyTargetClass=true)
 | REQUIRES_NEW | 挂起外层,自己新开一个 | 操作日志:主单回滚,日志也得留下 |
 | NESTED | 外层里打个保存点 | 赠品失败只退这一步;主单崩全退 |
 
-**Boot 自动配置的真相**:`@SpringBootApplication` 三合一 = `@SpringBootConfiguration` + `@EnableAutoConfiguration` + `@ComponentScan`。后者读各 jar 里 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` 清单(`spring.factories` 的自动配置用途已废),逐条过 `@ConditionalOnClass` / `@ConditionalOnMissingBean`——classpath 有货才配,你配了它就让位,不要的 `exclude` 排除。魔法=**清单+条件+你优先**。
+**Boot 自动配置的真相**:`@SpringBootApplication` 三合一 = `@SpringBootConfiguration` + `@EnableAutoConfiguration` + `@ComponentScan`。其中 `@EnableAutoConfiguration` 读各 jar 里 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` 清单(`spring.factories` 的自动配置用途已废),逐条过 `@ConditionalOnClass` / `@ConditionalOnMissingBean`——classpath 有货才配,你配了它就让位,不要的 `exclude` 排除。魔法=**清单+条件+你优先**。
 
 **MVC 请求流程速览:**
 
