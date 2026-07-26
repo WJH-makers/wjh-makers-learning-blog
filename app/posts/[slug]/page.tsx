@@ -1,7 +1,7 @@
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, markdownToHtml, siteUrl, splitSections } from "@/lib/posts";
+import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, renderMarkdown, siteUrl } from "@/lib/posts";
 import { CHAPTER_TYPE_LABEL } from "@/lib/series";
 import { findEpisodeInfo } from "@/lib/series-registry";
 import AdminEditLink from "./AdminEditLink";
@@ -50,13 +50,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: post.summary,
     },
   };
-}
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 export default async function PostPage({ params }: Props) {
@@ -116,22 +109,10 @@ export default async function PostPage({ params }: Props) {
   if (contentLines[0]?.replace(/^#\s+/, "").trim() === post.title.trim()) {
     contentLines.shift();
   }
-  const fullHtml = await markdownToHtml(contentLines.join("\n").replace(/^\s+/, ""));
-
-  // 提取章节标题用于 TOC（仅 h2）
-  const sections = splitSections(post.content);
-  const tocItems = sections
-    .map((s, i) => ({ title: s.title, index: i, id: slugify(s.title) }))
-    .filter((s) => s.title);
-
-  // 为 h2 标签注入 id 用于锚点
-  // 为 h2 注入锚点 id：用转义后的标题匹配与回填(不撤销渲染器的转义),
-  // 并对正则源做转义,防止标题里的特殊字符构造畸形正则或 $ 反向引用。
-  const htmlWithIds = tocItems.reduce((html, item) => {
-    const escTitle = escapeHtml(item.title);
-    const pattern = escTitle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    return html.replace(new RegExp(`<h2>${pattern}</h2>`), () => `<h2 id="${item.id}">${escTitle}</h2>`);
-  }, fullHtml);
+  // 渲染器直出标题锚点 id 并返回结构化 headings —— TOC 与正文锚点天然一致,
+  // 不再用正则反解析渲染后的 HTML 回填(含行内语法/重名标题时会静默失效)。
+  const { html: fullHtml, headings } = await renderMarkdown(contentLines.join("\n").replace(/^\s+/, ""));
+  const tocItems = headings.filter((h) => h.level === 2);
 
   const related = await getRelatedPosts(post.slug, post.tags);
   const comments = await getComments(post.slug);
@@ -176,15 +157,15 @@ export default async function PostPage({ params }: Props) {
           <p className="eyebrow">目录</p>
           <ol>
             {tocItems.map((item) => (
-              <li key={item.index}>
-                <a href={`#${item.id}`}>{item.title}</a>
+              <li key={item.id}>
+                <a href={`#${item.id}`}>{item.text}</a>
               </li>
             ))}
           </ol>
         </nav>
       )}
 
-      <div className="article-content" dangerouslySetInnerHTML={{ __html: htmlWithIds }} />
+      <div className="article-content" dangerouslySetInnerHTML={{ __html: fullHtml }} />
 
       <ShareBar url={url} title={post.title} />
 
@@ -263,12 +244,4 @@ export default async function PostPage({ params }: Props) {
       <Comments slug={post.slug} initial={comments} />
     </article>
   );
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }

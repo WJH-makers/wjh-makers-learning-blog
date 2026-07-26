@@ -4,6 +4,10 @@ import { getAllPublishedPosts, markdownToHtml, siteUrl } from "@/lib/posts";
 export const revalidate = 3600;
 export const runtime = "nodejs";
 
+// title/summary 是未经渲染器的原始字段;含 ]]> 会提前闭合 CDATA,把其后内容注入成 feed 裸标记。
+// 标准中和写法:]]> → ]]]]><![CDATA[>(markdownToHtml 的输出每个 > 均已转义,无需处理)。
+const cdata = (value: string) => `<![CDATA[${value.replaceAll("]]>", "]]]]><![CDATA[>")}]]>`;
+
 export async function GET() {
   const base = siteUrl();
   // 最近 30 篇进 feed;全文(content:encoded)只给最近 FULL_COUNT 篇,其余仅摘要。
@@ -14,11 +18,11 @@ export async function GET() {
   const items = (await Promise.all(
     posts.map(async (post, i) => `
       <item>
-        <title><![CDATA[${post.title}]]></title>
+        <title>${cdata(post.title)}</title>
         <link>${base}/posts/${post.slug}</link>
         <guid>${base}/posts/${post.slug}</guid>
         <pubDate>${new Date(post.date).toUTCString()}</pubDate>
-        <description><![CDATA[${post.summary}]]></description>
+        <description>${cdata(post.summary)}</description>
         ${i < FULL_COUNT ? `<content:encoded><![CDATA[${await markdownToHtml(post.content)}]]></content:encoded>` : ""}
       </item>`)
   )).join("");
