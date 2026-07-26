@@ -161,7 +161,11 @@ function inlineMarkdown(value: string): string {
   const escaped = escapeHtml(value);
   return escaped
     .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" decoding="async" />')
+    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img class="post-image" src="$2" alt="$1" loading="lazy" decoding="async" />')
+    // 仅允许站内的单斜杠绝对路径，避免把 `//host` 作为外部资源协议引入。
+    .replace(/!\[([^\]]*)\]\((\/comics\/java\/([A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\.png)\)/g,
+      '<picture><source srcset="/comics/java/$3.webp" type="image/webp" /><img class="post-image comic-image" src="$2" alt="$1" width="1024" height="1536" loading="lazy" decoding="async" /></picture>')
+    .replace(/!\[([^\]]*)\]\((\/(?!\/)[A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\)/g, '<img class="post-image" src="$2" alt="$1" loading="lazy" decoding="async" />')
     .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
     .replace(/\[([^\]]+)\]\((?!https?:)([^\s)]+)\)/g, (_m, text: string, url: string) =>
       /^(\/|#|mailto:)/i.test(url) ? `<a href="${url}" rel="noreferrer">${text}</a>` : text)
@@ -172,10 +176,95 @@ function inlineMarkdown(value: string): string {
 const highlightCache = new Map<string, string>();
 const MAX_CACHE = 200;
 
+/**
+ * 文本围栏里的框线图必须保持等宽与空格；交给 Shiki + 移动端自动换行会破坏布局。
+ * 仅识别明确的 Unicode 框线字符，普通说明文字仍按原来的高亮逻辑渲染。
+ */
+function isBoxDiagram(code: string, lang: string): boolean {
+  const plainText = !lang.trim() || /^(?:text|plain|plaintext)$/i.test(lang.trim());
+  return plainText && /[┌┐└┘├┤┬┴┼│─]/.test(code);
+}
+
+type TcpFlowStep = {
+  direction: "forward" | "reverse" | "both";
+  message: string;
+  note?: string;
+};
+
+/**
+ * 将 TCP 小节使用的轻量 DSL 渲染为结构化流程图。
+ * 文本框线图包含中文时会因字形回退而失去等宽对齐；此处用 CSS 网格保持语义和布局。
+ */
+function renderTcpFlowDiagram(code: string): string | null {
+  const [flowPart, layerPart] = code.split(/^---\s*$/m);
+  if (!flowPart || !layerPart) return null;
+
+  const names = { client: "客户端", server: "服务器" };
+  const steps: TcpFlowStep[] = [];
+  for (const rawLine of flowPart.trim().split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const match = /^(client|server)\s*(<->|->)\s*(client|server)\s*:\s*(.+?)(?:\s*\|\s*(.+))?$/i.exec(line);
+    if (!match) return null;
+
+    const [, from, arrow, to, message, note] = match;
+    const direction = arrow === "<->"
+      ? "both"
+      : from === "client" && to === "server"
+        ? "forward"
+        : from === "server" && to === "client"
+          ? "reverse"
+          : null;
+    if (!direction) return null;
+    steps.push({ direction, message, note });
+  }
+
+  const layers = layerPart
+    .trim()
+    .split("\n")
+    .map((line) => line.split("|").map((part) => part.trim()))
+    .filter((parts) => parts.length >= 2 && parts[0] && parts[1]);
+  if (steps.length === 0 || layers.length === 0) return null;
+
+  const stepHtml = steps.map((step) => {
+    const directionLabel = step.direction === "forward" ? "客户端发送到服务器" : step.direction === "reverse" ? "服务器发送到客户端" : "客户端与服务器双向通信";
+    const noteHtml = step.note ? `<span class="tcp-flow__note">${inlineMarkdown(step.note)}</span>` : "";
+    return `<li class="tcp-flow__step tcp-flow__step--${step.direction}"><span class="tcp-flow__route" aria-label="${directionLabel}"><strong>${inlineMarkdown(step.message)}</strong></span>${noteHtml}</li>`;
+  }).join("");
+  const layerHtml = layers.map(([level, detail, tag]) =>
+    `<li><span class="tcp-flow__layer-level">${inlineMarkdown(level)}</span><span>${inlineMarkdown(detail)}</span>${tag ? `<em>${inlineMarkdown(tag)}</em>` : ""}</li>`
+  ).join("");
+
+  return `<figure class="protocol-diagram tcp-flow"><figcaption><span>${names.client}</span><b>TCP 连接与字节流</b><span>${names.server}</span></figcaption><ol class="tcp-flow__steps">${stepHtml}</ol><ol class="tcp-flow__layers" aria-label="网络分层">${layerHtml}</ol></figure>`;
+}
+
 async function highlightCode(code: string, lang: string): Promise<string> {
   const cacheKey = `${lang}:${code}`;
   const cached = highlightCache.get(cacheKey);
   if (cached) return cached;
+
+  if (/^tcp-flow$/i.test(lang.trim())) {
+    const diagram = renderTcpFlowDiagram(code);
+    if (diagram) {
+      if (highlightCache.size >= MAX_CACHE) {
+        const firstKey = highlightCache.keys().next().value;
+        if (firstKey) highlightCache.delete(firstKey);
+      }
+      highlightCache.set(cacheKey, diagram);
+      return diagram;
+    }
+  }
+
+  if (isBoxDiagram(code, lang)) {
+    const diagram = `<pre class="ascii-diagram"><code>${escapeHtml(code)}</code></pre>`;
+    if (highlightCache.size >= MAX_CACHE) {
+      const firstKey = highlightCache.keys().next().value;
+      if (firstKey) highlightCache.delete(firstKey);
+    }
+    highlightCache.set(cacheKey, diagram);
+    return diagram;
+  }
+
   const language = lang.trim() || "text";
   const opts = { themes: { light: "github-light", dark: "github-dark" }, defaultColor: false } as const;
   try {

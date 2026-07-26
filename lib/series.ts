@@ -61,7 +61,7 @@ export const PROJECT_STAGES: { stage: string; season: number; desc: string }[] =
   { stage: "面向对象咖啡站", season: 2, desc: "Coffee / Order / 支付接口,用集合管理菜单与订单" },
   { stage: "可维护订单系统", season: 3, desc: "异常兜底、文件持久化、Maven 多模块、JUnit 覆盖" },
   { stage: "Spring Boot 咖啡店 API", season: 4, desc: "REST + MySQL + 登录鉴权的单体后端" },
-  { stage: "上线并可排障的服务", season: 5, desc: "Docker 部署、监控日志、JVM 事故复盘" },
+  { stage: "上线并可排障的服务", season: 5, desc: "线程与 JVM 排障、GC 日志与 JFR 复盘" },
   { stage: "分布式咖啡平台", season: 6, desc: "Redis/MQ/Spring Cloud,Docker 打包,微服务化" },
   { stage: "云端咖啡平台", season: 7, desc: "K8s 集群、CI/CD、监控与链路追踪,大促演练扛得住" },
 ];

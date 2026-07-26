@@ -50,6 +50,13 @@ const nextConfig: NextConfig = {
       ],
     },
     {
+      // 漫画文件名为稳定版本名，正文引用变更时才会换 URL；允许 CDN 与浏览器长期复用。
+      source: "/comics/:path*",
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ],
+    },
+    {
       source: "/api/:path*",
       headers: [
         { key: "Cache-Control", value: "no-store" },

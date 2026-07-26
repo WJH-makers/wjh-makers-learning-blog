@@ -478,6 +478,38 @@ a:focus-visible {
 .article-content h2 { padding-bottom: 8px; border-bottom: 1px solid var(--border); scroll-margin-top: 96px; }
 .article-content h1, .article-content h3 { scroll-margin-top: 96px; }
 .article-content p { margin: 1em 0; text-align: justify; }
+.article-content .post-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 1.6rem auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.article-content picture:has(.comic-image) {
+  display: block;
+  min-height: 1px;
+}
+
+.article-content .comic-image {
+  aspect-ratio: 2 / 3;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1536px;
+}
+
+.learning-prerequisite {
+  margin: 1.5rem 0;
+  padding: 1rem 1.125rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 36%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.learning-prerequisite p:last-child {
+  margin-bottom: 0;
+}
 .article-content ul { padding-left: 24px; }
 .article-content ol { padding-left: 24px; }
 .article-content h4 { margin: 1.2em 0 0.4em; font-weight: 700; }
@@ -512,6 +544,138 @@ a:focus-visible {
   font-style: normal;
   margin: 12px 0;
   background: rgba(var(--paper-rgb), 0.85);
+}
+.article-content .ascii-diagram {
+  overflow-x: auto;
+  white-space: pre;
+  overflow-wrap: normal;
+  word-break: normal;
+  tab-size: 2;
+}
+.article-content .ascii-diagram code {
+  display: block;
+  min-width: max-content;
+}
+
+/* 语义化协议图不依赖中文字符和英文空格的“伪等宽”对齐，窄屏也保持可读。 */
+.protocol-diagram {
+  margin: 1.5rem 0;
+  padding: clamp(14px, 3vw, 22px);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--neutral-100) 84%, var(--background));
+}
+.tcp-flow figcaption {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, 1fr) minmax(0, 2.5fr) minmax(4.5rem, 1fr);
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  text-align: center;
+}
+.tcp-flow figcaption b { font-family: var(--font-serif); font-size: 1.05rem; }
+.tcp-flow__steps,
+.tcp-flow__layers { list-style: none; padding: 0; margin: 0; }
+.tcp-flow__steps { display: grid; gap: 10px; }
+.tcp-flow__step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+.tcp-flow__route {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.tcp-flow__route::before {
+  content: "";
+  flex: 1 1 24px;
+  min-width: 18px;
+  border-top: 2px solid var(--accent);
+}
+.tcp-flow__route::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-top: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
+  transform: rotate(45deg);
+}
+.tcp-flow__step--reverse .tcp-flow__route { flex-direction: row-reverse; }
+.tcp-flow__step--reverse .tcp-flow__route::after { transform: rotate(-135deg); }
+.tcp-flow__step--both .tcp-flow__route::before { border-top-style: double; }
+.tcp-flow__step--both .tcp-flow__route::after { content: "⇄"; width: auto; height: auto; flex-basis: auto; border: 0; color: var(--accent); font-size: 1.2rem; line-height: 1; transform: none; }
+.tcp-flow__route strong { overflow-wrap: anywhere; text-align: center; }
+.tcp-flow__note { grid-column: 2; font-size: 0.85rem; color: var(--neutral-600); }
+.tcp-flow__layers {
+  display: grid;
+  gap: 6px;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border);
+}
+.tcp-flow__layers li {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 7px 9px;
+  border-left: 3px solid var(--neutral-400);
+  background: rgba(var(--paper-rgb), 0.7);
+}
+.tcp-flow__layer-level { font-family: var(--font-sans); font-weight: 800; }
+.tcp-flow__layers em { color: var(--accent); font-style: normal; font-size: 0.78rem; font-weight: 800; }
+
+.episode-exercises {
+  margin-top: 2rem;
+  padding: clamp(18px, 3vw, 30px);
+  border: 1px solid var(--border);
+  background: rgba(var(--paper-rgb), 0.9);
+}
+.episode-exercises > h2 { margin: 0.25rem 0; }
+.episode-exercises > article {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.episode-exercises h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+.exercise-options { padding-left: 1.6rem; }
+.exercise-options li { margin: 0.35rem 0; padding-left: 0.2rem; }
+.episode-exercises details {
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  background: var(--neutral-100);
+}
+.episode-exercises summary { cursor: pointer; font-weight: 700; }
+.episode-exercises details p { margin: 0.6rem 0 0; }
+
+.comic-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(280px, 1.2fr);
+  gap: clamp(18px, 3vw, 34px);
+  align-items: center;
+  margin-top: 2.5rem;
+  padding: clamp(16px, 3vw, 28px);
+  border: 1px solid var(--border);
+  background: rgba(var(--paper-rgb), 0.9);
+}
+.comic-intro h2 { margin: 0.25rem 0 0.6rem; }
+.comic-intro p:last-child { margin-bottom: 0; }
+.comic-intro img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 .article-content blockquote code { font-style: normal; }
 /* ===== 便利贴 sticky notes ===== */
@@ -1138,6 +1302,12 @@ textarea:focus { outline: 0; background: var(--neutral-100); }
   }
   code { font-size: 0.82em; }
   .article-content { font-size: 0.95rem; padding: clamp(14px, 3vw, 22px); }
+  .article-content .ascii-diagram { white-space: pre; word-break: normal; }
+  .tcp-flow__step { grid-template-columns: 1fr; gap: 3px; }
+  .tcp-flow__note { grid-column: 1; padding-left: 8px; }
+  .tcp-flow__layers li { grid-template-columns: minmax(4rem, auto) minmax(0, 1fr); }
+  .tcp-flow__layers em { grid-column: 2; }
+  .comic-intro { grid-template-columns: 1fr; }
 
   .footer span, .footer a { border-right: 0; border-bottom: 1px solid var(--border); text-align: center; padding: 12px 8px; }
   .footer a:last-child { border-bottom: 0; }

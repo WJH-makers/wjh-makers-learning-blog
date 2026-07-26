@@ -6,6 +6,7 @@ import { CHAPTER_TYPE_LABEL } from "@/lib/series";
 import { findEpisodeInfo } from "@/lib/series-registry";
 import AdminEditLink from "./AdminEditLink";
 import EpisodeProgress from "./EpisodeProgress";
+import EpisodeExercises from "./EpisodeExercises";
 import Comments from "./Comments";
 import ShareBar from "./ShareBar";
 import { getComments } from "@/lib/comments";
@@ -160,6 +161,16 @@ export default async function PostPage({ params }: Props) {
         </aside>
       )}
 
+      {info?.series.route === "/java" && episode && episode.season < 3 && (
+        <aside className="learning-prerequisite" aria-label="测试代码前置说明">
+          <p className="eyebrow">课程约定 · 测试代码</p>
+          <p>
+            本页的 JUnit 片段用于提前建立“用测试留证据”的习惯；它们不是独立的 <code>javac</code> 文件。
+            第 29 话会完整配置 Maven、JUnit 依赖和 <code>src/test/java</code> 目录；在那之前，可先阅读断言的含义，或在已配置 JUnit 的 IDE 项目中运行。
+          </p>
+        </aside>
+      )}
+
       {tocItems.length > 1 && (
         <nav className="section-toc" aria-label="目录">
           <p className="eyebrow">目录</p>
@@ -208,6 +219,15 @@ export default async function PostPage({ params }: Props) {
             )}
           </nav>
         </section>
+      )}
+
+      {info?.series.route === "/java" && episode && (
+        <EpisodeExercises
+          title={episode.title}
+          summary={episode.summary}
+          technologies={episode.technologies}
+          episode={episode.episode}
+        />
       )}
 
       {related.length > 0 && (
