@@ -13,3 +13,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# 连载路由目录,别被通用 build/dist 忽略规则误伤
+!app/build/
+!app/dist/
