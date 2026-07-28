@@ -22,10 +22,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false }, { status: 429 });
   }
 
-  const { token } = await request.json();
+  // 畸形 body 属于客户端错误,应答 400;裸 await request.json() 会让它变成未捕获异常 → 500。
+  let token: unknown;
+  try {
+    ({ token } = await request.json());
+  } catch {
+    return NextResponse.json({ ok: false }, { status: 400 });
+  }
   const expected = process.env.BLOG_ADMIN_TOKEN?.trim();
 
-  if (!expected || !safeCompare(token ?? "", expected)) {
+  if (!expected || typeof token !== "string" || !safeCompare(token, expected)) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 

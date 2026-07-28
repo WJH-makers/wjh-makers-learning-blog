@@ -26,14 +26,20 @@ export async function POST(request: Request) {
 
   let username: string;
   let password: string;
+  // 按 Content-Type 分派。不能「先试 json() 失败再试 formData()」——
+  // 第一次读取就消费掉了 body stream,第二次必抛,畸形请求会以 500 收场而不是 400。
   try {
-    const body = await request.json();
-    username = String(body.username ?? "").trim();
-    password = String(body.password ?? "").trim();
+    if ((request.headers.get("content-type") ?? "").includes("application/json")) {
+      const body = await request.json();
+      username = String(body?.username ?? "").trim();
+      password = String(body?.password ?? "").trim();
+    } else {
+      const form = await request.formData();
+      username = String(form.get("username") ?? "").trim();
+      password = String(form.get("password") ?? "").trim();
+    }
   } catch {
-    const form = await request.formData();
-    username = String(form.get("username") ?? "").trim();
-    password = String(form.get("password") ?? "").trim();
+    return NextResponse.json({ ok: false, message: "请求格式不正确" }, { status: 400 });
   }
 
   if (!username || !password) {
