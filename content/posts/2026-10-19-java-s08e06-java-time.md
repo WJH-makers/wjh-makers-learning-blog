@@ -297,4 +297,69 @@ class OrderClockTest {
 
 ---
 
+## 🎯 随堂练习
+
+### 选择题(10 道)
+
+1. 老三样(Date/Calendar/SimpleDateFormat)的三宗罪不包括哪项?
+   - A) 可变　B) 月份从 0　C) SimpleDateFormat 线程不安全　D) 不支持 Java 8
+2. `Calendar.set(2026, 12, 24)` 设置了 12 月,实际会?
+   - A) 12 月　B) 悄悄滚到明年 1 月　C) 抛异常　D) 编译期拦截
+3. LocalDate / LocalDateTime / ZonedDateTime 的共同特征是?
+   - A) 全部可变　B) 全都线程不安全　C) 全员不可变(修改返回新对象)　D) 都有时区
+4. `SimpleDateFormat` 线程不安全的根因是什么?
+   - A) 字段不是 final　B) 内部持有可变的 Calendar 字段,format/parse 是「先写再读」两步操作　C) 源码太老　D) 没有 synchronized
+5. 日期时间格式化器应该用什么?
+   - A) SimpleDateFormat　B) DateTimeFormatter(不可变,线程安全,可做 static final 常量)　C) 手写 format 方法　D) DateFormat
+6. 数据库存「事件发生时刻」,Java 类型和 DB 列类型的最佳拍档是?
+   - A) Date ↔ VARCHAR　B) Instant ↔ TIMESTAMP　C) LocalDateTime ↔ DATETIME　D) 随便
+7. 跨时区铁律是?
+   - A) 存本地时间　B) 存 UTC(Instant),展示时才换 ZoneId　C) 存字符串　D) 所有时区统一
+8. Duration 和 Period 分别该怎么用?
+   - A) 可以混用　B) Duration 量秒/纳秒(机器尺),Period 量年月日(日历尺)　C) Duration 更大　D) 已经合并
+9. `Period.between(birthday, today).getDays()` 返回?
+   - A) 总天数　B) 只返回「零头」那部分天数(月以下)　C) 总天数自动换算　D) 永远 0
+10. 总天数应该用什么?
+    - A) Period.getDays()　B) ChronoUnit.DAYS.between(a, b)　C) Duration.toDays()　D) 手算
+
+> [!答案]
+> **1-D**　老三样都是 JDK 1.0/1.1 时代的产品,后来 Java 8 推出了 java.time,所以它们"也能在 JDK 8+ 用",问题不在"不支持"而在三宗罪。**举一反三**:只要代码里出现了 `import java.util.Date`,就该警觉——除非是接遗留接口,进门第一件事就该转成 Instant。
+> **2-B**　Calendar 月份从 0 开始——0=1月,11=12月,12 不存在 → 静默进位到明年 1 月(不抛异常)。**举一反三**:这就是为什么 `Calendar.JANUARY` 等常量是给日子看的:永远用 `Calendar.DECEMBER` 而不是数字 12;但更好的做法是别用 Calendar。
+> **3-C**　java.time 的类全是不可变:plus/minus/with 一律返回新对象,原对象纹丝不动。不可变 = 线程安全,所以 DateTimeFormatter 可以 static final。**举一反三**:不可变是 JSR 310 设计的核心——String 和 BigDecimal 也走这条路;学会一个学别的全是有肌肉记忆的。
+> **4-B**　`DateFormat.format` 先 `calendar.setTime(date)` 写草稿,再从草稿读字段拼字符串——多线程共享一个 SDF,一个刚写完、另一个把草稿覆盖,串值随机染。**举一反三**:parse 更危险——不仅串值,遇到扭曲字节还能抛 `NumberFormatException`,甚至解析出合法但错误的日期。
+> **5-B**　DateTimeFormatter 不可变、线程安全、可预编译为常量。**举一反三**:`DateTimeFormatter.ISO_LOCAL_DATE` 这类预定义常量直接就能用;自定义格式用 `DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")`,然后记住它的文档里 `yyyy` 和 `YYYY` 不一样(后者是周年)。
+> **6-B**　TIMESTAMP 存 UTC 时间戳,Java 的 Instant 也是 UTC 时刻——天生一对。DATETIME 存字面值(无时区),对应 LocalDateTime。**举一反三**:把上海 LocalDateTime 塞进 TIMESTAMP 列再在温哥华读出来——你以为是上海时间,MysQL 按会话时区一顿换算,对账永远不在一个频道上。
+> **7-B**　存 UTC 是跨时区系统的唯一方案:所有写入都转 UTC(Instant),所有展示都按目标时区(ZonedDateTime)。**举一反三**:数据库的 TIMESTAMP 列设计之初就管这个——你往里写 `2026-10-19 08:00:00`,MySQL 会先按当前会话时区转换成 UTC 再存。
+> **8-B**　Duration 机器尺,量 90 秒;Period 日历尺,量「两个月零五天」。不能混:P2M5D 和 P90D 不是一回事。**举一反三**:`Duration.between(a, b).toDays()` 只给了整天数,不在意日历的月;反之 `Period.between(a, b)` 在意月季年,跨月才有意义。
+> **9-B**　`Period.getDays()` 返回的是「零头」天数的部分——离生日还有 2 个月零 5 天时返回 5,不是 66。**举一反三**:这一坑在 StackOverflow 有上万个踩踏记录;总天数永远走 `ChronoUnit.DAYS.between`。
+> **10-B**　`ChronoUnit.DAYS.between(a, b)` 返回精确日历天数,和 Period 的零头天数是两回事。**举一反三**:`ChronoUnit` 还能算周、月、年、世纪——`ChronoUnit.MONTHS.between` 返回整月数,跨年也正确处理。
+
+### 解答题(5 道)
+
+1. 画一张表对比 Date/Calendar/SimpleDateFormat 和 java.time(LocalDate/Instant/DateTimeFormatter)的差异(可变/月份/线程安全/类型分离)。
+2. SimpleDateFormat 为什么线程不安全?代码层面给出一个多线程串染的最小复现,并说明根因。
+3. 会员生日券:今天是 2026-10-19,会员生日 12-24,发券逻辑是什么?写出完整实现,包含「若今年生日已过,发明年」的判断。
+4. 温哥华分店夏令时结束夜(11 月 1 日)凌晨 1:30 在墙钟上出现两次,Java 的 ZonedDateTime 如何处理?
+5. 你现在接手了一个用 Date 和 SimpleDateFormat 写的老项目,怎么安全地逐步迁移到 java.time?
+
+> [!答案]
+> **1**　| 维度 | 老三样 | java.time ||---|---|---|| 可变性 | Date/Calendar 可变 | 全部不可变 || 月份 | 0~11(1月=0) | 1~12,Month 枚举兜底 || 线程安全 | SimpleDateFormat 不安全 | DateTimeFormatter 不可变可常量化 || 类型 | 一个 Date 既管时刻又管挂历 | 三个类型各管一段:LocaDate(日期)/Instant(时刻)/ZonedDateTime(时刻+时区) |　**举一反三**:为什么 JSR 310 拆成三个类型?因为需求本来就三类——「10 月 19 日发券」不需要时区;「订单支付时刻」必须是 UTC 时间线;「温哥华早上 8 点」既要知道时区还要知道夏令时。
+> **2**　```java
+static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+// 线程A: SDF.format(dateA) → calendar.setTime(dateA) 刚写完
+// 线程B: SDF.format(dateB) → calendar.setTime(dateB) 覆盖了A的时间
+// 线程A: 读完拼字符串 → 得到的是 B 的时间
+```　根因:SDF 继承的 DateFormat 内有一个**共享的可变 Calendar 实例**,format 分"写→读"两步,多线程并发时第二步读到的可能是别人的草稿。**举一反三**:如果必须留在 SimpleDateFormat 的遗留代码,补救方案是用 ThreadLocal 给每线程一份——但线程池里记得 finally remove;新代码直接用 DateTimeFormatter 常量。
+> **3**　```java
+LocalDate today = LocalDate.of(2026, 10, 19);
+LocalDate birthday = LocalDate.of(1978, 12, 24);
+LocalDate thisYear = birthday.withYear(today.getYear());
+LocalDate from = thisYear.isBefore(today) ? thisYear.plusYears(1) : thisYear;
+LocalDate to = from.plusDays(6); // 含当天 7 天
+```　**举一反三**:`withYear` 遇到闰年 2 月 29 日生日时怎么办?如果今年不是闰年,`withYear` 会抛 DateTimeException;更健壮的写法是用 `MonthDay` 类,它只存月日不管年,天然避开了闰年雷区。
+> **4**　ZonedDateTime.of(LocalDateTime, ZoneId) 默认取**前一个偏移**(−07:00),`plusHours(1)` 之后墙钟还是 1:30 但偏移变成 −08:00——物理上确实过了 1 小时。需要精确区分时可传 `ZoneOffsetTransition` 或用 `withLaterOffsetAtOverlap()`。**举一反三**:`withZoneSameInstant` 是跨时区对账的救命工具——把温哥华的凌晨 Instant 换成上海时区,就知道总部现在几点了。
+> **5**　第一步:遗留 API 入口(`Date.from(instant)`, `date.toInstant()`)做好双向转换,新代码只碰 java.time;第二步:数据库列从 DATETIME 腾挪到 TIMESTAMP,对应 Java 的 Instant;第三步:SimpleDateFormat → DateTimeFormatter 常量,并发问题一根代码就根治;第四步:跑全量回归,尤其对账逻辑。**举一反三**:Gradual migration 的铁则是「收敛到出入口 + 新代码只用新 API」,不要试图一次全改。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

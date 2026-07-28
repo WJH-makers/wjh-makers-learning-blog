@@ -233,4 +233,87 @@ rsync 把最新代码送上服务器,`systemctl restart coffee`,journalctl 里�
 
 ---
 
-*本话属于连载《从零开始玩命令行》。全卷地图见 [/cli](/cli);前作《从零开始学 Java》见 [/java](/java)。*
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,接下来3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. `ssh-keygen -t ed25519` 生成的是什么?
+- A) 一条 SSH 连接　B) 一对公钥和私钥(用于免密 SSH 登录)　C) 服务器证书　D) SSL 证书
+
+2. `scp file.txt user@server:/tmp/` 的作用是什么?
+- A) 从服务器下载文件　B) 将本地 `file.txt` 上传到服务器的 `/tmp/` 目录　C) 在服务器上创建文件　D) 备份文件到本地
+
+3. `rsync -avz source/ dest/` 中 `-a`、`-v`、`-z` 分别代表什么?
+- A) archive(归档/保留属性)、verbose(详细输出)、compress(传输中压缩)　B) all、version、zip　C) append、verify、zero　D) auto、view、zlib
+
+4. `scp` 中冒号 `:` 的作用是什么?
+- A) 分隔文件名和端口号　B) 分隔主机名和远程路径(冒号后是远程路径)　C) 表示压缩传输　D) 分隔用户名和密码
+
+5. `~/.ssh/authorized_keys` 文件的作用是什么?
+- A) 存储客户端的私钥　B) 存储**允许免密登录**的公钥列表(放公钥的人可以登录这台服务器)　C) 存储已知主机列表　D) 存储用户密码
+
+6. `rsync` 相比 `scp` 的核心优势是什么?
+- A) rsync 更快(总是)　B) rsync 支持增量传输(只传差异部分)、断点续传、可排除文件　C) rsync 不需要 SSH　D) rsync 只能本地使用
+
+7. `~/.ssh/config` 中配置以下内容:
+```
+Host coffee
+  HostName 10.0.0.5
+  User deploy
+```
+配置后,以下哪条命令可以连接该服务器?
+- A) `ssh coffee`　B) `ssh 10.0.0.5`　C) `ssh deploy@coffee`　D) 以上都可以,A 最简洁
+
+8. `rsync -avz --delete source/ dest/` 中 `--delete` 的作用是什么?
+- A) 删除源目录　B) 删除目标目录中多余的文件(使 dest 成为 source 的**精确镜像**)　C) 删除所有文件后同步　D) 删除源和目标中不同的文件
+
+9. 关于 SSH 密钥对,以下说法**正确**的是?
+- A) 私钥放在服务器,公钥放在本地　B) 私钥是锁(public),公钥是钥匙(private)　C) 私钥是**身份证明**(绝不能泄露),公钥是"锁"(放在要登录的服务器上)　D) 公钥和私钥可以互换使用
+
+10. 用户执行 `scp root@server:/etc/nginx/nginx.conf ./`,以下哪种冒号方向的解读是**正确**的?
+- A) 冒号后的路径是本地路径　B) `server:` = 在 host:path 中,冒号标识远程路径(从远程**下载**)　C) 冒号开头的路径表示绝对路径　D) 冒号是注释符号
+
+### 解答题(5 道)
+
+**Q1 概念:** 用"锁与钥匙"比喻解释 SSH 密钥对的工作原理:公钥放在哪?私钥放在哪?免密登录的认证过程是怎样的?
+
+**Q2 解释:** 对比 `scp` 和 `rsync` 的使用场景:什么时候用 scp,什么时候用 rsync?为什么 rsync 更适合"备份同步"任务?
+
+**Q3 操作:** 写出配置 SSH 免密登录的完整流程:生成密钥→分发公钥到服务器→配置 `~/.ssh/config` 简化连接→测试免密登录。
+
+**Q4 排障:** 菜菜配置了 SSH key 但还是被提示输入密码,执行 `ssh -v user@server` 看到 `debug1: Authentications that can continue: publickey,password` 和 `Permission denied (publickey)`. 分析可能原因(至少 3 个)。
+
+**Q5 综合设计:** 设计咖啡站代码的远程部署方案:用 rsync 将本地 `~/coffee-app/` 同步到生产服务器,要求:①排除 `.git`/`node_modules`/`*.log` ②先在本地试运行(`--dry-run`) ③保留服务器上 `uploads/` 目录(不同步删除) ④同步后自动重载 nginx ⑤写入 `~/.ssh/config` 方便日后使用。
+
+> [!答案]
+> **1-B** `ssh-keygen -t ed25519` 生成 Ed25519 算法的 SSH 密钥对:私钥(`~/.ssh/id_ed25519`)和公钥(`~/.ssh/id_ed25519.pub`)。**举一反三:**Ed25519 是推荐算法(比 RSA 更安全、更快、更短);旧系统可能只支持 RSA:`ssh-keygen -t rsa -b 4096`。🪟 PowerShell 同样内置 `ssh-keygen`。
+>
+> **2-B** `scp 源 目标`。`file.txt` 是本地文件,`user@server:/tmp/` 是远程目标 → 上传。**举一反三:**方向记忆:冒号那边是远程。下载:`scp user@server:/remote/file.txt ./`(冒号在源)。🪟 PowerShell 也可用 `scp`,或 `pscp`(PuTTY)。
+>
+> **3-A** `-a`=archive(递归+保留符号链接/权限/时间戳/属主,等同于 `-rlptgoD`),`-v`=verbose(显示传输细节),`-z`=compress(传输中 gzip 压缩,节省带宽)。**举一反三:**`-P` 显示进度条;`-n`=dry-run(模拟运行,不实际传输);`--exclude='*.log'` 排除模式。rsync 的选项相当于"存档+报告+压缩",是最常用的组合。
+>
+> **4-B** scp 的路径语法:`[user@]host:path`。冒号是"远程分隔符":冒号前=主机,冒号后=远程路径。**举一反三:**`scp file1 file2 user@server:/tmp/` 可以一次上传多个文件;`scp -r dir/ user@server:/tmp/` 递归上传目录。方向:源中有冒号=下载,目标中有冒号=上传。
+>
+> **5-B** `authorized_keys` 存储"授权登录的公钥"。拥有对应私钥的用户可以免密登录。**举一反三:**权限必须严格:`chmod 700 ~/.ssh`、`chmod 600 ~/.ssh/authorized_keys`。如果权限太宽松(如 644),SSH 会拒绝使用(安全策略)。`ssh-copy-id user@server` 是分发公钥的标准工具。
+>
+> **6-B** rsync 的增量传输算法:首次传输全量,后续只传输**变化的块**(文件变更的部分),极大节省时间和带宽。`scp` 每次都全量复制。rsync 还支持:`--partial` 断点续传、`--exclude` 排除、`--delete` 同步删除。**举一反三:**大文件/频繁同步用 rsync;临时搬一个小文件用 scp 更快(无需计算差异)。
+>
+> **7-D** `ssh coffee`(利用 config 别名)、`ssh 10.0.0.5`(IP 直连但需手动指定用户)、`ssh deploy@coffee`(别名已配置用户,手动再指定也不冲突)。**举一反三:**`~/.ssh/config` 可以定义端口:`Port 2222`;指定密钥:`IdentityFile ~/.ssh/coffee_key`;配置代理跳板:`ProxyJump bastion`。这是效率神器——再也不需要记住 `ssh -i ~/.ssh/special_key -p 2222 user@10.0.1.50`。
+>
+> **8-B** `--delete` 使目标成为源的**精确镜像**——目标目录中如果有源目录没有的文件,会被删除。**举一反三:**`--delete` 很强大也很危险,建议先用 `--dry-run` 预览会删除哪些文件。结合 `--exclude` 可以保护目标中的特定目录(如 `--exclude='uploads/' --delete` 删除其他多余文件但保留 uploads)。
+>
+> **9-C** 私钥=你的身份证(绝对保密,别人拿到就能冒充你);公钥=锁(公开,装上这个锁的服务器 "你的身份证" 能打开)。**举一反三:**类比:公钥是遍布全球各地的信箱投递口(谁都可以把信投进去),私钥是和这些投递口匹配的钥匙(只有你能打开信箱看信)。SSH 认证过程:服务器用公钥加密一个随机字符串→客户端用私钥解密并返回→服务器验证匹配→通过。
+>
+> **10-B** `scp root@server:/path ./` :`root@server:/path` 中冒号前是主机和用户,冒号后是远程路径→这是从远程下载到本地。**举一反三:**`scp ./file root@server:/path`(源无冒号=本地,目标有冒号=远程)→上传。记忆:"冒号指向谁,就是从谁那搬东西"。`rsync` 同理。
+>
+> **Q1** 密钥对模型:①你生成一对钥匙:公钥(锁)和私钥(钥匙) ②把**公钥**(锁)放到服务器的 `~/.ssh/authorized_keys` 里(相当于给这个家门装上一把只能由你打开的锁) ③**私钥**(钥匙)保存在你的本地 `~/.ssh/id_ed25519`,用密码保护(可选) ④认证过程:你 ssh 到服务器→服务器生成随机挑战→用你的公钥加密→发送给你的客户端→你用私钥解密→返回答案→服务器验证正确→通过,免密登录。**安全要点:**私钥绝不可分享;`authorized_keys` 权限必须 600;公钥可以随意分发。
+>
+> **Q2** scp:基于 SSH 的简单文件拷贝,每次传输全量文件,没有差异计算。适用场景:临时传一个配置文件、下载一个日志文件、小文件一次性传输。**rsync:**增量传输(只传差异)+ 丰富的同步策略(保属性/排除/删除/断点续传)。适用场景:代码部署(只上传变更)、定期备份(只备份新增/修改)、大文件同步(断点续传)、镜像同步(`--delete` 保证两边完全一致)。**为什么 rsync 更适合备份:**增量传输节省带宽和时间、`-a` 保留所有元数据(权限/时间/所有者)、`--link-dest` 可以基于上次备份硬链接去重(节省磁盘)、`--partial` 支持断点续传。
+>
+> **Q3** 完整流程:①`ssh-keygen -t ed25519 -C "coffee-server-key"` 生成密钥对(一路回车,不设密码可直接使用) ②`ssh-copy-id -i ~/.ssh/id_ed25519.pub deploy@coffee-server` 分发公钥(或手动 `cat ~/.ssh/id_ed25519.pub | ssh user@server "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"`) ③`vim ~/.ssh/config` 添加:`Host coffee`、`HostName 192.168.1.100`、`User deploy`、`IdentityFile ~/.ssh/id_ed25519` ④测试:`ssh coffee` 应该直接登录(免密) ⑤服务器端确认权限:`chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`。**举一反三:**可以给不同服务器生成不同密钥:`ssh-keygen -t ed25519 -f ~/.ssh/coffee_key`,在 config 中 `IdentityFile ~/.ssh/coffee_key`。
+>
+> **Q4** 可能原因:①公钥没有正确添加到服务器的 `~/.ssh/authorized_keys`(拼写错误、没重启 sshd 虽不需但建议确认、文件权限不是 600) ②服务器上 `.ssh` 目录或 `authorized_keys` 文件权限过于宽松(必须 700/600,否则 sshd 忽略) ③客户端私钥路径不对(如果用了非默认路径,需要在 ssh 命令中 `-i` 或在 config 中 `IdentityFile` 指定) ④服务器 `sshd_config` 禁用了 pubkey 认证(`PubkeyAuthentication no`) ⑤使用了错误的用户名(公钥装在 userA 的 authorized_keys,但用 userB ssh 连接) ⑥`known_hosts` 中该服务器的旧密钥与新服务器不匹配(重装过服务器)。**排查:**`ssh -vvv user@server` 看详细输出,搜索 "Authentication" 和 "publickey" 关键字。
+>
+> **Q5** 方案:①创建 `~/.ssh/config`:`Host coffee-prod`、`HostName 10.0.0.5`、`User deploy`、`IdentityFile ~/.ssh/coffee_prod_ed25519` ②试运行:`rsync -avzn --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/`(`-n` dry-run 预览) ③确认无误后去掉 `-n` 正式同步:`rsync -avz --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/`(不加 `--delete`,upload 不会被删除) ④同步后远程执行重载:`rsync ... && ssh coffee-prod "sudo systemctl reload nginx"` ⑤写成脚本 `deploy.sh` 方便复用:`#!/bin/bash; set -e; rsync -avz --exclude=... ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/; ssh coffee-prod "sudo systemctl reload nginx"; echo "Deploy OK"`。**举一反三:**生产级部署还应考虑:同步前先备份、记录部署历史(Git commit hash)、支持回滚(`rsync -avz /backups/old-version/ deploy@coffee-prod:/var/www/coffee/`)、用 `--link-dest` 去重节省备份空间。

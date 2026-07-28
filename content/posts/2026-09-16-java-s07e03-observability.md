@@ -210,4 +210,127 @@ Grafana 告诉阿零「下单接口 P99 涨到 2 秒」,可一笔下单要依次
 
 ---
 
+## 随堂练习
+先独立作答，再展开参考要点核对思路。
+
+### 一、选择题（10 道）
+
+**1.** 可观测性三支柱不包括以下哪一项？
+- A) 日志（Logs）　B) 指标（Metrics）　C) 告警（Alerting）　D) 链路追踪（Tracing）
+
+**2.** Prometheus 的底层数据存储类型是？
+- A) 关系型数据库　B) 文档型数据库　C) 时序数据库（TSDB）　D) 键值存储
+
+**3.** Micrometer 在 Spring Boot 生态中的角色是？
+- A) 一个日志框架　B) 一个 HTTP 客户端　C) 一个指标门面——提供统一 API，对接不同监控后端　D) 一个安全框架
+
+**4.** Grafana 的主要功能是什么？
+- A) 采集日志　B) 存储时序数据　C) 发送告警通知　D) 将多种数据源的数据可视化为仪表盘和图表
+
+**5.** ELK 技术栈中，各组件分工正确的是？
+- A) Elasticsearch 采集、Logstash 展示、Kibana 存储　B) Logstash/Filebeat 采集+处理、Elasticsearch 存储+搜索、Kibana 可视化　C) Kibana 采集、Elasticsearch 处理、Logstash 展示　D) 三者功能相同，互为备份
+
+**6.** Prometheus 的数据采集模式是？
+- A) 服务主动推送（Push）指标到 Prometheus　B) Prometheus 定时从服务端点拉取（Pull）指标　C) 通过消息队列异步传输　D) 通过数据库轮询
+
+**7.** 默认情况下，Spring Boot Actuator 暴露了哪些端点？
+- A) 全部端点　B) 仅 `health` 端点　C) 仅 `health` 和 `info` 端点　D) 不暴露任何端点
+
+**8.** Loki 在可观测性体系中的定位是？
+- A) 替代 Prometheus 存储指标　B) 存储和检索日志，按标签索引，可与 Grafana 直接对接　C) 分布式链路追踪后端　D) 告警规则引擎
+
+**9.** PromQL 中 `rate(http_requests_total[5m])` 的含义是？
+- A) 过去 5 分钟内 HTTP 请求总数　B) 过去 5 分钟内每秒平均请求增长率　C) HTTP 请求占 CPU 的比率　D) 未来 5 分钟预计的请求量
+
+**10.** 以下哪个是 Prometheus 告警规则的典型要素？
+- A) 数据库 SQL 查询　B) alert 名称、PromQL 条件表达式、持续时间（`for`）、告警级别标签　C) Java 异常堆栈　D) Docker 镜像名称
+
+> [!答案]
+> **1-C**　三支柱是日志（记录离散事件）、指标（聚合数值如 QPS/P99）、链路追踪（一次请求的完整路径）。告警是基于三者的上层能力，不是支柱本身。　举一反三：三支柱关系——指标告诉你「哪儿不对」、日志告诉你「为什么不对」、追踪告诉你「经过了哪」。三者打通才是真正的可观测性。
+> 
+> **2-C**　Prometheus 使用自研时序数据库（TSDB），专为带时间戳的数值序列优化——高效写入、按时间范围查询、自动压缩过期。不适合存大文本。　举一反三：时序数据库不适合存日志（大文本、高基数），所以 Loki 存日志、Prometheus 存指标，各司其职。
+> 
+> **3-C**　Micrometer 是 JVM 生态的指标门面（类似 SLF4J 对日志），同一套 API 可通过不同 Registry 导出到 Prometheus、Datadog 等，无需改代码。　举一反三：门面模式价值在于解耦——从 Prometheus 切到 Datadog 只换依赖和配置，业务代码不变。
+> 
+> **4-D**　Grafana 是可视化前端，通过数据源插件连接 Prometheus、Loki、Elasticsearch 等，把数据画成曲线图、柱状图、热力图等，支持告警规则定义。　举一反三：Dashboard 支持变量（如 `$service` 下拉），一个面板模板复用所有服务。好的 Dashboard 遵循「从左到右、从上到下 = 从宏观到微观」的信息层级。
+> 
+> **5-B**　ELK = Elasticsearch（存储+全文搜索）+ Logstash（采集+过滤+转换）+ Kibana（可视化+查询）。后扩展为 Elastic Stack，增加 Filebeat 轻量采集器。　举一反三：ELK 和 Loki 核心区别——ELK 对日志全文索引（搜索强但资源开销大），Loki 只索引标签不索引内容（便宜但大范围搜索慢）。
+> 
+> **6-B**　Prometheus 核心设计是 Pull 模型——按 `scrape_interval`（默认 15s）主动去 target 的 `/metrics` 端点抓取数据，服务不需要知道 Prometheus 在哪。　举一反三：Pull 好处——服务解耦、健康自显（抓不到=target down）、压测不因推送加剧负载。Push 适合短生命周期任务（用 Pushgateway 中转）。
+> 
+> **7-B**　Spring Boot Actuator 默认通过 Web 仅暴露 `health` 端点（安全考虑）。`prometheus`、`metrics` 等需通过 `management.endpoints.web.exposure.include` 显式放行。　举一反三：生产不要暴露 `env`、`beans`、`threaddump`——会泄露配置（含密码）和运行态信息。通常 `include: health,prometheus` 足够。
+> 
+> **8-B**　Loki 是 Grafana Labs 推出的日志聚合系统，核心设计是「标签索引 + 内容按需扫描」——只索引标签不索引日志内容，与 Grafana 无缝集成。　举一反三：Loki 使用模式——Grafana 看 QPS 异常→跳转到 Loki 日志拿 TraceId→跳到 Jaeger 看完整调用链。形成「指标→日志→追踪」三级下钻。
+> 
+> **9-B**　`rate()` 计算 Counter 类型指标在时间窗口内的每秒平均增长率。`rate(http_requests_total[5m])` = 过去 5 分钟平均每秒增加多少请求。　举一反三：`irate()` 只看窗口内最后两个样本点，对突刺更敏感适合告警。日常看板用 `rate()`（平滑），告警用 `irate()`（灵敏）。
+> 
+> **10-B**　Prometheus 告警规则至少包含：`alert`（名称）、`expr`（PromQL 条件）、`for`（持续时间防抖动）、`labels`（严重级别等）、`annotations`（描述和修复建议）。　举一反三：`for` 值很关键——太短频繁误报（警报疲劳），太长出事迟迟不报。P0/P1 用 1m~3m，P2/P3 用 5m~10m。
+
+### 二、解答题（3 道）
+
+**11.** Prometheus 的 Pull 模型与 Push 模型对比——各自的优缺点和适用场景是什么？
+
+**12.** 在一次线上排障中，指标、日志、追踪三者如何协同？描述一个从 Grafana 面板到最终定位根因的实际工作流。
+
+**13.** 一条有效的告警规则应该具备哪些要素？如何避免「告警疲劳」？
+
+> [!答案]
+> **11**　Pull（Prometheus 主动抓）优点：服务无需知道监控在哪完全解耦；抓不到=target down 自身暴露盲区；控制频率在中心端可随时调整；压测不因推送加重服务负载。缺点：被监控方必须网络可达（有防火墙/NAT 麻烦），需配服务发现。Push 优点：适合短生命周期（批处理/Serverless）、网络不可达场景。缺点：需知道推送地址、推送失败可能丢数据、系统沉默时分不清"没流量"还是"推送挂了"。　举一反三：批处理任务可用 Pushgateway（Push 到网关，Prometheus Pull 网关）。OpenTelemetry 的 OTLP 协议本身支持 Push 模式，适合 Span 上报。
+> 
+> **12**　典型工作流：(1) Grafana 仪表盘看到「下单接口 P99 延迟」曲线翘起（指标定位到服务异常）；(2) 切换到 Loki 面板按 `app=coffee-order` + 异常时间范围过滤，看到大量超时日志且带 TraceId（日志给出「为什么慢」）；(3) 复制 TraceId 跳转到 Jaeger 搜索，发现调用树中「库存查询」Span 耗时 1.8 秒（追踪给出「卡在哪一跳」）；(4) 深入库存服务 Loki 日志找 MySQL 慢查询。三层下钻前提：日志里打进 TraceId + Grafana 支持跨数据源跳转。　举一反三：指标告诉范围（「哪儿」）、日志给证据（「为什么」）、追踪画路径（「经过了哪」）。没有追踪的话从指标到日志需要手工翻多个服务拼调用顺序，效率低一个数量级。
+> 
+> **13**　好告警要素：(1) 明确告警对象；(2) 基于历史基线的合理阈值；(3) `for` 持续时间过滤瞬时抖动；(4) 清晰严重级别（P0~P3）；(5) 可操作通知内容（标题+排查方向+runbook 链接）；(6) 准确负责人标签。避免告警疲劳：(1) 必须有 `for` 条件；(2) 只对需要人类行动的事件告警——能自动修复的（HPA 扩容、Pod 自愈）不报警；(3) 定期 review 下线不再触发的告警；(4) 设置抑制规则（节点宕机时抑制其下所有 Pod 告警）；(5) 告警必须闭环——每条都应有结论。　举一反三：Google SRE 告警哲学——只对紧急、可操作、新出现的、影响用户的事件告警。不满足四个标准的用 Dashboard 曲线代替。
+
+### 三、代码题（2 道）
+
+**14.** 在 Spring Boot 中用 Micrometer 创建两个自定义指标：(1) Counter 计数订单创建量带 `status` 标签（success/fail）；(2) Timer 记录订单处理耗时。写出对应的 PromQL：(A) 过去 5 分钟每秒成功订单数，(B) 订单处理 P99 延迟。
+
+**15.** 写一份 Prometheus 告警规则 YAML：当订单服务 5xx 错误率超过 1% 持续 3 分钟时触发严重告警（severity: critical），包含告警描述和修复建议。
+
+> [!答案]
+> **14 验收**　```java
+> @Service
+> public class OrderMetricsService {
+>     private final Counter successCounter, failCounter;
+>     private final Timer orderTimer;
+> 
+>     public OrderMetricsService(MeterRegistry registry) {
+>         this.successCounter = Counter.builder("coffee.orders.created")
+>             .tag("status", "success").register(registry);
+>         this.failCounter = Counter.builder("coffee.orders.created")
+>             .tag("status", "fail").register(registry);
+>         this.orderTimer = Timer.builder("coffee.orders.duration")
+>             .publishPercentiles(0.5, 0.95, 0.99).register(registry);
+>     }
+> 
+>     public void recordOrder(boolean success, long durationMs) {
+>         (success ? successCounter : failCounter).increment();
+>         orderTimer.record(durationMs, TimeUnit.MILLISECONDS);
+>     }
+> }
+> ```
+> ```text
+> // A: 过去 5 分钟每秒成功订单数
+> rate(coffee_orders_created_total{status="success"}[5m])
+> // B: 订单处理 P99 延迟（秒）
+> histogram_quantile(0.99, rate(coffee_orders_duration_seconds_bucket[5m]))
+> ```　举一反三：Counter 用 `_total` 后缀是 Prometheus 命名约定；Timer 暴露为 `_seconds_count`、`_seconds_sum` 和 `_seconds_bucket` 三者组合才能算百分位。平均延迟有欺骗性，生产应看 P95/P99。
+> 
+> **15 验收**　```yaml
+> groups:
+>   - name: coffee-order-alerts
+>     rules:
+>       - alert: CoffeeOrderHighErrorRate
+>         expr: |
+>           (sum(rate(http_server_requests_seconds_count{
+>             application="coffee-order", status=~"5.."}[5m]))
+>            / sum(rate(http_server_requests_seconds_count{
+>             application="coffee-order"}[5m]))) > 0.01
+>         for: 3m
+>         labels: { severity: critical, service: coffee-order, team: backend }
+>         annotations:
+>           summary: "订单服务 5xx 错误率超过 1%"
+>           runbook: "1. Grafana 确认影响范围 2. Loki 查 5xx 日志和 TraceId 3. 新版本引起则 kubectl rollout undo 4. 检查 DB/Redis/MQ 健康"
+> ```　举一反三：告警用 `rate()` 而非直接除是因为 rate 能自动处理 Counter 重置（Pod 重启归零）。加一条反向告警 `CoffeeOrderNoTraffic` 检测零流量——可能是服务挂了但 Prometheus 没发现，或网关把流量断掉了。
+
 *本话属于连载《从零开始学 Java》。世界观与创作规范见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 [/java](/java)。*

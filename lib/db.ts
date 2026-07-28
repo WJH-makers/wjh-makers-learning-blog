@@ -82,7 +82,12 @@ function getClient(): Promise<MongoClient> {
     };
     const client = new MongoClient(uri, options);
     attachDatabasePool(client);
-    clientPromise = client.connect();
+    // 首连失败必须把 promise 丢掉:否则这个 rejected promise 会被缓存到容器生命周期结束,
+    // Atlas 一次抖动 = 评论/写作台/DB 文章在本次进程里永久静默失效。
+    clientPromise = client.connect().catch((error) => {
+      clientPromise = undefined;
+      throw error;
+    });
   }
 
   return clientPromise;
@@ -167,14 +172,29 @@ function slugify(input: string): string {
     .slice(0, 120);
 }
 
+/**
+ * 取一个未被占用的 slug。
+ * 不能用 countDocuments 推后缀:库里同时有 base 与 base-3 时 count=2 会推出必然撞唯一索引的 base-3。
+ * 这里读回同族已占用集合再找第一个空位;并发下仍可能撞车,由 createDatabasePost 的插入重试兜底。
+ */
 async function uniqueSlug(base: string): Promise<string> {
   const safeBase = base || "daily-note";
   const collection = await postsCollection();
-  const max = await collection.countDocuments({
-    slug: { $regex: `^${safeBase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(-\\d+)?$` },
-  });
-  if (max === 0) return safeBase;
-  return `${safeBase}-${max + 1}`;
+  const escaped = safeBase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const docs = await collection
+    .find({ slug: { $regex: `^${escaped}(-\\d+)?$` } }, { projection: { slug: 1 } })
+    .toArray();
+  const taken = new Set(docs.map((doc) => doc.slug));
+  if (!taken.has(safeBase)) return safeBase;
+  for (let i = 2; i <= taken.size + 2; i += 1) {
+    const candidate = `${safeBase}-${i}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+  return `${safeBase}-${taken.size + 3}`;
+}
+
+function isDuplicateKeyError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: number }).code === 11000;
 }
 
 export async function createDatabasePost(input: NewDatabasePost): Promise<Post> {
@@ -193,19 +213,29 @@ export async function createDatabasePost(input: NewDatabasePost): Promise<Post> 
 
   await ensureSchema();
   const collection = await postsCollection();
-  const slug = await uniqueSlug(`${date}-${slugify(title)}`);
+  const base = `${date}-${slugify(title)}`;
   const now = new Date();
 
-  await collection.insertOne({
-    slug,
-    title,
-    summary,
-    tags,
-    content,
-    publishedAt: date,
-    createdAt: now,
-    updatedAt: now,
-  });
+  // 并发写入下 uniqueSlug 的读-改-写仍有窗口,撞唯一索引就重算一次(最多 5 次)。
+  let slug = "";
+  for (let attempt = 0; ; attempt += 1) {
+    slug = await uniqueSlug(base);
+    try {
+      await collection.insertOne({
+        slug,
+        title,
+        summary,
+        tags,
+        content,
+        publishedAt: date,
+        createdAt: now,
+        updatedAt: now,
+      });
+      break;
+    } catch (error) {
+      if (!isDuplicateKeyError(error) || attempt >= 4) throw error;
+    }
+  }
 
   return {
     slug,

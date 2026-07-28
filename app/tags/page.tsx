@@ -16,20 +16,21 @@ export const revalidate = 3600;
 // 数据库→运维→前端),内容形式/IP 单列一组;长尾语法点归入对应领域,用于精确回到某一话。
 // 组内保留定义顺序(主标签在前);Spring 组预列 S4+ 标签,发布后自动归位;未列入的自动归「其他」。
 const TAG_CLUSTERS: { title: string; emoji: string; tags: string[] }[] = [
-  { title: "Java 语言基础", emoji: "☕", tags: ["Java", "编程入门", "HelloWorld", "变量", "基本类型", "运算符", "整数除法", "if", "条件判断", "switch", "分支穿透", "循环", "死循环", "数组", "数组越界", "方法", "函数", "Scanner", "输入", "String"] },
+  { title: "Java 语言基础", emoji: "☕", tags: ["Java", "Java基础", "编程入门", "HelloWorld", "变量", "基本类型", "运算符", "整数除法", "if", "条件判断", "switch", "分支穿透", "循环", "死循环", "数组", "数组越界", "方法", "函数", "Scanner", "输入", "String", "值传递", "深拷贝", "位运算", "位图", "包装类", "自动装箱", "BigDecimal", "enum", "EnumMap"] },
   { title: "面向对象", emoji: "🧱", tags: ["封装", "private", "继承", "extends", "多态", "动态派发", "接口", "interface", "抽象类", "Object", "equals", "record"] },
-  { title: "集合 & 泛型", emoji: "📦", tags: ["List", "ArrayList", "Set", "HashSet", "Map", "HashMap", "泛型", "generics"] },
-  { title: "异常 & IO", emoji: "⚠️", tags: ["异常处理", "自定义异常", "Exception", "调试", "空指针", "NIO", "文件IO"] },
-  { title: "函数式", emoji: "🌊", tags: ["函数式", "Lambda", "Stream"] },
+  { title: "集合 & 泛型", emoji: "📦", tags: ["List", "ArrayList", "Set", "HashSet", "Map", "HashMap", "泛型", "generics", "Queue", "PriorityQueue", "TreeMap", "Comparator", "LRU", "集合"] },
+  { title: "异常 · IO · 时间 · 正则", emoji: "⚠️", tags: ["异常处理", "自定义异常", "Exception", "调试", "空指针", "NIO", "文件IO", "IO", "编码", "序列化", "JSON", "java.time", "正则", "Pattern"] },
+  { title: "函数式", emoji: "🌊", tags: ["函数式", "Lambda", "Stream", "Optional"] },
+  { title: "并发 & 多线程", emoji: "🔀", tags: ["并发", "JMM", "volatile", "CAS", "LongAdder", "synchronized", "锁升级", "AQS", "ReentrantLock", "ConcurrentHashMap", "ThreadLocal", "CountDownLatch", "Semaphore", "CompletableFuture", "虚拟线程", "ScopedValue"] },
   { title: "工程 & 构建", emoji: "🔧", tags: ["Maven", "Gradle", "构建工具", "依赖管理", "JUnit", "单元测试", "测试", "Git", "版本控制", "多模块"] },
-  { title: "JVM & 性能", emoji: "🏛️", tags: ["JVM", "JDK", "OOM", "CPU"] },
-  { title: "Spring & 后端", emoji: "🌱", tags: ["Spring", "Spring Boot", "SpringBoot", "HTTP", "REST", "MyBatis", "JPA", "Spring Security", "鉴权"] },
-  { title: "数据库", emoji: "🗄️", tags: ["数据库", "MySQL", "Redis"] },
-  { title: "命令行 & 终端", emoji: "⌨️", tags: ["命令行", "终端漫画", "ssh", "shell", "阿零与特米"] },
-  { title: "系统 & 运维", emoji: "🖥️", tags: ["Linux", "Windows", "Docker", "SSH", "systemctl", "Vim", "环境配置"] },
-  { title: "前端 & 标记", emoji: "🎨", tags: ["前端", "HTML", "Markdown"] },
-  { title: "连载 & 项目", emoji: "📖", tags: ["Java漫画", "阿零与豆豆", "项目实战", "控制台程序", "重构"] },
-  { title: "方法 & 随笔", emoji: "📝", tags: ["学习方法", "复盘", "博客", "命令速查"] },
+  { title: "JVM & 底层", emoji: "🏛️", tags: ["JVM", "JDK", "OOM", "CPU", "反射", "注解", "动态代理", "ClassLoader", "双亲委派", "字节码", "JIT", "GC", "G1", "ZGC"] },
+  { title: "Spring & 后端", emoji: "🌱", tags: ["Spring", "Spring Boot", "SpringBoot", "HTTP", "REST", "MyBatis", "JPA", "Spring Security", "鉴权", "Bean", "事务"] },
+  { title: "数据库", emoji: "🗄️", tags: ["数据库", "MySQL", "Redis", "索引", "MVCC"] },
+  { title: "命令行 & 终端", emoji: "⌨️", tags: ["命令行", "终端漫画", "ssh", "shell", "阿零与特米", "PowerShell", "CMD", "WSL", "Neovim"] },
+  { title: "系统 & 运维", emoji: "🖥️", tags: ["Linux", "Windows", "Docker", "SSH", "systemctl", "Vim", "环境配置", "容器"] },
+  { title: "前端 & 工具链", emoji: "🎨", tags: ["前端", "HTML", "Markdown", "Vue", "Vite", "Node.js", "npm", "Python", "uv", "VSCode", "编辑器", "GitHub", "AI 工具", "工程效率"] },
+  { title: "连载 & 故事", emoji: "📖", tags: ["Java漫画", "编程漫画", "阿零与豆豆", "豆豆咖啡站", "治愈", "项目实战", "控制台程序", "重构", "八股", "面试", "新特性", "安全意识", "工程习惯", "综合"] },
+  { title: "方法 & 随笔", emoji: "📝", tags: ["学习方法", "复盘", "博客", "命令速查", "速查"] },
 ];
 
 function tagFontSize(count: number, maxCount: number): string {

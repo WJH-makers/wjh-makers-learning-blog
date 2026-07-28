@@ -1,14 +1,12 @@
-FROM docker.m.daocloud.io/library/node:20-alpine AS deps
+# node:20-alpine 已 EOL;standalone 产物只需能跑 next build 的 Node。
+# 用 node:22-alpine(当前 LTS,维护到 2027)。原 `deps` stage(--omit=dev)从未被引用:
+# runner 只 COPY .next/standalone,依赖由 standalone 自带,故删掉那一整段死代码。
+FROM docker.m.daocloud.io/library/node:22-alpine AS build-deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm config set fetch-timeout 60000 && npm ci 2>&1 || npm install 2>&1
 
-FROM docker.m.daocloud.io/library/node:20-alpine AS build-deps
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-
-FROM docker.m.daocloud.io/library/node:20-alpine AS builder
+FROM docker.m.daocloud.io/library/node:22-alpine AS builder
 ARG NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 WORKDIR /app
@@ -16,7 +14,7 @@ COPY --from=build-deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build && rm -rf .next/cache
 
-FROM docker.m.daocloud.io/library/node:20-alpine AS runner
+FROM docker.m.daocloud.io/library/node:22-alpine AS runner
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001 -G nodejs
 WORKDIR /app
 ENV NODE_ENV=production \

@@ -194,4 +194,120 @@ core 的测试(第 6 话那套)先跑、全过,app 再打包。第三季的每�
 
 ---
 
+## 🎯 随堂练习
+先自己做，再对答案。选择难度递进，解答从概念到综合，代码含边界验证。
+
+### 一、选择题（10 道）
+
+1. [基础] Maven 多模块项目的父 POM 打包类型必须设置为？
+- A) `jar`　B) `war`　C) `pom`　D) `ear`
+
+2. [基础] 父 POM 中用什么标签声明子模块列表？
+- A) `<dependencies>`　B) `<modules>`　C) `<children>`　D) `<subprojects>`
+
+3. [基础] 子模块的 POM 中通过什么标签指定父 POM？
+- A) `<modules>`　B) `<dependency>`　C) `<parent>`　D) `<inherits>`
+
+4. [进阶] 多模块项目中，模块间的依赖方向应该是？
+- A) 双向引用　B) **单向**，底层模块不依赖上层　C) 所有模块互相依赖　D) 只允许父模块依赖子模块
+
+5. [进阶] `coffee-app` 使用了 `coffee-core` 的类却忘了声明依赖，会看到什么错误？
+- A) 运行时 ClassNotFound　B) 编译期 `package does not exist`　C) 测试失败　D) 警告但可运行
+
+6. [进阶] 在父工程根目录执行 `mvn package`，子模块的构建顺序由什么决定？
+- A) 字母序　B) 随机　C) **Reactor 根据模块间依赖自动拓扑排序**　D) `<modules>` 声明顺序
+
+7. [进阶] `<dependencyManagement>` 的作用是？
+- A) 直接引入所有依赖　B) **统一声明版本号**，子模块引用时不写 version　C) 管理插件版本　D) 排除依赖
+
+8. [综合] 如果 `coffee-core` 反向依赖了 `coffee-app`，会导致？
+- A) 正常运行　B) **循环依赖**：Maven 拒绝构建 `The projects ... form a cycle`　C) 编译警告但可忽略　D) 运行时 StackOverflowError
+
+9. [综合] 拆多模块的核心收益**不包括**哪一项？
+- A) 核心业务可被多个入口复用　B) 模块边界清晰防止耦合　C) 构建和测试可独立　D) **代码行数自动减少**
+
+10. [综合] 多模块项目的版本管理最佳实践是？
+- A) 每个模块各自定版本　B) 父 POM 统一声明版本，子模块用父版本或 `${project.version}`　C) 不使用版本号　D) 每次发布手动逐个模块改版本
+
+> [!答案] **1-C** 父 POM 的 `packaging` 必须是 `pom`——它只做聚合和版本管理，自身不产出 jar/war。**举一反三**：子模块的 packaging 默认是 `jar`。
+> [!答案] **2-B** `<modules>` 标签列出所有子模块的目录名。**举一反三**：父 POM 必须放在子模块目录的**上级目录**。
+> [!答案] **3-C** `<parent>` 标签声明 GAV 坐标，子模块继承父 POM 的属性和依赖管理。**举一反三**：子模块的 `version` 如果和父模块相同，可以省略——由父模块统一管理。
+> [!答案] **4-B** 依赖单向——app → core。core 绝不反向依赖 app，否则形成循环。**举一反三**：这是分层架构的基本纪律，也是第四季 Spring 分层思想的前身。
+> [!答案] **5-B** Maven 各模块 classpath 隔离——不声明依赖就编译不过，报 `package ... does not exist`。**举一反三**：这是安全机制——不让你无意中用其他模块的类。
+> [!答案] **6-C** Reactor（反应堆）分析模块间依赖关系，自动决定构建顺序，保证被依赖的模块先构建。**举一反三**：`mvn package -pl coffee-core` 可以只构建指定模块。
+> [!答案] **7-B** `<dependencyManagement>` 只声明版本不引入依赖；子模块在 `<dependencies>` 中引用时不写 `<version>`，版本由父 POM 统一控制。**举一反三**：这解决了"多个模块用同一个库但版本不一致"的经典问题。
+> [!答案] **8-B** Maven 会检测循环依赖并直接报错终止构建。**举一反三**：如果两模块确实需要互相感知，抽取公共接口到第三个模块（如 `coffee-api`）。
+> [!答案] **9-D** 多模块不会自动减少代码——反而会增加配置文件数量。它的价值在于架构清晰（复用、解耦、独立构建），而非代码量。**举一反三**：单模块项目代码足够简单时不急着拆——过度拆分反而增加维护成本。
+> [!答案] **10-B** 父 POM 中通过 `properties` 或 `<dependencyManagement>` 统一声明版本，子模块用 `${project.version}` 引用。发布时只需改父 POM 一处。**举一反三**：`maven-release-plugin` 可以自动化版本升级和发布流程。
+
+### 二、解答题（3 道）
+
+1. [概念] 多模块项目的三个核心配置文件各管什么？父 POM（packaging=pom）管聚合和版本，子模块 POM 管自身依赖，`<dependencyManagement>` 管版本统一。画出一个典型的两层多模块结构。
+
+2. [场景] 咖啡站 v3 拆成了 `coffee-core`（领域）和 `coffee-app`（入口）。现在要加一个 `coffee-admin` 后台管理模块，也需要引用领域对象。请设计模块结构：①写出新的父 POM `<modules>`；②写出 `coffee-admin` 的 POM 如何声明依赖；③依赖关系图中 `core` 是否应该知道 `admin` 的存在。
+
+3. [综合] 比较"单模块一把梭"和"多模块拆分"的优劣，给出分模块的决策条件：①什么时候应该拆；②什么时候不应该拆；③如果核心域被多个入口引用但入口数量还不确定，应该怎么设计模块边界。
+
+> [!答案] **1** 三层结构：父 POM——`<modules>` 聚合子模块 + `<properties>` 统一版本 + `<dependencyManagement>` 统一依赖版本；core 子模块 POM——`<parent>` 指向父 POM + 自己的 `<dependencies>`（如无外部依赖可不写）；app 子模块 POM——`<parent>` 指向父 POM + `<dependencies>` 中包含 `coffee-core`。**举一反三**：父 POM 的 `<dependencyManagement>` 中声明 core 的版本，app 引用时就不写 `<version>`，换版本只需改父 POM。
+> [!答案] **2** ①父 POM `<modules>` 新增：`<module>coffee-core</module>`、`<module>coffee-app</module>`、`<module>coffee-admin</module>`；②`coffee-admin` 的 `<dependencies>` 中加 `<dependency><groupId>cafe.doudou</groupId><artifactId>coffee-core</artifactId></dependency>`（版本可省略，由父 POM `<dependencyManagement>` 统一控制）；③core **不应该**知道 admin 的存在——依赖方向始终单向：admin → core。**举一反三**：如果把 core、app、admin 都依赖的公共工具抽出到 `coffee-common` 模块，层次关系为 common ← core ← app/admin。
+> [!答案] **3** 该拆的信号：①同一套领域模型被多个入口（控制台、Web、定时任务）使用；②不同模块由不同人/团队维护；③构建耗时过长，希望只重测改动的模块。不该拆：①项目还很小（<10 个类）；②团队只有 1-2 人且不预期扩展入口；③模块边界还不清晰。入口不确定时的设计：先抽 `coffee-core`（纯领域 + 接口）和 `coffee-common`（工具/常量），新增入口只需建新模块并依赖 core——这就是"核心不认识外壳"的威力。**举一反三**：不要在一开始就过度拆分——3 个模块是合理的起点，10 个模块大概率过度设计。
+
+### 三、代码题（2 道）
+
+1. [基础] 设计一个两模块 Maven 项目：①父工程 `coffee-parent`（groupId: `cafe.doudou`，packaging: pom，module: `coffee-core` 和 `coffee-app`）；②`coffee-core` 模块中创建一个 `Coffee` 类（name、price 字段 + 构造器）；③`coffee-app` 模块的 main 方法中创建 `Coffee` 实例并打印。写出：目录结构、父 POM 关键内容、`coffee-app` 的 POM 依赖声明、`App.java` 代码。
+
+2. [综合] 在一个已存在的多模块项目中，`coffee-app` 编译报 `package cafe.core does not exist`。请写出排查清单（至少 3 项）和修复步骤。若确认依赖已声明但仍报错，可能原因是什么？如何用 `mvn install` 解决？
+
+> [!答案] **1 验收**：
+> 目录结构：
+> ```
+> coffee-parent/
+> ├── pom.xml                    (packaging=pom, modules=[core, app])
+> ├── coffee-core/
+> │   ├── pom.xml                (parent=coffee-parent)
+> │   └── src/main/java/cafe/core/Coffee.java
+> └── coffee-app/
+>     ├── pom.xml                (parent=coffee-parent, 依赖 coffee-core)
+>     └── src/main/java/cafe/app/App.java
+> ```
+> 父 POM 关键片段：
+> ```xml
+> <groupId>cafe.doudou</groupId>
+> <artifactId>coffee-parent</artifactId>
+> <version>1.0.0</version>
+> <packaging>pom</packaging>
+> <modules><module>coffee-core</module><module>coffee-app</module></modules>
+> ```
+> `coffee-app/pom.xml` 依赖声明：
+> ```xml
+> <parent>
+>     <groupId>cafe.doudou</groupId>
+>     <artifactId>coffee-parent</artifactId>
+>     <version>1.0.0</version>
+> </parent>
+> <artifactId>coffee-app</artifactId>
+> <dependencies>
+>     <dependency>
+>         <groupId>cafe.doudou</groupId>
+>         <artifactId>coffee-core</artifactId>
+>         <version>1.0.0</version>
+>     </dependency>
+> </dependencies>
+> ```
+> `App.java`：
+> ```java
+> package cafe.app;
+> import cafe.core.Coffee;
+> public class App {
+>     public static void main(String[] args) {
+>         Coffee c = new Coffee("美式", 20);
+>         System.out.println(c.name() + ": ¥" + c.price());
+>     }
+> }
+> ```
+> **举一反三**：用 `<parent>` 继承版本管理时，子模块的 `groupId` 如果与父相同可以省略。
+> [!答案] **2 验收**：排查清单——①确认 `coffee-app/pom.xml` 中 `<dependencies>` 包含 `coffee-core` 且 GAV 正确；②确认父 POM 的 `<modules>` 中列出了 `coffee-core` 且在 `coffee-app` 之前；③确认 `coffee-core` 的类在 `src/main/java/cafe/core/` 目录下（包名对应）。修复步骤：在项目根目录执行 `mvn clean install`——这会把 core 先编译并安装到本地仓库 `~/.m2`，然后 app 才能从本地仓库引用到它。如果依赖已声明但仍报错，可能原因：①`coffee-core` 从未 `install` 过（本地仓库里没有）；②版本号不匹配；③IDE 缓存未刷新。`mvn install` 解决：先编译 core → 安装到 `~/.m2` → 再编译 app（此时 app 从本地仓库找到 core）。**举一反三**：日常开发中用 `mvn install`（而非 `package`）是多模块项目的标准操作——确保被依赖的模块在本地仓库中可用。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与创作规范见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 [/java](/java)。*

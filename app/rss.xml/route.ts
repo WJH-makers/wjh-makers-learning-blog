@@ -1,4 +1,4 @@
-import { getAllPublishedPosts, markdownToHtml, siteUrl } from "@/lib/posts";
+import { getAllPublishedPosts, markdownToHtml, outboundDate, siteUrl } from "@/lib/posts";
 
 // RSS 变化频率低(仅发文时),用 ISR 缓存;write 发布会 revalidatePath('/rss.xml') 主动刷新。
 export const revalidate = 3600;
@@ -21,7 +21,7 @@ export async function GET() {
         <title>${cdata(post.title)}</title>
         <link>${base}/posts/${post.slug}</link>
         <guid>${base}/posts/${post.slug}</guid>
-        <pubDate>${new Date(post.date).toUTCString()}</pubDate>
+        <pubDate>${outboundDate(post.date).toUTCString()}</pubDate>
         <description>${cdata(post.summary)}</description>
         ${i < FULL_COUNT ? `<content:encoded><![CDATA[${await markdownToHtml(post.content)}]]></content:encoded>` : ""}
       </item>`)
@@ -36,7 +36,7 @@ export async function GET() {
         <atom:link href="${base}/rss.xml" rel="self" type="application/rss+xml"/>
         <description>Java 全栈、系统实践、遥感 VQA 与 MoE 研究记录</description>
         <language>zh-CN</language>
-        <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+        <lastBuildDate>${(posts.length > 0 ? outboundDate(posts[0].date) : new Date()).toUTCString()}</lastBuildDate>
         ${items}
       </channel>
     </rss>`;

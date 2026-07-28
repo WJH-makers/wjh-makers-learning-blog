@@ -257,4 +257,98 @@ class PoolTest {
 
 ---
 
+## 🎯 随堂练习
+先自己做,再对答案。选择难度递进,解答从概念到综合,代码含边界验证。
+
+### 一、选择题(10 道)
+1. [基础]`ThreadPoolExecutor` 完整构造器的参数个数和第三、第六个参数是什么?
+- A) 5 个,第三个是 unit,第六个是 handler　B) 7 个,第三个是 keepAliveTime,第六个是 threadFactory　C) 7 个,第三个是 workQueue,第六个是 threadFactory　D) 6 个,第三个是 keepAliveTime,第六个是 handler
+> [!答案] **1-C**　7 参数顺序:corePoolSize→maxPoolSize→**keepAliveTime**→unit→workQueue→**threadFactory**→handler。**举一反三**:`Executors.newFixedThreadPool(n)` 内部 core=max=n,用无界 LinkedBlockingQueue——这就是为什么《阿里巴巴开发手册》禁止用它。
+
+2. [进阶]任务提交到线程池的执行优先级顺序是?
+- A) 先看队列→再开新线程→最后核心线程　B) 核心线程→队列→临时线程(超 max)→拒绝策略　C) 临时线程→核心线程→拒绝　D) 随机分配
+> [!答案] **2-B**　执行顺序:①核心线程有空→直接处理;②核心忙→入队列;③队列满→开临时线程(未达 maxPoolSize);④线程数达 max→拒绝策略。**举一反三**:这个顺序意味着——有界队列没满时**永远不会**创建新线程,即使核心线程全部忙碌。这是很多人调大一倍 maxPoolSize 却看不到线程数增长的原因。
+
+3. [深入]四种拒绝策略中,`CallerRunsPolicy` 的行为是?
+- A) 抛异常 RejectedExecutionException　B) 静默丢弃新任务　C) 由提交任务的线程(如 main 线程)自己执行该任务　D) 丢弃队列中最老的任务
+> [!答案] **3-C**　CallerRunsPolicy:"谁提交的谁自己跑"——形成自然反压:提交线程被占住,它就无法继续提交新任务,倒逼上游降速。**举一反三**:AbortPolicy(默认)抛异常适合必须成功的关键任务;DiscardPolicy 丢弃适合可损失的日志/监控;DiscardOldestPolicy 丢最早的对时效敏感场景。
+
+4. [基础]`Executors.newFixedThreadPool(n)` 的大坑是什么?
+- A) 线程数太少　B) 内部使用无界 `LinkedBlockingQueue`(容量 ≈ Integer.MAX_VALUE),队列可无限增长导致 OOM　C) 不支持并发　D) 线程不会复用
+> [!答案] **4-B**　`newFixedThreadPool` 用 `new LinkedBlockingQueue<>()` 不设容量,任务堆积无上限→堆内存被排队任务塞满→OOM。**举一反三**:`newCachedThreadPool` 更危险——最大线程数 `Integer.MAX_VALUE`,高峰时无限创建线程;两者都是《阿里巴巴 Java 开发手册》明令禁止的生产写法。
+
+5. [进阶]核心线程数设置为 CPU 核数 + 1,适用于什么类型的任务?
+- A) IO 密集型(查库、调接口)　B) CPU 密集型(加密、压缩、计算)　C) 所有类型　D) 不需要计算,随便填
+> [!答案] **5-B**　CPU 密集型:CPU 核数 + 1(多一个利用等待时的 CPU)。IO 密集型:可以设更大(如核数*2 或更多),因为线程大量时间在等 IO,CPU 空闲可多开线程。**举一反三**:公式是起点不是终点——最终值靠**压测**标定,观察 CPU 利用率、RT 曲线、线程活跃数。
+
+6. [深入]`keepAliveTime` 参数只对哪些线程生效?
+- A) 核心线程　B) 临时线程(超过 corePoolSize 的部分)——空闲超时后被销毁　C) 所有线程　D) 主线程
+> [!答案] **6-B**　默认 `keepAliveTime` 只对临时线程(核心数之外的)生效,空闲超时即回收;核心线程默认不回收(除非 `allowCoreThreadTimeOut(true)`)。**举一反三**:这意味着池子平时只保留核心线程,高峰过后临时线程自动释放,实现弹性伸缩。
+
+7. [基础]`submit()` 和 `execute()` 的区别?
+- A) 完全相同　B) `submit` 返回 `Future<T>`,可获取结果和异常;`execute` 无返回值　C) `execute` 更快　D) `submit` 只用于 Callable
+> [!答案] **7-B**　`submit(Callable<T>)` 返回 `Future<T>`,可 `get()` 阻塞等结果、`get(timeout)` 超时等、`cancel()` 取消;`execute(Runnable)` 只提交不关心结果。**举一反三**:`submit(Runnable)` 也返回 `Future<?>`,get() 返回 null,但可以捕获执行中的异常。
+
+8. [进阶]`shutdown()` 和 `shutdownNow()` 的区别?
+- A) 前者等待已提交任务执行完,后者尝试中断正在执行的任务并返回未执行任务列表　B) 完全相同　C) `shutdownNow` 更温和　D) 没有区别
+> [!答案] **8-A**　`shutdown()`:温和关闭,不再接受新任务,但已提交的任务(含队列中)执行完毕才关闭;`shutdownNow()`:尝试中断正在执行的线程,返回队列中未执行的任务列表,不保证立即停止。**举一反三**:通常 `shutdown()+awaitTermination(timeout)` 组合使用,超时后仍不结束再 `shutdownNow()`。
+
+9. [深入]`ThreadPoolExecutor` 中 `beforeExecute()` 和 `afterExecute()` 的典型用途?
+- A) 不能重写　B) 记录任务执行时间、埋点监控、清理 ThreadLocal(如 RequestContext)　C) 管理数据库连接　D) 编译 Java 代码
+> [!答案] **9-B**　`beforeExecute`/`afterExecute` 是模板方法——可在任务执行前后记录耗时、打印日志、清理 ThreadLocal,实现线程池级别的统一监控。**举一反三**:`afterExecute` 的第二个参数是 Throwable——如果任务抛异常,可在此统一记录,而非在每个任务里各自 try-catch。
+
+10. [综合]Tomcat 内嵌的线程池本质是什么?`server.tomcat.threads.max` 对应线程池的哪个参数?
+- A) 自定义线程池,不相关　B) 它是 `ThreadPoolExecutor` 的封装;`threads.max` ≈ `maxPoolSize`　C) 它是数据库连接池　D) 它是 JVM 线程管理
+> [!答案] **10-B**　Tomcat 线程池也是 `ThreadPoolExecutor` 的封装:`threads.min-spare`≈corePoolSize,`threads.max`≈maxPoolSize,`accept-count`≈workQueue 的容量。**举一反三**:线上调参——如果 `accept-count` 太小,请求直接拒绝;太大则队列堆积导致延迟升高。
+
+### 二、解答题(3 道)
+1. [概念]用一个咖啡店前台的比喻解释线程池的:核心线程、有界队列、临时线程、拒绝策略四个概念。
+> [!答案] **1**　①核心线程=固定收银员(常驻 8 人),日常够用;②有界队列=候客椅(最多 200 人),收银员忙不过来时顾客坐椅子上等;③临时线程=高峰临时工(最多 32 人),椅子坐满才加派人手;④拒绝策略=门口挂牌"暂停接单"(或让经理自己上=CallerRunsPolicy)。这个比喻精准对应了"先占核心→再塞队列→再加临时→最后拒绝"的执行顺序。**举一反三**:如果把椅子换成无限长(无界队列),顾客不拒绝但椅子从店门口排到街上——内存爆了——这就是 `Executors.newFixedThreadPool` 的致命缺陷。
+
+2. [场景]咖啡站的下单接口平均耗时 200ms(其中 DB 查询占 150ms),预估 QPS 峰值 500。请估算合理的核心线程数和队列容量,并说明估算依据。
+> [!答案] **2**　①每个请求占用线程 200ms(IO 密集,150ms 在等 DB);②500 QPS 需要同时处理:500×0.2=100 个并发任务;③核心线程:IO 密集可设 CPU 核数×(1+IO时间/CPU时间),假设 8 核×(1+150/50)≈8×4=32。实际核心可设 32~64,队列 200~500。**依据**:`core×200ms = 每秒处理量`,32×(1000/200)×1s=160 QPS——核心不够,队列缓冲剩余流量,临时线程作为弹性补充。最终值需压测验证。**举一反三**:不是算完就定——上线后用 Micrometer 监控线程池的 `pool.size`/`queue.size`/`active.count`,按实际数据调整。
+
+3. [综合]Java 21 引入虚拟线程后,传统的"线程池+有界队列"模式在 IO 密集型场景是否还需要?分析虚拟线程的优势和传统线程池仍然适用的场景。
+> [!答案] **3**　虚拟线程的优势:**极轻量**(~KB vs 平台线程~1MB),百万虚拟线程同时跑不成问题,IO 密集型场景可"一请求一虚拟线程",无需纠结线程数。**传统线程池仍然需要**:①CPU 密集型任务——虚拟线程不提升计算速度,过多的虚拟线程争抢 CPU 反而恶化;②需要限流的场景——"无界"的虚拟线程可能掩盖下游资源瓶颈,如 DB 连接池仍只有 20 个连接,10 万虚拟线程抢 20 个连接照样排队;**限流仍需要,只是从线程池搬到了信号量或连接池层**。③存量代码兼容——不是所有框架/库都适配了虚拟线程。**举一反三**:虚拟线程不是银弹,它解决的是"平台线程太贵所以要用池子省着用"的问题;但"资源有上限"的物理现实不会因为线程便宜了就消失。
+
+### 三、代码题(2 道)
+1. [基础]手动创建 `ThreadPoolExecutor`:核心 2、最大 4、存活 30s、有界队列(10)、CallerRunsPolicy,给线程命名为"coffee-worker"。提交 5 个打印"你好,我是 [线程名]"的任务并优雅关闭。
+> [!答案] **1 验收**:
+> ```java
+> var pool = new ThreadPoolExecutor(2, 4, 30L, TimeUnit.SECONDS,
+>         new ArrayBlockingQueue<>(10),
+>         r -> new Thread(r, "coffee-worker-" + counter.getAndIncrement()),
+>         new ThreadPoolExecutor.CallerRunsPolicy());
+> for (int i = 0; i < 5; i++) {
+>     pool.execute(() -> System.out.println("你好,我是 " +
+>             Thread.currentThread().getName()));
+> }
+> pool.shutdown();
+> pool.awaitTermination(5, TimeUnit.SECONDS);
+> ```
+> **举一反三**:给线程起名是排障刚需——`jstack` 里看到 `coffee-worker-3` 比 `pool-1-thread-3` 强一百倍。
+
+2. [综合]模拟"队列满→CallerRunsPolicy 反压"的场景:创建 core=1,max=1,队列=3 的线程池,主线程连续提交 6 个任务(每个 sleep 1s),观察哪些任务由主线程执行。用 `Thread.currentThread().getName()` 区分执行线程,并断言至少有一个任务由 main 线程执行。
+> [!答案] **2 验收**:
+> ```java
+> @Test void callerRunsPolicyKicksIn() throws Exception {
+>     var pool = new ThreadPoolExecutor(1, 1, 60, TimeUnit.SECONDS,
+>             new LinkedBlockingQueue<>(3),
+>             new ThreadPoolExecutor.CallerRunsPolicy());
+>     var names = new ConcurrentLinkedQueue<String>();
+>     for (int i = 0; i < 6; i++) {
+>         final int no = i;
+>         pool.execute(() -> {
+>             try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+>             names.add(Thread.currentThread().getName() + " 完成 #" + no);
+>         });
+>     }
+>     pool.shutdown();
+>     pool.awaitTermination(10, TimeUnit.SECONDS);
+>     assertTrue(names.stream().anyMatch(n -> n.contains("main")),
+>             "CallerRunsPolicy 应将溢出任务交给提交线程(main)执行");
+> }
+> ```
+> **举一反三**:1(core)+3(queue)=4 个正常排队,第 5/6 个溢出→提交者(main)自己执行;若用 AbortPolicy(默认),第 5 个就抛异常——选择哪个取决于"宁可慢也不丢"还是"宁可丢也不慢"。
+
 *本话属于连载《从零开始学 Java》。世界观与创作规范见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 [/java](/java)。*

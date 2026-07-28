@@ -248,6 +248,173 @@ class MillionCustomersTest {
 
 > 下一话《并发终考:超卖事故复盘》(番外卷二终):没有新知识点,只有一场真实事故、一个一言不发的旁观者,和阿零自己的五步排障法。
 
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,中间3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. 平台线程(Platform Thread)和 OS 线程的关系是?
+- A) 多个平台线程映射到一个 OS 线程(N:1)　　B) 一个平台线程映射到一个 OS 线程(1:1)——Java 的平台线程就是对 OS 线程的包装,每个 `Thread` 对象底面对应一个内核线程　　C) 平台线程完全在用户态,与 OS 线程无关　　D) 平台线程和 OS 线程的关系取决于 JVM 版本
+
+2. 虚拟线程(Virtual Thread)的栈内存大小是多少?
+- A) 默认 1MB,和平台线程一样　　B) 默认几十到几百 KB,且由 JVM 动态管理——栈以「堆栈块(continuation frames)」形式存储在堆上,按需分配和缩小,不需要预留 1MB　　C) 不使用栈,使用堆上的 ArrayList 模拟　　D) 固定 256KB
+
+3. 虚拟线程最受益的场景是?
+- A) 纯 CPU 计算密集型(如加密解密、图像处理)　　B) IO 密集型(如数据库查询、HTTP 调用、文件读写)——阻塞时虚拟线程在 JVM 内 mount/unmount 到平台线程,不阻塞 OS 线程,使平台线程能服务其他虚拟线程,大幅提升并发吞吐　　C) 所有场景都受益　　D) 只是语法糖,没有性能提升
+
+4. 虚拟线程的「pin(钉住)」问题指的是什么?
+- A) 虚拟线程被固定在某个 CPU 核上　　B) 当虚拟线程执行 `synchronized` 块或 native 方法时,不能被 unmount(不能从平台线程上卸下)——导致阻塞期间独占该平台线程,其他虚拟线程无法使用它,削弱了虚拟线程的并发优势　　C) 虚拟线程被 GC 标记为不可移动的对象　　D) 虚拟线程和平台线程的绑定关系不可改变
+
+5. 以下关于虚拟线程的创建方式,正确的是?
+- A) `new Thread(() -> {}).start()`——和创建平台线程一样　　B) `Thread.ofVirtual().start(() -> {})`——JDK 19+ 的虚拟线程工厂方法,创建的 Thread 默认以虚拟线程身份运行　　C) `Executors.newVirtualThreadPerTaskExecutor()`——提交的任务在每个虚拟线程中执行,不需池化管理　　D) B 和 C 都正确
+
+6. 虚拟线程和线程池的关系,以下哪个说法正确?
+- A) 应该创建一个固定大小的虚拟线程池来复用虚拟线程　　**B) 虚拟线程不应池化——它们是廉价的(几乎不消耗系统资源),应该「一任务一线程」直接创建;池化反而违背了虚拟线程的设计初衷(每个任务隔离,无状态污染)**　　C) 虚拟线程也必须池化,否则会内存溢出　　D) 虚拟线程不需要管理,也不能显式创建
+
+7. 虚拟线程的 `ThreadLocal` 使用需要注意什么?
+- A) 完全不能用　　**B) 能用,但要严守 `remove` 纪律——虚拟线程虽然库存百万条,但每条仍携带 `ThreadLocal` 的 value 强引用,不 remove 仍会泄漏;且 JDK 21+ 推荐将不可变上下文迁移到 `ScopedValue`,既无泄漏风险又自动在 mount/unmount 时传播**　　C) 虚拟线程的 ThreadLocal 值会被 GC 自动回收　　D) 虚拟线程创建 ThreadLocal 时会自动设置过期时间
+
+8. 以下哪种代码模式会导致虚拟线程被「pin」?
+- A) `Thread.sleep(1000)`　　**B) `synchronized(obj) { blockingIO(); }`——在 `synchronized` 块内执行阻塞操作,虚拟线程无法 unmount,期间绑定的平台线程被独占**　　C) `lock.lockInterruptibly()`　　D) `CompletableFuture.supplyAsync(() -> work())`
+
+9. 虚拟线程的数量级通常在什么范围?
+- A) 几百到几千,和平台线程一样　　**B) 可达数十万甚至百万——虚拟线程只占堆内存(每个几百字节到几 KB 栈),不消耗 OS 线程资源,理论上受限于 JVM 堆内存大小而非 OS 线程限制**　　C) 受限于 CPU 核数 × 2　　D) 虚拟线程有硬上限 65535
+
+10. JDK 21 的结构化并发 `StructuredTaskScope` 与虚拟线程的关系是?
+- A) 两者没有关系,是完全独立的两个 API　　**B) `StructuredTaskScope` 是虚拟线程的「组织者」——它在一段代码中 fork 出多个子虚拟线程,并在所有子线程结束时自动 join,提供清晰的父子关系和作用域管理;两者配合解决「虚拟线程泄漏」(fork 出去的线程不知何时结束)的问题**　　C) `StructuredTaskScope` 只支持平台线程　　D) `StructuredTaskScope` 是虚拟线程的另一种写法
+
+### 解答题(5 道)
+
+1. 用三个关键数字对比平台线程和虚拟线程:① 创建成本 ② 栈内存 ③ 最大数量,并解释为什么这些差异让虚拟线程适合「高并发 + 频繁阻塞」的场景。
+
+2. 画出虚拟线程在阻塞 IO 时的 mount/unmount 流程图——从虚拟线程调用 `socket.read()`(阻塞)到接收到数据(恢复)的全过程。解释为什么这个过程不消耗 OS 调度器的时间片。
+
+3. 你的咖啡站现有代码使用 `Executors.newFixedThreadPool(200)` 处理 HTTP 请求,每个请求中多次调用数据库和缓存。大促期间 200 个线程全部卡在数据库查询上,新请求排队超时。请给出用虚拟线程的改造方案(只改三行代码),并分析为什么线程数从 200 飙升到几万也不会让系统崩溃。
+
+4. 虚拟线程三大纪律:①不池化 ②防钉住(pin) ③ThreadLocal→Scoped Values。请针对每条纪律给出一个违反它的代码示例和后果,以及遵守它的正确写法。
+
+5. 你的项目将从 JDK 17 + 平台线程迁移到 JDK 21 + 虚拟线程。设计迁移策略:① 哪些代码最容易直接受益(改一行 Executor 即可)?② 哪些代码需要重构(存在 `synchronized` + IO 或 `ThreadLocal` 滥用)?③ 虚拟线程是否应该全部替代平台线程?找出至少一个场景,虚拟线程不适合而平台线程仍然是最佳选择。
+
+> [!答案]
+> **1-1** B(1:1 映射——Java Thread(平台线程)创建时,底层调用 OS API 创建内核线程。每个平台线程是一个独立的调度实体,被 OS 调度器管理)  
+> **举一反三**:1:1 模型的优劣:优势——真实并行,多核 CPU 同时运行多个平台线程;劣势——OS 线程是稀缺资源,创建/切换成本高(用户态↔内核态切换),栈内存大(默认 1MB)。
+>
+> **1-2** B(堆栈存于堆,动态管理——虚拟线程的栈由 JVM 以 stack chunk 对象形式分配在堆上,调用链深时自动扩展堆栈块,返回时自动收缩。初始只有几百字节,峰值可能几百 KB)  
+> **举一反三**:传统线程栈的固定 1MB 是最大的内存瓶颈——1000 个线程 = 1GB 栈内存。虚拟线程的栈按需分配,100 万虚拟线程的内存消耗可能不到 1GB(假设每个平均栈深度浅),这就是百万并发的物质基础。
+>
+> **1-3** B(IO 密集是虚拟线程的最高价值场景——阻塞 IO 时虚拟线程卸载平台线程,让 OS 线程去服务别的虚拟线程。传统线程在阻塞时 OS 线程被浪费,虚拟线程把这段「浪费」转化为吞吐。CPU 密集任务没有这个收益——因为不会阻塞,不需要卸载)  
+> **举一反三**:虚拟线程的提升公式:收益 ≈ 阻塞时间 / 总任务时间。纯 CPU 计算(阻塞时间 ≈ 0)≈ 0% 提升;微服务调用(阻塞时间 90%+)≈ 10x 提升。
+>
+> **1-4** B(pin 的本质——虚拟线程在 `synchronized` 块或 JNI native 方法中不能卸载。如果此时发生阻塞 IO,虚拟线程被 pin 在平台线程上,该平台线程被独占,无法服务其他虚拟线程)  
+> **举一反三**:pin 是虚拟线程设计上的一个已知限制——monitor 锁（`synchronized`）与虚拟线程的挂载/卸载机制之间存在冲突,因为 monitor 持有者必须是 OS 线程。解决方法:把 `synchronized` 替换成 `ReentrantLock`（显式锁不 pin）,或者把阻塞操作移出 synchronized 块。
+>
+> **1-5** D(B 和 C 都对——`Thread.ofVirtual().start(r)` 创建单个虚拟线程;`Executors.newVirtualThreadPerTaskExecutor()` 返回一个每任务创建新虚拟线程的执行器,不用池化)  
+> **举一反三**:`Thread.ofPlatform()` 创建平台线程,`Thread.ofVirtual()` 创建虚拟线程。两者 API 对称,意图却相反——平台线程需要池化复用,虚拟线程用后即弃。
+>
+> **1-6** B(不池化——虚拟线程的创建成本极低(非系统调用,只是堆上分配对象),栈内存极小,生命周期短。池化会引入三个问题:①限制了最大并发数(违背虚拟线程的初衷) ②带来 ThreadLocal 污染(线程复用=旧值残留) ③管理复杂度(池大小、队列、拒绝策略),而这些在虚拟线程下都是多余的)  
+> **举一反三**:"不要池化"是虚拟线程最反直觉的纪律——因为我们被平台线程的昂贵成本训练了二十年,潜意识里认为"池化 = 高性能"。虚拟线程颠覆了这个前提:廉价资源不需要池化。
+>
+> **1-7** B(能用但要 remove,且推荐迁移到 ScopedValue——虚拟线程的 Thread 对象仍然有 ThreadLocalMap,不 remove 仍然泄漏。区别在于泄漏速度:平台线程 200 个,每个泄漏 1MB,总计 200MB;虚拟线程可能 10 万个,每个泄漏 1KB,总计 100MB——仍然不可接受。ScopedValue 是官方推荐的替代)  
+> **举一反三**:虚拟线程让 ThreadLocal 的泄漏从"慢性病"变成"急性病"——虽然单个虚拟线程的 ThreadLocal 泄漏量小,但虚拟线程数量大,泄漏总量可能比平台线程更大且更难定位。所以迁移到 ScopedValue 不是可选项,而是必选项。
+>
+> **1-8** B(synchronized 块内阻塞 IO → pin 住。虚拟线程在 `synchronized` 持有 monitor 时不能被 unmount,阻塞期间独占平台线程)  
+> **举一反三**:pin 的检测:用 `-Djdk.tracePinnedThreads=full` JVM 参数,当虚拟线程被 pin 时 JVM 打印栈信息。常见的 pin 陷阱:`synchronized(this) { socket.read(); }`——把 I/O 放在 synchronized 块里,十个虚拟线程就能 pin 住十个平台线程,所有并发优势全毁。
+>
+> **1-9** B(数量由堆内存决定,不受 OS 线程限制——一个虚拟线程的对象本体加初始栈约占几百字节到 1KB,1GB 堆内存理论上可承载百万级别虚拟线程。实际瓶颈是:① 每个虚拟线程的局部变量总量 ② 异步操作数(连接数、FD 数) ③ 业务逻辑复杂度)  
+> **举一反三**:"百万并发"的硬件要求不像想象中那么高——瓶颈不再在线程,而在网络连接数(需要 OS 参数优化)、数据库连接池(不能用 1 请求 1 DB 连接)、以及下游服务的承载能力。虚拟线程解决了"并发等待"的瓶颈,但下游系统成为新的瓶颈。
+>
+> **1-10** B(StructuredTaskScope 解决虚拟线程的生命周期管理——它在 try-with-resources 块内 fork 出子虚拟线程,在 scope.close() 时自动 join 所有子线程,保证 fork 出的线程不会逃逸到作用域外,防止"僵尸虚拟线程"。如果 fork 出去忘记 join,虚拟线程就变成孤儿线程;StructuredTaskScope 通过作用域自动约束)  
+> **举一反三**:如果把虚拟线程比作"Task",StructuredTaskScope 就是 "Task 的生命周期管理器"。没有它,虚拟线程的 fork-join 模式容易泄漏;有它,子线程结束时间被限定在 scope 的 try 块内,语义清晰。
+>
+> **2-1** 三个关键对比:① 创建成本——平台线程 ≈ 1ms(OS 系统调用),虚拟线程 ≈ 1µs(JVM 堆分配,无系统调用)。② 栈内存——平台线程默认 1MB(预留),虚拟线程几百字节~几百 KB(按需分配)。③ 最大数量——平台线程 ≈ 数千(OS 内核线程上限,如 Linux pid_max 限制),虚拟线程 ≈ 数十万到百万(仅受堆内存限制)。适用性解释:高并发=大量任务同时在线,频繁阻塞=大部分时间在等 IO 不干活。平台线程:每个等待都要占一条线程(每线程 1MB × 几千条 = 几 GB 内存,数千个已到 OS 上限)。虚拟线程:等待时不占线程——因为阻塞时自动卸下,平台线程去服务其他虚拟线程;数十万虚拟线程同时等待,但内存消耗仅取决于「同时在干活」的个数×栈深,而非「总共存在」的个数。效果:10000 并发数,平台线程需要 10000×1MB ≈ 10GB 栈+线程调度开销→崩溃;虚拟线程需要约 50MB 堆+极少量平台线程→轻松运行。  
+> **举一反三**:虚拟线程解决的不是"加速计算",而是"降低等待的资源成本"。类比:传统线程是给每个顾客配一个服务员(服务员=平台线程),服务员陪等菜;虚拟线程是给每个顾客发一个"等待牌"(轻量对象),只有上菜的瞬间才需要一个服务员。
+>
+> **2-2** 流程:
+> ```
+> 虚拟线程 VT-1 执行中（mount 在平台线程 PT-A 上）
+>     │
+>     ▼
+> VT-1 调用 socket.read() → 内核无数据 → 进入阻塞
+>     │
+>     ▼ JVM 运行时
+> ① 保存 VT-1 的执行状态到堆上的 continuation 对象
+> ② 卸载 VT-1 从 PT-A（unmount）→ PT-A 恢复可用状态
+> ③ 将 VT-1 标记为"等待 IO"
+>     │
+>     ▼
+> PT-A 从调度队列取下一个虚拟线程 VT-2 并 mount 它
+> PT-A 开始执行 VT-2 的代码（继续干活,无阻塞）
+>     │
+>     │  ... 同时,内核在网络数据到达后 ...
+>     ▼
+> ④ 内核通知 JVM:数据就绪,VT-1 的 socket 可读
+> ⑤ JVM 将 VT-1 放回「就绪队列」
+> ⑥ 某个空闲的 PT（PT-B）从就绪队列取 VT-1,mount 并恢复执行
+> ⑦ VT-1 从 socket.read() 返回,拿到数据,继续执行
+> ```
+> 不消耗 OS 时间片:步骤①-③和④-⑦全在 JVM 用户态完成——没有系统调用、没有 OS 线程切换、没有用户态↔内核态切换。平台线程 A 在 VT-1 阻塞后被「回收」去处理 VT-2,这个过程是 JVM 的调度,开销远小于 OS 线程切换。真正发生的是:一次 `park/unpark`(用户态)而非一次 `context_switch`(内核态)。  
+> **举一反三**:为什么虚拟线程切换比平台线程快 2-3 个数量级?因为 OS 线程切换需要保存/恢复寄存器、切换页表、TLB flush、更新调度器数据结构——全是内核态操作。虚拟线程挂载/卸载只需保存/恢复 Java 栈帧到堆,全程在用户态,不需要陷入内核,也不需要更新 MMU。
+>
+> **2-3** 改三行:
+> ```java
+> // 改前
+> ExecutorService pool = Executors.newFixedThreadPool(200);
+> // 改后
+> ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
+> ```
+> 原理:每个 HTTP 请求提交到 executor:
+> ```java
+> pool.submit(() -> {
+>     String user = db.query("SELECT ...");  // 阻塞,虚拟线程自动 unmount
+>     String order = db.query("SELECT ..."); // 阻塞,再 unmount
+>     cache.set(key, compute(user, order));  // 缓存可能远程
+>     return response;
+> });
+> ```
+> 为什么 200→几万不崩溃:① 线程数飙升是因为"创建成本极低"——每请求一个虚拟线程,不是池化复用,而是用完就释放(GC)。只要堆够,能承载的虚拟线程数就受限于内存。② 崩溃的边界从「线程等待占用 OS 线程」变成了「数据库连接池上限」——即使 30 万个虚拟线程同时在线,其中只有约 50 个同时在干活(对应 50 个数据库连接),其余 29 万 950 个都在等待网络 IO(挂起状态,不占 CPU,只占几百字节堆)。瓶颈从线程池转移到数据库连接池——后者才是真正的限流点,需配合连接池大小控制。  
+> **举一反三**:虚改后的新瓶颈:数据库连接数。如果 3 万个虚拟线程同时 query,数据库最多接受 200 连接,剩下 29800 个虚拟线程排着等——但它们只占内存不消耗 CPU,等待本身不会让系统崩溃。真正需要控制的是上游流量(limit 信号量)或数据库连接池大小。
+>
+> **2-4** ① 不池化——错误:
+> ```java
+> ExecutorService pool = Executors.newFixedThreadPool(100, Thread.ofVirtual().factory());
+> // 提交 1000 个任务,只有 100 个虚拟线程在跑,其余排队——人为限流,违了虚拟线程的初衷
+> ```
+> 正确:
+> ```java
+> ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor();
+> // 1000 个任务,每个一个虚拟线程,全部并行——限流的任务交给 Semaphore 或连接池
+> ```
+> ② 防钉住——错误:
+> ```java
+> synchronized(dataLock) {
+>     String result = httpClient.send(request); // 阻塞 IO 在 synchronized 内,pin!
+> }
+> ```
+> 正确:
+> ```java
+> String result = httpClient.send(request); // IO 移到锁外
+> synchronized(dataLock) {
+>     updateData(result); // 只有快速操作在锁内
+> }
+> // 或改用 ReentrantLock(不 pin 虚拟线程)
+> ```
+> ③ ThreadLocal→ScopedValue——错误:
+> ```java
+> ThreadLocal<User> currentUser = new ThreadLocal<>();
+> // 虚拟线程用完不 remove → 内存持续增长,百万个虚拟线程可能泄漏大量数据
+> ```
+> 正确:
+> ```java
+> private static final ScopedValue<User> CURRENT_USER = ScopedValue.newInstance();
+> ScopedValue.where(CURRENT_USER, user).run(() -> {
+>     handleRequest(); // 作用域内可见,出了自动释放,无需 remove
+> });
+> ```
+> **举一反三**:三条纪律的统一原则——虚拟线程的设计哲学是"轻量、临时、无状态"。池化(有状态+复用)、pin(与 OS 层的状态耦合)、ThreadLocal(有状态+手动清理)全部违背了这个哲学。遵守三条纪律,就是在把代码从"有状态"转向"无状态",这正是现代并发编程的核心趋势。
+>
+> **2-5** ① 最容易直接受益的代码:所有使用 `ExecutorService` 处理大量 IO 任务的代码——把 `Executors.newFixedThreadPool(n)` 或 `Executors.newCachedThreadPool()` 换成 `Executors.newVirtualThreadPerTaskExecutor()`。典型场景:Web 容器(如 Tomcat 已支持虚拟线程)、HTTP 网关、消息消费者、批量数据同步器。只需改 Executor 的创建,其他代码不变。② 需要重构的代码:标识在 synchronized 内有阻塞 IO (`synchronized(lock) { db.query() }`)→ 移除同步块/替换为 ReentrantLock;ThreadLocal 未 remove → 改为 ScopedValue 或加 finally remove;依赖池大小做限流(如 `pool.getQueue().size()`)→ 改为 Semaphore 限流。③ 不是所有场景都用虚拟线程:纯 CPU 密集型(如实时音视频编解码、科学计算、图形渲染)——虚拟线程不加速计算,用平台线程+ForkJoinPool 最合适。需精确控制线程优先级或 CPU 亲和性——虚拟线程不支持这些。需 JNI 频繁调用 → JNI 会 pin 虚拟线程。结论:虚拟线程替代了「为等 IO 而生的线程池」,但不替代「为并行计算而生的线程池」。迁移策略:IO 密集→虚拟线程,CPU 密集→ForkJoinPool,两者共存。  
+> **举一反三**:迁移的三个层次——L1:换 Executor 不换业务逻辑(80% 的场景);L2:修 synchronized+IO 和 ThreadLocal(15% 的场景);L3:重构架构利用 StructuredTaskScope(5% 的场景,如复杂的 fork-join 流)。不要试图一次迁移到 L3,从 L1 开始就能获取最大收益。
 ---
 
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

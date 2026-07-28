@@ -189,4 +189,123 @@ class CafeAppTest {
 
 > 第三季《工程时代》:**异常体系**兜住错误、**文件持久化**留住数据、**Maven** 管理构建、**JUnit** 织成测试网、**Git** 记录每一步,还要专门开一话讲透本季只是顺手一用的 **Lambda 与 Stream**——带咖啡站从「能运行」迈向「可维护」。
 
+
+
+## 🎯 随堂练习
+先自己做，再对答案。选择难度递进，解答从概念到综合，代码含边界验证。
+
+### 一、选择题（10 道）
+
+1. [基础] S2 重构后，咖啡站各模块通过什么方式协作？- A) 全局变量　B) 接口契约和对象引用　C) `static` 方法直接调用　D) 数据库
+2. [基础] 值对象（如 `Coffee`）的最合适的实现方式是？- A) 普通类手写 getter/setter　B) `record`　C) `HashMap`　D) `String[]`
+3. [基础] `Menu` 用哪种数据结构实现"按名查咖啡"最合适？- A) `List<Coffee>`　B) `Map<String, Coffee>`　C) `Coffee[]`　D) `Set<Coffee>`
+4. [进阶] 下面哪种设计**不符合**职责分离原则？- A) `Coffee` 只管数据、`Cashier` 只管结账　B) `Coffee` 类里写一个 `pay()` 方法处理付款逻辑　C) `PaymentMethod` 接口只管付款契约　D) `Menu` 只管索引和查找
+5. [进阶] 从 S1（数组+静态方法）到 S2（对象+接口+集合），最核心的质量提升是？- A) 代码变短了　B) 修改成本降低——改一处不引发雪崩　C) 运行更快　D) 变量名变短了
+6. [进阶] 收银台 `checkout(PaymentMethod pm, double amount)` 为什么参数写接口类型而非具体类？- A) 因为接口写在前面好看　B) 面向接口编程——换付款方式不用修改收银台代码　C) 因为具体类不能用　D) 因为接口更快
+7. [进阶] "对扩展开放、对修改关闭"（开闭原则）在本季中的最佳体现是？- A) 所有代码写在一个文件　B) 加新饮品加新子类，加新付款方式加新实现类，都不动已有代码　C) 用 switch 分派　D) 用 if-else 判断
+8. [综合] 测试中的"回归测试"（regression test）指什么？- A) 测试代码回归到旧版本　B) 修改代码后跑已有测试，确保之前修好的 bug 不会重新出现　C) 只测新功能　D) 自动生成的测试
+9. [综合] 重构和重写（rewrite）的区别是什么？- A) 没区别　B) 重构是不改变外部行为的前提下改善内部结构；重写是从头写　C) 重构更慢　D) 重写更安全
+10. [综合] S2 咖啡站的"明确局限"（数据在内存、关机即丢）是第三季的入口。这个问题对应什么解决方案？- A) 泛型　B) 异常处理　C) 文件持久化/数据库　D) 多态
+
+> [!答案] **1-B**　S2 的核心是面向对象——Coffee 值对象、Menu 索引、PaymentMethod 接口、Cashier 结算，通过接口契约和对象引用协作。**2-B**　`record` 一行代码搞定构造器 + getter + equals/hashCode/toString——值对象的最佳实践。**3-B**　`Map<String, Coffee>` 提供 O(1) 按名查找，是菜单索引的天然选择。**4-B**　`Coffee` 处理付款逻辑违反了单一职责——Coffee 是值对象，只该管自己的数据，付款逻辑属于收银台或 PaymentMethod。**5-B**　衡量重构质量的不是"代码变短"，而是"修改成本降低"——分离的职责意味着改付款不影响咖啡，改菜单不影响结账。**6-B**　接口参数让收银台不绑定具体付款方式——加积分支付只需新增实现类，收银台零改动。**7-B**　S2 的核心成就——加饮品加子类、加付款加实现类，已有代码不动。open for extension, closed for modification。**8-B**　回归测试 = 每次改动后把之前写的测试全跑一遍——保证旧功能没被新代码弄坏。S02E12 结尾的测试就是这个目的。**9-B**　重构是在有测试保护的前提下逐步改善结构（行为不变）；重写是推倒重来。有测试是重构的前提——这也是为什么 S02E12 强调先写测试再改代码。**10-C**　数据在内存关机消失 → 需要持久化到文件或数据库。第三季 S03E03（文件处理）和第四季 S04E04（MySQL）就是解决这个问题的。
+**举一反三**：第 5、7、8 三题串起了 S2 的"工程意识"暗线——重构不是炫技，是为了改得动代码；回归测试不是负担，是改代码的底气。
+
+### 二、解答题（3 道）
+
+1. [概念] S2 重构后，咖啡站的对象模型（Coffee/Menu/Cashier/PaymentMethod）各自的职责是什么？画出职责边界，说明为什么不能把所有功能塞到一个类里。
+2. [场景] 现在要在咖啡站加一个新功能：折扣卡（持有者享受 9 折）。说明在 S2 架构下怎么加这个功能，需要改哪些类、不动哪些类——对比如果在 S1 架构下要改多少地方。
+3. [综合] "面向接口编程"在本季有两个层面的应用：①`PaymentMethod` 接口（业务层）；②Java 集合接口（`List`/`Map`/`Set`，JDK 层）。分别说明它们如何体现"依赖抽象而非具体实现"，以及带来的好处。
+
+> [!答案] **1**　职责边界：`Coffee`（值对象）——持有 name/price/stock 数据，管好自己的不变量（价格≥0、库存≥0）。`Menu`（仓储）——管理所有 Coffee 的增删查改，提供按名查找（O(1)）。`Cashier`（业务逻辑）——根据订单计算总价、扣减库存、调用付款接口完成结算。`PaymentMethod`（接口契约）——定义付款行为签名，各付款方式自行实现。不能塞到一个类里的原因：①单一职责——一个类只有一个改变的理由；②可测试——每个类可独立 mock 依赖测试；③可替换——改付款方式只换 PaymentMethod 实现，Cashier 无感。**举一反三**：Spring 里的 Controller → Service → Repository 三层架构就是这种职责分离的规模化版本。**2**　S2 架构下只需：①新增 `DiscountCard` 类（字段 `cardId, discountRate`）；②在 `Cashier.checkout` 增加一个可选参数 `DiscountCard card`，或重载一个带折扣参数的方法；③结算时 `total *= card.getRate()`。已有类零改动。S1 架构下（数组+静态方法）：①改全局数组加折扣数据；②改 `calculateTotal` 静态方法加折扣逻辑（所有调用方都受影响）；③可能还要改 `printReceipt` 加折扣行。一个功能动全身。**举一反三**：这就是衡量设计好坏的标准——"加一个需求需要改几个地方"。改的越少，设计越好。**3**　业务层 `PaymentMethod`：收银台依赖接口而非具体付款类，好处——①换付款方式不动收银台；②测试时用 Lambda 模拟（`amount -> {}`）不需要真实支付网关；③未来加硬件支付（刷卡机/NFC）同样只加实现类。JDK 层集合接口：`List<Coffee> orders = new ArrayList<>()`——代码只认 `List` 接口，好处——①如果性能需要换 `LinkedList`，只改 `new` 那行；②方法参数写 `List` 而非 `ArrayList`，调用方可以传任何 List 实现；③`Collections.unmodifiableList()` 返回的也是 List——统一接口让装饰器/代理模式无缝接入。**举一反三**：Spring 的依赖注入就是把这条原则推到极致——你在代码里只写 `@Autowired PaymentService`（接口类型），Spring 在运行时决定注入哪个实现（可能由配置文件、profile、条件注解决定）。
+
+### 三、代码题（2 道）
+
+1. [基础] 不看原文，自己设计 S2 咖啡站的最小可运行模型（只写类结构和方法签名，不要求完整实现）：至少包含 `Coffee`（值对象）、`Menu`（管理菜单）、`Cashier`（结账）、`PaymentMethod`（付款接口）、一个具体付款实现。画出类关系。
+2. [综合] 实现一个简化的收银台 `Cashier`：有 `checkout(String coffeeName, int quantity, PaymentMethod pm)` 方法。流程：查 Menu 获取咖啡 → 检查库存 → 扣库存 → 计算总价 → 调 `pm.pay(total)`。库存不足时抛 `IllegalStateException`，咖啡不存在时抛 `NoSuchElementException`。写两个测试：①正常结算流程；②库存不足抛异常（验证库存未被扣减）。
+
+> [!答案] **1 验收**：
+> ```java
+> // Coffee 值对象
+> record Coffee(String name, double price, int stock) {}
+> 
+> // Menu 管理咖啡
+> class Menu {
+>     Map<String, Coffee> items = new HashMap<>();
+>     void add(Coffee c) { items.put(c.name(), c); }
+>     Coffee find(String name) { return items.get(name); }
+> }
+> 
+> // PaymentMethod 付款接口
+> interface PaymentMethod { void pay(double amount); }
+> class CashPay implements PaymentMethod {
+>     public void pay(double amount) { System.out.println("现金支付: ¥" + amount); }
+> }
+> 
+> // Cashier 收银台
+> class Cashier {
+>     void checkout(Menu menu, String name, int qty, PaymentMethod pm) {
+>         Coffee c = menu.find(name);
+>         // ... 检查库存、扣减、计算总价、调用 pm.pay
+>     }
+> }
+> // 关系: Menu 持有多个 Coffee（1:N）
+> //       Cashier 依赖 Menu（查咖啡）和 PaymentMethod（付款）
+> //       但 Cashier 不持有它们——通过方法参数传入（依赖注入的雏形）
+> ```
+> **举一反三**：`Cashier` 不持有 Menu 和 PaymentMethod 作为字段，而是方法参数——这叫"方法参数注入"，是依赖注入（DI）的最简形式。**2 验收**：
+> ```java
+> import java.util.*;
+> 
+> record Coffee(String name, double price, int stock) {
+>     Coffee withStock(int newStock) { return new Coffee(name, price, newStock); }
+> }
+> 
+> class Menu {
+>     private final Map<String, Coffee> items = new HashMap<>();
+>     void add(String name, double price, int stock) {
+>         items.put(name, new Coffee(name, price, stock));
+>     }
+>     Coffee find(String name) {
+>         Coffee c = items.get(name);
+>         if (c == null) throw new NoSuchElementException("没有这款咖啡: " + name);
+>         return c;
+>     }
+>     void update(Coffee c) { items.put(c.name(), c); }
+> }
+> 
+> interface PaymentMethod { void pay(double amount); }
+> 
+> class Cashier {
+>     void checkout(Menu menu, String coffeeName, int quantity, PaymentMethod pm) {
+>         Coffee coffee = menu.find(coffeeName);           // 不存在→NoSuchElementException
+>         if (coffee.stock() < quantity) {
+>             throw new IllegalStateException("库存不足: " + coffeeName + " 只有 " + coffee.stock() + " 杯");
+>         }
+>         menu.update(coffee.withStock(coffee.stock() - quantity));  // 扣库存
+>         double total = coffee.price() * quantity;
+>         pm.pay(total);
+>     }
+> }
+> 
+> // 测试1: 正常结算
+> Menu menu = new Menu();
+> menu.add("美式", 15.0, 10);
+> double[] charged = {0};
+> PaymentMethod recorder = amount -> charged[0] = amount;
+> new Cashier().checkout(menu, "美式", 2, recorder);
+> System.out.println("付款: ¥" + charged[0]);          // 30.0
+> System.out.println("剩余库存: " + menu.find("美式").stock()); // 8
+> 
+> // 测试2: 库存不足
+> try {
+>     new Cashier().checkout(menu, "美式", 100, recorder);
+> } catch (IllegalStateException e) {
+>     System.out.println(e.getMessage());                // 库存不足
+>     System.out.println("库存应不变: " + menu.find("美式").stock()); // 8（未扣减）
+> }
+> ```
+> **举一反三**：测试中用 Lambda `amount -> charged[0] = amount` 模拟付款——这就是"面向接口编程"在测试中的直接好处。不需要真实的支付宝 SDK，一个 Lambda 就能验证整条结算链路。
+
+---
+
 *完整季次地图见 [/java](/java);世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`。*

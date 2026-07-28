@@ -216,4 +216,58 @@ class MoneyTest {
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 🎯 随堂练习
+
+### 选择题(10 道)
+
+1. double 存 0.1 为什么「存不准」?
+   - A) Java 的 double 设计有缺陷　B) 0.1 在二进制里是无限循环小数,52 位尾数装不下　C) 编译器 bug　D) 只发生在 Windows 上
+2. `0.1 + 0.1 + 0.1 == 0.3` 在 Java 中的结果是?
+   - A) true　B) false　C) 编译错误　D) 随机
+3. `new BigDecimal(0.1)` 和 `BigDecimal.valueOf(0.1)` 的区别是?
+   - A) 完全一样　B) 前者原封不动保存 double 的误差,后者先走字符串路径得到干净的 0.1　C) 前者更精确　D) 前者是静态方法
+4. `new BigDecimal("1.0").equals(new BigDecimal("1.00"))` 结果是?
+   - A) true　B) false　C) 异常　D) 编译错误
+5. 两个 BigDecimal 的金额比大小,正确做法是?
+   - A) `equals`　B) `compareTo` == 0　C) `==`　D) `>` 直接比
+6. `new BigDecimal("19.00").divide(new BigDecimal(3))` 会?
+   - A) 返回 6.33　B) ArithmeticException:除不尽且没给 scale　C) 返回 6　D) 四舍五入
+7. 正确的除法写法是?
+   - A) `divide(bd)`　B) `divide(bd, 2, RoundingMode.HALF_UP)`　C) `divide(bd, Math.round)`　D) 不能用除法
+8. 数据库里存金额的列类型应该是?
+   - A) FLOAT　B) DOUBLE　C) DECIMAL　D) VARCHAR
+9. 测试里 `assertEquals(new BigDecimal("0.3"), threeCoupons)` 的前提是?
+   - A) 凑巧　B) 双边的 scale 必须一致,equals 连小数位数一起比　C) 用 compareTo 重写 assertEquals　D) 做不到
+10. `double` 可以合法用在哪?
+    - A) 绝不——永远用 BigDecimal　B) 图形渲染/科学计算等容忍近似误差的场景　C) 金额计算　D) 数据库主键
+
+> [!答案]
+> **1-B**　IEEE 754 用二进制存小数,0.1 的二进制是 `0.0001100110011…` 无限循环,52 位尾数截断后只能存最近似值。**举一反三**:这不是 Java 的问题,C/Python/JS 的浮点数同理,`0.1+0.2 === 0.3 // false` 在 JS 控制台就能复现。
+> **2-B**　三张 0.1 加起来是 0.30000000000000004 而不是 0.3。**举一反三**:浮点判等不要用 `==`,给一个误差容忍 `Math.abs(a-b) < 1e-9`;金额则直接用 BigDecimal 的 compareTo。
+> **3-B**　`new BigDecimal(0.1)` 先用 double 保存了 0.1(已经带误差),再把误差原封不动传给 BigDecimal;`valueOf` 内部用了 `Double.toString(0.1)`,先得到字符串再传给 BigDecimal。**举一反三**:这一条背死——金额永远用字符串构造 `new BigDecimal("18.00")` 或 `valueOf`,函数形参已经是 double 时 `valueOf` 是唯一选择。
+> **4-B**　`equals` 比较时连 scale(小数位数)一起比,1.0(scale=1) ≠ 1.00(scale=2)。**举一反三**:`equals` 偶尔有用(比如验证 setScale 是否正确),金额判等则永远用 `compareTo==0`。
+> **5-B**　金额比较只能用 `compareTo`,它只看数值不看 scale。**举一反三**:写 `a.compareTo(b) == 0` 而不是 `a.equals(b)`,养成肌肉记忆到手指。
+> **6-B**　BigDecimal 除不尽时绝不偷偷舍入——不给 scale + RoundingMode 宁可抛 ArithmeticException 也不静默错。**举一反三**:这就是金融计算的铁则:拒绝"悄悄近似";你写的每一行 BigDiv 除法都要有 RoundingMode。
+> **7-B**　除法三要素:除数 + 保留几位小数(scale) + 舍入规则(RoundingMode)。**举一反三**:HALF_UP 是最常用的四舍五入;分账时最后一人用「总额 - 前 N−1 人的和」兜底,避免 6.33×3=18.99 少一分。
+> **8-C**　DECIMAL 是十进制定点数,与 Java 的 BigDecimal 同为十进制,无缝映射;FLOAT/DOUBLE 是二进制近似值,存进去误差就固化了。**举一反三**:MySQL 的 `price DECIMAL(10,2)` 表示最多 10 位数字、其中 2 位是小数;BigDecimal 的 scale=2 与之一一对应。
+> **9-B**　`assertEquals` 底层调 equals,equals 连 scale 一起比;双方 setScale 统一后测试才可靠。**举一反三**:或者写 `assertTrue(threeCoupons.compareTo(new BigDecimal("0.3")) == 0)`,这种写法对 scale 不敏感,也是金测惯用模板。
+> **10-B**　double 的设计初衷是科学计算——速度快、允许近似;只有「容忍近似」的场景才合法。**举一反三**:即使科学计算,Java 里用 `StrictMath`(对标 IEEE 754 严格语义)而非 `Math`(允许不同处理器略不同)能复现跨平台结果——但这两个都跟钱无关。
+
+### 解答题(5 道)
+
+1. 用 IEEE 754 的二进制原理,解释为什么 0.1 + 0.1 + 0.1 不等于 0.3。
+2. `new BigDecimal(0.1)` 打印出了 55 位长尾巴,为什么 `BigDecimal.valueOf(0.1)` 打印干净的 0.1?源码层面发生了什么?
+3. `equals` 和 `compareTo` 对 BigDecimal 的区别是什么?金额判等为什么不能用 `equals`?
+4. 公司团建 19 元账单三人 AA,按 BigDecimal + HALF_UP 分,写出完整代码,并说明最后一人为什么要用「减法兜底」。
+5. 如果 Legacy 系统已经把金额存成了 double,该在哪个环节转成 BigDecimal,怎么转?
+
+> [!答案]
+> **1**　IEEE 754 用二进制存小数:0.1 的二进制是 `0.0001100110011…`(1100 无限循环),double 的 52 位尾数只截取前 52 位(舍入),实际存的值略大于 0.1。三个「略大」相加,误差累积到 0.00000000000000004,所以不等于 0.3。**举一反三**:二进制不擅长存分母不是 2ⁿ 的十进制小数,和「3 进制无法精确表示 1/3」是一个道理——不是 Bug,是进制换算的必然。
+> **2**　`new BigDecimal(0.1)` 拿到的是 double 字面量 0.1——它已经带着二进制近似的误差了(实际长约 0.10000000000000000555…),BigDecimal 忠实地把误差原样转成十进制,所以一排长尾。`valueOf(0.1)` 内部先用 `Double.toString(0.1)` 把 double 打成能唯一还原的最短字符串,恰巧就是 "0.1",再以字符串构造 BigDecimal。**举一反三**:所有从 double 进 BigDecimal 的门,优先走 `valueOf`;如果 double 是 JSON 反序列化得到的,说明 JSON 解析那步就已经该拦截。
+> **3**　`equals` 比较数值 + scale(1.0 和 1.00 不等),`compareTo` 只比数值(1.0 和 1.00 相等)。金额在乎的是「一元钱是不是一元钱」,所以必须 `compareTo`。**举一反三**:`TreeSet<BigDecimal>` 的元素判重看 `compareTo`,不是 `equals`——如果把 equal scale 不同的同数值 BD 放进 TreeSet,只有先加那一个会被保留。
+> **4**　```java
+BigDecimal bill = new BigDecimal("19.00");
+BigDecimal each = bill.divide(new BigDecimal("3"), 2, RoundingMode.HALF_UP); // 6.33
+BigDecimal last = bill.subtract(each.multiply(new BigDecimal("2")));   // 6.34 兜底
+```　前两人各 6.33,最后一人 6.34——总额 = 6.33+6.33+6.34 = 19.00 分毫不差。**举一反三**:任何分账/分摊/佣金分配,最后一份用 「总额 − 已分配总和」兜底,这是金融系统的惯用模式。
+> **5**　在数据进系统的最外层(Controller 入口、MQ 消费端、文件读取)就拦截:拿到 double 后立即 `BigDecimal.valueOf(d).setScale(...)` 转成 BigDecimal,之后的业务逻辑只碰 BigDecimal。**举一反三**:最差但常见的情况是系统内部已经到处是 double 了——不要试图「一把全改」,先收敛到一两处出入口,再逐步往里迁移,每次迁移都跑全量回归测试。*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

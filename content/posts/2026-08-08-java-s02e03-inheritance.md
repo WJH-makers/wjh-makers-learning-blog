@@ -193,4 +193,91 @@ void premium_exposes_foam() {
 
 ---
 
+## 🎯 随堂练习
+先自己做，再对答案。选择难度递进，解答从概念到综合，代码含边界验证。
+
+### 一、选择题（10 道）
+
+1. [基础] Java 中用什么关键字实现继承？- A) `implements`　B) `extends`　C) `inherit`　D) `super`
+2. [基础] 子类构造器中调用父类构造器使用哪个关键字？- A) `this`　B) `parent`　C) `super`　D) `base`
+3. [基础] `super()` 调用在子类构造器中必须放在？- A) 最后一行　B) 任意位置　C) 第一行　D) 方法体中间
+4. [进阶] 如果子类构造器第一行不写 `super(...)`，会发生什么？- A) 编译报错　B) 编译器自动插入 `super()`（调用父类无参构造）　C) 跳过父类初始化　D) 运行时异常
+5. [进阶] `@Override` 注解的作用是？- A) 提高运行性能　B) 编译器检查该方法是否真的覆写了父类方法　C) 必须写否则编译失败　D) 改变方法可见性
+6. [进阶] 以下哪行代码正确覆写了 `toString()` 方法？- A) `public String ToString()`　B) `public String toString(Object o)`　C) `@Override public String toString()`　D) `@Override public string toString()`
+7. [进阶] 向上转型（Upcasting）的特点是什么？- A) 需要显式 `(子类型)` 强转　B) 子类对象自动当成父类类型使用　C) 会丢失对象数据　D) 编译不通过
+8. [综合] Java 不支持多继承（一个类只能继承一个父类），原因是什么？- A) JVM 性能限制　B) 避免"菱形问题"——两个父类有同名方法时产生歧义　C) 历史原因无实际理由　D) 语法太难实现
+9. [综合] 关于 `super.方法名()` 和 `this.方法名()`，描述正确的是？- A) 两者永远调用同一个方法　B) `super.` 调用父类版本，即使子类覆写了该方法　C) `super.` 调用子类版本　D) 不能同时使用
+10. [综合] 子类实例化的完整顺序是？- A) 子类字段 → 父类构造器 → 子类构造器　B) 父类静态块 → 子类静态块 → 父类构造器 → 子类字段初始化 → 子类构造器　C) 父类字段 → 父类构造器 → 子类字段 → 子类构造器　D) 随机顺序
+
+> [!答案] **1-B**　`extends` 是 Java 唯一的继承关键字。**2-C**　`super(参数)` 调用父类构造器。**3-C**　`super()` 或 `this()` 必须是构造器的第一条语句。**4-B**　编译器自动加 `super()`，但前提是父类有无参构造器——如果没有且子类不显式调有参的 `super(...)`，编译就失败。**5-B**　`@Override` 是编译期注解，只用来检测你是否真的在覆写——拼错名/参数写给被立刻抓出来。**6-C**　`toString()` 返回 `String`（大写 S），不能改签名。**7-B**　向上转型是安全的、自动的、不需要强转——子类对象天然是一个父类对象。**8-B**　多继承的菱形问题：`B extends A, C extends A` → `D extends B, C` 时，`D` 调用 `A` 的方法到底走 B 还是 C 的路径？Java 用"单继承 + 多接口"规避。**9-B**　`super.` 强制从父类开始找方法，跳过子类的覆写版本。**10-C**　经典顺序：父类 static→子类 static→父类字段→父类构造器→子类字段→子类构造器。
+**举一反三**：第 10 题顺序是面试八股 Top 级——"实例化时 `this.x` 为什么可能是 `null`" 常考（字段初始化和构造器执行顺序决定）。
+
+### 二、解答题（3 道）
+
+1. [概念] 继承的"is-a"关系是什么意思？举一个合理的 is-a 继承例子和一个不该用继承的场景，说明"组合优于继承"的判断标准。
+2. [场景] 父类 `Coffee` 的构造器需要 `(String name, double price)`。子类 `PremiumCoffee` 额外有 `int foamLevel`（奶泡等级）。写出 `PremiumCoffee` 的构造器，说明 `super(name, price)` 为什么必须写在第一行。
+3. [综合] 子类覆写父类方法后，有没有办法在子类中"借用"父类原版的方法逻辑？写一个具体场景（如子类 `describe()` 在父类基础上追加内容），并说明 `super` 在这里的作用。
+
+> [!答案] **1**　"is-a" = 子类**是一种**父类：`PremiumCoffee` 是一种 `Coffee`，合理。反例：`Coffee` 继承 `Water`（咖啡**需要**水而不是**是**水），这是"has-a"关系，该用组合——在 `Coffee` 里持有 `Water water` 字段。判断标准：如果 B 能完全替代 A 使用（里氏替换），继承成立；否则用组合。**举一反三**：所有"is-a"继承都可以被组合替代，但复用父类提供的公共行为和类型多态时继承更省代码。**2**　
+> ```java
+> class PremiumCoffee extends Coffee {
+>     private int foamLevel;
+>     PremiumCoffee(String name, double price, int foamLevel) {
+>         super(name, price);   // 必须第一行
+>         this.foamLevel = foamLevel;
+>     }
+> }
+> ```
+> `super()` 必须第一行是因为 JVM 要求**先完成父类构造才能分配子类字段**——如果子类字段在父类构造完成前就能用，父类构造器可能访问到未初始化的子类字段，造成逻辑混乱。**举一反三**：Java 25 开始允许在 `super()` 之前写一些语句（JEP 草案），但目前主流仍是"第一行"约束。**3**　用 `super.方法名()` 可以调用父类版本。比如：
+> ```java
+> @Override String describe() {
+>     return super.describe() + " · 奶泡等级: " + foamLevel;
+> }
+> ```
+> 这样既复用了父类的描述逻辑（不复制代码），又在它基础上追加了子类的信息——这是继承优于复制粘贴的关键体现。**举一反三**：模板方法模式大量使用这个技巧——父类定骨架（`final` 方法），内部的钩子方法留给子类覆写，覆写时还可以通过 `super.` 调父类的默认逻辑。
+
+### 三、代码题（2 道）
+
+1. [基础] 定义 `Drink` 父类（字段 `String name`，`describe()` 返回 `"这是一杯饮品"`），`Coffee` 子类继承它并 `@Override describe()` 返回 `"这是一杯" + name`。测试向上转型：`Drink d = new Coffee("美式"); d.describe()` 输出什么？为什么？
+2. [综合] 设计继承链：`Product`（字段 `String id`、`double price`；`getInfo()` 返回 `id + ":" + price`）→ `Coffee` extends `Product`（新字段 `String beanType`；`@Override getInfo()` 追加 `"[" + beanType + "]"`）。再写 `CoffeeWithShot` extends `Coffee`（新增 `int shots`；`@Override getInfo()` 继续追加 `" +" + shots + "shots"`）。测试三层链的 `getInfo()` 输出，确保每层只负责自己的追加逻辑。
+
+> [!答案] **1 验收**：
+> ```java
+> class Drink {
+>     String name;
+>     Drink(String name) { this.name = name; }
+>     String describe() { return "这是一杯饮品"; }
+> }
+> class Coffee extends Drink {
+>     Coffee(String name) { super(name); }
+>     @Override String describe() { return "这是一杯" + name; }
+> }
+> Drink d = new Coffee("美式");
+> System.out.println(d.describe()); // "这是一杯美式"
+> ```
+> 输出子类版本因为**动态绑定**——`d` 声明为父类但实际指向子类对象，运行时找实际对象的 `describe()`。**举一反三**：动态绑定是下一话"多态"的基石。**2 验收**：
+> ```java
+> class Product {
+>     String id; double price;
+>     Product(String id, double price) { this.id = id; this.price = price; }
+>     String getInfo() { return id + ":" + price; }
+> }
+> class Coffee extends Product {
+>     String beanType;
+>     Coffee(String id, double price, String beanType) { super(id, price); this.beanType = beanType; }
+>     @Override String getInfo() { return super.getInfo() + "[" + beanType + "]"; }
+> }
+> class CoffeeWithShot extends Coffee {
+>     int shots;
+>     CoffeeWithShot(String id, double price, String beanType, int shots) { super(id, price, beanType); this.shots = shots; }
+>     @Override String getInfo() { return super.getInfo() + " +" + shots + "shots"; }
+> }
+> // 测试:
+> Product p = new CoffeeWithShot("C001", 18.0, "阿拉比卡", 2);
+> System.out.println(p.getInfo()); // C001:18.0[阿拉比卡] +2shots
+> ```
+> **举一反三**：每层只调 `super.getInfo()` 并追加自己的内容——修改父类格式不影响子类追加逻辑，符合"对修改关闭、对扩展开放"的原则。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观见 `docs/java-comic-academy/handbook.md`;季次地图见 `/java`。*

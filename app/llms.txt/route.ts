@@ -1,4 +1,5 @@
 import { getAllPublishedPosts, siteUrl } from "@/lib/posts";
+import { SERIES_LIST, seriesProgress } from "@/lib/series-registry";
 import { agentContentSignal } from "@/lib/agent-markdown";
 
 export const revalidate = 3600;
@@ -11,18 +12,29 @@ export async function GET() {
     .map((post) => `- [${post.title}](${base}/posts/${post.slug}/markdown): ${post.summary}`)
     .join("\n");
 
+  // 连载入口走注册表:新开一条线自动出现,只列已开更的。
+  const seriesList = SERIES_LIST
+    .map((s) => ({ s, p: seriesProgress(s) }))
+    .filter(({ p }) => p.done > 0)
+    .map(({ s, p }) => `- [${s.title}](${base}${s.route}): ${s.tagline}(${p.done}/${p.total} 话)`)
+    .join("\n");
+
   const body = `# WJH-makers
 
 > 中文技术学习博客，记录 Java 全栈、工程实践与遥感 VQA / MoE 研究。
+> 特色:把 Java 工程师需要的整个知识面写成同一个咖啡站宇宙下的漫画连载。
 
 ## 阅读入口
 
-- [文章索引](${base}/posts)
-- [Java 漫画课程](${base}/java)
-- [CLI 学习系列](${base}/cli)
-- [豆豆咖啡站(温情工程漫画)](${base}/cafe)
+- [连载总台](${base}/series):全部漫画连载
+- [全量归档](${base}/archive):按时间线的完整文章清单
+- [速查手册](${base}/cheatsheets):命令与语法速查
 - [标签索引](${base}/tags)
-- [关于作者](${base}/about)
+- [项目集](${base}/projects) · [关于作者](${base}/about) · [现在在做](${base}/now)
+
+## 连载
+
+${seriesList}
 
 ## 机器可读格式
 

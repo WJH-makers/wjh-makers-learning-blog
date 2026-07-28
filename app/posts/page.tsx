@@ -1,22 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPublishedPosts, siteUrl, type Post } from "@/lib/posts";
-import { publishedEpisodes, totalEpisodeCount } from "@/lib/series";
-import { cliAllEpisodes, cliPublishedEpisodes } from "@/lib/series-cli";
-import { cafeAllEpisodes, cafePublishedEpisodes } from "@/lib/series-cafe";
+import { SERIES_LIST, findEpisodeInfo, seriesProgress } from "@/lib/series-registry";
 
 export const revalidate = 604800;
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
-  title: "全部文章",
-  description: "漫画连载、命令与速查手册、学习笔记 —— 分门别类。",
+  title: "文章精选 · 速查与笔记",
+  description: "速查手册与学习笔记的精选列表;连载话次在各系列地图里,全量清单见 /archive。",
   alternates: { canonical: `${siteUrl()}/posts` },
 };
 
-// 连载话次单独有 /java /cli 地图,不塞进列表;速查与笔记分区展示。
+// 连载话次单独有系列地图,不塞进列表;速查与笔记分区展示。
+// 走注册表判定而非 slug 正则 —— 新开一条线不改这里也能正确归类。
 function isSeriesEpisode(p: Post): boolean {
-  return /(java|cli|cafe)-s\d/.test(p.slug);
+  return findEpisodeInfo(p.slug) !== undefined;
 }
 function isCheatsheet(p: Post): boolean {
   return p.slug.includes("cheatsheet") || p.tags.some((t) => t === "命令速查" || t === "速查");
@@ -47,9 +46,12 @@ export default async function PostsPage() {
   return (
     <div className="page-shell narrow">
       <div className="page-title">
-        <p className="eyebrow">Archive Desk</p>
-        <h1>全部文章</h1>
-        <p>漫画连载 · 命令与速查 · 学习笔记 —— 分门别类,各取所需。</p>
+        <p className="eyebrow">Selected · 精选</p>
+        <h1>文章精选 · 速查与笔记</h1>
+        <p>
+          这一页放速查手册与学习笔记。连载话次各有自己的地图(见 <Link href="/series">连载总台</Link>),
+          想要不分类的完整清单请去 <Link href="/archive">全量归档</Link>。
+        </p>
       </div>
 
       <section className="section-head">
@@ -57,21 +59,20 @@ export default async function PostsPage() {
           <p className="eyebrow">Serialized · 连载</p>
           <h2>📖 漫画连载</h2>
         </div>
-        <span className="muted">故事化的长篇教程</span>
+        <Link href="/series">全部 {SERIES_LIST.length} 条 →</Link>
       </section>
       <div className="post-grid">
-        <Link href="/java" className="card series-hero-card">
-          <p className="series-hero-lead">从零开始学 Java</p>
-          <p className="muted">已完结 {publishedEpisodes().length} / {totalEpisodeCount()} 话 · 阿零与豆豆 · 咖啡站 v0→v7</p>
-        </Link>
-        <Link href="/cli" className="card series-hero-card">
-          <p className="series-hero-lead">从零开始玩命令行</p>
-          <p className="muted">连载中 {cliPublishedEpisodes().length} / {cliAllEpisodes().length} 话 · 阿零与特米 · Linux↔PowerShell</p>
-        </Link>
-        <Link href="/cafe" className="card series-hero-card">
-          <p className="series-hero-lead">豆豆咖啡站</p>
-          <p className="muted">连载中 {cafePublishedEpisodes().length} / {cafeAllEpisodes().length} 话 · 阿零与豆豆 · 温情工程物语</p>
-        </Link>
+        {SERIES_LIST.map((series) => ({ series, p: seriesProgress(series) }))
+          .filter(({ p }) => p.done > 0)
+          .map(({ series, p }) => (
+            <Link key={series.route} href={series.route} className="card series-hero-card">
+              <p className="series-hero-lead">{series.title}</p>
+              <p className="muted">
+                {p.done >= p.total ? "已完结" : "连载中"} {p.done} / {p.total} 话
+                {series.alias ? ` · ${series.alias}` : ""}
+              </p>
+            </Link>
+          ))}
       </div>
 
       {cheatsheets.length > 0 && (

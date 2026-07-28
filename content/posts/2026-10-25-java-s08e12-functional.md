@@ -260,4 +260,70 @@ class ReportTest {
 
 ---
 
+## 🎯 随堂练习
+
+### 选择题(10 道)
+
+1. 四大函数式接口中,Predicate 的角色是?
+   - A) 变形机　B) 闸门(boolean test)——决定元素进不进流水线　C) 无底洞　D) 补货机
+2. `Coffee::name` 属于哪种方法引用形态?
+   - A) 静态方法引用　B) 类::实例方法(首参当接收者)　C) 构造器引用　D) 对象::实例方法
+3. `Optional.of("拿铁").orElse(queryDb())` 的问题是什么?
+   - A) 没问题　B) 即使 Optional 里有值,orElse 的参数(查库)也会先执行　C) 不支持串行　D) 编译错误
+4. 正确延迟执行兜底值的方法是什么?
+   - A) orElse　B) orElseGet(() -> queryDb())——只在没值时执行　C) get　D) map
+5. `Optional.get()` 为什么是坏味道?
+   - A) 空盒抛 NoSuchElementException,和判空一样危险　B) 太慢　C) 不支持链式　D) 会还原
+6. 并行流的最佳应用场景是哪一组?
+   - A) 数据量极小 + IO 密集　B) 数据量大(十万+)、纯 CPU、无共享可变状态、源好拆　C) 任何场景　D) 仅用于文件读取
+7. 并行流 + 共享 ArrayList 会导致什么问题?
+   - A) 自动同步　B) 元素丢失或数组越界——ArrayList 不是线程安全的　C) 更快　D) 编译拦截
+8. Stream 的 collect 在并行流下怎么做到线程安全?
+   - A) 自动加锁　B) 每个线程有私人本子(累加器),最后合并——并行安全是设计出来　C) 切换串行　D) 依赖 volatile
+9. Collectors.groupingBy + counting 组合的含义是?
+   - A) 排序　B) 按某键分组并统计每组的数量　C) 过滤　D) 去重
+10. `orElse` 和 `orElseGet` 的核心区别是?
+    - A) 返回值类型不同　B) orElse 参数不管有没有值都先执行,orElseGet 只在没值时执行　C) orElseGet 更快　D) orElse 是静态方法
+
+> [!答案]
+> **1-B**　Predicate.test 返回 boolean——filter 的参数就是 Predicate,「进不进流水线」看它。**举一反三**:四大接口不用全背——每当你写匿名类内用到 test/apply/accept/get 时,就知道它们分别对应哪个。
+> **2-B**　`类名::实例方法` 要求「第一个参数是方法所属类型」——`Coffee::name` 等价于 `c -> c.name()`,c 就是 Coffee。**举一反三**:这是方法引用四种形态里最容易混淆的一种——关键是「流里元素类型恰好是方法所在类」;String::length、BigDecimal::intValue 都是这型。
+> **3-B**　orElse 的参数是普通方法调用,在 Optional 解引用之前就执行了——不管盒里有值没值,queryDb() 都跑了。**举一反三**:`orElse(log("hello"))` 也一样——log 总是打,即使 Optional 有值。生产上 orElse 只放常量或已算好的值,绝不放带副作用的代码。
+> **4-B**　orElseGet 接收一个 Supplier(补货机),只在 Optional 为空时才调用。**举一反三**:`orElseGet(() -> new ArrayList<>())` 是常见模式——只在需要时才分配空集合,省内存。
+> **5-A**　直接 get 空盒 = NoSuchElementException;这和忘了判空一样危险。正确做法:orElse/orElseGet(给缺省值),orElseThrow(给专用异常),ifPresent(有值时执行)。**举一反三**:可以用 `orElseThrow(() -> new BusinessException("..."))` 替代 get;至少抛一个业务可读的异常,而不是让人摸脑子想为什么 NoSuchElement。
+> **6-B**　并行流四条判据:数据量(小数据开销大于收益)、纯 CPU(无 IO)、无共享可变状态、好拆的数据源(ArrayList 好拆,LinkedList 难拆)。**举一反三**:默认写串行流;怀疑它可以并行的时候,用 JMH 跑一次基准测试——拿数据说话,不猜。
+> **7-B**　ArrayList.add 三步(读 size→放元素→size++)线程不安全——八个线程同时做,互相覆盖,总数丢失;扩容瞬间数组越界。**举一反三**:共享可变状态 + 并行流 = 灾难配方;要收集就交给 collect,要变换就 map(纯函数);纯函数:同一个输入永远同一个输出,不改外部变量。
+> **8-B**　collect 的 Supplier/Accumulator/Combiner 协议:每线程拿到自己的新容器(Supplier),往里累加(Accumulator),最后两步合并(Combiner)——全程没有共享状态。**举一反三**:这就是「分而治之」的 Stream 实现:split 数据源 → 多线程执行中间操作 → 各线程收集局部结果 → 合并。理解了这个协议,你也能写自定义 Collectors。
+> **9-B**　`groupingBy(分类键, counting())` = SQL 里的 `GROUP BY key, COUNT(*)`。**举一反三**:`groupingBy` 还能嵌套 `mapping/summingInt/maxBy`,一行写出复杂的统计。熟悉 SQL 的人可以一对一对记:WHERE → filter,ORDER BY → sorted,LIMIT → limit,GROUP BY → groupingBy。
+> **10-B**　orElse 的参数在调用那一刻就求值;orElseGet 的参数包装在 Supplier 里,只在 Optional 空时才调。**举一反三**:`orElse(new ArrayList<>())` 即使有值也新建了空List——浪费;`orElseGet(ArrayList::new)` 只在需要时才建——这两个是面试官最爱追问的细节。
+
+### 解答题(5 道)
+
+1. 四个函数式接口(Predicate/Function/Consumer/Supplier)各写一个咖啡站例子,画表解释它们充当的角色。
+2. 遍历一个 `List<Order>`,取出已支付订单,按金额降序排,取前五,收集成 List。写一条 Stream 流水线。
+3. 解释为什么并行流往共享 ArrayList 里 add 会丢失数据,以及为什么 collect 方案能避免。
+4. `orElse` 和 `orElseGet` 的求值时机差异:给一个带副作用的例子,证明 orElse 总是执行兜底代码。
+5. 什么时候不该用 Optional 做字段?为什么它只应做返回值?
+
+> [!答案]
+> **1**　| 接口 | 角色 | 咖啡站例子 ||---|---|---|| Predicate | 闸门 | `order -> order.status() == PAID`,filter 时用 || Function | 变形机 | `Order::total`,map 时从订单→金额 || Consumer | 无底洞 | `IO::println`,只吞不吐,forEach 时用 || Supplier | 补货机 | `ArrayList::new`,只吐不吞,collect 时提供容器 |　**举一反三**:把 Stream 想象成工厂流水线:Predicate=质检站(filter),Function=喷漆工位(map),Consumer=包装入库(forEach),Supplier=新开一个空托盘(collect 的容器提供者)。
+> **2**　```java
+List<Order> top5 = orders.stream()
+    .filter(o -> o.status() == Status.PAID)
+    .sorted(Comparator.comparing(Order::total).reversed())
+    .limit(5)
+    .toList();
+```　**举一反三**:如果 sorted 在前、limit 在后——stream 是先排序再取前五(整体排序 O(n log n));如果把 limit 放 sorted 前面,意思是「先任意取 5 个,再排」——不是 Top 5 而是「抽中的 5 个内的排序」。
+> **3**　ArrayList.add 是三步:读当前 size,放到 size 位置,size+1。两个线程同时读到 size=10,都放到 index 10,后者覆盖前者 → 丢一条。如果 size 从 10→11 时另一个线程正扩容到新数组,旧数组 index 11 越界。collect 方案:每线程有自己的 ArrayList → 自己的局部 add 是顺序的 → 最终 Combiner 把局部 list 合并。**举一反三**:collect 的并行安全源于**每个累加器独享一个可变容器**,最后一次性合并——这正是 Fork/Join 模型的套路。
+> **4**　```java
+int[] counter = new int[1];
+Supplier<String> backup = () -> { counter[0]++; return "兜底"; };
+Optional.of("拿铁").orElse(backup.get()); // 拿铁,但counter已经+1了(backup被执了)
+Optional.of("拿铁").orElseGet(backup);   // 拿铁,counter没变
+System.out.println(counter[0]); // 1
+```　**举一反三**:orElse 参数在方法调用前计算——这是 Java 方法参数求值的常规规则(参数在方法调用前求值)。orElseGet 延迟执行的背后是 Supplier 把代码包了一层。
+> **5**　Optional 是「返回值」——给调用方一个明确的「可能为空」信号。当做字段:每个 getter 返回 Optional,团队里「每次用都得 .orElse()」啰嗦;序列化多一层麻烦;更致命的是字段本身可能为 null → 你判的是「Optional 本身为 null」还是「盒子里为空」?Optional 做方法参数同理——应该让调用方决定怎么处理「可能为空」。**举一反三**:Optional 做字段的唯一可取场景是「类内部直实空了也合理,但我想用一个统一的方式提供兜底值」——即便如此也不推荐,用 `Collections.emptyList()` 之类的零对象模式更干净。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

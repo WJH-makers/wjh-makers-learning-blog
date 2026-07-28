@@ -22,6 +22,10 @@ vercel.json
 
 scripts
 templates
+
+# 漫画原档 PNG 只是 build-comic-variants 的输入,线上只 serve avif/webp。
+# 不排除的话 57MB 原档会整包进镜像与 standalone 输出。
+public/comics/**/*.png
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

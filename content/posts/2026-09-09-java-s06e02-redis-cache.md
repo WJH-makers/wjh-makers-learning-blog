@@ -220,4 +220,114 @@ JUnit 质检员点头:「**证据呢?** ——`times(1)`,缓存确实生效了�
 
 ---
 
+## 随堂练习
+先独立作答，再展开参考要点核对思路。
+
+### 一、选择题（10 道）
+
+**1.** Cache-Aside（旁路缓存）模式下，一次读操作的流程是什么？
+- A) 先查数据库 → 再写缓存 → 返回　B) 先查缓存 → 命中返回 / miss 查数据库 → 回填缓存 → 返回　C) 先查缓存 → miss 则直接返回 null　D) 数据库更新时自动同步缓存
+
+**2.** 以下哪种场景属于**缓存穿透**？
+- A) 大量缓存 key 在同一时刻集体过期　B) 反复查询 DB 中不存在的数据，缓存永远 miss，每次直穿到数据库　C) Redis 进程宕机　D) 一个热点 key 过期瞬间，数千并发请求同时去数据库加载
+
+**3.** 缓存击穿与缓存雪崩的核心区别是什么？
+- A) 击穿是 Redis 宕机，雪崩是 key 过期　B) 击穿是单个热点 key 过期瞬间并发冲击 DB，雪崩是大量 key 同时过期集体冲击 DB　C) 两者完全相同　D) 击穿是查询不存在的数据
+
+**4.** 以下哪种方案**不能**解决缓存穿透？
+- A) 缓存空值（把 null 也存进 Redis，设短 TTL）　B) 布隆过滤器　C) TTL 加随机值　D) 在写入数据时同时更新缓存
+
+**5.** 布隆过滤器用于防御缓存穿透时，核心原理是什么？
+- A) 精确判断某个 key 是否存在　B) 快速判断某个 key 一定不存在或可能存在（允许极小误判）　C) 自动将不存在的数据写入缓存　D) 限制用户查询频率
+
+**6.** Redis 五大数据类型**不包括**以下哪项？
+- A) String　B) Hash　C) Table　D) Sorted Set
+
+**7.** 防止缓存雪崩最简单必配的措施是什么？
+- A) 给所有缓存的 TTL 加随机偏移量　B) 部署 Redis 集群　C) 使用布隆过滤器　D) 禁止设置 TTL，让缓存永不过期
+
+**8.** Spring Boot 3.x 中 Redis 的配置前缀是什么？
+- A) `spring.redis`　B) `spring.data.redis`　C) `redis.datasource`　D) `spring.cache.redis`
+
+**9.** 以下关于互斥锁解决缓存击穿的描述，正确的是？
+- A) 互斥锁让所有请求排队等缓存重建　B) 只放一个线程去查 DB 重建缓存，其余等待或返回旧值，牺牲一点吞吐换 DB 安全　C) 互斥锁能完全消除击穿，无任何代价　D) 互斥锁是穿透的解法
+
+**10.** Cache-Aside 模式下 Redis 宕机，业务会发生什么？
+- A) 整个应用崩溃，全部 500　B) 缓存 miss 后全打到数据库，业务仍能正常返回（只是变慢）　C) 前端页面显示空白　D) Redis 自动切换备份节点，零影响
+
+> [!答案]
+> **1-B**　Cache-Aside 核心：应用自行管理缓存——先查 Redis，命中返回；miss 查 MySQL 后手动回填并设 TTL。　举一反三：Redis 挂了全走 DB 业务不崩，这是 Cache-Aside 被工业界广泛采用的根本原因。
+> 
+> **2-B**　穿透本质：查询数据 DB 里也不存在，`if (c != null)` 才回填，null 永远不进缓存。本话恶意刷 `id=99999` 一万次全打 DB。　举一反三：记住三个关键词——穿透看"数据存不存在"，击穿看"单个热点 key 过期的瞬间"，雪崩看"大批 key 同时失效"。
+> 
+> **3-B**　击穿聚焦"一个热点 key"（如美式过期瞬间几千人全扑 DB）；雪崩聚焦"大量 key"（整柜菜单同一秒集体过期）。　举一反三：击穿用互斥锁或逻辑过期；雪崩用 TTL 加随机偏移。解法不同，必须区分。
+> 
+> **4-C**　TTL 加随机值是防雪崩（打散过期时间），对穿透无效——穿透是数据不存在，跟 TTL 无关。A（空值缓存）、B（布隆过滤器）是穿透标准解法。　举一反三：工程最低成本三件套——空值缓存 + TTL 加随机 + 互斥锁重建热点，分别对应穿透、雪崩、击穿。
+> 
+> **5-B**　布隆过滤器是概率型数据结构——说"一定不存在"100%准确可拒请求；说"可能存在"有极小误判率（通常 <1%）。　举一反三：主要缺点是难以删除元素（需计数布隆），且数据写入时需同步更新过滤器。
+> 
+> **6-C**　Redis 五大数据类型：String、Hash、List、Set、Sorted Set（ZSet）。"Table"不是——Redis 是键值存储，无表结构。　举一反三：Hash 适合存对象字段，Sorted Set 适合排行榜，根据场景选类型才能发挥最大价值。
+> 
+> **7-A**　雪崩根因是大批 key 同时过期。最简单的解法：TTL 加随机偏移（如 30min + random 0~300s），打散过期时间。　举一反三：随机 TTL 只防"过期引起的雪崩"，Redis 宕机引起的雪崩需高可用集群 + 限流降级。
+> 
+> **8-B**　Spring Boot 3.x 将 Redis 配置前缀改为 `spring.data.redis`。本话特意提醒老项目别抄错。　举一反三：这是 Boot 3.0 统一数据访问配置命名的一部分，升级老项目所有 Redis 配置项都要加 `.data`。
+> 
+> **9-B**　互斥锁方案：第一个 miss 线程拿锁去查 DB 重建，其他等或返回旧值——DB 只承受一次查询而非数千次。　举一反三：逻辑过期方案是进阶版——值里存逻辑过期时间，key 不设真 TTL，过期后异步刷新，旧值先顶着，读请求完全不阻塞。
+> 
+> **10-B**　Cache-Aside 容错优势：Redis 只是缓存层，挂了全走 DB，业务逻辑正常，只是响应变慢。　举一反三：若用"缓存即数据库"模式（数据只写 Redis 没写 DB），Redis 宕机就丢数据——务必清楚"缓存"和"主存储"的边界。
+
+### 二、解答题（3 道）
+
+**1.** 用自己的话分别描述缓存穿透、缓存击穿、缓存雪崩的成因和本质区别，并给出各自的推荐解法。
+
+**2.** 布隆过滤器的原理简述——为什么它适合防御缓存穿透但不适合精确查询？
+
+**3.** 什么是 Cache-Aside 模式？它和"由缓存系统自动同步数据库"的方案相比有何优缺点？
+
+> [!答案]
+> **1**　① 穿透：查的数据 DB 里不存在，缓存永远挡不住→解法：缓存空值（短 TTL）+ 布隆过滤器。② 击穿：单个热点 key 过期瞬间，大规模并发 miss 同时扑向 DB→解法：互斥锁（只放一个线程重建）+ 逻辑过期。③ 雪崩：大量 key 同一时间过期或 Redis 宕机，DB 被集体冲击→解法：TTL 加随机偏移 + 多级缓存 + 高可用集群。　举一反三：牢记三个关键词——穿透看"数据存不存在"，击穿看"单个热点"，雪崩看"大批 key 同时"。面试先说出关键词再展开，不会混淆。
+> 
+> **2**　布隆过滤器由多个哈希函数和位数组组成——添加元素时多个哈希映射的位全置 1；查询时任一位为 0 则"一定不存在"，全为 1 则"可能存在"。适合防穿透：查缓存前先过布隆，"一定不存在"的直接拒，省掉 Redis + DB 两次查询。不适合精确查询：有误判率（可控制在 <1%），且标准布隆不支持删除元素。　举一反三：误判率可通过调整位数组大小和哈希函数数量控制，空间效率与误判率需权衡。
+> 
+> **3**　Cache-Aside：应用自己管缓存——读时先查 Redis、miss 查 DB 后手动回填；写时更新 DB 后手动删除缓存。优点：简单可控、容错好（Redis 挂了走 DB）、灵活动态设置 TTL。缺点：代码侵入、高并发下可能短暂不一致。与自动同步方案对比：自动方案对应用透明但 Redis 成"必经之路"，一挂全站崩——不如 Cache-Aside 的降级能力。　举一反三：本话采用 Cache-Aside 读模式，写入/更新时记得同步删除缓存，否则会出现不一致。
+
+### 三、代码题（2 道）
+
+**1.** 写一个 MenuService 的 `getCoffee(long id)` 方法，用 `StringRedisTemplate` 实现完整的 Cache-Aside 读流程，包含空值缓存（防穿透）和随机 TTL（防雪崩）。
+
+**2.** 用 Mockito 写单元测试，验证"第二次读命中缓存、不再查数据库"，通过 `verify(mapper, times(1)).findById(1L)` 证明缓存生效。
+
+> [!答案]
+> **1 验收**　```java
+> public Coffee getCoffee(long id) throws Exception {
+>     String key = "menu:coffee:" + id;
+>     String cached = redis.opsForValue().get(key);
+>     if (cached != null) {
+>         if (cached.isEmpty()) return null;  // 空值缓存→DB也没有
+>         return json.readValue(cached, Coffee.class);
+>     }
+>     Coffee c = mapper.findById(id);
+>     if (c != null) {
+>         redis.opsForValue().set(key, json.writeValueAsString(c),
+>             Duration.ofMinutes(30).plusSeconds(random.nextInt(300))); // 随机TTL防雪崩
+>     } else {
+>         redis.opsForValue().set(key, "", Duration.ofMinutes(2)); // 空值缓存2分钟防穿透
+>     }
+>     return c;
+> }
+> ```　举一反三：写入/更新时需同步 `redis.delete(key)`，否则缓存与 DB 不一致。Cache-Aside 读模式是最常见的用法。
+> 
+> **2 验收**　```java
+> @Test
+> void second_read_should_hit_cache_not_db() throws Exception {
+>     when(redis.opsForValue().get("menu:coffee:1")).thenReturn(null);
+>     when(mapper.findById(1L)).thenReturn(new Coffee(1L, "美式", 15, 100));
+>     menuService.getCoffee(1L);  // 第一次 miss,查DB+回填
+>     String cached = new ObjectMapper().writeValueAsString(new Coffee(1L, "美式", 15, 100));
+>     when(redis.opsForValue().get("menu:coffee:1")).thenReturn(cached);
+>     menuService.getCoffee(1L);  // 第二次命中缓存
+>     verify(mapper, times(1)).findById(1L); // 关键:DB只被查了一次
+> }
+> ```　举一反三：`verify(mapper, times(1))` 是缓存生效的硬证据——面试中能写出这个测试 = 真正落地过缓存，不是只背概念。
+
 *本话属于连载《从零开始学 Java》。世界观与创作规范见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 [/java](/java)。*

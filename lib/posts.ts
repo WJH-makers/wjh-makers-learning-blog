@@ -165,3 +165,14 @@ export async function getRelatedPosts(slug: string, tags: string[], limit = 4): 
 export function siteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online").replace(/\/$/, "");
 }
+
+/**
+ * 对外声明日期时的钳制:内容日历排到未来是有意为之(连载按剧情时间线排期),
+ * 但 RSS/sitemap/JSON-LD 携带未来时间会被吃掉 —— Search Console 忽略未来 lastmod,
+ * 部分阅读器直接丢弃未来条目。站内展示仍用原始 date,只在这些出口钳到"最晚是现在"。
+ */
+export function outboundDate(date: string): Date {
+  const parsed = Date.parse(date);
+  const now = Date.now();
+  return new Date(Number.isNaN(parsed) ? now : Math.min(parsed, now));
+}

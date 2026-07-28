@@ -18,31 +18,105 @@ import { SEC_SEASONS, SEC_SERIES_META } from "@/lib/series-sec";
 import { ALGO_SEASONS, ALGO_SERIES_META } from "@/lib/series-algo";
 import { AI_SEASONS, AI_SERIES_META } from "@/lib/series-ai";
 import { WEB_SEASONS, WEB_SERIES_META } from "@/lib/series-web";
+import { PERF_SEASONS, PERF_SERIES_META } from "@/lib/series-perf";
+import { ARCH_SEASONS, ARCH_SERIES_META } from "@/lib/series-arch";
+import { QA_SEASONS, QA_SERIES_META } from "@/lib/series-qa";
+import { SPRING_SEASONS, SPRING_SERIES_META } from "@/lib/series-spring";
+import { MQ_SEASONS, MQ_SERIES_META } from "@/lib/series-mq";
+import { OBS_SEASONS, OBS_SERIES_META } from "@/lib/series-obs";
+import { SRC_SEASONS, SRC_SERIES_META } from "@/lib/series-src";
+import { REACTIVE_SEASONS, REACTIVE_SERIES_META } from "@/lib/series-reactive";
+import { BIGDATA_SEASONS, BIGDATA_SERIES_META } from "@/lib/series-bigdata";
+import { SEARCH_SEASONS, SEARCH_SERIES_META } from "@/lib/series-search";
+import { GITADV_SEASONS, GITADV_SERIES_META } from "@/lib/series-gitadv";
+import { CAREER_SEASONS, CAREER_SERIES_META } from "@/lib/series-career";
 
 export type SeriesRef = {
   title: string;
+  /** 副标题(「阿零与豆豆 · Java 生态学院」这类),列表页做次级标识 */
+  alias?: string;
+  /** 一句话定位,/series 索引页与 footer 用 */
+  tagline: string;
+  /** 贯穿全系列的长期项目 */
+  project?: string;
   route: Route; // 系列首页路由(typedRoutes 校验),如 /java、/cli、/cafe
   storageKey: string; // localStorage 进度 key
   seasons: JavaSeason[];
 };
 
+/** 各 series 文件的 META 结构一致,这里统一收口,新开一条线只加一行。 */
+type SeriesMetaLike = {
+  readonly title: string;
+  readonly alias?: string;
+  readonly tagline: string;
+  readonly project?: string;
+  readonly storageKey?: string;
+};
+
+function defineSeries(
+  meta: SeriesMetaLike,
+  route: Route,
+  seasons: JavaSeason[],
+  storageKeyOverride?: string,
+): SeriesRef {
+  return {
+    title: meta.title,
+    alias: meta.alias,
+    tagline: meta.tagline,
+    project: meta.project,
+    route,
+    storageKey: storageKeyOverride ?? meta.storageKey ?? `${route.slice(1)}-academy:completed`,
+    seasons,
+  };
+}
+
 export const SERIES_LIST: SeriesRef[] = [
-  { title: SERIES_META.title, route: "/java", storageKey: "java-academy:completed", seasons: SEASONS },
-  { title: CLI_SERIES_META.title, route: "/cli", storageKey: CLI_SERIES_META.storageKey, seasons: CLI_SEASONS },
-  { title: CAFE_SERIES_META.title, route: "/cafe", storageKey: CAFE_SERIES_META.storageKey, seasons: CAFE_SEASONS },
-  { title: JVM_SERIES_META.title, route: "/jvm", storageKey: JVM_SERIES_META.storageKey, seasons: JVM_SEASONS },
-  { title: BUILD_SERIES_META.title, route: "/build", storageKey: BUILD_SERIES_META.storageKey, seasons: BUILD_SEASONS },
-  { title: MICRO_SERIES_META.title, route: "/micro", storageKey: MICRO_SERIES_META.storageKey, seasons: MICRO_SEASONS },
-  { title: NET_SERIES_META.title, route: "/net", storageKey: NET_SERIES_META.storageKey, seasons: NET_SEASONS },
-  { title: OS_SERIES_META.title, route: "/os", storageKey: OS_SERIES_META.storageKey, seasons: OS_SEASONS },
-  { title: DB_SERIES_META.title, route: "/db", storageKey: DB_SERIES_META.storageKey, seasons: DB_SEASONS },
-  { title: DIST_SERIES_META.title, route: "/dist", storageKey: DIST_SERIES_META.storageKey, seasons: DIST_SEASONS },
-  { title: CLOUD_SERIES_META.title, route: "/cloud", storageKey: CLOUD_SERIES_META.storageKey, seasons: CLOUD_SEASONS },
-  { title: SEC_SERIES_META.title, route: "/sec", storageKey: SEC_SERIES_META.storageKey, seasons: SEC_SEASONS },
-  { title: ALGO_SERIES_META.title, route: "/algo", storageKey: ALGO_SERIES_META.storageKey, seasons: ALGO_SEASONS },
-  { title: AI_SERIES_META.title, route: "/ai", storageKey: AI_SERIES_META.storageKey, seasons: AI_SEASONS },
-  { title: WEB_SERIES_META.title, route: "/web", storageKey: WEB_SERIES_META.storageKey, seasons: WEB_SEASONS },
+  defineSeries(SERIES_META, "/java", SEASONS, "java-academy:completed"),
+  defineSeries(CLI_SERIES_META, "/cli", CLI_SEASONS),
+  defineSeries(CAFE_SERIES_META, "/cafe", CAFE_SEASONS),
+  defineSeries(JVM_SERIES_META, "/jvm", JVM_SEASONS),
+  defineSeries(BUILD_SERIES_META, "/build", BUILD_SEASONS),
+  defineSeries(MICRO_SERIES_META, "/micro", MICRO_SEASONS),
+  defineSeries(NET_SERIES_META, "/net", NET_SEASONS),
+  defineSeries(OS_SERIES_META, "/os", OS_SEASONS),
+  defineSeries(DB_SERIES_META, "/db", DB_SEASONS),
+  defineSeries(DIST_SERIES_META, "/dist", DIST_SEASONS),
+  defineSeries(CLOUD_SERIES_META, "/cloud", CLOUD_SEASONS),
+  defineSeries(SEC_SERIES_META, "/sec", SEC_SEASONS),
+  defineSeries(ALGO_SERIES_META, "/algo", ALGO_SEASONS),
+  defineSeries(AI_SERIES_META, "/ai", AI_SEASONS),
+  defineSeries(WEB_SERIES_META, "/web", WEB_SEASONS),
+  defineSeries(PERF_SERIES_META, "/perf", PERF_SEASONS),
+  defineSeries(ARCH_SERIES_META, "/arch", ARCH_SEASONS),
+  defineSeries(QA_SERIES_META, "/qa", QA_SEASONS),
+  defineSeries(SPRING_SERIES_META, "/spring", SPRING_SEASONS),
+  defineSeries(MQ_SERIES_META, "/mq", MQ_SEASONS),
+  defineSeries(OBS_SERIES_META, "/obs", OBS_SEASONS),
+  defineSeries(SRC_SERIES_META, "/src", SRC_SEASONS),
+  defineSeries(REACTIVE_SERIES_META, "/reactive", REACTIVE_SEASONS),
+  defineSeries(BIGDATA_SERIES_META, "/bigdata", BIGDATA_SEASONS),
+  defineSeries(SEARCH_SERIES_META, "/search-engine", SEARCH_SEASONS),
+  defineSeries(GITADV_SERIES_META, "/gitadv", GITADV_SEASONS),
+  defineSeries(CAREER_SERIES_META, "/career", CAREER_SEASONS),
 ];
+
+/** 一条线的连载进度(已发布 / 规划总数)。 */
+export function seriesProgress(series: SeriesRef): { done: number; total: number } {
+  const all = series.seasons.flatMap((s) => s.episodes);
+  return { done: all.filter((e) => e.status === "published" && e.slug).length, total: all.length };
+}
+
+/** 全站连载总量,首页/关于页/统计页共用一个口径。 */
+export function allSeriesProgress(): { done: number; total: number; lines: number } {
+  let done = 0;
+  let total = 0;
+  for (const series of SERIES_LIST) {
+    const p = seriesProgress(series);
+    done += p.done;
+    total += p.total;
+  }
+  return { done, total, lines: SERIES_LIST.length };
+}
 
 export type EpisodeInfo = {
   series: SeriesRef;

@@ -269,4 +269,67 @@ String json = mapper.writeValueAsString(new OrderView(order.id(), order.items(),
 
 ---
 
+## 🎯 随堂练习
+
+### 选择题(10 道)
+
+1. Serializable 接口的作用是?
+   - A) 自动深拷贝　B) 是一个标记接口(零方法),声明「我愿意被序列化」　C) 压缩对象　D) 生成 equals
+2. transient 关键字在序列化中的效果是?
+   - A) 加速序列化　B) 该字段不上车,解冻后为默认值(引用 null,数字 0)　C) 加密字段　D) 永久删除
+3. static 字段为什么天然不被序列化?
+   - A) 编译器 bug　B) static 字段属于类不属于对象,序列化的是对象图　C) 会自动参加　D) 被 transient 替换
+4. serialVersionUID 不显式声明会怎样?
+   - A) 自动分配随机值　B) JVM 按类结构自动算——字段一改值就变,旧存档全部被拒　C) 没影响　D) 生成异常
+5. 显式声明 `private static final long serialVersionUID = 1L` 后加了新字段,反序列化旧存档——新字段的值是?
+   - A) 自动赋值　B) 默认值(引用 null)　C) 抛异常　D) 编译错误
+6. JDK 序列化三条缺点不包括?
+   - A) 体积大(带类型元数据)　B) 只有 Java 认识　C) 反序列化是攻击面(需要配过滤器)　D) 速度比 JSON 慢很多
+7. record 在序列化方面有什么优势?
+   - A) 没有　B) 一定走规范构造器(校验逻辑被保留),且豁免 serialVersionUID 比对(按组件名匹配)　C) 序列化更快　D) 自动压缩
+8. 给外界(API/文件)传数据,应优先用什么格式?
+   - A) JDK 序列化　B) JSON(Jackson)——跨语言、人眼可读、生态大　C) 字节流　D) XML 优先
+9. InvalidClassException 提示「stream classdesc serialVersionUID=... local class=...」,含义是?
+   - A) 磁盘已满　B) 存档时类结构 ≠ 当前类结构(你没显式声明 serialVersionUID,自动算出的不一样)　C) 网络超时　D) 内存不足
+10. 反序列化安全的核心防御手段是?
+    - A) 不反序列化　B) 配 ObjectInputFilter 白名单,只放行已知类型　C) 用 HTTPS　D) 限定文件路径
+
+> [!答案]
+> **1-B**　Serializable 是标记接口(没有任何方法),纯粹是给 JVM 一个信号:「这个类可以被 ObjectOutputStream 序列化」。**举一反三**:ObjectOutputStream 写对象前会检查对象 instanceof Serializable——不是的话直接 NotSerializableException。
+> **2-B**　transient 序列化时跳过该字段;反序列化后取到默认值:引用 null,整数 0,boolean false。**举一反三**:敏感字段(密码、令牌、密钥)用 transient;业务上不需要持久化的临时状态(如缓存)也可以用 transient。
+> **3-B**　static 字段存在类的元空间,不属于任何实例——序列化只冻实例的对象图。**举一反三**:反序列化后静态字段是「当前 JVM 里类的那个值」,不是冻之前的快照——重启后静态计数器归零。
+> **4-B**　serialVersionUID 是类的「存档版本号」——你声明了就不变,没声明 JVM 自动算(字段+方法 决定),类改一点值就变,旧档全都 InvalidClassException。**举一反三**:IDE 都有「生成 serialVersionUID」的检查项;IntelliJ → Settings → Inspections → "Serializable class without 'serialVersionUID'",打开。
+> **5-B**　旧存档里没有 channel 字段,反序列化时跳过它——不调构造器、不给默认字面值,只分配类型的零值(引用 null)。**举一反三**:所以这种新字段在解冻后必须判空——`if (channel == null) channel = "堂食"`;这就是 record 在这件事上更好:它走规范构造器,你可以在那里设默认值。
+> **6-D**　JDK 序列化的体积不比 JSON 慢一个量级,而是体积更大——它存储了完整的类元数据、字段名、类型信息,比 JSON 臃肿得多。**举一反三**:文章里「一杯拿铁 601 字节」就是 JDK 序列化的产物;同样的数据 Jackson 写 JSON 才一百多字节。
+> **7-B**　record 的反序列化不走 readObject,而是读组件名然后调规范构造器——构造器里的校验逻辑(比如 `addons = List.copyOf(addons)`)会被执行。而且 record 的 serialVersionUID 默认为 0L,反序列化时豁免比对。**举一反三**:普通类要模拟 record 的这个行为,得手写 readObject/readResolve——记住,record 就是替你写了这些。
+> **8-B**　JSON 跨语言、人眼可读、Jackson 生态覆盖所有常用场景(日期/枚举/自定义序列化器);JDK 序列化只留在 JVM 内部自用的存档。**举一反三**:Jackson 和 Gson 之争:Jackson 的功能和性能都领先;Spring Boot 默认注的就是 Jackson 的 ObjectMapper,这是 Jackson 成为事实标准的推力之一。
+> **9-B**　存档时 (stream classdesc) 和当前类 (local class) 的 serialVersionUID 不一致——你没显式声明,加了一个字段后自动算的值变了。**举一反三**:如果这是生产事故,临时修复是回退到旧类,或写迁移程序(先冻成中间格式 JSON,再按新类读回去)。
+> **10-B**　`ObjectInputFilter.Config.setSerialFilter(filter)` 全局设白名单,只允许已知的包名/类名反序列化。**举一反三**:这条是 OWASP Top 10 级别的安全建议——Java 反序列化漏洞常年稳居高危;CVE 看几个,就知道不是吓唬人。
+
+### 解答题(5 道)
+
+1. serialVersionUID 为什么必须显式声明?写出一个「加字段后旧存档被拒→恢复」的完整过程。
+2. 比较 JDK 序列化和 Jackson JSON 三方面:跨语言、体积、安全性。什么情况下仍用 JDK 序列化?
+3. transient 和 static 在序列化中的行为有什么不同?画表对比。
+4. record 的反序列化比普通类好在哪?为什么 record 能绕开反序列化的安全风险?
+5. 设计一个「订单存档 + 重启恢复」的功能:Order 包含敏感 token,要求存档后 token 不落盘,重启后 token 重新生成。
+
+> [!答案]
+> **1**　不加 serialVersionUID:JVM 按类结构(字段名/类型/访问修饰符/父类/接口)自动计算散列。加了一个 channel 字段 → 散列变化 → 旧存档反序列化时 InvalidClassException。修复:显式声明 `private static final long serialVersionUID = 1L`,锁死版本号,旧档可读;新增字段在解冻后得到默认值 null,使用时判空。**举一反三**:实际上 record 不需要显式声明——它的 serialVersionUID 固定 0L,增加了组件名也兼容;这是 JEP 395 为 record 序列化特意做的豁免。
+> **2**　| 维度 | JDK 序列化 | Jackson JSON ||---|---|---|| 跨语言 | 只有 Java | 任何语言 || 体积 | 大(含类元数据) | 紧凑(只存数据) || 安全性 | 反序列化攻击(需配过滤器) | 无远程代码执行风险,文本格式 || 仍用场景 | JVM 内部短期缓存、分布式 session(都是自己冻自己吃) | 对外 API、文件、消息队列 |　**举一反三**:Spring Session 用 JDK 序列化存 session 对象——属于「同一个集群内自己的 JVM 互相传」,风险可控;但 session 里的对象一旦写进 Redis 给外部读,就踩安全红线了。
+> **3**　| 修饰符 | 序列化行为 | 反序列化后值 | 语义 ||---|---|---|---|| transient | 跳过该字段 | 零值(null/0/false) | 此字段属于临时态或敏感信息,不存档 || static | 不序列化(属于类不属对象) | 当前 JVM 里该类的值 | 静态字段是类级别的,不是对象图的成员 |　**举一反三**:transient 并不等于销毁——序列化是跳过,解冻后你可以在 readObject 里手动还原(比如重新生成 token);static 则从来不在对象图里,所以需要单独保存。
+> **4**　普通类反序列化不走构造器——可以绕过构造器里的校验逻辑、final 字段可以被直接写入(通过 Unsafe/反射),攻击者可构造出非法状态的对象的字节流。record 反序列化**必须走规范构造器**——验证逻辑被执行、全部字段必须赋值(否则编译期就过不去)。**举一反三**:这就是为什么 Effective Java 推荐「尽量让类不可变、尽量用 record」——越不可变更安全。
+> **5**　```
+class Order implements Serializable {
+    private String id;
+    private transient String payToken; // 不落盘
+    private void readObject(ObjectInputStream in) throws Exception {
+        in.defaultReadObject();  // 先反序列化非 transient 字段
+        this.payToken = TokenGenerator.issue(id);  // 重启后重新生成
+    }
+}
+```　或直接用 record 的规范构造器:record 解冻时走构造器,`payToken` 组件不在组件表里——但你设计上就别把 payToken 放进 record 的组件,单独管理。**举一反三**:`readObject/writeObject` 自定义序列化行为是这个机制的标准扩展点——不过大部分时候不该用;默认行为 + transient 已经解决 90% 的情况。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

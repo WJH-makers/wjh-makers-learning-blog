@@ -273,6 +273,135 @@ JUnit 质检员:「证据呢?——每条退出路径都走一遍、锁都能回
 
 > 下一话《并发菜单:ConcurrentHashMap》:HashMap 并发写为什么丢数据;ConcurrentHashMap 从分段锁到「CAS + 桶头锁」的换代;还有一句反直觉的警告——线程安全的容器,不等于你的复合操作安全。
 
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,中间3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. AQS(AbstractQueuedSynchronizer)的核心三零件是什么?
+- A) Thread、Runnable、Callable　　B) state 状态变量、CLH 变体队列、park/unpark 线程阻塞唤醒　　C) Lock、Condition、ReadWriteLock　　D) volatile、CAS、synchronized
+
+2. `ReentrantLock.lock()` 和 `synchronized` 在「可重入性」上的关系是?
+- A) 只有 `ReentrantLock` 支持可重入,`synchronized` 不支持　　B) 两者都支持可重入——同一线程可多次获取同一把锁,state 递增,释放时递减　　C) 只有 `synchronized` 支持可重入　　D) 两者都不支持可重入,都需要显式释放
+
+3. `ReentrantLock` 的公平锁和非公平锁,在 AQS 的 `tryAcquire` 实现中的关键区别是什么?
+- A) 公平锁会先检查队列中有没有等待更久的线程,有则让出;非公平锁直接抢,不管队列　　B) 公平锁用 `synchronized` 实现,非公平锁用 CAS　　C) 公平锁要求调用者提供线程优先级　　D) 非公平锁不支持可重入
+
+4. `lockInterruptibly()` 相比 `lock()` 的核心优势是什么?
+- A) 可以设置超时时间　　B) 在等待锁的过程中可以响应线程中断(`Thread.interrupt()`),让等待中的线程有机会优雅退出,而不是死等　　C) 自动释放锁　　D) 支持公平模式
+
+5. `ReentrantReadWriteLock` 的规则是?
+- A) 读读共享(多个读线程同时持有),写写互斥,读写互斥——读锁被持有时写锁必须等待　　B) 读读共享,写写也共享　　C) 所有操作都互斥(和普通锁一样)　　D) 读读共享,但写操作可以抢占读锁
+
+6. Condition 相比 `wait/notify` 的核心优势是什么?
+- A) Condition 不需要 `synchronized` 块　　B) 一个 Lock 可以创建多个 Condition,每个 Condition 对应一个等待队列,可以实现精确唤醒——而不是像 `notifyAll()` 那样「全叫起来,各自检查条件」　　C) Condition 的 `await()` 不需要释放锁　　D) Condition 自动处理虚假唤醒
+
+7. 以下代码中,`lock.unlock()` 没放在 finally 块里,最可能的后果是什么?
+
+```java
+Lock lock = new ReentrantLock();
+lock.lock();
+doRiskyWork();   // 可能抛异常
+lock.unlock();   // ❌ 没放 finally
+```
+
+- A) 锁会自动在异常时释放,没有问题　　B) 如果 `doRiskyWork()` 抛异常,`unlock()` 永远不会被调用——锁永远不被释放,其他线程永久阻塞(死锁)　　C) JVM 会检测到异常并自动调用 `unlock()`　　D) 锁会被 GC 回收后自动释放
+
+8. `StampedLock` 的「乐观读」模式相比 `ReentrantReadWriteLock` 的读锁,核心优势是什么?
+- A) 乐观读不需要获取读锁,直接读取后通过 `validate(stamp)` 检查读取期间是否有写操作——没有写的话读操作完全无锁,性能远高于读写锁的读锁(CAS 开销)　　B) 乐观读支持写操作的并发　　C) 乐观读是公平的　　D) 乐观读可以升级为写锁
+
+9. `tryLock(long timeout, TimeUnit unit)` 返回 false 意味着什么?
+- A) 锁已经被其他线程持有,当前线程选择放弃等待　　B) 当前线程已经持有该锁(可重入)　　C) 锁对象已被 GC 回收　　D) 超时时间内锁未被释放,当前线程在获取锁上等待的总时间超过了 timeout
+
+10. 以下关于 AQS 中 `park` 和 `unpark` 的描述,哪项是正确的?
+- A) `park` 和 `unpark` 是 Java 层面实现的,不涉及操作系统　　B) `unpark` 可以在 `park` 之前调用——如果先 `unpark`,后续的 `park` 会直接返回而不阻塞　　C) `park` 必须和 `synchronized` 配合使用　　D) `park` 会让线程进入 `BLOCKED` 状态
+
+### 解答题(5 道)
+
+1. 用自己的话解释 AQS 是如何用 `state`、CLH 队列和 `park/unpark` 这三样东西,撑起 `ReentrantLock` 的全部语义(加锁、排队、阻塞、唤醒、解锁)的。
+
+2. `ReentrantLock` 的公平锁和非公平锁各有什么优缺点?为什么非公平锁的吞吐量通常更高?什么场景下必须用公平锁?
+
+3. 你的咖啡站有一个「订单状态追踪」功能:多个写线程负责更新订单状态,多个读线程负责展示订单状态。读写比约 100:1。请对比 `ReentrantLock`、`ReentrantReadWriteLock` 和 `StampedLock` 三种锁在这个场景下的表现,并推荐最优选择。
+
+4. 条件变量场景:你有一个有界缓存(BoundedBuffer),`put` 满时等 notFull,`take` 空时等 notEmpty。请设计 Condition 的用法——用 `notFull` 和 `notEmpty` 两个 Condition,写出 `put` 和 `take` 方法的伪代码,并说明相比 `wait/notifyAll` 的单条件队列,这个设计好在哪。
+
+5. 你的咖啡站接下来要支持分布式部署。当前的 `ReentrantLock` 只能在单个 JVM 内工作。请设计一个分层的锁架构:① 先描述单机层的锁选型(考虑读写比和性能) ② 再描述跨 JVM 的分布式锁方案 ③ 画出决策流程:什么情况下走本地锁、什么情况下走分布式锁、两者如何协同。
+
+> [!答案]
+> **1-1** B(state + CLH 变体队列 + park/unpark —— AQS 定义了同步器的骨架,子类只需实现 `tryAcquire/tryRelease` 等模板方法)  
+> **举一反三**:AQS 是模板方法模式的典范。`ReentrantLock`、`Semaphore`、`CountDownLatch` 都基于它,只是 `tryAcquire` 里对 state 的语义不同:ReentrantLock 是 0/1 + 重入计数,Semaphore 是许可数,CountDownLatch 是倒数。
+>
+> **1-2** B(两者都支持可重入——`synchronized` 靠 Mark Word 里的线程 ID + 重入计数,`ReentrantLock` 靠 AQS state 记录重入次数)  
+> **举一反三**:可重入的设计意义:一个同步方法调用另一个同步方法(同一把锁)时不会自己卡死自己。如果没有可重入性,递归调用或嵌套调用的同步方法将直接死锁。
+>
+> **1-3** A(公平锁在 CAS 抢之前先调用 `hasQueuedPredecessors()` 检查是否有前驱等待节点;非公平锁跳过这个检查直接 CAS 抢)  
+> **举一反三**:非公平锁在 `lock()` 时甚至会在入队之前先抢一次(插队),抢不到才入队排队——这就是「非公平」两字的含义。非公平锁的吞吐高就高在这次插队:刚释放锁的线程唤醒等待者需要时间,此时新来的线程可以直接拿到锁,减少了线程切换。
+>
+> **1-4** B(可响应中断——`lock()` 在等待时不响应中断直到拿到锁,`lockInterruptibly()` 在等待中收到中断信号会立即抛 `InterruptedException` 放弃等待)  
+> **举一反三**:`synchronized` 没有「可中断等待」的能力——这是 `ReentrantLock` 相比 `synchronized` 的三大核心优势之一(另两个是 `tryLock` 超时和公平锁选择)。在需要「等待可取消」的场景(如用户取消操作),`lockInterruptibly` 是救命的。
+>
+> **1-5** A(读读共享、写写互斥、读写互斥——经典的多读单写模型)  
+> **举一反三**:需要注意的坑——读锁不能升级为写锁(升级会导致死锁),但写锁可以降级为读锁。如果需要在读后决定写,不能「在读锁里加写锁」,必须释放读锁再获取写锁(检查期间数据可能已被改变)。
+>
+> **1-6** B(多条件队列是 Condition 的核心价值——一个 Lock 可创建多个 Condition,`notFull.signal()` 精准唤醒一个等「不满」的,`notEmpty.signal()` 精准唤醒一个等「非空」的,避免了 `notifyAll()` 的惊群效应)  
+> **举一反三**:Condition 类比 `wait/notify` 就像数据库的「多个条件索引」对比「全表扫描」。用 `wait/notifyAll` 是所有等待者全叫起来自己看条件,用 Condition 是直接叫正确的人。
+>
+> **1-7** B(异常穿透到栈顶,`unlock()` 永远不执行——锁永不释放,任何试图获取该锁的线程将永久阻塞)  
+> **举一反三**:这是 `ReentrantLock` 最常见的生产事故。防法只有一个:永远 `lock.lock(); try { ... } finally { lock.unlock(); }`。`synchronized` 不需要 finally 是因为 JVM 保证异常时自动解锁——这也是 `synchronized` 的唯一安全优势。
+>
+> **1-8** A(乐观读是 StampedLock 的性能杀手锏——`tryOptimisticRead()` 返回一个 stamp,读完后 `validate(stamp)` 检查期间是否有写;没写就白嫖了一次无锁读,有写就回退为悲观读锁重试)  
+> **举一反三**:StampedLock 的性能模型:乐观读 < 悲观读锁 < 写锁。适用「写极少、读极多」的场景,在读写锁基础上还能再提一截吞吐。代价:① 不可重入 ② 没有 Condition ③ 乐观读模式需要手动 validate。
+>
+> **1-9** D(在指定的 timeout 时间内锁未被获取到,放弃并返回 false——线程在这段时间内处于等待状态但不会永久阻塞)  
+> **举一反三**:`tryLock` + `tryLock(timeout)` 是实现「尝试获取,获取不到就降级处理/快速失败」的策略基础。例如:抢不到锁就走缓存、走消息队列异步处理,而不是死等。
+>
+> **1-10** B(`unpark` 的「许可」是累积的——如果线程还没 `park`,先调一次 `unpark`,下一次 `park` 就会消费这个许可并立即返回,不会阻塞)  
+> **举一反三**:这与 `wait/notify` 的重要区别——`notify` 如果没有线程在 wait 就会丢失信号,而 `unpark` 的许可是「预存」的。这也是为什么 `LockSupport.park/unpark` 用作 AQS 的底层阻塞原语而不是 `wait/notify`。
+>
+> **2-1** ① **加锁**:`ReentrantLock.lock()` → AQS `acquire(1)` → 先尝试 `tryAcquire`(CAS 把 state 从 0 改为 1)。如果成功——获取锁,出队。② **排队与阻塞**:`tryAcquire` 失败 → `addWaiter` 把当前线程包装成 Node 节点加入 CLH 变体队列尾部(CAS 入队) → `acquireQueued` 进入自旋:检查前驱是不是 head(说明该我了),是则再抢一次 `tryAcquire`;不是或抢不到则 `shouldParkAfterFailedAcquire` 检查前驱状态,如果前驱在等就把当前节点标记为 SIGNAL → 调用 `LockSupport.park(this)` 阻塞当前线程。③ **唤醒**:`ReentrantLock.unlock()` → AQS `release(1)` → `tryRelease`(state 减到 0) → `unparkSuccessor(head)` 唤醒 head 的后继节点 → 那个线程从 `park` 返回,继续 `acquireQueued` 自旋,发现自己是 head 的后继 → 抢锁成功,自己成为新 head。④可重入:`tryAcquire` 检查 `getExclusiveOwnerThread() == current`,是则 state 累加,不是则抢锁。  
+> **举一反三**:整个过程就是一个高效的「抢车位」模型——state 是车位状态(0=空,1=有人),CLH 队列是排队通道,`park/unpark` 是让排队的人坐在车里等(不空转)。理解这三个零件,就理解了所有 AQS 子类的原理。
+>
+> **2-2** 公平锁:线程严格按请求顺序获取锁,先到先得。优点:不会造成线程饥饿,适合需要严格公平性的场景(如排队处理用户请求)。缺点:每次 `tryAcquire` 都要检查队列,多了队列遍历开销;且刚释放锁的线程必须唤醒等待者,新来的线程不能插队,增加了线程切换。非公平锁:新来的线程可以直接抢,抢不到再排队。优点:吞吐量高——利用释放锁和唤醒等待者之间的「空窗期」,让新线程直接拿锁,减少了一次线程切换;极端情况下还能减少总的上下文切换次数。缺点:可能导致队列中的线程「饿死」——一直有后来者插队,先到的永远拿不到锁。必须用公平锁的场景:当业务逻辑要求操作的先后顺序有语义含义(如「先下单的必须先扣库存」)时,非公平锁打乱顺序可能导致业务错误。  
+> **举一反三**:生产环境默认用非公平锁。`synchronized` 也是非公平的——大多数并发组件(包括 AQS 内部的 CLH 锁)都选择非公平,因为吞吐优势太明显。公平锁更像是「需要明确语义保证时才用的精确工具」。
+>
+> **2-3** 场景特征:读写比 100:1,说明绝大多数操作是读,只有极少写操作。① `ReentrantLock`:读写都互斥,100 个读线程排队串行,吞吐极差。② `ReentrantReadWriteLock`:读读共享,写独占。读线程可以并发进入,仅在有写操作时读线程才被阻塞。100:1 的读写比下,读锁几乎常驻,写锁偶尔插入——比 ReentrantLock 吞吐高约 100 倍(读并发度 ≈ 线程数)。③ `StampedLock`:进一步优化读性能——提供「乐观读」模式。读操作用 `tryOptimisticRead()` 获取 stamp,不获取锁直接读数据,读完后 `validate(stamp)` 检查期间是否有写。100:1 场景下写极少,乐观读几乎每次都 validate 通过,完全无锁。比读写锁的读锁还省了一次 CAS 操作。推荐:用 `StampedLock`。3~5 个写线程偶尔来一下,绝大多数读操作走乐观读路径,零锁开销。注意事项:① StampedLock 不可重入(如果业务代码嵌套调用锁,需用手动管理) ② 乐观读返回的 stamp 必须在读后再 validate ③ 不提供 Condition。  
+> **举一反三**:这三个锁的选型有一条清晰升级线:写入频率越低、读取频率越高,越往右走。`ReentrantLock`(全互斥)→ `RWLock`(读共享)→ `StampedLock`(乐观读)。反过来,写频繁时 StampedLock 的乐观读频繁失败回退,性能反而不如读写锁。
+>
+> **2-4** Condition 版 BoundedBuffer:
+> ```java
+> class BoundedBuffer {
+>     final Lock lock = new ReentrantLock();
+>     final Condition notFull  = lock.newCondition();  // "不满"等待队列
+>     final Condition notEmpty = lock.newCondition();  // "不空"等待队列
+>     final Object[] items; int putIdx, takeIdx, count;
+>
+>     void put(Object x) {
+>         lock.lock();
+>         try {
+>             while (count == items.length) notFull.await(); // 满了,等 notFull
+>             items[putIdx] = x; putIdx = (putIdx + 1) % items.length; count++;
+>             notEmpty.signal(); // 放入后,唤醒一个等 "不空" 的 (不是全唤醒)
+>         } finally { lock.unlock(); }
+>     }
+>
+>     Object take() {
+>         lock.lock();
+>         try {
+>             while (count == 0) notEmpty.await(); // 空了,等 notEmpty
+>             Object x = items[takeIdx]; takeIdx = (takeIdx + 1) % items.length; count--;
+>             notFull.signal(); // 取出后,唤醒一个等 "不满" 的
+>             return x;
+>         } finally { lock.unlock(); }
+>     }
+> }
+> ```
+> 优势:相比 `wait/notifyAll` 共用同一个 wait set,两个 Condition 将「等空」和「等满」的线程分离到两个队列。`notFull.signal()` 只唤醒一个等「不满」的消费者,`notEmpty.signal()` 只唤醒一个等「不空」的生产者——精准唤醒,零惊群。如果只有一个 wait set,必须用 `notifyAll()` 无差别唤醒所有等待者,每个线程醒来后自己检查条件,不满足的再睡回去——O(n) 的唤醒成本变成 O(1)。  
+> **举一反三**:这就是 Lock+Condition 对比 `synchronized+wait/notify` 的双条件队列优势——精准控制唤醒,降开销。大多数 `BlockingQueue` 的实现(如 `ArrayBlockingQueue`)就是 Lock+Condition 的两条件队列方案。
+>
+> **2-5** 分层锁架构:① **单机层**:基于场景——订单读写比约查询偏重读。本地锁选 `StampedLock`(乐观读 + 写锁)。业务接口:`updateOrderStatus()` 走写锁,`getOrderStatus()` 走乐观读(validate 失败则退化为悲观读锁)。为什么不用分布式的读锁:读操作远多于写,本地 `StampedLock` 零网络开销,延迟低。② **跨 JVM 层**:当订单状态更新可能来自不同服务实例时(如支付回调到实例 A,退款到实例 B),用 Redis 分布式锁(Redisson `RLock`)或数据库乐观锁(`UPDATE orders SET status=? WHERE id=? AND version=?`)。分布式锁粒度:在「单订单 ID」级别——不同订单用不同锁 key,互不阻塞。③ **决策流程**:读取操作——直接从本地缓存或 DB 读,不走分布式锁(高并发读加分布式锁是杀鸡用牛刀)。写入操作——判断:该订单的本地锁持有者是否是本实例?如果是,本地 `StampedLock` 写锁即可;如果可能多实例并发写同一订单,先本地锁(防单实例内的并发写),再 Redis 分布式锁(防跨实例写),形成本地锁+分布式锁双保险。协同原则:本地锁在外层,分布式锁在内层——先争本地锁(快速失败),再争分布式锁(网络开销,只跨实例时才用到)。如果分布式锁获取失败(> 3 次重试),走消息队列异步重试。  
+> **举一反三**:设计分层锁架构的核心原则——「就近原则」:能本地锁的不远程锁,能细粒度锁的不全锁,能乐观锁的不悲观锁。每一层锁只处理该层能处理的竞争范围,上层没解决的溢出到下层的兜底。
 ---
 
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

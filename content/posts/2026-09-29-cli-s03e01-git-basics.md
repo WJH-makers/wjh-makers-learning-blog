@@ -246,4 +246,81 @@ $ git show --stat HEAD           # 最后一次提交到底动了哪些文件
 
 ---
 
-*本话属于连载《从零开始玩命令行》。全卷地图见 [/cli](/cli);前作《从零开始学 Java》见 [/java](/java)。*
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,接下来3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. Git 的"三区模型"是指哪三个区?
+- A) 本地区、远程区、缓存区　B) 工作目录、暂存区、本地仓库(.git)　C) 代码区、文档区、测试区　D) master 区、branch 区、tag 区
+
+2. `git add` 的作用是什么?
+- A) 创建新文件　B) 将修改从工作目录添加到暂存区(索引)　C) 将修改从暂存区提交到仓库　D) 将修改推送到远程仓库
+
+3. `git commit` 提交的是哪个区的内容?
+- A) 工作目录中的所有修改　B) 暂存区(索引)中的内容　C) 远程仓库中的内容　D) 所有未跟踪的文件
+
+4. "add 快照陷阱"指的是什么?
+- A) `git add` 很快所以叫快照　B) `git add` 时复制了文件的**当前状态**,之后修改工作目录中的文件不会自动反映到暂存区　C) `git add` 创建的是系统快照,可以随时恢复　D) 不存在"add 快照陷阱"这个概念
+
+5. `git log --oneline` 的输出是什么格式?
+- A) 完整的提交信息含 diff　B) 每个提交一行(简短哈希 + 提交信息)　C) 只显示最近一个提交　D) 图形化分支图
+
+6. `git status` 会显示哪些关键信息?
+- A) 只显示当前分支名　B) 当前分支名、工作区与暂存区的状态(已修改/已暂存/未跟踪)　C) 只显示未提交的文件列表　D) 完整的提交历史
+
+7. `git diff` 和 `git diff --staged` 的区别是什么?
+- A) 完全相同　B) `git diff` 比较工作目录与暂存区(未暂存的修改),`git diff --staged` 比较暂存区与最近一次提交(已暂存的修改)　C) `git diff` 比较两次提交,`git diff --staged` 比较分支　D) `git diff` 是简写,`--staged` 是完整形式,结果一样
+
+8. 修改了 `a.txt`,执行 `git add a.txt`,然后又修改了 `a.txt`,此时 `git commit` 会提交哪个版本?
+- A) 第一次修改的版本(执行 add 时的快照)　B) 第二次修改的版本(最新版本)　C) 两次修改的合并版本　D) 报错,要求重新 add
+
+9. `git commit -m "message"` 执行后,以下哪个说法**错误**?
+- A) 暂存区的内容被保存为一个新的提交　B) 工作目录中的文件被清空　C) 提交记录可以通过 `git log` 查看　D) 提交包含作者、时间戳、提交信息等元数据
+
+10. 以下操作序列会产生什么结果:修改 `a.txt`→`git add a.txt`→修改 `a.txt`→`git commit`→`git status`?
+- A) working tree clean(干净)　B) `a.txt` 显示为已修改(modified)　C) 报错,提交失败　D) 文件被还原到 add 时的状态
+
+### 解答题(5 道)
+
+**Q1 概念:** 画出 Git 三区模型(工作目录、暂存区、本地仓库)的数据流向图,解释 `add` 和 `commit` 在其中的作用。
+
+**Q2 解释:** 用"快递打包"比喻解释 Git 的 add+commit 流程:为什么需要 add(选货)而不直接 commit(发货)?
+
+**Q3 操作:** 写出初始化一个 Git 仓库、创建 `README.md`、完成首次提交的完整命令序列。提交信息为"初始化项目"。
+
+**Q4 排障:** 菜菜修改了 3 个文件:`a.txt`(bugfix)、`b.txt`(新功能)、`c.txt`(临时调试代码)。现在只想提交 `a.txt` 和 `b.txt`,不想提交 `c.txt`。请给出正确的操作序列。
+
+**Q5 综合设计:** 你需要为咖啡站的 `order-service` 模块建立 Git 仓库进行版本控制:①初始化仓库 ②添加 `.gitignore` 排除 `*.log` 和 `node_modules/` ③完成首次提交 ④设计日常开发循环(add→commit→status→log)的工作流,要求每次提交前检查要提交的内容。
+
+> [!答案]
+> **1-B** 工作目录(Working Directory)=你看到的文件;暂存区(Staging Area/Index)=下一次 commit 的快照候选区;本地仓库(.git)=已提交的历史版本。**举一反三:**还有一个"远程仓库"(Remote),不在本地三区内。🪟 TortoiseGit/SourceTree 等 GUI 工具用图形化界面呈现相同的三区概念。
+>
+> **2-B** `git add` 把工作目录中的修改"标记为准备提交",存入暂存区(索引)。**举一反三:**`git add .` 添加所有修改;`git add -p` 交互式选择要暂存的代码块(可以选择性添加文件中的部分修改)。这就是"add 快照陷阱"的来源——add 是"拍照"而非"标记文件"。
+>
+> **3-B** `git commit` 只提交暂存区的内容,而不是工作目录中的所有修改!**举一反三:**如果有文件修改了但没有 `git add`,那些修改不会进入这次提交。用 `git status` 可以确认暂存区和工作区的状态。
+>
+> **4-B** `git add` 时拍下的"照片"(文件快照)被固定到暂存区。之后如果继续修改文件,暂存区中的快照不会自动更新,需要再次 `git add` 才会更新。**举一反三:**日常操作:改代码→add→又想改一点→改完后忘了再 add→commit 发现修改没进去→原因是"add 快照"。
+>
+> **5-B** `--oneline` 每个提交显示一行:`缩写哈希 提交信息`(如 `a1b2c3d Fix login bug`)。**举一反三:**`git log --oneline --graph --all` 可以查看所有分支的拓扑图;`git log --oneline -5` 限制显示最近 5 条。
+>
+> **6-B** `git status` 是最常用的"仪表盘":①当前分支 ②尚未暂存的修改(Changes not staged) ③已暂存待提交的修改(Changes to be committed) ④未跟踪的新文件(Untracked files)。**举一反三:**养成 `git status` 肌肉记忆——每次 commit 前、pull 前、操作后都先看一眼状态。🪟 `git status -s`(short)显示简洁格式。
+>
+> **7-B** `git diff`=工作目录 vs 暂存区(改了什么但还没 add);`git diff --staged`(= `git diff --cached`)=暂存区 vs 上一次 commit(add 了什么即将被 commit)。**举一反三:**`git diff HEAD`=工作目录 vs 最近一次提交(全部未提交的修改,含已暂存和未暂存);`git diff branch1..branch2`=两个分支之间的差异。
+>
+> **8-A** commit 只提交暂存区的内容,暂存区中保存的是第一次 add 时的快照,所以第一次修改的版本被提交。**举一反三:**这就是"陷阱"所在:第二次修改在工作目录中,但没有被重新 add,所以不在暂存区中,不会被提交。需要再跑一次 `git add a.txt` 才能提交第二次修改。
+>
+> **9-B** 提交后工作目录中的文件不会变化——commit 是记录,不是"清空"。**举一反三:**commit 创建了一个不可变的时间点(除非用 reset/rebase 等修改历史的操作),工作目录中的文件保持最后一次保存的状态。
+>
+> **10-B** 第二次修改后的 `a.txt`(未 add)仍在工作目录中,与暂存区(保存的是第一次 add 的快照)不同→`git status` 显示 `a.txt` 为 modified。**举一反三:**这就是 add 快照陷阱的经典演示:commit 之后工作目录中可能还有未暂存的修改。
+>
+> **Q1** 数据流向:工作目录](修改)—{`git add`}→[暂存区](准备提交)—{`git commit`}→[本地仓库 .git](版本历史)—{`git push`}→[远程仓库 GitHub]。**add 的作用:**把"要提交的内容"从工作目录选入暂存区(拍照/选货)。**commit 的作用:**把暂存区的快照永久写入仓库,产生一个不可变的版本记录(附作者、时间、信息)。**关键:**工作目录→暂存区(选择性)、暂存区→仓库(批量提交)。
+>
+> **Q2** 比喻:①工作目录=超市货架(你想要的东西都在上面) ②`git add`=把商品放入购物车(挑选"这次要买的东西",购物车里是照片不是实物) ③`git commit`=推购物车去结账(把购物车里的商品拍成购物小票存档,购物记录永久保留)。**为什么需要 add:**①可以分批结账(这次只提交部分修改) ②可以确认"购物车里是不是我想要的"(git diff --staged 查看即将提交的内容) ③避免一不小心把临时调试代码一起提交。
+>
+> **Q3** 命令序列:`git init` → `echo "# 我的项目" > README.md` → `git add README.md` → `git commit -m "初始化项目"`。**举一反三:**用 `git status` 可以在每一步之间确认状态;`git init -b main`(Git 2.28+)可以直接指定默认分支名;初始化后建议立即创建 `.gitignore`。
+>
+> **Q4** 正确操作:`git add a.txt b.txt`(只 add 需要提交的两个文件,`c.txt` 保持 untracked 或 modified 但不 add)→`git commit -m "bugfix: a.txt; feat: add b.txt"`。**举一反三:**`c.txt` 不会被提交是因为它不在暂存区。用 `git stash push c.txt` 可以临时保存 `c.txt` 的修改(如果已 tracked),稍后用 `git stash pop` 恢复。
+>
+> **Q5** 操作:①`git init order-service && cd order-service` ②`echo "*.log\nnode_modules/" > .gitignore && git add .gitignore` ③`git commit -m "初始化 order-service 仓库"` ④日常开发循环:`git status`(看状态)→`git diff`(看未暂存的修改内容)→`git add <files>`(选要提交的文件)→`git diff --staged`(确认即将提交的内容)→`git commit -m "描述本次修改"`→`git log --oneline -3`(确认提交成功)。**举一反三:**用 `git commit -v` 打开编辑器并显示 diff,可以在写提交信息时参照修改内容;`git commit --amend` 修正最近一次提交(改信息或补充文件)。

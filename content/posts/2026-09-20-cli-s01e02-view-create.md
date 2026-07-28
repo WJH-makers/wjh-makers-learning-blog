@@ -223,4 +223,81 @@ $ tail -n 1 memo.txt               # 刚学的 tail 立刻上岗:只验最后一
 
 ---
 
-*本话属于连载《从零开始玩命令行》。全卷地图见 [/cli](/cli);前作《从零开始学 Java》见 [/java](/java)。*
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,接下来3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. 要查看一个长文本文件的全部内容,用哪个命令最合适(支持上下翻页)?
+- A) `cat`　B) `more`　C) `less`　D) `head`
+
+2. 创建一个多层嵌套目录 `a/b/c/d`,用一条命令完成,正确的是?
+- A) `touch a/b/c/d`　B) `mkdir a/b/c/d`　C) `mkdir -p a/b/c/d`　D) `mkdir --recursive a/b/c/d`
+
+3. `echo "hello" > file.txt` 执行两次后,`file.txt` 的内容是什么?
+- A) `hello\nhello`(两行)　B) `hello`(一行)　C) `hellohello`(同一行)　D) 第二次执行报错
+
+4. `cat` 与 `less` 的核心区别是什么?
+- A) `cat` 更快,`less` 更慢　B) `cat` 一次输出全部,`less` 支持分页浏览/搜索/回退　C) `cat` 只能看文本,`less` 能看二进制　D) 没有区别,只是不同时代的产物
+
+5. 用 `tail -f /var/log/app.log` 查看日志时,以下说法正确的是?
+- A) 显示文件最后 10 行然后退出　B) 显示文件全部内容　C) 持续追踪文件末尾新增内容,实时显示　D) 只显示文件第一行
+
+6. 已有文件 `a.txt` 内容为 "old",执行 `echo "new" > a.txt`,以下说法**错误**的是?
+- A) `a.txt` 内容变为 "new"　B) 原有内容 "old" 被覆盖　C) 如果文件不存在会创建新文件　D) "new" 被追加到 "old" 后面
+
+7. 在 `less` 中,按哪个键可以搜索关键字?
+- A) 按 `q` 然后输入关键字　B) 按 `/` 然后输入关键字　C) 按 `s` 然后输入关键字　D) `less` 不支持搜索
+
+8. `head -n 5 file.txt` 和 `tail -n 5 file.txt` 分别输出什么?
+- A) 都是文件的前 5 行　B) 分别是文件的前 5 行和后 5 行　C) 分别是文件的后 5 行和前 5 行　D) 都是文件的后 5 行
+
+9. 以下哪个命令会**清空**已有文件 `log.txt` 的内容?
+- A) `cat log.txt`　B) `echo "" >> log.txt`　C) `> log.txt`　D) `tail log.txt`
+
+10. 当前目录存在 `notes/`,执行 `touch notes` 会怎样?
+- A) 创建一个名为 `notes` 的空文件,覆盖目录　B) 更新 `notes/` 目录的时间戳,不破坏目录　C) 报错:与已有目录名冲突　D) 删除目录并创建同名空文件
+
+### 解答题(5 道)
+
+**Q1 概念:** 解释 `>`, `>>`, `<` 三个重定向符号的功能区别,并各给一个使用场景。
+
+**Q2 解释:** `cat file.txt` 和 `less file.txt` 在查看一个 10000 行的日志文件时,行为上有什么本质区别?分别在什么场景下选用?
+
+**Q3 操作:** 写出创建一个三层目录结构 `project/src/components` 并在 `src` 下创建空文件 `index.js` 的完整命令序列。
+
+**Q4 排障:** 菜菜执行 `cat /var/log/nginx/access.log`,终端瞬间刷过几万行日志,完全看不清开头。请给出三种不同的实用方案让他能有效查看日志内容。
+
+**Q5 综合设计:** 你需要为咖啡站写一个部署脚本:①创建备份目录 `~/backups/2026/09`(必须能自动创建中间目录) ②把当前日期写入 `~/backups/2026/09/date.txt` ③将应用日志最近 20 行追加到 `~/backups/2026/09/recent.log`。写出完整命令。
+
+> [!答案]
+> **1-C** `less` 支持分页浏览、搜索(`/keyword`)、上下滚动(`j`/`k`)、按 `q` 退出。**举一反三:**`less` 的设计哲学是"less is more"(比 more 更强大),加载大文件时不会一次性读入内存。🪟 PowerShell 中 `less` 不可用,可用 `more` 或 `Get-Content file.txt | Out-Host -Paging`。
+>
+> **2-C** `mkdir -p` 会自动创建所有不存在的中间目录。**举一反三:**`mkdir -p` 对已存在的目录也不会报错(幂等性),非常适合脚本使用。🪟 PowerShell 中 `mkdir` 不需要 `-p`,默认就递归创建: `New-Item -ItemType Directory -Force a/b/c/d`。
+>
+> **3-B** `>` 是覆盖重定向,第二次执行会覆盖第一次的内容,所以文件只有一行 "hello"。**举一反三:**想追加内容应使用 `>>`(追加重定向)。🪟 PowerShell 中 `>` 等同于 `Out-File`,也是覆盖;`>>` 等同于 `Out-File -Append`。
+>
+> **4-B** `cat` 一次输出全部内容到终端;`less` 打开交互式分页器,可按行/页滚动、搜索、回退。**举一反三:**`cat` 适合小文件和管道组合;`less` 适合人工浏览大文件。`less` 按 `G` 跳到末尾,`g` 跳到开头。
+>
+> **5-C** `tail -f`(follow) 持续监控文件,有新内容追加时实时显示,按 `Ctrl+C` 退出。**举一反三:**`tail -n 20` 显示最后 20 行(默认 10 行);`head -n 20` 显示前 20 行。🪟 PowerShell 中可用 `Get-Content file.log -Wait -Tail 10` 实现类似 `tail -f` 效果。
+>
+> **6-D** `>` 是覆盖重定向,不是追加。**举一反三:**覆盖用 `>`,追加用 `>>`。`> file` 还可以用来快速清空文件。🪟 注意 `>` 是覆盖,脚本中小心误操作。
+>
+> **7-B** 在 `less` 中按 `/` 进入搜索模式,输入关键字后回车,按 `n` 跳到下一个匹配,`N` 跳到上一个。**举一反三:**`less` 的搜索支持正则表达式;按 `&` 可以只显示匹配的行(过滤模式)。
+>
+> **8-B** `head -n 5`取前 5 行,`tail -n 5` 取后 5 行。**举一反三:**`head` 和 `tail` 可以组合使用,如 `head -n 20 file | tail -n 5` 取第 16-20 行。
+>
+> **9-C** `> log.txt`(不带命令的覆盖重定向)会截断文件为零长度,等价于清空。**举一反三:**`> file`(或 `:> file`、`truncate -s 0 file`)都是清空文件的写法。B 选项 `>>` 是追加,不会清空。
+>
+> **10-B** `touch` 对已存在的目录只会更新其时间戳(access/modify time),不会报错也不会破坏目录。**举一反三:**`touch` 的原始设计是用来"触碰"文件更新时间的,创建新文件是副业;`touch -a` 只更新访问时间,`touch -m` 只更新修改时间。
+>
+> **Q1** `>`覆盖重定向:将命令输出写入文件,文件已存在则先清空,如 `echo "start" > log.txt`。`>>`追加:输出附加到文件末尾,不删除原有内容,如 `echo "new entry" >> log.txt`。`<`输入重定向:将文件内容作为命令的输入,如 `sort < names.txt`。**举一反三:**管道 `|` 是另一种"连接"方式,将前一个命令的 stdout 传给后一个命令的 stdin,如 `cat file | sort`。
+>
+> **Q2** `cat` 是一次性全部输出,对于 10000 行日志,终端会全速刷到底,只能看到最后几十行。`less` 打开一个交互式分页器,加载第一页后暂停,可以上下翻、搜索关键字、跳转到任意位置。**场景选择:**快速浏览小文件用 `cat`;逐一查看大日志用 `less`;只想看开头几行用 `head`;只需末尾用 `tail`;追踪实时日志用 `tail -f`。
+>
+> **Q3** 完整序列:`mkdir -p project/src/components` → `touch project/src/index.js`。也可以先 `cd project` 再在内部创建。**举一反三:**验证目录结构用 `tree project` 或 `find project -type d`,检查文件用 `find project -type f`。
+>
+> **Q4** 方案一:`less /var/log/nginx/access.log` 分页浏览,可按 `/` 搜索、`g` 跳到开头。方案二:`tail -n 100 /var/log/nginx/access.log` 只看最近 100 行。方案三:`head -n 50 /var/log/nginx/access.log` 只看前 50 行。**举一反三:**也可以 `cat file | grep ERROR` 过滤错误行、`wc -l file` 先看总行数再决定策略、`split` 将大文件切分后逐步分析。
+>
+> **Q5** 完整命令:`mkdir -p ~/backups/2026/09` → `date > ~/backups/2026/09/date.txt` → `tail -n 20 /var/log/app.log >> ~/backups/2026/09/recent.log`。**举一反三:**生产脚本应加错误检查:`mkdir -p ... && date > ... && tail ... >> ...` 用 `&&` 串联确保前一步成功才执行下一步;也可以用 `set -e` 让脚本遇错即停。🪟 PowerShell 中 `date` 会输出日期对象而非文本,建议用 `Get-Date -Format 'yyyy-MM-dd'`。

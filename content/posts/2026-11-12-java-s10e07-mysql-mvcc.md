@@ -221,4 +221,132 @@ class MemberServiceTest {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,中间3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. MVCC 中,undo 版本链的「糖葫芦」结构依赖哪两个隐藏列?
+- A) row_id 和 db_ver
+- B) trx_id 和 roll_pointer
+- C) create_time 和 update_time
+- D) lock_bit 和 version_num
+
+2. InnoDB 默认的隔离级别是?
+- A) READ UNCOMMITTED
+- B) READ COMMITTED(RC)
+- C) REPEATABLE READ(RR)
+- D) SERIALIZABLE
+
+3. 「快照读」和「当前读」的区别是?
+- A) 快照读是 `SELECT`,当前读是 `UPDATE`/`DELETE`
+- B) 快照读读的是 ReadView 裁定的版本(不加锁),当前读读最新版本并加锁
+- C) 快照读在读已提交级别生效,当前读在可重复读级别生效
+- D) 快照读性能更好,当前读结果更准确(两个永远不同)
+
+4. ACID 中,持久性(D)由什么保证?
+- A) undo log
+- B) 锁 + MVCC
+- C) redo log + binlog(两阶段提交绑定)
+- D) 外键约束
+
+5. RR 隔离级别下,ReadView 的生成时机是?
+- A) 每条 SELECT 语句执行时新生成一个
+- B) 整个事务开始时生成,之后所有 SELECT 共用同一份
+- C) 每次 UPDATE 时生成
+- D) 由用户手动指定
+
+6. 「查了再插」在 RR 隔离级别下也会出现 Duplicate,原因是?
+- A) SELECT 是快照读,看到的是「开始时的世界」;中间别人提交了,SLEECT 看不见但 INSERT 的当前读撞到了
+- B) MySQL 不支持唯一约束
+- C) 索引失效导致的
+- D) 事务未提交
+
+7. 以下关于 InnoDB 行锁的描述,正确的是?
+- A) 行锁直接锁在数据行上
+- B) 行锁加在**索引记录**上;若 WHERE 条件无索引,退化为锁全表
+- C) 行锁只在主键索引上加
+- D) 行锁不会产生死锁
+
+8. 死锁的两个必要条件是?
+- A) 两个事务同时修改同一行
+- B) 两个事务以不同顺序获取同一组资源,形成循环等待
+- C) 两个事务都使用 `SELECT FOR UPDATE`
+- D) 隔离级别是 SERIALIZABLE
+
+9. 以下关于「幂等注册」的描述,**错误**的是?
+- A) 直接 INSERT,捕获 Duplicate 异常后转查询已存在的 id
+- B) 可替代「先 SELECT 再 INSERT」的并发不安全写法
+- C) 必须依赖唯一约束(uk_phone)作为守门员
+- D) 幂等注册可以不用唯一约束,仅靠 SELECT 防重
+
+10. RR 隔离级别防幻读靠的是?
+- A) 只靠 MVCC 快照读
+- B) 快照读靠 MVCC(全事务一张 ReadView,新插入行不可见) + 当前读靠临键锁(记录锁 + 间隙锁,不许往范围里插)
+- C) 只靠间隙锁
+- D) InnoDB 的 RR 级别无法防幻读
+
+### 解答题(5 道)
+
+**Q1(概念)** 解释 MVCC 的三大零件(隐藏列/undo 版本链/ReadView)各自的作用,并画出一行数据在经历三次 UPDATE 后的版本链示意图。
+
+**Q2(解释)** RC 和 RR 隔离级别在 ReadView 生成策略上有何不同?这一差异如何导致「不可重复读」在 RC 上可能发生,在 RR 上不会?
+
+**Q3(场景)** 咖啡站会员注册:两个收银员同时注册同一手机号。请复现 RR 级别下「先 SELECT 查不到→INSERT 时撞 Duplicate」的完整时序,并说明为什么「查了再插」无法防重。
+
+**Q4(分析)** 死锁日志 `ERROR 1213: Deadlock found` 出现后,你作为 DBA/开发者应如何排查?请写出从日志到根源再到修复的完整排查思路。
+
+**Q5(设计)** 你需要设计一个「优惠券秒杀」系统:多用户并发抢有限数量的券,要求不超发、不少发、高并发。请设计核心表结构 + 扣减 SQL + 死锁预防策略。
+
+> [!答案]
+> **选择题**
+> 1-B。InnoDB 每行有 2~3 个隐藏列:`DB_TRX_ID`(最后修改的事务 ID)、`DB_ROLL_PTR`(指向 undo log 中上一版本的指针)、`DB_ROW_ID`(无主键时自动生成)。★举一反三:trx_id 是 MVCC 判断「谁改的」的关键,roll_pointer 串起了糖葫芦。
+>
+> 2-C。InnoDB 默认 REPEATABLE READ。★举一反三:Oracle 默认 RC,PostgreSQL 默认 RC——面试中别搞混数据库的默认隔离级别。
+>
+> 3-B。快照读(`SELECT` 不加锁)读 ReadView 裁定的历史版本;当前读(`SELECT FOR UPDATE`/`UPDATE`/`DELETE`/`INSERT`)读最新版本并加锁。★举一反三:同一个事务里先普通 SELECT 读到旧数据,再 `SELECT FOR UPDATE` 读到新数据——不是 bug,是两种读看不同的世界。
+>
+> 4-C。redo log(物理日志,崩溃恢复) + binlog(逻辑日志,主从复制),两阶段提交使二者一致。★举一反三:A 靠 undo,C 靠上面三位联合保障,I 靠锁+MVCC。
+>
+> 5-B。RR 下,事务启动时拍一张 ReadView,之后所有 SELECT 共用;RC 下每条 SELECT 都新拍一张。★举一反三:因为 RR 一张到底,所以「可重复读」;因为 RC 每 SELECT 都刷新,所以能看到别人提交的更新(不可重复读)。
+>
+> 6-A。RR 的 ReadView 在事务开始时生成,中途别人提交的数据对该事务不可见(SELECT 看不到),但 INSERT 是当前读,要写数据,发现唯一索引已有记录→Duplicate。★举一反三:隔离性只保证「读得一致」,不保证「读后别人不动」。唯一约束才是防重写入的守门员。
+>
+> 7-B。锁加在索引记录上。`UPDATE … WHERE name='阿零'` 若 name 无索引,无法定位到某一行,只能全表每行的索引记录逐条上锁≈锁全表。★举一反三:这解释了为什么 WHERE 条件列必须有索引——不仅为查询快,也为锁粒度合理。
+>
+> 8-B。死锁必要条件:互斥 + 持有等待 + 不可剥夺 + 循环等待。事务 A 按 id=1→2 加锁,B 按 id=2→1 加锁,同时持有对方要的——死锁。★举一反三:最简单的预防:所有事务按同一顺序(如 id 升序)加锁,永远不会有循环等待。
+>
+> 9-D。幂等注册必须依赖唯一约束——它是数据库层面唯一的原子守门员。纯 SELECT 检查再 INSERT 有 check-then-act 竞态,无法保证。★举一反三:数据库的保证(约束) > 应用层的逻辑(先查后插)。
+>
+> 10-B。快照读:全事务一张 ReadView,后来者插入的行 trx_id 大于 max_trx_id 不可见→**读层面防幻读**。当前读:临键锁(Next-Key Lock=行锁+间隙锁)把记录和缝隙一起锁→**写层面防幻读**。★举一反三:仅靠 MVCC 无法防止当前读的幻读(你查不到但别人能插入),必须配合锁。
+>
+> **解答题**
+>
+> **Q1** 隐藏列:trx_id(事务 ID,记录谁改的)和 roll_pointer(指向上一个版本的 undo 指针)。undo 版本链:从当前最新版本顺着 roll_pointer 往回串,每版标注了 trx_id。ReadView:事务启动时拍的快照,包含活跃事务名单——用于判断哪个版本对当前事务可见。三次 UPDATE 后的链:`[行当前:trx=300]→roll_ptr→[trx=250]→roll_ptr→[trx=100 初始]→roll_ptr=NULL`。★举一反三:ReadView 通过 trx_id 在版本链上从新到旧找到第一个「可见」的版本——这就是「时间机器」的运转方式。
+>
+> **Q2** RC:每条 SELECT 语句重新生成 ReadView → 别人提交的更新对后续 SELECT 可见 → 同一事务内两次读同一行可能读到不同值(不可重复读)。RR:事务开始时生成一张 ReadView,之后所有 SELECT 共用 → 别人提交的更新对该事务全程不可见 → 可重复读。★举一反三:这个差异从代码看只是「ReadView 创建时机的不同」——原理越简单,区分越重要。
+>
+> **Q3** 时序:①T1 时刻,收银员 A 开启事务,SELECT phone='138…'→Empty(A 的 ReadView 生成,活跃事务={A});②T2 时刻,收银员 B INSERT phone='138…' 并 COMMIT(trx_id=B);③T3 时刻,A 执行 INSERT phone='138…'——INSERT 是当前读,检查 uk_phone 发现 B 已写入→Duplicate key error;④A 再 SELECT 依然 Empty(因为 ReadView 没刷新,trx_id=B > A 的 max_trx_id,不可见)。结论:SELECT 是快照读,看到的是 T1 的快照,INSERT 是当前读,必须面对当下的物理现实——两者之间的时间差就是竞态窗口。★举一反三:防重的正确方式:不管是先查后插,直接 INSERT + 捕获 Duplicate + 幂等回退。
+>
+> **Q4** 排查思路:①读错误日志,记下发生时间、涉及的事务和语句(`SHOW ENGINE INNODB STATUS` 的 LATEST DETECTED DEADLOCK 段是核心现场,列出两个事务各自的锁持有和等待);②还原死锁环:事务 A 持有哪些锁、在等什么锁;事务 B 持有哪些锁、在等 A 的什么锁——画出等待图;③找到根因:通常两个事务以不同顺序访问同一组资源;④修复:统一各个业务入口的加锁顺序(如规定所有涉及「订单→库存→账户」的流程必须按这个顺序);⑤治标选项:死锁重试(捕获 DeadlockLoserDataAccessException,自动重新执行事务)。★举一反三:InnoDB 的死锁检测是自动的——发现环后挑回滚代价最小的当牺牲者。所以「偶尔死锁报错」不算事故,「频繁死锁」才是问题。
+>
+> **Q5** 核心表:
+> ```sql
+> CREATE TABLE coupon (
+>   id    BIGINT AUTO_INCREMENT PRIMARY KEY,
+>   name  VARCHAR(50) NOT NULL,
+>   total INT NOT NULL,
+>   stock INT NOT NULL  -- 剩余数量
+> );
+> ```
+> 扣减 SQL(原子扣):
+> ```sql
+> UPDATE coupon SET stock = stock - 1
+> WHERE id = ? AND stock > 0;
+> ```
+> 在 Java 中判断 `affected rows`:0=已抢完,1=成功。死锁预防:①所有抢券请求按 coupon id 升序加锁(统一的顺序防循环等待);②高并发下,扣减 SQL 本身在 InnoDB 行级锁下几乎不会死锁(单行 update,无交叉);③若同时更新用户账户(扣积分等),规定先扣券、再扣账户,顺序固定;④应用层加乐观锁 `WHERE stock = :oldStock` 配合 CAS 自旋。★举一反三:秒杀的四种经典手段:①单一 UPDATE 原子扣(本解);②Redis 预减库存+异步落库(性能更高);③乐观锁 CAS;④悲观锁 SELECT … FOR UPDATE(最重,少用)。
+>
+> ---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

@@ -222,4 +222,60 @@ class MemberLevelTest {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。
+
+### 选择题(10 道)
+
+1. `Integer a = 128` 编译后约等于什么?
+   - A) `Integer a = new Integer(128)`　B) `Integer a = Integer.valueOf(128)`　C) `int a = 128`　D) 不编译
+2. `int x = a`(a 是 Integer)编译后会变成?
+   - A) `int x = a`　B) `int x = a.intValue()`　C) `int x = Integer.parseInt(a)`　D) 编译错误
+3. `Integer a = 127; Integer b = 127;` 用 `==` 比较结果是?
+   - A) true　B) false　C) 编译错误　D) 抛异常
+4. `Integer a = 128; Integer b = 128;` 用 `==` 比较结果是?
+   - A) true　B) false　C) 编译错误　D) 视 JVM 而异
+5. 上一题结果为 false 的根因是?
+   - A) 128 超出 int 范围　B) IntegerCache 缓存 −128~127,128 不在缓存内,每次装箱造新对象　C) `==` 对 Integer 禁用　D) JDK bug
+6. `Map<String, Integer>.get("路人甲")` 返回 null,赋值给 `int x` 会?
+   - A) x = 0　B) 编译期直接拦截　C) NullPointerException(拆箱触发的 intValue() 炸了)　D) x = null
+7. 包装类之间判等,正确的做法是?
+   - A) 一律 `==`　B) `equals()`(或 `Objects.equals`)　C) 先转 int 再 `==`　D) 随便
+8. `Map<Long, String>` 里 `map.get(1)` 永远查不到,因为?
+   - A) Map 不支持包装类　B) 1 装箱是 Integer,`Long.equals(Integer)` 恒 false　C) key 必须是 String　D) 编译器警告
+9. 表达式 `vip ? 1 : bonus`(bonus 是 Integer 且 null)会?
+   - A) 返回 0　B) NPE——三元运算符两边类型对齐时触发拆箱　C) 返回 null　D) 编译期限制
+10. 哪对基本类型对应的包装类没有缓存?
+    - A) int → Integer　B) char → Character　C) boolean → Boolean　D) float → Float
+
+> [!答案]
+> **1-B**　自动装箱走 `valueOf`,不是 `new`。**举一反三**:`valueOf` 的源码就四行,进去看一眼就理解了 IntegerCache;看过就不会再错。
+> **2-B**　拆箱 = 编译期插入 `xxxValue()` 调用,是隐藏的代码,所以 null 拆箱会 NPE。**举一反三**:用 javap -c 反编译一段含装箱拆箱的代码,亲眼看到这条隐藏指令,这辈子不会忘。
+> **3-A**　127 在 IntegerCache 缓存内,两次装箱返回同一个共享对象。**举一反三**:这只是碰巧——工程上绝不依赖 `==` 比包装类,换台机器/调了缓存上界结果就反转。
+> **4-B**　128 超出默认缓存范围,每次装箱都是 new 新对象。**举一反三**:这是笔试口试双料常客,面试时能说出缓存范围 −128~127 且上界可调,就是满分回答。
+> **5-B**　`valueOf` 判断 `low <= i <= high`,在范围内返回缓存里的同一个对象,否则 new 新对象。**举一反三**:Byte/Short/Long 的缓存也是 −128~127,Character 是 0~127,Boolean 只有 TRUE/FALSE 两个常量;Float/Double 没有缓存。
+> **6-C**　`get` 返回 null,赋给 `int` 触发拆箱 `intValue()`,在 null 上调用方法必然 NPE。**举一反三**:防御写法是 `getOrDefault(key, 0)`,或者用 `Integer` 接收再判空——数据从 DB 里取出来的 Integer 字段同理。
+> **7-B**　`equals` 比值不比引用;`Objects.equals(a, b)` 额外处理了两边都是 null 的情况。**举一反三**:面试追问「`a.equals(b)` vs `Objects.equals(a, b)`」——前者 a 是 null 当场 NPE,后者没问题。
+> **8-B**　`map.get(1)` 的 1 自动装箱为 Integer,`Long.equals(Integer)` 永远返回 false,因为类型不同。**举一反三**:这个 Bug 在生产上极阴——不报异常,就是永远查不到,排查到怀疑人生;养成写 `1L` 的肌肉记忆。
+> **9-B**　三元表达式先确定整体类型:一边 int 一边 Integer → 整体是 int → bonus 被拆箱 → null.intValue() = NPE。**举一反三**:三元运算符类型对齐规则是「转成大的那个」,Integer + int = int,Long + int = long,知道这条规则就能预判雷区。
+> **10-D**　Float 和 Double 没有缓存,每次装箱必定是 new 新对象。**举一反三**:浮点数取值无限多,缓存没意义;这也是 `new Float(0.1) == new Float(0.1)` 永远 false 的另一重原因。
+
+### 解答题(5 道)
+
+1. 用自己的话讲清自动装箱和拆箱分别对应哪两个方法,为什么 null 拆箱会 NPE?
+2. IntegerCache 缓存的范围是多少?为什么它能解释「127 `==` 是 true、128 `==` 是 false」?
+3. 包装类比较应该用什么?`==` 和 `equals` 在包装类上的语义分别是什么?
+4. 从 Map<String, Integer> 里取积分,怎么写才不会因 null 而拆箱 NPE?给出至少两种写法。
+5. 为什么说「int 优先于 Integer,包装类只用在必须装箱的地方(放进集合/泛型/可空字段)」?
+
+> [!答案]
+> **1**　装箱 = `valueOf()`(int → Integer),拆箱 = `intValue()`(Integer → int),都是编译期自动插入的。null 拆箱时 `null.intValue()` 必然 NPE——编译期不拦,因为它不知道运行时会拿到 null。**举一反三**:凡是「数据库查出的可空字段」配 `Integer` 接收,再加一步 getOrDefault/判空;把拆箱永远放在 null 检查之后。
+> **2**　IntegerCache 默认缓存 −128 到 127。127 装箱两次都命中缓存,返回同一个对象,`==` 比引用自然 true;128 每次装箱都 new 新对象,地址不同 = false。**举一反三**:上界能用 `-XX:AutoBoxCacheMax=256` 调大,调完 128 也会 true——但这恰好证明所有依赖 `==` 的代码都是在赌配置,正确做法就是不用 `==`。
+> **3**　`==` 比引用(是不是同一个对象),`equals` 比值(内容相等 + 类型相同)。包装类判等永远用 `equals` 或 `Objects.equals`。**举一反三**:实际上 `Integer.equals(Long)` 不会抛异常,直接返回 false——类型不同时 equals 不报错,只是静默不等,这是另一种「不炸但悄悄错」的形态。
+> **4**　① `int p = points.getOrDefault("路人甲", 0)`;② `Integer p = points.get("路人甲"); if (p != null) { ... }`。**举一反三**:`getOrDefault` 最干净,一行兜底;但要小心 `getOrDefault` 不能防御 Map 本身的 null key/value 策略——HashMap 允许 null,Hashtable/CHM 不允许。
+> **5**　因为拆箱 NPE、装箱开销、缓存陷阱都是 int 没有的。int 是值类型,`==` 天然安全、不占堆、不会被 null。只在放进集合(泛型擦除到 Object 需装箱)、可空字段(DB 查出的 null)时用包装类。**举一反三**:「基本类型优先」是 Effective Java 的第 61 条,背后的理由是安全 + 性能 + 语义一致。`int` 还天然线程安全——每个线程栈上都有自己的一份。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

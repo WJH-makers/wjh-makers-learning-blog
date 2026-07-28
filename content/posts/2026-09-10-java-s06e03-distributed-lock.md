@@ -209,4 +209,108 @@ void only_one_wins_the_last_cup() throws Exception {
 
 ---
 
+## 随堂练习
+先独立作答，再展开参考要点核对思路。
+
+### 一、选择题（10 道）
+
+**1.** Redis 分布式锁核心命令 `SET lock_key value NX EX 30` 中，`NX` 和 `EX` 分别表示什么？
+- A) NX=键不存在时设置，EX=过期时间单位是秒　B) NX=键存在时设置，EX=过期时间单位是毫秒　C) NX=永不超时，EX=额外参数　D) NX=数值递增，EX=扩展模式
+
+**2.** `synchronized` 在多实例部署下为什么必然失效？
+- A) synchronized 在 Java 25 中被废弃　B) synchronized 的锁是 JVM 进程内对象锁，不同 JVM 各锁各的互不感知　C) synchronized 不支持网络通信　D) 多实例部署时线程数太多导致死锁
+
+**3.** 分布式锁中"锁误删"描述的是什么场景？
+- A) 用户手动删了 Redis 的 lock key　B) A 的锁到期后被 B 抢到，A 在 finally 里无脑 `delete(key)` 把 B 的锁删了　C) 多个实例同时抢锁导致 Redis 崩溃　D) Redis 主从切换导致锁数据丢失
+
+**4.** 解决"锁误删"的正确方式是什么？
+- A) 把 TTL 设得足够长　B) 用 Lua 脚本原子地执行"比对 token 是否匹配 → 匹配则删除"　C) 用 `ThreadLocal` 传递 token　D) 在 `finally` 里先 `get(key)` 判断 token 再 `del(key)`
+
+**5.** Redisson 的"看门狗"（watchdog）解决的是什么问题？
+- A) 防止 Redis 主从切换丢锁　B) 业务未结束时自动给锁续期，防止锁提前过期　C) 检测并清理死锁　D) 限制同时持有锁的线程数量
+
+**6.** Redisson 默认锁 TTL 和看门狗续期间隔是多少？
+- A) 10 秒 / 3 秒　B) 30 秒 / 10 秒　C) 60 秒 / 20 秒　D) 无默认值，必须手动指定
+
+**7.** 手写 SET NX 分布式锁时如果不设过期时间（不加 EX/PX），会发生什么？
+- A) 锁永不过期，持锁进程崩溃后其他线程永远抢不到——死锁　B) Redis 60 秒后自动清理　C) 每次释放后 key 自动过期　D) 没有任何问题
+
+**8.** ZooKeeper 分布式锁相比 Redis 分布式锁（Redisson）的核心优势是什么？
+- A) 性能更高　B) 强一致性（CP），极端场景下不会丢锁　C) 代码更简单　D) 不需要额外部署中间件
+
+**9.** 释放 Redisson 锁时，为什么要判断 `lock.isHeldByCurrentThread()`？
+- A) 防止在未持有锁的线程中调用 unlock 抛出异常　B) 防止因 tryLock 超时返回 false 后，finally 中释放了别人的锁　C) Redisson 要求释放锁前必须调用此方法　D) 这是 Java 语法要求
+
+**10.** 手写 Redis 分布式锁的**三个致命坑**是哪三个？
+- A) 慢查询、大 key、热 key　B) 加锁非原子、锁误删、锁未续期　C) 内存溢出、CPU 飙升、网络断开　D) 连接池耗尽、序列化失败、超时
+
+> [!答案]
+> **1-A**　`NX`（Not eXists）= 不存在才 SET 成功（抢锁语义）；`EX 30`=30 秒过期（防死锁）。　举一反三：老版本 `SETNX`+`EXPIRE` 分两条命令，中间宕机就死锁——`SET NX EX` 一条命令解决了原子性问题。
+> 
+> **2-B**　`synchronized` 和 `ReentrantLock` 是 JVM 进程内锁，锁在堆内存对象头里。三实例=三 JVM=三把各锁各的锁，A 锁管不了 B 线程。　举一反三：分布式锁把锁从 JVM 内部搬到进程外共享存储（Redis），三个实例都认同一把锁。
+> 
+> **3-B**　完整链条：A 抢到锁，业务耗时 11s 超出 10s TTL→第 10s 锁过期，B 抢到→第 11s A 醒来 `finally` 里 `delete(key)` 删掉的是 B 的锁。　举一反三：解决需两点：① 唯一 token（UUID）标识持有者；② 比对+删除必须原子——用 Lua 脚本一条执行。
+> 
+> **4-B**　D 有致命时序窗口——`get` 和 `del` 之间锁又可能过期被抢走，还是误删。必须用 Lua 脚本原子执行。　举一反三：这就是生产不手写锁的原因——Lua、续期、可重入不封装好，随便一个时序窗口就是线上事故。
+> 
+> **5-B**　看门狗机制：默认 TTL=30s，看门狗每 10s 检查，若业务未结束且锁仍被持有，自动续回 30s。　举一反三：如果手动指定 `leaseTime`（如 `lock(10, SECONDS)`），看门狗不启动——适用于能精确估算耗时的场景。
+> 
+> **6-B**　默认锁 TTL=30s，看门狗续期间隔=10s（TTL/3）。　举一反三：Redisson 实现可重入锁——同一线程多次 `lock()` 内部计数器记录重入次数，`unlock()` 减到 0 才真正释放。
+> 
+> **7-A**　不设过期，持锁进程崩溃或被 kill 后 `finally` 的 `delete` 不执行，lock key 永远留在 Redis，所有实例抢不到——死锁。　举一反三：即使设了过期也要考虑续期——业务耗时可超 TTL 就需要看门狗，单纯 SET NX EX 只适合极短任务。
+> 
+> **8-B**　ZooKeeper 基于 ZAB 协议（CP 系统），临时顺序节点+Watch 机制理论上更安全——节点掉线锁自动释放。　举一反三：ZK 写性能远低于 Redis、运维重。绝大多数业务 Redisson 够用，只有"绝对不能出错"的金融场景才上 ZK。
+> 
+> **9-B**　`tryLock(waitTime, SECONDS)` 超时返回 false（没抢到锁），`try` 块抛异常后 `finally` 里 `unlock()` 会去释放一把不属于自己的锁。`isHeldByCurrentThread()` 确保只有持锁者才释放。　举一反三：`lock.lock()`（阻塞等锁）则 `finally` 里可放心 `unlock()`——`lock()` 要么拿到锁才返回，要么被中断。
+> 
+> **10-B**　① 非原子——`SETNX`+`EXPIRE` 分开写中间宕机就死锁（解决：`SET NX EX` 一条）；② 锁误删——不判断 token 直接删（解决：UUID+Lua 原子比对删除）；③ 未续期——业务比 TTL 长导致锁提前过期（解决：看门狗）。　举一反三：这三个坑是分布式锁面试核心考点，能完整说出且给方案 = 真上过手。
+
+### 二、解答题（3 道）
+
+**1.** 为什么分布式锁需要"锁续期"？描述 Redisson 看门狗的工作机制。
+
+**2.** 对比 Redis（手写 SET NX）、Redisson、ZooKeeper 三种分布式锁方案，说明各自适用场景和核心权衡。
+
+**3.** "锁误删"是怎么发生的？为什么说用 Java 代码在 `finally` 里先 `get` 判断 token 再 `del` 仍然可能出错？
+
+> [!答案]
+> **1**　锁续期解决"业务执行时间超过锁过期时间"——若 TTL=10s 但业务跑 15s，第 10s 锁自动过期→另一线程抢到→两个线程同时执行临界区。Redisson 看门狗：默认 TTL=30s，每 10s（TTL/3）检查，若业务未结束且锁仍被持有，自动将 TTL 续回 30s；`unlock()` 后看门狗停止。　举一反三：手动指定 `leaseTime` 时看门狗不启动，适用于能精确估算耗时的场景。
+> 
+> **2**　① Redis 手写 SET NX：最轻，无额外依赖，但需自处理续期/可重入——只适合极短排他场景（如秒杀），不建议生产手写。② Redisson：开箱即用——看门狗续期、可重入、公平锁全封装，大部分业务的默认选择；仍受 Redis 主从异步复制的极端丢锁风险。③ ZooKeeper：CP 强一致，临时节点+Watch 机制，节点掉线锁自动释放——适合金融级"绝不能出错"场景；写性能低、运维重。　举一反三：选择顺序——大多数业务 Redisson 够用；一致性要求极高才上 ZK；手写只用于理解原理。
+> 
+> **3**　锁误删的时序窗口：A 持有锁（token=aaa），业务执行中→锁 TTL 到期自动删除→B `SET NX` 拿到锁（token=bbb）→A 业务结束 `finally` 里 `redis.delete(key)` 删掉了 B 的锁。Java 代码 `get(key)+equals(token)+del(key)` 三步非原子：`get` 发现 token=aaa→但在 `del` 之前锁又过期→B 拿到锁→A 还是删了 B 的锁。　举一反三：必须用 Lua 脚本在 Redis 服务端一条 EVAL 原子执行 get+比对+del，中间不会有其他命令插入。
+
+### 三、代码题（2 道）
+
+**1.** 用 Redisson 实现带分布式锁的扣库存方法：锁 key 为 `lock:stock:{coffeeId}`，确保异常时也能正确释放锁且判断 `isHeldByCurrentThread()`。
+
+**2.** 写一段 Lua 脚本和 Java 调用方法，实现"原子地判断 token 是否匹配，匹配则删除 key"的分布式锁释放逻辑。
+
+> [!答案]
+> **1 验收**　```java
+> public void deductStock(Long coffeeId) {
+>     RLock lock = redisson.getLock("lock:stock:" + coffeeId);
+>     lock.lock();  // 阻塞等锁，看门狗自动续期
+>     try {
+>         Coffee c = mapper.findById(coffeeId);
+>         if (c == null || c.stock() <= 0) throw new BizException("已售罄");
+>         mapper.deductStock(coffeeId);
+>     } finally {
+>         if (lock.isHeldByCurrentThread()) lock.unlock(); // 防误释放
+>     }
+> }
+> ```　举一反三：若希望等待超时就返回（不阻塞），用 `lock.tryLock(3, TimeUnit.SECONDS)`——3 秒内抢不到返回 false，提示"手慢了"。
+> 
+> **2 验收**　```java
+> private static final String UNLOCK_SCRIPT =
+>     "if redis.call('get', KEYS[1]) == ARGV[1] " +
+>     "then return redis.call('del', KEYS[1]) else return 0 end";
+> 
+> public void unlock(String lockKey, String token) {
+>     var script = new DefaultRedisScript<>(UNLOCK_SCRIPT, Long.class);
+>     Long result = redis.execute(script, List.of(lockKey), token);
+>     // result==0→token不匹配(别人的锁或已过期)，静默处理
+> }
+> ```　举一反三：调用方在 `finally` 中始终调用 `unlock(lockKey, token)`，持锁时存的 UUID token 释放时用同一个 token 比对，保证只有持锁者能释放。
+
 *本话属于连载《从零开始学 Java》。世界观与创作规范见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 [/java](/java)。*

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// 注意:这里必须保留内联实现,不能复用 @/lib/safe-compare —— 那份依赖 node:crypto/Buffer,
+// 而本文件跑在 Edge Runtime,只有 Web API 可用。
 function safeCompare(a: string, b: string): boolean {
   const enc = new TextEncoder();
   const ua = enc.encode(a);
@@ -26,7 +28,13 @@ export function middleware(request: NextRequest) {
     const target = pathname === "/" || pathname === "/posts"
       ? new URL("/agent/markdown", request.url)
       : new URL(`${pathname}/markdown`, request.url);
-    return NextResponse.rewrite(target);
+    const rewritten = NextResponse.rewrite(target);
+    // 同一 URL 会按 Accept 返回 HTML 或 Markdown 两种内容:不声明 Vary,
+    // CF/nginx 只按 URL 缓存 —— agent 抓一次就可能让后续浏览器读者拿到裸 Markdown。
+    rewritten.headers.append("Vary", "Accept");
+    // 这份变体只服务内容协商,不进共享缓存,避免上游代理把它当作该 URL 的规范表示。
+    rewritten.headers.set("Cache-Control", "private, no-store");
+    return rewritten;
   }
 
   if (request.nextUrl.pathname === "/write" && request.method === "POST") {
@@ -43,6 +51,8 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
   if (isContentPage) {
+    // HTML 与 Markdown 共用同一 URL,必须声明按 Accept 分表示,否则共享缓存会串味。
+    response.headers.append("Vary", "Accept");
     // 反向代理会把内部地址作为 request.url 传入；发现链接必须始终使用公网规范域名。
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online";
     const links = [

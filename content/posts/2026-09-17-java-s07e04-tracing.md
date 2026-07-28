@@ -253,4 +253,127 @@ void traceId_should_propagate_via_http_header() {
 
 ---
 
+## 随堂练习
+先独立作答，再展开参考要点核对思路。
+
+### 一、选择题（10 道）
+
+**1.** 在分布式链路追踪中，一个 Trace 由一个或多个什么组成？
+- A) Log　B) Span　C) Metric　D) Event
+
+**2.** TraceId 在分布式追踪中的作用是？
+- A) 标识单个服务实例　B) 标识一次跨服务的完整请求链　C) 记录日志级别　D) 标识部署版本
+
+**3.** OpenTelemetry 在可观测性生态中的定位是什么？
+- A) 一个日志聚合系统　B) 一个 Java 框架　C) 一个容器编排平台　D) CNCF 的可观测性标准——提供统一 API、SDK 和采集协议，解耦埋点与后端存储
+
+**4.** SkyWalking 的埋点方式主要依靠什么技术？
+- A) 开发者手动每行加埋点　B) Java Agent 字节码增强——挂载 `-javaagent` 自动织入常见框架埋点　C) 通过 AOP 注解手动标注　D) 修改 JVM 源码
+
+**5.** TraceId 从一个服务传递到另一个服务，主要依靠什么机制？
+- A) 数据库共享表　B) Kubernetes ConfigMap　C) HTTP 请求头（W3C `traceparent`）或消息头携带上下文　D) 服务间通过环境变量传递
+
+**6.** 阿零把库存查询丢进 `new Thread()` 异步执行后，该 Span 从瀑布图上消失——根本原因是什么？
+- A) 异步操作比同步快来不及记录　B) TraceId 存储在 ThreadLocal 中，新线程不继承当前线程上下文　C) 新线程日志级别太低　D) Jaeger 不支持异步 Span
+
+**7.** Span 之间的父子关系通过什么字段建立？
+- A) Span 的名称　B) Span 的开始时间　C) Span 的标签（Tags）　D) parentSpanId——子 Span 记录父 Span 的 SpanId
+
+**8.** 服务拓扑图（Service Topology）在追踪系统中展示的是什么？
+- A) 服务的 CPU 和内存使用　B) 服务器机房物理位置　C) 服务间的调用关系、依赖方向和调用量/延迟等指标　D) Kubernetes 集群节点分布
+
+**9.** 生产环境分布式追踪的采样率通常设为多少？为什么不全量采样？
+- A) 100%（全量采样）　B) 1%~10%（按比例采样），降低追踪系统的存储和网络开销　C) 0%（不开追踪以省资源）　D) 50%
+
+**10.** 以下哪个不是链路追踪能提供的价值？
+- A) 精确找到一次请求卡在哪个服务、哪个方法　B) 查看调用链中每一跳的耗时　C) 自动修复性能瓶颈　D) 发现不合理的调用链
+
+> [!答案]
+> **1-B**　Trace 代表一次完整请求链路（如用户下单），由多个 Span 组成。每个 Span 记录一次操作（HTTP 调用、DB 查询）的开始/结束时间和元数据。　举一反三：Trace 和 Span = 树和节点的关系。根 Span 是入口，叶 Span 是最终操作，中间 Span 是层层调用。
+> 
+> **2-B**　TraceId 全局唯一，在整个分布式链路中保持不变——网关→订单→库存→缓存→MQ，所有 Span 共享同一 TraceId，散落各服务的 Span 借此拼回完整调用树。　举一反三：TraceId 在入口生成（如网关），后续服务只传递不重新生成。同一业务出现多个 TraceId 说明链路在某个环节断了——常见断点是异步线程、MQ 中间跳。
+> 
+> **3-D**　OpenTelemetry（OTel）是 CNCF 孵化的开放标准——"一次埋点、导出到哪由配置决定"。定义统一 API/SDK 生成 Trace/Metrics/Logs，OTLP 协议传输，后端 Collector 可路由到 Jaeger、SkyWalking 等。　举一反三：OTel 解决"厂商锁定"——从 Zipkin 切到 Jaeger 只需改 Collector 导出配置。但 OTel 是标准/协议层，实际存储分析靠后端。
+> 
+> **4-B**　SkyWalking 核心特色是 Java Agent 字节码增强——JVM 加载类时动态修改字节码，给 Spring MVC、HttpClient、JDBC、Redis、MQ 等常见框架自动注入追踪代码，对业务零侵入。　举一反三：Agent 缺点——只能覆盖 Agent 认识的标准框架，自定义 RPC 协议、裸线程中的调用追不到，需用 OTel SDK 手动补 Span。
+> 
+> **5-C**　跨进程上下文传播靠传输载体携带 TraceId 和 SpanId——HTTP 调用通过请求头（W3C 标准 `traceparent: 00-{traceId}-{spanId}-01`），MQ 消息通过消息属性头。　举一反三：W3C `traceparent` 是跨语言推荐标准头（取代各家私有头如 `X-B3-TraceId`）。格式：`version-traceId-parentSpanId-traceFlags`。
+> 
+> **6-B**　追踪上下文（TraceId、SpanId）底层存储在 `ThreadLocal` 中，`new Thread()` 创建的是干净裸线程，不会自动继承上下文。子线程发 HTTP 时没带 `traceparent`，下游当成新请求另发一个 TraceId——链路断裂。　举一反三：不仅是追踪——Spring Security 登录信息、MDC 日志上下文也全绑在 ThreadLocal 上。生产异步必须走框架管理的、会传播上下文的线程池。
+> 
+> **7-D**　每个 Span 除了自己的 spanId，还记录 parentSpanId（父 Span ID）。只有根 Span 的 parentSpanId 为空。追踪后端依此把散落各服务的 Span 重新拼成调用树。　举一反三：跨进程传播——A 调 B 时 A 把自己的 spanId 塞进 HTTP 头，B 收到后把它作为自己 Span 的 parentSpanId。如此递归整棵树就串起来了。
+> 
+> **8-C**　服务拓扑图通过分析所有 Trace 数据自动绘制出服务间调用关系——谁调了谁、调用量多少、平均延迟多少、错误率如何。是微服务治理核心可视化工具。　举一反三：拓扑图是「意料之外依赖」的发现器——文档里可能没写 A→C，但运行时数据不会撒谎。
+> 
+> **9-B**　全量追踪在高 QPS 下产生海量数据——一个 QPS 10000 的系统一秒就有 10000 条 Trace。生产采样 1%~10%，且必须保证「同一条 Trace 要么全采要么全不采」。　举一反三：Head-based 采样（入口决定）简单但可能漏慢/错误请求；Tail-based（等 Trace 完整后按延迟/错误决定）更精准但实现复杂。折中：正常请求低采样，错误/慢请求强制采样。
+> 
+> **10-C**　追踪是观测工具不是修复工具——能精确告诉你"卡在哪、卡了多久"，但不会自动优化代码或 SQL。核心价值：(A) 定位瓶颈、(B) 量化耗时、(D) 发现异常调用模式。　举一反三：追踪最强场景是定位长尾延迟——平均延迟正常但 P99=2s，钻进那 1% 的慢 Trace 看到底是哪一步在拖后腿。
+
+### 二、解答题（3 道）
+
+**11.** 描述一个 TraceId 从网关到数据库的完整跨服务传播过程：在哪生成？如何从一个服务传递到下一个？Span 如何被拼回一棵树？
+
+**12.** OpenTelemetry 如何解决「厂商锁定」问题？它的 Collector 扮演什么角色？
+
+**13.** 异步场景下（如 `@Async`、`CompletableFuture`、MQ 消费），如何保证 TraceId 不丢失？列出至少两种方案。
+
+> [!答案]
+> **11**　(1) 生成：请求到达第一个服务（如网关）时检查是否有 `traceparent` 头——没有则生成新 TraceId 和根 Span。(2) 传播：调下游时框架拦截出站 HTTP 调用，把当前 TraceId + spanId 写入出站头 `traceparent: 00-{traceId}-{spanId}-01`。(3) 接收：下游追踪库从入站头读出 traceId（保持不变）和 parentSpanId（上游 spanId），创建自己的 Span（新 spanId，parentSpanId 指向上游），挂在上游 Span 下面。(4) 拼树：各服务异步将 Span 上报后端，后端按 traceId 分组、按 parentSpanId 建树，还原完整调用树和瀑布图。　举一反三：传播不限于 HTTP——gRPC 用 Metadata、MQ 用消息属性头，本质都是把上下文塞进传输载体。任一中间件不传播链路就断在那里。
+> 
+> **12**　OTel 解决厂商锁定：(1) 统一 API/SDK——业务代码只依赖 OTel 的 `Tracer`、`@WithSpan` 等标准接口，不直接依赖 Jaeger 或 SkyWalking SDK；(2) 统一传输协议 OTLP——Span/Metric 数据以标准格式离开应用；(3) Collector 作为"数据路由器"——接收 OTLP 数据后根据配置转发到多个后端（如同时发给 Jaeger 存档和 Datadog 展示）。切换后端只需改 Collector 的 exporter 配置。　举一反三：Collector 还可做预处理——采样、过滤敏感字段（脱敏手机号）、富化（添加 `env=prod` 标签）、聚合（减少后端写入压力）。
+> 
+> **13**　方案一：使用托管线程池——Spring 的 `@Async` 配 `TaskExecutor` 时用 `LazyTraceableThreadPoolTaskExecutor`（Micrometer Tracing 提供），自动传播上下文。方案二：手动捕获+传播——`var snapshot = ContextSnapshot.captureAll();` → 异步任务开始时 `try (var scope = snapshot.setThreadLocals()) { ... }` 恢复上下文。方案三：MQ 消费端——生产者发消息时在消息头写入 `traceparent`，消费者收到后读取并恢复。　举一反三：方案一最简单（不改业务代码）但只覆盖 Spring 管理线程池；方案二最灵活但侵入代码；关键是团队要有规范禁止 `new Thread()`——所有线程须由框架管理。
+
+### 三、代码题（2 道）
+
+**14.** 用 OpenTelemetry SDK 写一段代码：在订单创建方法中手动创建 Span，并给 Span 打上 `order.id` 和 `order.amount` 两个自定义标签。
+
+**15.** 写一个集成测试，验证 TraceId 确实通过 HTTP 头跨服务传播了。使用 Spring Boot Test 和 Micrometer Tracing。
+
+> [!答案]
+> **14 验收**　```java
+> @Service
+> public class OrderService {
+>     private final Tracer tracer;
+>     public OrderService(OpenTelemetry openTelemetry) {
+>         this.tracer = openTelemetry.getTracer("coffee-order-service", "1.0.0");
+>     }
+>     public Order createOrder(OrderRequest req) {
+>         Span span = tracer.spanBuilder("OrderService.createOrder")
+>             .setSpanKind(SpanKind.INTERNAL).startSpan();
+>         try (Scope scope = span.makeCurrent()) {
+>             span.setAttribute("order.id", req.orderId());
+>             span.setAttribute("order.amount", req.amount());
+>             Order order = saveToDatabase(req);
+>             span.setStatus(StatusCode.OK);
+>             return order;
+>         } catch (Exception e) {
+>             span.recordException(e);
+>             span.setStatus(StatusCode.ERROR, e.getMessage());
+>             throw e;
+>         } finally { span.end(); }
+>     }
+> }
+> ```　举一反三：`SpanKind` 影响后端展示——`INTERNAL`（内部操作）、`CLIENT`（出站调用）、`SERVER`（入站请求）。手动埋点只用于关键业务方法（方便按订单号搜索 Trace），不要每个方法都埋。
+> 
+> **15 验收**　```java
+> @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+> class TraceIdPropagationTest {
+>     @Autowired Tracer tracer;
+>     @Autowired TestRestTemplate restTemplate;
+> 
+>     @Test
+>     void traceIdMustExistInCurrentSpan() {
+>         Span testSpan = tracer.nextSpan().name("test-trace-propagation");
+>         try (var ws = tracer.withSpan(testSpan.start())) {
+>             ResponseEntity<String> resp = restTemplate.getForEntity("/api/orders/health", String.class);
+>             Span current = tracer.currentSpan();
+>             assertThat(current).isNotNull();
+>             assertThat(current.context().traceId()).matches("[0-9a-f]{32}"); // 合法TraceId
+>             assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+>         } finally { testSpan.end(); }
+>     }
+> }
+> ```　举一反三：测试进 CI 有双重价值——(1) 验证追踪库配置正确；(2) 防止有人把 `RestTemplate` 换成裸 `HttpURLConnection`（不支持传播）导致链路断裂。
+
 *本话属于连载《从零开始学 Java》。世界观与创作规范见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 [/java](/java)。*

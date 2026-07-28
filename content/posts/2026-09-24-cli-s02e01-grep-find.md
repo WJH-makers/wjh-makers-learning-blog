@@ -212,4 +212,81 @@ grep 有个和别的命令不同的脾气:**命中 `$?`=0,没命中=1,出错=2**
 
 ---
 
-*本话属于连载《从零开始玩命令行》。全卷地图见 [/cli](/cli);前作《从零开始学 Java》见 [/java](/java)。*
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,接下来3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. `grep` 命令的核心功能是什么?
+- A) 查找文件　B) 在文本中搜索匹配指定模式的行　C) 替换文本内容　D) 统计文件行数
+
+2. `find` 命令的路径参数应该放在什么位置?
+- A) 命令的最后　B) 命令的最前面(紧接 find 之后)　C) 放在 -name 参数之后　D) 任意位置
+
+3. `grep -i "error" log.txt` 中的 `-i` 代表什么?
+- A) 忽略大小写(insensitive)　B) 反向匹配(invert)　C) 显示行号(index)　D) 交互模式(interactive)
+
+4. `grep -r "TODO" src/` 与 `grep "TODO" src/*` 的关键区别是?
+- A) 完全一样　B) `-r` 递归搜索所有子目录,`*` 只搜索当前层文件　C) `-r` 更快　D) `*` 搜索隐藏文件,`-r` 不搜索
+
+5. `find /var/log -name "*.log" -type f` 中 `-type f` 的作用是?
+- A) 只匹配普通文件(regular file)　B) 只匹配目录　C) 匹配任意类型　D) 按文件大小过滤
+
+6. 关于正则表达式元字符,以下哪个是 `grep` 默认模式下的"任意单个字符"?
+- A) `*`　B) `?`　C) `.`　D) `+`
+
+7. `grep -c "404" access.log` 的输出是什么?
+- A) 所有包含 404 的行　B) 第一个包含 404 的行　C) 包含 404 的总行数(计数值)　D) 不包含 404 的行
+
+8. 以下 `find` 命令哪个能找出 `/home` 下 7 天内修改过的所有 `.java` 文件?
+- A) `find /home -name "*.java" -mtime -7`　B) `find /home -mtime -7 -name "*.java"`　C) `find /home -name "*.java" -mtime +7`　D) 以上 A 和 B 都对
+
+9. `grep -F "a.txt" file_list.txt` 中的 `-F` 是什么意思?
+- A) 强制搜索(force)　B) 固定字符串匹配(不解释正则元字符)　C) 只显示文件名　D) 全文搜索(full-text)
+
+10. 以下哪条命令最准确地查找包含 IP 地址 `192.168.1.1` 的行(不匹配 `192.168.1.10`)?
+- A) `grep "192.168.1.1" file`　B) `grep "192\.168\.1\.1\b" file`　C) `grep -w "192.168.1.1" file`　D) 以上 B 和 C 都可以
+
+### 解答题(5 道)
+
+**Q1 概念:** `grep` 和 `find` 各司何职?比喻说明两者在"信息检索"中的分工。
+
+**Q2 解释:** `grep -r` 与 `find ... -exec grep` 组合的区别?何时必须用后者而非前者?
+
+**Q3 操作:** 在 `/var/log` 目录下,递归查找所有包含 "ERROR" 的 `.log` 文件,并显示匹配行的行号。写出命令。
+
+**Q4 排障:** 菜菜执行 `find / -name "nginx.conf"`,命令行卡住很久没有输出。分析可能原因,并给出优化方案。
+
+**Q5 综合设计:** 咖啡站项目代码在 `~/project/` 下,里面有上百个 `.java`、`.py`、`.js` 文件。现在需要:①找出所有包含 `FIXME` 或 `TODO` 注释的行 ②排除 `node_modules/` 和 `__pycache__/` 目录 ③统计每个文件类型中有多少个待办项。设计完整的搜索策略和命令。
+
+> [!答案]
+> **1-B** `grep` = Global Regular Expression Print,按正则模式搜索文本行。**举一反三:**`grep` 家族还包括 `egrep`(扩展正则,=`grep -E`)、`fgrep`(固定字符串,=`grep -F`)。🪟 PowerShell 中 `Select-String` 等价于 `grep`。
+>
+> **2-B** `find` 的语法:`find [起始路径] [匹配条件] [动作]`,路径必须紧跟命令名。**举一反三:**这一点初学者常搞错——`find -name "*.txt" /home` 会报错,因为路径参数 `-name` 被错误地放在路径前。
+>
+> **3-A** `-i` = ignore case,搜索时不区分大小写。**举一反三:**`-v` 反向匹配(排除),`-n` 显示行号,`-c` 计数,`-l` 只显示文件名,`-w` 整词匹配。`grep -iv "debug" log` 排除 debug 行。
+>
+> **4-B** `-r`(recursive)递归搜索子目录;`src/*` 中 shell 展开 `*` 只匹配当前目录下的可见文件/目录名,不递归进入子目录。**举一反三:**`grep -r` 会搜索所有子文件夹,包括 `.git`;通常需要加排除:`grep -r --exclude-dir={.git,node_modules} "pattern" .`。
+>
+> **5-A** `-type f` 限定只匹配普通文件(type file),排除目录、符号链接、设备文件等。**举一反三:**其他类型:`d`=目录,`l`=符号链接,`s`=socket。`find . -type d -empty` 找出所有空目录。
+>
+> **6-C** `.` 匹配任意单个字符(换行符除外)。**举一反三:**`*` 在正则中表示"前一元素重复 0 次或多次",不是通配符!这是正则和 glob 最容易混淆的地方。`a.*b` 匹配 a 后跟任意字符再到 b;glob 中 `a*b` 匹配文件名以 a 开头以 b 结尾。
+>
+> **7-C** `-c` 输出计数(count),即匹配到的总行数,不是匹配的内容本身。**举一反三:**`grep -c` 常用于统计,如 `grep -c "ERROR" *.log` 统计每个日志文件中的错误数。🪟 Select-String 无直接 `-c` 等价,用 `(Select-String ...).Count`。
+>
+> **8-D** A 和 B 都对——`find` 的表达式是"与"(AND)关系,各条件顺序可交换(性能可能有差异但结果相同)。**举一反三:**`-mtime -7` 表示"最近 7 天内修改"(modified time < 7 days),`-mtime +7` 表示"7 天前修改",`-mtime 7` 表示"恰好 7 天前修改"。
+>
+> **9-B** `-F` 将搜索模式视为纯字符串字面量,不解释 `.`、`*`、`[` 等正则元字符。**举一反三:**搜索文件名或包含特殊字符的字符串时,务必用 `-F` 或 `fgrep`,否则 `grep "a.txt"` 中的 `.` 会匹配任意字符。`grep -F "a.txt"` 只匹配字面的 `a.txt`。
+>
+> **10-D** `grep -w`(整词匹配)确保不匹配 `192.168.1.100`;正则中的 `\b`(词边界)也有同样效果。**举一反三:**`-w` 比手写正则简单且不易出错。注意 `grep` 默认把 IP 中的 `.` 当作正则元字符(=任意字符),如果不加 `-w` 或 `-F`,`grep "192.168.1.1"` 会意外匹配到 `192x168y1z1`。
+>
+> **Q1** `grep` 按**内容**找——"包含某个关键词的那一行在哪?";`find` 按**属性**找——"叫什么名字/多大/什么时候改过的那个文件在哪?"。**比喻:**`find` 是图书管理员(按书名、出版日期检索图书),`grep` 是在书里做全文检索(找哪个段落写过某句话)。两者组合(`find ... -exec grep ...`)威力无穷。
+>
+> **Q2** `grep -r "ERR" /var/log/` 直接递归搜索所有文件,简洁快速。但当需要**先按条件筛选文件再搜索内容**时,必须用 `find+exec`。例如"找所有 `.log` 文件中大于 100MB 的那几个,然后搜索 ERR":`find /var/log -name "*.log" -size +100M -exec grep "ERR" {} \;`。**举一反三:**`find+exec` 会为每个匹配文件启动一个新 grep 进程;`find ... -exec grep {} +`(注意 `+` 结尾)会把多个文件合并传给 grep,性能更好。
+>
+> **Q3** 命令:`grep -rn "ERROR" /var/log/ --include="*.log"`。解析:`-r` 递归,`-n` 显示行号,`--include` 限定文件名模式。**举一反三:**也可以用 `find /var/log -name "*.log" -exec grep -nH "ERROR" {} +`;`-H` 确保即使只有一个文件也显示文件名。
+>
+> **Q4** 卡住原因:①`/` 是整个文件系统,文件数量巨大,`find` 需要遍历所有挂载点 ②可能遍历到远程文件系统(NFS)或 `/proc` `/sys` 等虚拟文件系统,速度极慢。**优化方案:**①缩小范围:先猜测配置文件可能在 `/etc/`,用 `find /etc -name "nginx.conf"` ②限制深度:`find / -maxdepth 3 -name "nginx.conf"` ③排除虚拟文件系统:`find / -path /proc -prune -o -path /sys -prune -o -name "nginx.conf" -print` ④用 `locate nginx.conf`(如果已建立索引)。**举一反三:**永远不要在生产服务器上裸跑 `find /`,轻则让硬盘满负载,重则触发 IO timeout 告警。
+>
+> **Q5** 搜索策略:①`grep -rn --include="*.{java,py,js}" -E "FIXME|TODO" ~/project/ --exclude-dir={node_modules,__pycache__}` 一步完成前两步 ②统计:`grep -rn --include="*.java" "TODO\|FIXME" ~/project/ | wc -l` 单类型统计 ③完整脚本:用 `for ext in java py js; do count=$(grep -rn --include="*.$ext" -E "FIXME|TODO" ~/project/ --exclude-dir={node_modules,__pycache__} | wc -l); echo "$ext: $count"; done`。**举一反三:**`-E` 开启扩展正则,支持 `|`(或)操作符;`--exclude-dir` 接受花括号展开,可同时排除多个目录。

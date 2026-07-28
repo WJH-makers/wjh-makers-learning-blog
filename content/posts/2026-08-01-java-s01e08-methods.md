@@ -200,4 +200,135 @@ void total_and_afford() {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做，再对答案。选择1-3基础识记，4-6理解应用，7-9分析判断，10综合；解答递进；代码题从写到验证。
+
+### 一、选择题（10 道）
+
+1. [基础] 以下哪个是正确的 Java 方法声明？
+   - A) `void calc() { }`　B) `calc(void) { }`　C) `int calc() { }`　D) A 和 C 都正确
+
+2. [基础] 一个 `void` 方法可以写 `return;` 吗？
+   - A) 不可以，void 方法不能出现 return　B) 可以，`return;` 表示提前退出　C) 可以，但必须放在方法末尾　D) 只有 main 方法可以
+
+3. [基础] 以下哪个不是方法重载的正确示例（与 `void print(int a)` 构成重载）？
+   - A) `void print(String a)`　B) `int print(int a)`　C) `void print(int a, int b)`　D) `void print(double a)`
+
+4. [理解] Java 方法参数传递的方式是？
+   - A) 值传递　B) 引用传递　C) 基本类型值传递，对象引用传递　D) 取决于参数类型
+
+5. [理解] 以下代码输出什么？`public static void change(int x) { x = 100; }` 调用 `int a = 5; change(a); System.out.println(a);`
+   - A) 5　B) 100　C) 编译报错　D) 运行时异常
+
+6. [应用] 以下代码输出什么？`public static void change(int[] arr) { arr[0] = 99; }` 调用 `int[] a = {1,2,3}; change(a); System.out.println(a[0]);`
+   - A) 1　B) 99　C) 编译报错　D) 运行时异常
+
+7. [分析] 以下方法能否构成重载？`void test(int a, double b) { }` 和 `void test(double a, int b) { }`
+   - A) 可以，参数类型顺序不同　B) 不可以，参数类型相同　C) 可以，但调用时可能产生歧义　D) A 和 C 都正确
+
+8. [分析] 以下代码的问题是什么？`public static int getResult() { if (Math.random() > 0.5) return 1; }`
+   - A) 没有问题　B) 缺少 `else` 分支　C) 不是所有路径都有返回值　D) random 应该在循环里用
+
+9. [判断] 关于 `main` 方法，以下说法正确的是？
+   - A) 一个类中可以有多个 `main` 方法　B) `main` 方法必须是 `public static void`　C) `main` 方法不能调用其他方法　D) `main` 方法可以没有 `String[] args` 参数
+
+10. [综合] 以下代码输出什么？`int a = 5; int b = 10; swap(a, b); System.out.println(a + ", " + b);` 其中 `swap` 定义为 `void swap(int x, int y) { int t = x; x = y; y = t; }`
+    - A) 10, 5　B) 5, 10　C) 编译报错　D) 10, 10
+
+> [!答案]
+> **1-D**：`void` 写在返回类型位置（Java 风格），不是参数位置（B 是 C/Python 风格）。`int` 返回类型需要内部有 `return 值;`。**举一反三**：方法签名 = 返回类型 + 方法名 + 参数列表，同一个类中不能有两个签名完全相同的方法（会产生编译错误）。
+> **2-B**：`void` 方法可以写 `return;`（不带值），作用是提前结束方法执行。通常用于前置条件不满足时直接返回，避免深层嵌套。**举一反三**：`return;` 在 void 方法末尾可以省略——方法执行完自动返回。
+> **3-B**：重载只看**方法名 + 参数列表**（参数个数、类型、顺序），不看返回类型。`int print(int a)` 参数列表和 `void print(int a)` 完全相同，不算重载，编译器会报"方法重复定义"错误。**举一反三**：两个方法只有返回类型不同不足以构成重载——Java 无法根据调用上下文推断你要哪个返回类型。
+> **4-A**：Java 只有**值传递**。基本类型传值的副本，对象传引用（地址）的副本。说"对象是引用传递"是常见误解——实际传递的是引用的副本，副本指向同一个对象。**举一反三**：这解释了为什么方法内 `list = new ArrayList()` 不影响外部变量，而 `list.add("x")` 会影响——前者改的是副本引用的指向，后者是通过副本引用操作了同一个对象。
+> **5-A**：`x` 是形参，接收的是 `a` 的值（5）的副本。方法内 `x = 100` 改的是这个副本，原始变量 `a` 不受影响，最终输出 5。**举一反三**：这是值传递最直接的体现——基本类型永远不可能被方法改变。
+> **6-B**：`arr` 接收的是 `a` 引用的副本，但这个副本仍然指向堆上同一个 `{1,2,3}` 数组对象。`arr[0] = 99` 通过这个副本修改了数组内容，所以 `a[0]` 变为 99。**举一反三**：这不是"引用传递"，而是"通过值传递的引用副本操作了同一个对象"——两个概念不同。
+> **7-D**：可以构成重载（参数列表不同：`int, double` vs `double, int`）。但在调用 `test(1, 2)` 时，两个 `int` 都可以隐式转为 `double`，编译器无法判断你调的是哪一个，产生歧义编译错误。**举一反三**：泛型擦除也可能导致重载歧义——`void m(List<Integer>)` 和 `void m(List<String>)` 擦除后签名相同，编译失败。
+> **8-C**：如果 `Math.random()` 返回 ≤0.5，`if` 条件不成立，方法体没有 `return` 语句，但方法签名声明了返回 `int`。Java 编译器要求"所有执行路径都必须有返回值"，此代码编译失败。**举一反三**：加 `else return 0;` 或在方法末尾加 `return 0;` 解决。
+> **9-B**：作为程序入口的 `main` 必须是 `public static void main(String[] args)`。D 错：省略参数会编译通过但不再是 JVM 识别的入口，运行时报 "main method not found"。A 错：可以写多个重载 `main`（如 `main(int x)`），但只有一个能作为入口。C 错：main 当然可以调用其他方法。**举一反三**：`main` 只是入口函数，本身没有任何特权——它调用的方法和其他方法地位相同。
+> **10-B**：Java 是值传递，`swap(a, b)` 传递的是 a 和 b 的值副本，方法内交换的是副本 x 和 y，原始变量 a、b 不受影响。输出仍是 5, 10。**举一反三**：Java 中没有 C++ 的引用传递语法，无法实现真正的原地交换方法——这是很多面试的陷阱题。
+
+### 二、解答题（3 道）
+
+1. [概念阐述] 什么是方法重载（Overload）？构成重载需要满足哪些条件？返回类型不同算不算重载？请举例说明。
+
+2. [场景解释] 咖啡机系统中，写一个 `calcTotal` 方法。现在有三条业务线：①已知杯数 × 单价（`calcTotal(int count, double price)`）；②已知杯数和折扣率（`calcTotal(int count, double price, double discount)`）；③已知总价和配送费（`calcTotal(double subtotal, int deliveryFee)`）。请设计三个重载方法并说明编译器如何区分调用。
+
+3. [综合分析] "Java 是值传递"这个说法在面试中经常被问到。请从三个层次证明这个结论：①基本类型参数的实验；②对象参数"方法内修改字段"的实验；③对象参数"方法内重新赋值引用"的实验。结合实验代码说明为什么③不能改变外部引用的原因是值传递而非引用传递。
+
+> [!答案]
+> **1**　重载指同一个类中允许多个**方法名相同**但**参数列表不同**的方法并存。条件：参数个数不同 / 参数类型不同 / 参数类型顺序不同。只看参数列表——返回类型、访问修饰符、异常列表都**不算**重载的依据。`int foo() { }` 和 `void foo() { }` 不能构成重载（编译器无法根据调用上下文区分）。重载的意义在于"同一种操作对不同输入的处理"——如 `Math.abs(int)` 和 `Math.abs(double)`。**举一反三**：重载是在编译时决定的（静态绑定），覆盖（Override）是在运行时决定的（动态绑定）——两者常被混淆。
+> **2**　设计三个重载：`public static double calcTotal(int count, double price) { return count * price; }`（基础版），`public static double calcTotal(int count, double price, double discount) { return count * price * discount; }` （折扣版），`public static double calcTotal(double subtotal, int deliveryFee) { return subtotal + deliveryFee; }`（配送版）。编译器根据**实参的个数和类型**在编译期就能确定调用哪个版本：`calcTotal(3, 15.9)` → 第 1 个，`calcTotal(3, 15.9, 0.8)` → 第 2 个，`calcTotal(47.7, 5)` → 第 3 个。**举一反三**：如果三个方法参数类型有重叠（如 `(int, double)` vs `(double, int)`），调用 `calcTotal(3, 5)` 时两个 int 都能隐式转为 double，编译器报歧义错误。
+> **3**　三个层次证明：①基本类型：`int a=5; change(a);` 方法内 `x=100`，外部 a 还是 5——值被复制了。②对象参数修改字段：`int[] a={1}; change(a);` 方法内 `arr[0]=99`，外部 a[0] 也是 99——因为副本引用指向同一个对象，通过副本引用的 `.` 操作可以修改对象内容。③对象参数重新赋值引用：`int[] a={1}; change(a);` 方法内 `arr = new int[]{99}`，外部 a 还是 {1}——因为 `arr` 是形参副本，改 `arr` 指向新对象不影响外部 a 的指向。如果 Java 真的是引用传递，③中 `arr = new int[]{99}` 就会让外部 a 也指向新对象——但实验证明不会，这正好推翻了"引用传递"假说。**举一反三**：面试回答公式——"Java 只有值传递。基本类型传值的副本，引用类型传引用地址的副本。通过副本引用可以改对象内容但不是引用传递，因为不能把外部变量本身重新指向新对象。"
+
+### 三、代码题（2 道）
+
+1. [基础实现] 写三个重载方法 `max`：① `max(int a, int b)` 返回最大值；② `max(int a, int b, int c)` 返回最大值（调用①实现）；③ `max(int[] arr)` 返回数组最大值（用循环实现）。测试：max(3,7) → 7，max(3,7,2) → 7，max(new int[]{3,7,2,9,1}) → 9。
+
+2. [综合设计] 写一个"温度转换工具类"：包含方法 `c2f(double c)`（摄氏→华氏，f=c×9/5+32）、`f2c(double f)`（华氏→摄氏，c=(f-32)×5/9），以及重载方法 `convert(double value, String scale)`（scale 为 "C" 则转为华氏，为 "F" 则转为摄氏，其他抛异常）。在 main 中演示：冰点（0°C → 32°F）、沸点（212°F → 100°C）、正常体温（37°C → 98.6°F），要求输出包含一位小数。
+
+> [!答案]
+> **1 验收**：
+> ```java
+> public static int max(int a, int b) {
+>     return a > b ? a : b;
+> }
+>
+> public static int max(int a, int b, int c) {
+>     return max(max(a, b), c);  // 复用二参数版本
+> }
+>
+> public static int max(int[] arr) {
+>     if (arr == null || arr.length == 0) {
+>         throw new IllegalArgumentException("数组不能为空");
+>     }
+>     int m = arr[0];
+>     for (int i = 1; i < arr.length; i++) {
+>         if (arr[i] > m) m = arr[i];
+>     }
+>     return m;
+> }
+>
+> // 测试
+> System.out.println(max(3, 7));                  // 7
+> System.out.println(max(3, 7, 2));               // 7
+> System.out.println(max(new int[]{3, 7, 2, 9, 1})); // 9
+> ```
+> **举一反三**：重载方法之间可以互相调用——③调用②，②调用①，层层递进，减少重复代码。注意 `arr` 空数组时初始化 `arr[0]` 会越界，务必先做防御检查。
+>
+> **2 验收**：
+> ```java
+> public static double c2f(double c) {
+>     return c * 9.0 / 5.0 + 32;
+> }
+>
+> public static double f2c(double f) {
+>     return (f - 32) * 5.0 / 9.0;
+> }
+>
+> public static double convert(double value, String scale) {
+>     if (scale.equals("C")) {
+>         return c2f(value);
+>     } else if (scale.equals("F")) {
+>         return f2c(value);
+>     } else {
+>         throw new IllegalArgumentException("scale 必须是 C 或 F，实际：" + scale);
+>     }
+> }
+>
+> // main 演示
+> public static void main(String[] args) {
+>     System.out.printf("0°C = %.1f°F\n", c2f(0));        // 32.0°F ✓
+>     System.out.printf("212°F = %.1f°C\n", f2c(212));    // 100.0°C ✓
+>     System.out.printf("37°C = %.1f°F\n", c2f(37));      // 98.6°F ✓
+>
+>     System.out.printf("convert 版: %.1f\n", convert(0, "C"));    // 32.0
+>     System.out.printf("convert 版: %.1f\n", convert(212, "F"));  // 100.0
+>     // convert(100, "X"); → 抛异常
+> }
+> ```
+> 运行验证：0°C=32.0°F, 212°F=100.0°C, 37°C=98.6°F 全部精确。**举一反三**：注意用 `9.0/5.0` 而非 `9/5`——后者是整数除法得 1，导致公式完全错误（0°C 变成 32°F？0×1+32=32 碰巧对，但 100°C 就变成 100×1+32=132°F 了——实际应该是 212°F）。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 `/java`。*

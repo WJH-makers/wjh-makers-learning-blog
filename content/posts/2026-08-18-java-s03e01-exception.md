@@ -250,4 +250,132 @@ class CoffeeShopTest {
 
 ---
 
+## 🎯 随堂练习
+先自己做，再对答案。选择难度递进，解答从概念到综合，代码含边界验证。
+
+### 一、选择题（10 道）
+
+1. [基础] 下列哪个类是 Java 异常体系的根？
+- A) `Exception`　B) `Throwable`　C) `Error`　D) `RuntimeException`
+
+2. [基础] `finally` 块在什么情况下**不会**执行？
+- A) `try` 中有 `return`　B) `try` 块中抛异常　C) JVM 崩溃或 `System.exit()`　D) `catch` 块中有异常
+
+3. [基础] 关于 checked 异常，说法正确的是？
+- A) 继承自 `Error`　B) 编译器不强制处理　C) 必须 `try-catch` 或 `throws`　D) 都是 `RuntimeException` 的子类
+
+4. [进阶] 阅读以下栈轨迹，真正抛出异常的是哪一行？
+```text
+Exception ... IllegalStateException: 库存不足
+    at CoffeeShop.order(CoffeeShop.java:18)
+    at CoffeeShop.main(CoffeeShop.java:26)
+```
+- A) main 的第 26 行　B) order 的第 18 行　C) 两行都有可能　D) 需要从下往上读
+
+5. [进阶] `catch (Exception e)` 写在 `catch (IllegalStateException e)` 前面会怎样？
+- A) 正常运行，自动匹配　B) 编译报错 "unreachable"　C) 运行时忽略顺序　D) 只有第二个 catch 生效
+
+6. [进阶] 以下哪个是 **unchecked** 异常？
+- A) `IOException`　B) `SQLException`　C) `NullPointerException`　D) `ClassNotFoundException`
+
+7. [进阶] `throw` 和 `throws` 的区别是？
+- A) 完全相同，只是写法差异　B) `throw` 抛异常实例，`throws` 声明可能抛的类型　C) `throws` 在方法体内，`throw` 在方法签名　D) `throw` 只能用于 checked 异常
+
+8. [进阶] 异常链中 `cause` 参数（`new XxxException(msg, cause)`）的作用是？
+- A) 替代原始异常　B) 保留 `Caused by` 链，不丢根本原因　C) 自动修复异常　D) 抑制栈轨迹输出
+
+9. [综合] 为什么"空 catch 块"是新手最致命的习惯？
+- A) 编译失败　B) 吞掉异常，Bug 静默潜伏，线上无从排查　C) 性能严重下降　D) 违反 Java 语法
+
+10. [综合] Java 7 引入的多重 catch 语法是？
+- A) `catch (IOException, SQLException e)`　B) `catch (IOException | SQLException e)`　C) `catch (IOException & SQLException e)`　D) `catch (IOException || SQLException e)`
+
+> [!答案] **1-B** `Throwable` 是所有异常的祖宗，只有它和它的子类能被 `throw`/`catch`。**举一反三**：不要直接继承 `Throwable`——语义太重，从 `Exception` 或 `RuntimeException` 继承即可。
+> [!答案] **2-C** `finally` 几乎总是执行；唯一例外是 JVM 崩溃、`System.exit()` 被调用、或守护线程被强制终止。**举一反三**：不要在 `finally` 中写 `return`，它会吞掉 `try` 中的异常和返回值。
+> [!答案] **3-C** checked 异常（`Exception` 除 `RuntimeException` 外）编译器强制处理。**举一反三**：`IOException`、`SQLException` 是典型 checked 异常。
+> [!答案] **4-B** 栈轨迹 `at` 第一行就是抛出异常的**精确位置**。先看异常类型和消息，再直接跳 `at` 第一行定位。**举一反三**：栈轨迹从上往下 = 从出事点到最外层调用者。
+> [!答案] **5-B** `catch` 必须从具体到宽泛（先子类后父类），否则父类的 catch 覆盖了子类，编译器报 unreachable。**举一反三**：`catch (Exception e)` 放最后兜底。
+> [!答案] **6-C** `NullPointerException` 继承自 `RuntimeException`，是 unchecked。其它三个都是 checked。**举一反三**：判断口诀——继承自 `RuntimeException` 的就是 unchecked。
+> [!答案] **7-B** `throw` 是动作（抛出一个异常实例），写在方法体内；`throws` 是声明，写在方法签名上。**举一反三**：override 时子类 `throws` 的范围不能比父类更宽。
+> [!答案] **8-B** 把底层异常作为 `cause` 传入，栈轨迹显示 `Caused by: ...`，完整保留因果链。**举一反三**：catch 中做异常转译时，**必须**把原异常当 cause 传进去。
+> [!答案] **9-B** `catch (Exception e) {}` 吞掉异常，程序继续运行但 Bug 悄然潜伏。**举一反三**：至少打印日志或重抛 —— `throw new RuntimeException(e)`。
+> [!答案] **10-B** 竖线 `|` 合并多个异常类型，共用一段处理。**举一反三**：多重 catch 的变量 `e` 是隐式 `final` 的，不能重新赋值。
+
+### 二、解答题（3 道）
+
+1. [概念] checked 异常和 unchecked 异常各举两个 Java 内置类的例子，说明各自适合的使用场景。为什么 Spring 生态偏爱 unchecked？
+
+2. [场景] 方法 A 调用方法 B，B 调用方法 C。C 中抛出一个 checked 异常 `IOException`，但 C 和 B 都没有 `try-catch`。请描述异常传播路径，以及 A 和 B 各需要做什么才能让代码编译通过。
+
+3. [综合] 你正在设计一个库存管理 API 的异常策略，包含三个操作：`checkout(item, qty)`（出库）、`queryStock(item)`（查库存）、`restock(item, qty)`（入库）。哪些异常应该用 checked 强制调用方处理，哪些用 unchecked？说明理由并画出异常类层次。
+
+> [!答案] **1** checked 示例：`IOException`（文件/网络不可控）、`SQLException`（数据库连接失败）——用于"调用方有理由预期并能恢复"的外部意外。unchecked 示例：`NullPointerException`、`IllegalArgumentException`——表示程序 Bug，应让它崩出来暴露。Spring 偏爱 unchecked 的原因：不污染业务接口签名、配合全局异常处理器兜底。**举一反三**：checked 的代价是每一层都要 `throws` 或 `try`——调用链越长，污染越重。
+> [!答案] **2** C 抛 `IOException` 后，异常沿调用栈向上冒泡：C→B→A→JVM。B 没有 catch 就必须在方法签名声明 `throws IOException`；同理 A 要么 catch 住，要么也声明 `throws`。如果一路都不处理，最终 JVM 终止线程并打印栈轨迹。**举一反三**：设计 API 时，checked 异常会**强制传播**到所有调用方——这就是为什么滥用 checked 会污染整个调用链。
+> [!答案] **3** checked：`InsufficientStockException`（查询后出库，调用方可先补货后重试——可恢复）。unchecked：`InvalidItemException`（参数错误，程序 Bug）、`NegativeQuantityException`（传负数，调用方代码逻辑错误）。层次：`RuntimeException → BusinessException → InsufficientStockException`，`Exception → InventoryException → StockDataException`（checked 分支）。**举一反三**：核心判断标准——调用方**有没有合理恢复手段**。有则 checked，没有则 unchecked。
+
+### 三、代码题（2 道）
+
+1. [基础] 写一个 `safeDivide(int a, int b)` 方法：除数为 0 时抛出 `IllegalArgumentException("除数不能为零")`。在 `main` 中用 `try-catch-finally` 调用：catch 打印异常消息，finally 打印"计算结束"。分别用 `(10, 2)` 和 `(10, 0)` 验证输出。
+
+2. [综合] 写一个 `FileProcessor` 类，包含 `readFirstLine(Path path)` 方法：用 `Files.newBufferedReader` 打开文件，读取第一行后返回，在 **finally** 中关闭 reader。如果文件不存在（`NoSuchFileException`），捕获后包装成自定义的 `ProcessingException`（继承 `RuntimeException`，有 `(String msg, Throwable cause)` 构造器）。在 main 中调用并断言 `e.getCause()` 不为 null。
+
+> [!答案] **1 验收**：
+> ```java
+> static int safeDivide(int a, int b) {
+>     if (b == 0) throw new IllegalArgumentException("除数不能为零");
+>     return a / b;
+> }
+> public static void main(String[] args) {
+>     int[][] cases = {{10, 2}, {10, 0}};
+>     for (int[] c : cases) {
+>         try {
+>             System.out.println(safeDivide(c[0], c[1]));
+>         } catch (IllegalArgumentException e) {
+>             System.out.println("出错：" + e.getMessage());
+>         } finally {
+>             System.out.println("计算结束");
+>         }
+>     }
+> }
+> // 输出:
+> // 5
+> // 计算结束
+> // 出错：除数不能为零
+> // 计算结束
+> ```
+> **举一反三**：`finally` 中若写 `return`，会覆盖 `try` 的返回值——几乎所有代码检查工具都会告警。
+> [!答案] **2 验收**：
+> ```java
+> class ProcessingException extends RuntimeException {
+>     public ProcessingException(String msg, Throwable cause) { super(msg, cause); }
+> }
+> static String readFirstLine(Path path) {
+>     BufferedReader reader = null;
+>     try {
+>         reader = Files.newBufferedReader(path);
+>         return reader.readLine();
+>     } catch (NoSuchFileException e) {
+>         throw new ProcessingException("文件不存在：" + path, e);
+>     } catch (IOException e) {
+>         throw new ProcessingException("读取失败：" + path, e);
+>     } finally {
+>         if (reader != null) {
+>             try { reader.close(); } catch (IOException ignored) { }
+>         }
+>     }
+> }
+> public static void main(String[] args) {
+>     Path notExist = Path.of("nonexistent.txt");
+>     try {
+>         readFirstLine(notExist);
+>     } catch (ProcessingException e) {
+>         System.out.println(e.getMessage());                     // 文件不存在：nonexistent.txt
+>         System.out.println(e.getCause().getClass().getSimpleName()); // NoSuchFileException
+>     }
+> }
+> ```
+> **举一反三**：本话的 `finally` 关闭流实际上是过渡方案——下一话用 try-with-resources 可以省掉这段手工 `close()` 代码，且不会压制定主异常。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与创作规范见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 [/java](/java)。*

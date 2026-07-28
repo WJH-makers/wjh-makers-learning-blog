@@ -246,4 +246,89 @@ class InventoryWorkerTest {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前 3 题基础识记,中间 3 题理解应用,最后 4 题分析判断与综合。
+
+### 选择题(10 道)
+
+1. JMM 中「工作内存」存储的是什么?
+   - A) 所有线程共享的变量　B) 线程从主内存拷贝来的变量副本　C) 堆中的对象　D) 方法调用栈帧
+2. volatile 关键字最基础的作用是?
+   - A) 让变量不可变　B) 保证变量的可见性　C) 让变量变成线程私有　D) 禁止读取该变量
+3. 下面哪个说法关于 volatile 是正确的?
+   - A) volatile 保证自增操作原子性　B) volatile 不保证原子性　C) volatile 让代码更慢　D) volatile 替代 synchronized
+4. `volatile boolean running = true` 在 while 循环中被读,为什么要加 volatile?
+   - A) 防止编译错误　B) 不加 volatile,JIT 可能把变量放入寄存器,其他线程的修改永远看不见　C) 为了让代码更清晰　D) 这是约定
+5. `volatile int count = 0; count++;` 两个线程各执行 1000 次后,count 的最大值和最小值分别是?
+   - A) 最大 2000 最小 2000　B) 最大 2000 最小 2　C) 最大 1000 最小 0　D) 总是 2000
+6. DCL 单例中 instance 加 volatile 是防止什么?
+   - A) 内存泄漏　B) 指令重排——分配内存后引用先暴露,但对象尚未初始化完成　C) 死锁　D) 序列化破坏
+7. 下面这段代码中,线程 B 能否保证读到 `x == 1`?
+   ```java
+   // 线程A: x = 1; ready = true;  (ready 是 volatile)
+   // 线程B: if (ready) { print(x); }
+   ```
+   - A) 不一定　B) 一定——volatile 写 happen-before volatile 读,线程 A 在 volatile 写之前的所有操作对 B 可见　C) x 必须也加 volatile　D) 编译错误
+8. happens-before 规则中,以下哪对关系是 JMM 明确保证的?
+   - A) A 线程的任意写 happens-before B 线程的任意读(不加同步)　B) 对一个 volatile 变量的写 happens-before 后续对该变量的读　C) 两个线程的任意操作都有 happens-before 关系　D) 跨线程的普通变量读写自动有序
+9. 一个对象 `final` 字段在构造函数返回后,其他线程看到的是?
+   - A) 默认值(0/null)　B) 构造函数中赋的值——JMM 对 final 字段有特殊保证　C) 不确定　D) 延迟初始化的值
+10. 下面三个工具:①volatile ②synchronized ③AtomicInteger,其中哪组能同时保证可见性、原子性和有序性?
+    - A) 只有 ①　B) ①和③都不行,②全满足;③只保证基础原子性和可见性　C) 全部都能　D) 都不能
+
+> [!答案]
+> **1-B**　每个线程从主内存拷贝变量到自己的工作内存,操作后刷回。**举一反三**:这就是为什么不加同步的变量,线程间互相看不见——各自看着自己的「抄本」。
+> **2-B**　volatile 的两大语义:① 保证可见性(写后立即刷回主内存,读前从主内存拿最新);② 禁止指令重排。**举一反三**:volatile 是 JMM 提供的轻量级同步工具,代价低但不解决原子性。
+> **3-B**　volatile 只保证可见性和有序性,**不保证原子性**。count++ 读-改-写三步仍然会被线程间交叉执行。**举一反三**:「volatile 不保原子」是面试最高频考点——背住之后追问自然进 AtomicInteger 或 synchronized。
+> **4-B**　JIT 可能把 running 优化到寄存器,循环里一直读寄存器中的旧值——即使另一个线程改了主内存,这个线程也看不见。volatile 禁止这一优化。**举一反三**:不加 volatile 的单线程测试永远通过——因为 JIT 对单线程热点代码才会激进优化,压力测试时 JIT 编译触发后才暴露这个 Bug。
+> **5-B**　count++ 三步:读→加→写。2 个线程各 1000 次,最多(运气好)2000;最少 2——因为两个线程各读到一次 0,各写回 1,后续所有操作互相覆盖。**举一反三**:这就是为什么 volatile 计数不可靠——能肉眼推演出最少值是 2,比只答「不安全」强一个档次。
+> **6-B**　`instance = new Singleton()` 分解:分配内存→初始化对象→将引用赋给 instance。JIT 可能重排②③——其他线程在③之后②之前读到 instance(非 null),拿到的对象字段全是默认值。volatile 禁止这一重排。**举一反三**:JDK 5 之前 volatile 没这能力——所以老教程里 DCL 是反模式;JSR 133 让 volatile 有了内存屏障语义,现代 JDK(5+)才安全。
+> **7-B**　volatile 写 happen-before volatile 读。线程 A 的 x=1(普通写)发生在线程 A 的 volatile 写之前,线程 B 的 volatile 读之后的代码能看到 volatile 写之前的所有操作。ready 就像一条「栅栏」。**举一反三**:这被称为「借助 volatile 发布」——用一个 volatile 标志位让普通变量的变更一起变可见,省掉把所有变量都标成 volatile。
+> **8-B**　JMM 定义了六条 happens-before 关系:程序次序、volatile 写-读、锁释放-获取、线程 start、线程 join、final 构造函数。不是所有操作都有 happens-before。**举一反三**:面试追问「JMM 到底保证什么」——不要展开背,而是画一张图:两个线程,用 volatile 变量作媒介,传递可见性。
+> **9-B**　JMM 给 final 字段特殊保证:构造函数执行完、返回后,final 字段赋值对所有线程可见(不需要额外同步)。前提是不能让 this 引用在构造期间逃逸。**举一反三**:这就是为什么「尽量让字段 final」是并发安全的天然助手——final 字段在构造函数结束后,其他线程一定看到已初始化的值。
+> **10-B**　volatile 只见可见性和有序性;AtomicInteger 保证单个操作(如 get/incrementAndGet)的原子性和可见性;只有 synchronized 同时保证三性(通过加锁下的互斥消除竞争)。**举一反三**:三种工具的定位:volatile=标志位/一写多读;AtomicInteger=计数器/CAS;锁=复合操作/多变量一致性。
+
+### 解答题(5 道)
+
+1. 用自己的话解释 JMM「主内存-工作内存」模型下,「可见性」问题是怎么产生的。
+2. volatile 的两大语义分别解决什么问题?给出典型使用场景(至少两个)。
+3. DCL 单例的完整实现中,为什么 instance 需要 volatile?去掉 volatile 在什么情况下可能出错?(提示:考虑 JIT 编译和指令重排)
+4. 画出 happens-before 四条核心规则的关系图:线程内程序次序、volatile 写读、监视器锁释放获取、线程 start/join。解释它们如何串联成跨线程的可见性链。
+5. 设计一个场景:线程 A 负责初始化一个共享的配置对象(多个字段),线程 B 等待初始化完成后读取配置。给出两种同步方案,标注各自的适用场景和开销。
+
+> [!答案]
+> **1**　每个线程操作变量时先从主内存拷贝到工作内存(缓存),修改后择机刷回主内存。线程 A 改了变量但没即时刷回,或线程 B 读的时候没从主内存重新取——B 就看到了过期的值。这正是「你改了总账,他照自己的抄本念」。**举一反三**:CPU 和多核架构天然有缓存不一致问题;JMM 不是解决它,而是**规定**哪些手段(volatile/锁/final)能让你跨越缓存获得一致视图。操作系统底层同样有 MESI 协议维护缓存一致性,但应用层不该依赖硬件行为。
+> **2**　① 可见性:保证写操作对所有线程立即可见——典型场景:关闭信号标志 `boolean shutdown`(一写多读)。② 禁止重排:保证 volatile 前后指令不会被重排——典型场景:DCL 单例的 instance 字段、需要按序写多个标志位。**举一反三**:volatile 不负责原子性,所以对计数器和链表操作无能为力;把 volatile 想象成一面公告墙:你贴在上面的消息大家都能看到最新版本,但不能阻止好几个人同时贴纸把公告搞乱。
+> **3**　完整实现:
+```java
+class Singleton {
+    private static volatile Singleton instance;
+    public static Singleton getInstance() {
+        if (instance == null) {
+            synchronized (Singleton.class) {
+                if (instance == null)
+                    instance = new Singleton();
+            }
+        }
+        return instance;
+    }
+}
+```
+无 volatile 时 `new Singleton()` 的分配内存和构造方法可能被 JIT 重排:先让 instance 指向未初始化完的对象,另一线程看到 instance 非 null 就直接用了——得到的对象字段全是默认值。**举一反三**:Enum 单例是 DCL 的终极替代——JVM 天然保证枚举实例的唯一性和初始化安全性,零同步开销且不会有重排问题。大部分单例需求枚举就够了。
+> **4**　关系链:
+```
+线程A:  x=1 → volatileWrite → ┐  程序次序保证前面的操作被 volatile 写"发布"
+                                │
+线程B:                        volatileRead → y=x   happens-before 保证看到 volatile 写前的所有操作
+```
+volatile 写读是跨线程桥梁。类似地:线程A 释放锁 → 线程B 获取同锁,锁是桥梁;线程 start 是桥梁(主线程 start 前操作对新线程可见);线程 join 也是桥梁(被 join 线程结束时的操作对主线程可见)。**举一反三**:有了 happens-before 心智模型,你不需要背「什么时候加 volatile」——而是看两个线程之间是否通过某种 happens-before 桥梁传递了可见性。如果没有,就需要加。
+> **5**　方案一(volatile 标志位 + final 字段):所有配置字段用 final,初始化完成后设一个 volatile boolean initialized=true。消费者读前检查 initialized。适用:配置只初始化一次不变。开销:只有标志位一个 volatile。方案二(ReadWriteLock):用 ReentrantReadWriteLock,写锁保护初始化,读锁保护消费。适用:配置可能被多次更新。开销:每次读都要获取读锁,比 volatile 开销大。**举一反三**:实际生产上更常见的是用 CountDownLatch——初始化线程完成时 countDown,消费者 await;或直接用 CompletableFuture 的 supplyAsync+thenAccept 链式编排。
+
+---
+
+*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
