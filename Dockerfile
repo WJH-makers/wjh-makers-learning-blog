@@ -11,7 +11,11 @@ RUN npm config set fetch-timeout 60000 && npm ci
 
 FROM docker.m.daocloud.io/library/node:22-alpine AS builder
 ARG NEXT_PUBLIC_SITE_URL
-ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+# NEXT_PUBLIC_* 由 next build 内联进前端 bundle,只能在构建期传入;
+# 放到 runner 的 env_file 里前端读不到(那时 JS 早已生成)。
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
 WORKDIR /app
 COPY --from=build-deps /app/node_modules ./node_modules
 COPY . .

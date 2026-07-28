@@ -79,7 +79,18 @@ function hashIp(ip: string): string {
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
   if (!secret) return true;
-  if (!token) return false;
+  if (!token) {
+    // secret 配了、site key 没配 = 典型的半截配置:前端压根不渲染 widget,于是每条评论
+    // 都缺 token 被拒,而用户只看到「请重试」——重试一万次也没用。这里把根因写进日志,
+    // 免得下次又从前端一路查到 CF。仍然拒绝(fail-closed),但要让运维一眼看见为什么。
+    if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()) {
+      console.error(
+        "[comments] 配置不一致:TURNSTILE_SECRET_KEY 已设,但 NEXT_PUBLIC_TURNSTILE_SITE_KEY 缺失。" +
+        "后者是构建期内联的前端变量,须通过 docker compose build args 传入,否则评论会被全部拒绝。",
+      );
+    }
+    return false;
+  }
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
