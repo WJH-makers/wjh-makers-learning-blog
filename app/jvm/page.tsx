@@ -15,6 +15,8 @@ export const metadata: Metadata = {
   title: `${JVM_SERIES_META.title} · ${JVM_SERIES_META.alias}`,
   description: JVM_SERIES_META.tagline,
   alternates: { canonical: `${siteUrl()}/jvm` },
+  // 未开更的蓝图页对搜索引擎是薄内容;开更后自动恢复索引。
+  robots: jvmPublishedEpisodes().length === 0 ? { index: false, follow: true } : undefined,
   openGraph: {
     ...OG_BASE,
     title: `${JVM_SERIES_META.title} · ${JVM_SERIES_META.alias}`,

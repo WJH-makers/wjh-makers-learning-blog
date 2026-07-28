@@ -15,6 +15,8 @@ export const metadata: Metadata = {
   title: `${NET_SERIES_META.title} · ${NET_SERIES_META.alias}`,
   description: NET_SERIES_META.tagline,
   alternates: { canonical: `${siteUrl()}/net` },
+  // 未开更的蓝图页对搜索引擎是薄内容;开更后自动恢复索引。
+  robots: netPublishedEpisodes().length === 0 ? { index: false, follow: true } : undefined,
   openGraph: {
     ...OG_BASE,
     title: `${NET_SERIES_META.title} · ${NET_SERIES_META.alias}`,

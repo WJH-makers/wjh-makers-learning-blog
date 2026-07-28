@@ -15,6 +15,8 @@ export const metadata: Metadata = {
   title: `${DB_SERIES_META.title} · ${DB_SERIES_META.alias}`,
   description: DB_SERIES_META.tagline,
   alternates: { canonical: `${siteUrl()}/db` },
+  // 未开更的蓝图页对搜索引擎是薄内容;开更后自动恢复索引。
+  robots: dbPublishedEpisodes().length === 0 ? { index: false, follow: true } : undefined,
   openGraph: {
     ...OG_BASE,
     title: `${DB_SERIES_META.title} · ${DB_SERIES_META.alias}`,

@@ -15,6 +15,8 @@ export const metadata: Metadata = {
   title: "豆豆咖啡站 · 温情工程物语",
   description: CAFE_SERIES_META.tagline,
   alternates: { canonical: `${siteUrl()}/cafe` },
+  // 未开更的蓝图页对搜索引擎是薄内容;开更后自动恢复索引。
+  robots: cafePublishedEpisodes().length === 0 ? { index: false, follow: true } : undefined,
   openGraph: {
     ...OG_BASE,
     title: "豆豆咖啡站 · 温情工程物语",

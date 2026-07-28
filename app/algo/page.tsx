@@ -15,6 +15,8 @@ export const metadata: Metadata = {
   title: `${ALGO_SERIES_META.title} · ${ALGO_SERIES_META.alias}`,
   description: ALGO_SERIES_META.tagline,
   alternates: { canonical: `${siteUrl()}/algo` },
+  // 未开更的蓝图页对搜索引擎是薄内容;开更后自动恢复索引。
+  robots: algoPublishedEpisodes().length === 0 ? { index: false, follow: true } : undefined,
   openGraph: {
     ...OG_BASE,
     title: `${ALGO_SERIES_META.title} · ${ALGO_SERIES_META.alias}`,

@@ -15,6 +15,8 @@ export const metadata: Metadata = {
   title: `${MICRO_SERIES_META.title} · ${MICRO_SERIES_META.alias}`,
   description: MICRO_SERIES_META.tagline,
   alternates: { canonical: `${siteUrl()}/micro` },
+  // 未开更的蓝图页对搜索引擎是薄内容;开更后自动恢复索引。
+  robots: microPublishedEpisodes().length === 0 ? { index: false, follow: true } : undefined,
   openGraph: {
     ...OG_BASE,
     title: `${MICRO_SERIES_META.title} · ${MICRO_SERIES_META.alias}`,
