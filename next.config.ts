@@ -33,20 +33,28 @@ const nextConfig: NextConfig = {
             "object-src 'none'",
             "base-uri 'none'",
             "frame-ancestors 'none'",
+            // 表单只能提交回本站:即便某处被注入了 <form action="//evil">,浏览器也会拦下,
+            // 这是 CSP 里少数能挡住「数据外带」而非「脚本执行」的指令。
+            "form-action 'self'",
             "upgrade-insecure-requests",
           ].join("; "),
         },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-      ],
-    },
-    {
-      source: "/_next/static/:path*",
-      headers: [
-        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        // 全站生效(原先只挂在 /api 下,HTML 与静态资源反而没保护)。
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        // 站点没有任何需要这些硬件/API 的功能,一律关掉,缩小第三方脚本的可乘之机。
+        {
+          key: "Permissions-Policy",
+          value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+        },
+        // 源站自己也声明 HSTS,不把「只走 HTTPS」这件事全押在 CF 配置不被改上。
+        { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
       ],
     },
     {
       // 漫画文件名为稳定版本名，正文引用变更时才会换 URL；允许 CDN 与浏览器长期复用。
+      // 注:/_next/static 不在这里 —— Next 自己就发 immutable 长缓存,再自定义一遍是冗余,
+      // 且会触发「Custom Cache-Control can break Next.js development behavior」告警。
       source: "/comics/:path*",
       headers: [
         { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
@@ -55,8 +63,8 @@ const nextConfig: NextConfig = {
     {
       source: "/api/:path*",
       headers: [
+        // nosniff 已由上面的全站规则覆盖,这里只补接口特有的「永不缓存」。
         { key: "Cache-Control", value: "no-store" },
-        { key: "X-Content-Type-Options", value: "nosniff" },
       ],
     },
   ],

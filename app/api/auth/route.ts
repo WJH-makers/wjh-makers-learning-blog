@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/client-ip";
 import { safeCompare } from "@/lib/safe-compare";
 
 export async function GET() {
@@ -15,7 +16,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for") ?? headersList.get("x-real-ip") ?? "unknown";
+  const ip = clientIp(headersList);
 
   if (!checkRateLimit(ip, "login").allowed) {
     return NextResponse.json({ ok: false }, { status: 429 });
