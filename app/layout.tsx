@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Playfair_Display, Lora, Inter, JetBrains_Mono, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 import ClarityAnalytics from "./ClarityAnalytics";
-import { jsonLdSafe } from "@/lib/jsonld";
+import { jsonLdSafe, personNode, personId, websiteId } from "@/lib/jsonld";
+import { SERIES_LIST, seriesProgress } from "@/lib/series-registry";
 
 // 斜体全站仅 2 处且均为装饰性(blockquote/署名),浏览器合成斜体足够——
 // 去掉 italic 变体省 2 个 woff2 preload,首屏字体请求 6→4。
@@ -31,7 +32,15 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESC,
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    // 漫画站不给大图预览等于自弃图片搜索与 Discover 的位置。
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+  },
+  authors: [{ name: SITE_AUTHOR, url: GITHUB_URL }],
+  creator: SITE_AUTHOR,
+  publisher: SITE_AUTHOR,
   alternates: {
     types: { "application/rss+xml": "/rss.xml" },
   },
@@ -63,60 +72,82 @@ export const viewport = {
   maximumScale: 5,
 } satisfies Viewport;
 
-const websiteJsonLd = {
+// 一张 @graph:WebSite 与 Person 各一个规范节点,互相用 @id 引用。
+// 全站其余页面只发引用({"@id": ...}),不再各自复制一份匿名 Person。
+const identityGraph = {
   "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: SITE_NAME,
-  alternateName: "WJH-makers 的技术学习与工程实践",
-  url: SITE,
-  inLanguage: "zh-CN",
-  author: {
-    "@type": "Person",
-    name: SITE_AUTHOR,
-    url: GITHUB_URL,
-    sameAs: [GITHUB_URL],
-  },
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": websiteId(SITE),
+      name: SITE_NAME,
+      alternateName: "WJH-makers 的技术学习与工程实践",
+      url: SITE,
+      inLanguage: "zh-CN",
+      publisher: { "@id": personId(SITE) },
+    },
+    personNode(SITE),
+  ],
 };
 
-const personJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Person",
-  name: SITE_AUTHOR,
-  alternateName: "WJH-makers",
-  url: `${SITE}/about`,
-  sameAs: [GITHUB_URL],
-};
+// footer 只列已开更的线,规划中的统一收在 /series 后面,免得三列变成一堵墙。
+const FOOTER_SERIES = SERIES_LIST.filter((s) => seriesProgress(s).done > 0);
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN" className={fontVars}>
       <body>
         <a className="skip-link" href="#main">跳到正文</a>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(websiteJsonLd) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(personJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(identityGraph) }} />
         <header className="site-header">
           <div className="edition-bar">
             <span>WJH-makers</span>
             <span>WJH-makers 的技术学习与工程实践</span>
             <span>Java · 系统 · AI</span>
           </div>
-          <nav className="nav">
+          <nav className="nav" aria-label="主导航">
             <Link className="brand" href="/">WJH-makers</Link>
             <div className="nav-links">
-              <a href="https://github.com/WJH-makers" target="_blank" rel="noreferrer">GitHub</a>
-              <Link href="/posts">博客</Link>
+              <Link href="/series">连载</Link>
+              <Link href="/cheatsheets">速查</Link>
+              <Link href="/archive">归档</Link>
               <Link href="/tags">标签</Link>
               <Link href="/about">关于</Link>
+              <a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a>
             </div>
           </nav>
         </header>
-        <main id="main">{children}</main>
+        <main id="main" tabIndex={-1}>{children}</main>
         <footer className="footer">
-          <span>Crafted with ♥ by WJH-makers</span>
-          <span>&copy; {new Date().getFullYear()} All Rights Reserved · <a href="/rss.xml">RSS</a></span>
-          <span>
+          <div className="footer-col">
+            <p className="footer-head">内容</p>
+            <Link href="/archive">全量归档</Link>
+            <Link href="/posts">文章精选</Link>
+            <Link href="/cheatsheets">速查手册</Link>
+            <Link href="/tags">标签云</Link>
+          </div>
+          <div className="footer-col">
+            <p className="footer-head">连载</p>
+            <Link href="/series">连载总台</Link>
+            {FOOTER_SERIES.map((s) => (
+              <Link key={s.route} href={s.route}>{s.title}</Link>
+            ))}
+          </div>
+          <div className="footer-col">
+            <p className="footer-head">关于与订阅</p>
+            <Link href="/about">关于我</Link>
+            <Link href="/projects">项目集</Link>
+            <Link href="/now">现在在做</Link>
+            <Link href="/stats">站点数据</Link>
+            <a href="/rss.xml">RSS 订阅</a>
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a>
+            <a href="/llms.txt">llms.txt</a>
+          </div>
+          <div className="footer-bar">
+            <span>Crafted with ♥ by WJH-makers</span>
+            <span>&copy; {new Date().getFullYear()} All Rights Reserved</span>
             <a className="beian" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">鄂ICP备2026036494号-1</a>
-          </span>
+          </div>
         </footer>
         <ClarityAnalytics />
       </body>

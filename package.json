@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "WJH-makers 的个人学习成果博客，部署到 Vercel。",
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

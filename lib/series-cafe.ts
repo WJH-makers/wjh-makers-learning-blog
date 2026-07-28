@@ -89,10 +89,10 @@ export const CAFE_SEASONS: JavaSeason[] = [
     goal: "上线外卖与线上点单——一个人做得对,不代表所有人同时行动时仍然正确。",
     covers: ["并发", "深夜的那盏灯"],
     episodes: [
-      { season: 4, episode: 1, title: "最后一袋咖啡豆,卖给了两个人", summary: "限量咖啡豆只剩一袋,系统却同时卖给了两位顾客。阿零第一次撞见「并发」这头看不见的野兽。", chapterType: "incident", projectStage: "扛得住抢购的店", technologies: ["并发", "锁"], jobSkills: ["并发安全"], status: "planned" },
-      { season: 4, episode: 2, title: "断了网,所有人一起重来", summary: "一次网络抖动,让所有订单同时重试,雪片般砸向系统。深夜的这盏灯,差点灭了。", chapterType: "comic", projectStage: "断网也不乱的店", technologies: ["网络", "重试"], jobSkills: ["容错"], status: "planned" },
-      { season: 4, episode: 3, title: "有人在敲一扇没人用的旧门", summary: "阿零发现有人反复试探系统一个早该废弃的旧接口——目标,直指豆豆的底层。", chapterType: "comic", projectStage: "有门卫的店", technologies: ["接口安全"], jobSkills: ["安全"], status: "planned" },
-      { season: 4, episode: 4, title: "撑过午夜的那一晚", summary: "第四卷收束:午夜活动的洪峰稳稳压住。可阿零心里清楚,有什么东西,正在旧系统里醒来。", chapterType: "project", projectStage: "深夜也可靠的豆豆咖啡站 v4", technologies: ["综合"], jobSkills: ["高可用"], status: "planned" },
+      { season: 4, episode: 1, title: "最后一袋咖啡豆,卖给了两个人", summary: "限量咖啡豆只剩一袋,系统却同时卖给了两位顾客。阿零第一次撞见「并发」这头看不见的野兽。", chapterType: "incident", projectStage: "扛得住抢购的店", technologies: ["并发", "锁"], jobSkills: ["并发安全"], status: "published", slug: "2026-11-17-cafe-s04e01-two-buyers" },
+      { season: 4, episode: 2, title: "断了网,所有人一起重来", summary: "一次网络抖动,让所有订单同时重试,雪片般砸向系统。深夜的这盏灯,差点灭了。", chapterType: "comic", projectStage: "断网也不乱的店", technologies: ["网络", "重试"], jobSkills: ["容错"], status: "published", slug: "2026-11-18-cafe-s04e02-retry-storm" },
+      { season: 4, episode: 3, title: "有人在敲一扇没人用的旧门", summary: "阿零发现有人反复试探系统一个早该废弃的旧接口——目标,直指豆豆的底层。", chapterType: "comic", projectStage: "有门卫的店", technologies: ["接口安全"], jobSkills: ["安全"], status: "published", slug: "2026-11-19-cafe-s04e03-old-door" },
+      { season: 4, episode: 4, title: "撑过午夜的那一晚", summary: "第四卷收束:午夜活动的洪峰稳稳压住。可阿零心里清楚,有什么东西,正在旧系统里醒来。", chapterType: "project", projectStage: "深夜也可靠的豆豆咖啡站 v4", technologies: ["综合"], jobSkills: ["高可用"], status: "published", slug: "2026-11-20-cafe-s04e04-midnight-peak" },
     ],
   },
   {
@@ -103,10 +103,10 @@ export const CAFE_SEASONS: JavaSeason[] = [
     goal: "为城市咖啡节服务多个摊位——系统拆开以后,责任不能跟着一起消失。",
     covers: ["拆分与协作", "浮出水面的名字"],
     episodes: [
-      { season: 5, episode: 1, title: "一个人,忙不过一座城", summary: "咖啡节流量压垮了单体系统。阿零第一次不得不把「自己写的一切」拆开,交给别人。", chapterType: "comic", projectStage: "能协作的店", technologies: ["服务拆分"], jobSkills: ["架构演进"], status: "planned" },
-      { season: 5, episode: 2, title: "系统拆成七块,订单去哪了", summary: "拆开之后,一笔订单走丢在七个服务之间,谁也说不清它在哪。责任,不能随着拆分一起蒸发。", chapterType: "comic", projectStage: "追得到链路的店", technologies: ["微服务", "链路追踪"], jobSkills: ["分布式"], status: "planned" },
-      { season: 5, episode: 3, title: "日志里,那个不该存在的名字", summary: "排查事故时,阿零在日志深处撞见一条谁也没写过的记录,和一个早已注销的名字——那杯十年的拿铁,浮出了水面。", chapterType: "incident", projectStage: "看得见幽灵的店", technologies: ["日志", "可观测"], jobSkills: ["排障"], status: "planned" },
-      { season: 5, episode: 4, title: "咖啡节,大家一起扛住了", summary: "第五卷收束:一座城的咖啡节稳稳办完。阿零学会了信别人的代码——也终于要面对,豆豆到底是谁。", chapterType: "project", projectStage: "撑起一座城的豆豆咖啡站 v5", technologies: ["综合"], jobSkills: ["协作"], status: "planned" },
+      { season: 5, episode: 1, title: "一个人,忙不过一座城", summary: "咖啡节流量压垮了单体系统。阿零第一次不得不把「自己写的一切」拆开,交给别人。", chapterType: "comic", projectStage: "能协作的店", technologies: ["服务拆分"], jobSkills: ["架构演进"], status: "published", slug: "2026-11-21-cafe-s05e01-one-person-one-city" },
+      { season: 5, episode: 2, title: "系统拆成七块,订单去哪了", summary: "拆开之后,一笔订单走丢在七个服务之间,谁也说不清它在哪。责任,不能随着拆分一起蒸发。", chapterType: "comic", projectStage: "追得到链路的店", technologies: ["微服务", "链路追踪"], jobSkills: ["分布式"], status: "published", slug: "2026-11-22-cafe-s05e02-seven-pieces" },
+      { season: 5, episode: 3, title: "日志里,那个不该存在的名字", summary: "排查事故时,阿零在日志深处撞见一条谁也没写过的记录,和一个早已注销的名字——那杯十年的拿铁,浮出了水面。", chapterType: "incident", projectStage: "看得见幽灵的店", technologies: ["日志", "可观测"], jobSkills: ["排障"], status: "published", slug: "2026-11-23-cafe-s05e03-ghost-in-logs" },
+      { season: 5, episode: 4, title: "咖啡节,大家一起扛住了", summary: "第五卷收束:一座城的咖啡节稳稳办完。阿零学会了信别人的代码——也终于要面对,豆豆到底是谁。", chapterType: "project", projectStage: "撑起一座城的豆豆咖啡站 v5", technologies: ["综合"], jobSkills: ["协作"], status: "published", slug: "2026-11-24-cafe-s05e04-festival-together" },
     ],
   },
   {
@@ -117,10 +117,10 @@ export const CAFE_SEASONS: JavaSeason[] = [
     goal: "系统已经很大,却频发无法重现的问题——不知道,不等于没有发生。",
     covers: ["疑难排障", "十年前的真相"],
     episodes: [
-      { season: 6, episode: 1, title: "只有一个客人,总是出错", summary: "所有人都正常,唯独一位顾客持续下单失败,日志却一切正常。只有一个人出问题,也是 100% 的问题。", chapterType: "incident", projectStage: "为一个人也查到底的店", technologies: ["疑难排障"], jobSkills: ["根因分析"], status: "planned" },
-      { season: 6, episode: 2, title: "深夜,它的心跳突然乱了", summary: "每到深夜,系统就莫名抖动。阿零装上「心电图」,终于看清豆豆底层那条十年的脉搏。", chapterType: "comic", projectStage: "能看见心跳的店", technologies: ["可观测", "监控"], jobSkills: ["可观测性"], status: "planned" },
-      { season: 6, episode: 3, title: "豆豆,到底是谁做的", summary: "真相揭晓:豆豆,是十年前那台太温柔而卡住的机器,留下的一颗心。当年那个决定里,有严序,有特米,也有豆豆的家人。", chapterType: "comic", projectStage: "认清自己的店", technologies: ["责任归属"], jobSkills: ["复盘"], status: "planned" },
-      { season: 6, episode: 4, title: "那个十年前的决定", summary: "第六卷收束:所有人第一次坦诚面对那场旧事故。阿零意识到,自己正走在同一条路上。", chapterType: "project", projectStage: "直面过去的豆豆咖啡站 v6", technologies: ["综合"], jobSkills: ["工程伦理"], status: "planned" },
+      { season: 6, episode: 1, title: "只有一个客人,总是出错", summary: "所有人都正常,唯独一位顾客持续下单失败,日志却一切正常。只有一个人出问题,也是 100% 的问题。", chapterType: "incident", projectStage: "为一个人也查到底的店", technologies: ["疑难排障"], jobSkills: ["根因分析"], status: "published", slug: "2026-11-25-cafe-s06e01-only-one-guest" },
+      { season: 6, episode: 2, title: "深夜,它的心跳突然乱了", summary: "每到深夜,系统就莫名抖动。阿零装上「心电图」,终于看清豆豆底层那条十年的脉搏。", chapterType: "comic", projectStage: "能看见心跳的店", technologies: ["可观测", "监控"], jobSkills: ["可观测性"], status: "published", slug: "2026-11-26-cafe-s06e02-heartbeat" },
+      { season: 6, episode: 3, title: "豆豆,到底是谁做的", summary: "真相揭晓:豆豆,是十年前那台太温柔而卡住的机器,留下的一颗心。当年那个决定里,有严序,有特米,也有豆豆的家人。", chapterType: "comic", projectStage: "认清自己的店", technologies: ["责任归属"], jobSkills: ["复盘"], status: "published", slug: "2026-11-27-cafe-s06e03-who-made-doudou" },
+      { season: 6, episode: 4, title: "那个十年前的决定", summary: "第六卷收束:所有人第一次坦诚面对那场旧事故。阿零意识到,自己正走在同一条路上。", chapterType: "project", projectStage: "直面过去的豆豆咖啡站 v6", technologies: ["综合"], jobSkills: ["工程伦理"], status: "published", slug: "2026-11-28-cafe-s06e04-ten-years-ago" },
     ],
   },
   {
@@ -131,10 +131,10 @@ export const CAFE_SEASONS: JavaSeason[] = [
     goal: "严序推出全自动无人门店,咖啡站必须决定未来——技术该替人决定,还是帮人决定?",
     covers: ["AI 与人", "守约"],
     episodes: [
-      { season: 7, episode: 1, title: "严序的无人店,开在了对面", summary: "街对面,一家完全自动、没有店员的连锁开张了。它高效、准时,却记不住任何一个人的名字。", chapterType: "comic", projectStage: "被逼到墙角的店", technologies: ["AI 推荐", "自动化"], jobSkills: ["AI 应用"], status: "planned" },
-      { season: 7, episode: 2, title: "它记住了所有人,却不许人改变", summary: "AI 能预测每位客人想喝什么,却把想换口味的老顾客判成了「异常」。记住,和允许改变,是两回事。", chapterType: "comic", projectStage: "会预测的店", technologies: ["AI", "隐私"], jobSkills: ["AI 伦理"], status: "planned" },
-      { season: 7, episode: 3, title: "我差点把你,也变成 MOKA-0", summary: "阿零发现,只要按下最后一次升级,豆豆就会亲手删掉她守了十年的那笔订单。他停手了——把选择权,还给她。", chapterType: "comic", projectStage: "把选择还给人的店", technologies: ["抉择"], jobSkills: ["技术决策"], status: "planned" },
-      { season: 7, episode: 4, title: "营业中,永远", summary: "全系列大结局:城市咖啡节上,豆豆用最慢的手冲,做完了那杯迟到十年的拿铁。MOKA-0 恢复完成——它守的从来不是效率,是一个人。", chapterType: "project", projectStage: "有人味的豆豆咖啡站(终章)", technologies: ["综合"], jobSkills: ["把技术还给人"], status: "planned" },
+      { season: 7, episode: 1, title: "严序的无人店,开在了对面", summary: "街对面,一家完全自动、没有店员的连锁开张了。它高效、准时,却记不住任何一个人的名字。", chapterType: "comic", projectStage: "被逼到墙角的店", technologies: ["AI 推荐", "自动化"], jobSkills: ["AI 应用"], status: "published", slug: "2026-11-29-cafe-s07e01-unmanned-store" },
+      { season: 7, episode: 2, title: "它记住了所有人,却不许人改变", summary: "AI 能预测每位客人想喝什么,却把想换口味的老顾客判成了「异常」。记住,和允许改变,是两回事。", chapterType: "comic", projectStage: "会预测的店", technologies: ["AI", "隐私"], jobSkills: ["AI 伦理"], status: "published", slug: "2026-11-30-cafe-s07e02-remember-not-change" },
+      { season: 7, episode: 3, title: "我差点把你,也变成 MOKA-0", summary: "阿零发现,只要按下最后一次升级,豆豆就会亲手删掉她守了十年的那笔订单。他停手了——把选择权,还给她。", chapterType: "comic", projectStage: "把选择还给人的店", technologies: ["抉择"], jobSkills: ["技术决策"], status: "published", slug: "2026-12-01-cafe-s07e03-almost-moka" },
+      { season: 7, episode: 4, title: "营业中,永远", summary: "全系列大结局:城市咖啡节上,豆豆用最慢的手冲,做完了那杯迟到十年的拿铁。MOKA-0 恢复完成——它守的从来不是效率,是一个人。", chapterType: "project", projectStage: "有人味的豆豆咖啡站(终章)", technologies: ["综合"], jobSkills: ["把技术还给人"], status: "published", slug: "2026-12-02-cafe-s07e04-open-forever" },
     ],
   },
 ];

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, renderMarkdown, siteUrl } from "@/lib/posts";
+import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, outboundDate, renderMarkdown, siteUrl } from "@/lib/posts";
 import { CHAPTER_TYPE_LABEL } from "@/lib/series";
 import { findEpisodeInfo } from "@/lib/series-registry";
 import AdminEditLink from "./AdminEditLink";
@@ -11,7 +11,7 @@ import Comments from "./Comments";
 import ShareBar from "./ShareBar";
 import CodeCopy from "./CodeCopy";
 import { getComments } from "@/lib/comments";
-import { jsonLdSafe } from "@/lib/jsonld";
+import { jsonLdSafe, personRef } from "@/lib/jsonld";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -39,6 +39,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!post) return {};
 
   const url = `${siteUrl()}/posts/${post.slug}`;
+  // 内容日历排到未来是有意为之,但对外声明未来的 publishedTime 会让搜索引擎拒绝索引,
+  // 部分阅读器也会丢弃 —— 统一钳到「最晚是现在」。
+  const isoDate = outboundDate(post.date).toISOString();
 
   return {
     title: post.title,
@@ -52,8 +55,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: post.summary,
       url,
       type: "article",
-      publishedTime: post.date,
-      modifiedTime: post.date,
+      publishedTime: isoDate,
+      modifiedTime: isoDate,
+      authors: ["https://github.com/WJH-makers"],
       tags: post.tags,
     },
     twitter: {
@@ -75,15 +79,32 @@ export default async function PostPage({ params }: Props) {
   const season = info?.season;
 
   const url = `${siteUrl()}/posts/${post.slug}`;
+  const isoDate = outboundDate(post.date).toISOString();
+
+  // 面包屑要走文章真实所在的路径:连载话次不在 /posts 列表里(那里被过滤掉了),
+  // 声明「首页 > 博客 > 标题」是条不存在的路径。有系列信息就用系列层。
+  const breadcrumbItems = info
+    ? [
+        { name: "首页", path: "/", item: siteUrl() },
+        { name: "连载", path: "/series", item: `${siteUrl()}/series` },
+        { name: info.series.title, path: info.series.route, item: `${siteUrl()}${info.series.route}` },
+        { name: post.title, path: `/posts/${post.slug}`, item: url },
+      ]
+    : [
+        { name: "首页", path: "/", item: siteUrl() },
+        { name: "文章", path: "/posts", item: `${siteUrl()}/posts` },
+        { name: post.title, path: `/posts/${post.slug}`, item: url },
+      ];
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "首页", item: siteUrl() },
-      { "@type": "ListItem", position: 2, name: "博客", item: `${siteUrl()}/posts` },
-      { "@type": "ListItem", position: 3, name: post.title, item: url },
-    ],
+    itemListElement: breadcrumbItems.map((b, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: b.name,
+      item: b.item,
+    })),
   };
 
   const articleJsonLd = {
@@ -94,16 +115,13 @@ export default async function PostPage({ params }: Props) {
     url,
     image: `${url}/opengraph-image`,
     wordCount: countWords(post.content),
-    datePublished: post.date,
-    dateModified: post.date,
-    author: {
-      "@type": "Person",
-      name: "WJH-makers",
-      alternateName: "WJH-makers",
-      url: "https://github.com/WJH-makers",
-    },
+    datePublished: isoDate,
+    dateModified: isoDate,
+    author: personRef(siteUrl()),
+    publisher: personRef(siteUrl()),
     keywords: post.tags.join(", "),
     inLanguage: "zh-CN",
+    isAccessibleForFree: true,
     articleSection: season ? `第${season.season}卷 · ${season.title}` : undefined,
     isPartOf: info
       ? {
@@ -126,18 +144,46 @@ export default async function PostPage({ params }: Props) {
   // 渲染器直出标题锚点 id 并返回结构化 headings —— TOC 与正文锚点天然一致,
   // 不再用正则反解析渲染后的 HTML 回填(含行内语法/重名标题时会静默失效)。
   // 渲染 / 相关文章 / 评论三者互不依赖,并行取(冷渲染与 ISR 再生约省 1/3 延迟)
-  const [{ html: fullHtml, headings }, related, comments] = await Promise.all([
+  const [{ html: fullHtml, headings }, related, comments, allPosts] = await Promise.all([
     renderMarkdown(contentLines.join("\n").replace(/^\s+/, "")),
     getRelatedPosts(post.slug, post.tags),
     getComments(post.slug),
+    getAllPublishedPosts(),
   ]);
   const tocItems = headings.filter((h) => h.level === 2);
+
+  // 非连载文章(速查/笔记)按时间线取上下篇,让它们也有前进/后退的路径。
+  // 连载话次已有专属的 series-pager,这里只服务其余文章。
+  let chronoPrev: (typeof allPosts)[number] | undefined;
+  let chronoNext: (typeof allPosts)[number] | undefined;
+  if (!info) {
+    const idx = allPosts.findIndex((p) => p.slug === post.slug);
+    if (idx !== -1) {
+      // allPosts 按日期倒序:下标更小 = 更新,更大 = 更旧
+      chronoNext = allPosts[idx - 1]; // 更新的一篇
+      chronoPrev = allPosts[idx + 1]; // 更旧的一篇
+    }
+  }
 
   return (
     <article className="page-shell article-shell">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(articleJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(breadcrumbJsonLd) }} />
-      <Link className="back-link" href="/posts">← 返回文章列表</Link>
+      <Link className="back-link" href={info ? info.series.route : "/posts"}>
+        ← {info ? `返回${info.series.title}` : "返回文章列表"}
+      </Link>
+      <nav className="crumbs" aria-label="面包屑">
+        {breadcrumbItems.map((b, i) => (
+          <span key={b.item}>
+            {i < breadcrumbItems.length - 1 ? (
+              <Link href={b.item.replace(siteUrl(), "") as never}>{b.name}</Link>
+            ) : (
+              <span aria-current="page">{b.name}</span>
+            )}
+            {i < breadcrumbItems.length - 1 && <span className="crumbs-sep">/</span>}
+          </span>
+        ))}
+      </nav>
       <header className="article-header">
         <p className="date">{post.date} · {post.readingMinutes} min read</p>
         <h1>{post.title}</h1>
@@ -227,6 +273,27 @@ export default async function PostPage({ params }: Props) {
           technologies={episode.technologies}
           episode={episode.episode}
         />
+      )}
+
+      {!info && (chronoPrev || chronoNext) && (
+        <nav className="chrono-pager" aria-label="上一篇下一篇">
+          {chronoPrev ? (
+            <Link className="series-pager-link prev" href={`/posts/${chronoPrev.slug}`}>
+              <span className="eyebrow">上一篇</span>
+              <span>{chronoPrev.title}</span>
+            </Link>
+          ) : (
+            <span />
+          )}
+          {chronoNext ? (
+            <Link className="series-pager-link next" href={`/posts/${chronoNext.slug}`}>
+              <span className="eyebrow">下一篇</span>
+              <span>{chronoNext.title}</span>
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
       )}
 
       {related.length > 0 && (
