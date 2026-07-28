@@ -250,4 +250,45 @@ class CoffeeShopTest {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。每道答案都带一句「举一反三」,帮你把这一个点连成一片。
+
+### 选择题(10 道)
+
+1. `Throwable` 下面分成哪两支?
+   - A) `Exception` 和 `RuntimeException`　B) `Error` 和 `Exception`　C) `checked` 和 `unchecked`　D) `Throwable` 和 `Throwable`
+2. 对 `OutOfMemoryError`、`StackOverflowError` 这一支,正确做法是?
+   - A) 一律用 try-catch 接住　B) 别去接 —— 系统级塌方,接了也救不回来　C) 转成 RuntimeException 再抛　D) 记日志后继续运行
+3. 判断 checked / unchecked 的口诀是?
+   - A) 名字带 Exception 的是 checked　B) 继承自 `RuntimeException` 的是 unchecked,其余 `Exception` 是 checked　C) 运行时抛的都是 unchecked　D) 自定义的都是 checked
+4. 异常抛出后没人接,会怎样?
+   - A) 程序继续往下走　B) 一路冒泡到 `main` 之外,JVM 打印栈轨迹并**终止整个程序**　C) 自动重试　D) 返回默认值
+5. 栈轨迹应该怎么读?
+   - A) 从下往上,最后一行是出事点　B) 从上往下:第一行是异常类型和消息,紧跟的 `at` 是真正抛出的那一行　C) 只看最后一行　D) 只看行号
+6. `finally` 块什么时候执行?
+   - A) 只有 try 成功时　B) 只有 catch 兜住时　C) 无论 try 成功还是 catch 兜住都执行,常用来收尾　D) 只有抛异常时
+7. `catch (Exception e) {}` 这种写法的问题是?
+   - A) 性能差　B) 等于把警报器的线剪了 —— 出事你毫不知情,Bug 潜伏到线上才爆　C) 编译报错　D) 会导致内存泄漏
+8. 多重 catch `catch (IOException | SQLException e)` 是哪个版本起支持的?
+   - A) Java 5　B) Java 6　C) Java 7　D) Java 8
+9. `assertThrows(IllegalStateException.class, () -> shop.order("美式", 999));` 断言的是?
+   - A) 这段代码不会抛异常　B) 这段代码必须抛出指定类型的异常,并返回那个异常对象供进一步断言　C) 返回值等于某个常量　D) 方法执行时间
+10. 框架(如 Spring)偏爱 unchecked 异常的原因是?
+    - A) 性能更好　B) 不逼业务代码到处 `throws`,接口更干净　C) 编译更快　D) 更容易被捕获
+
+> [!答案]
+> **1-B**　`Error` 是系统塌方,`Exception` 才是你该处理的。**举一反三**:两者共同的祖先 `Throwable` 才是 `throw`/`catch` 真正认的类型。
+> **2-B**　内存都没了,catch 里的代码多半也跑不动。**举一反三**:唯一常见的例外是最外层框架为了「优雅记录一笔再退出」,但那不是恢复。
+> **3-B**　看是不是 `RuntimeException` 的后代。**举一反三**:所以自定义业务异常继承谁,决定了调用方是否被强制处理 —— 这是设计决策不是随手选。
+> **4-B**　一个没接,全场陪葬。**举一反三**:本话的事故本质不是「一单失败」,而是「全店打烊」——护栏该放在能继续服务的那一层。
+> **5-B**　第一行看类型和消息,`at` 行看出事点。**举一反三**:栈轨迹从「出事点」到「最外层调用者」,中间还能看出调用链,是排障第一手材料。
+> **6-C**　`finally` 是收尾专用。**举一反三**:关文件、还连接都靠它 —— 不过下一话的 `try-with-resources` 能让你连它都不用写。
+> **7-B**　空 catch 是最致命的新手习惯。**举一反三**:至少要打印或记日志;真要忽略,也该写注释说明为什么可以忽略。
+> **8-C**　Java 7 的多重 catch。**举一反三**:同版本还带来了 `try-with-resources`,两者都是为了减少异常处理的样板代码。
+> **9-B**　它断言必须抛,还把异常对象还给你。**举一反三**:异常路径和正常路径一样值得测 —— 「该报错的地方真的报错」也是需求。
+> **10-B**　接口签名不被 `throws` 淹没。**举一反三**:代价是调用方可能忘了处理,所以文档和统一异常处理器要跟上。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与创作规范见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 [/java](/java)。*

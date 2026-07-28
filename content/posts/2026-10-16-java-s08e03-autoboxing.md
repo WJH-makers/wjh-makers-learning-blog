@@ -222,4 +222,45 @@ class MemberLevelTest {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。每道答案都带一句「举一反三」,帮你把这一个点连成一片。
+
+### 选择题(10 道)
+
+1. `Integer a = 128, b = 128; a == b` 的结果是?
+   - A) `true`　B) **`false`** —— 128 出了缓存,两次装箱是两个对象　C) 编译报错　D) 运行期异常
+2. `Integer c = 127, d = 127; c == d` 却是 `true`,因为?
+   - A) 127 是特殊值　B) **命中 IntegerCache(−128~127),返回同一个共享对象**　C) 编译器优化成基本类型　D) 巧合
+3. 自动装箱和拆箱在编译期分别被翻译成?
+   - A) 强制类型转换　B) **装箱 = `Integer.valueOf(n)`,拆箱 = `a.intValue()`**　C) 反射调用　D) 什么都不做
+4. 哪一类包装类**没有**缓存?
+   - A) Integer　B) Character　C) Boolean　D) **Float / Double** —— 装箱必是新对象
+5. `int p = points.get("路人甲");`(表里没这个人)会?
+   - A) 得到 0　B) 得到 null　C) **抛 NPE** —— 编译官插入的 `intValue()` 对着 null 调用　D) 编译报错
+6. `Map<Long, String> map` 里 `map.get(1)` 查不到,原因是?
+   - A) 键不存在　B) `1` 装箱成 `Integer`,而 `Long.equals(Integer)` 恒为 false —— 应写 `map.get(1L)`　C) 需要强制转换　D) Map 不支持数字键
+7. `-XX:AutoBoxCacheMax=256` 能让 128 的 `==` 变 true,但工程上?
+   - A) 应该这么调　B) **绝不依赖** —— 换台机器、换个启动脚本结果就反转　C) 只在测试环境用　D) 会导致内存泄漏
+8. 包装类比较的正确姿势是?
+   - A) `==`　B) **`equals` 或 `Objects.equals`**(后者还 null 安全)　C) `compareTo` 必须用　D) 先转成基本类型再 `==`
+9. `vip ? 1 : bonus`(`bonus` 是 `Integer`)的陷阱是?
+   - A) 类型不兼容编译报错　B) 分支一边 int 一边 Integer,整个表达式统一成 int 触发**自动拆箱**,`bonus` 为 null 时 NPE　C) 结果总是 1　D) 没有陷阱
+10. 从 Map 取值避免 null 拆箱,最省事的写法是?
+    - A) 先 `containsKey` 再 `get`　B) `getOrDefault(key, 0)`　C) try-catch 包住　D) 把值类型改成 String
+
+> [!答案]
+> **1-B**　出了缓存就是两个对象。**举一反三**:这个 Bug 静悄悄地给错,没有异常没有警告 —— 比崩溃更阴险。
+> **2-B**　碰巧命中同一个住户。**举一反三**:正因为「小数值碰巧对」,这类 Bug 才总能通过测试、上线才炸。
+> **3-B**　全是编译期翻译。**举一反三**:知道这一点,`==` 为什么比的是引用、null 为什么会 NPE,两个问题一起解决了。
+> **4-D**　浮点没有缓存。**举一反三**:浮点数还有 `NaN != NaN`、`-0.0 == 0.0` 等一堆特例,判等尤其要小心。
+> **5-C**　`intValue()` 对着 null 调。**举一反三**:数据库查出的 `Integer` 字段同理 —— null 一赋给 `int` 就是这颗雷。
+> **6-B**　类型必须严丝合缝。**举一反三**:这也是为什么 `List<Integer>.remove(1)` 会按**下标**删除,而 `remove(Integer.valueOf(1))` 才按值删。
+> **7-B**　别赌 JVM 参数。**举一反三**:任何依赖「默认配置恰好如此」的代码,都在等一次环境变更把它掀翻。
+> **8-B**　`Objects.equals` 两边可为 null。**举一反三**:结论背死 —— `==` 只留给基本类型。
+> **9-B**　三元的类型统一规则会触发拆箱。**举一反三**:所以三元的两个分支类型要对齐,别混装基本类型和包装类型。
+> **10-B**　`getOrDefault` 一行搞定。**举一反三**:同族的 `computeIfAbsent`、`Optional.ofNullable` 都是「把 null 挡在源头」的思路。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

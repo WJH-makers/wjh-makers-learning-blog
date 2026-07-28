@@ -210,4 +210,126 @@ class ReflectionTest {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,中间3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. 获取 `Class` 对象有三种方式,以下哪种**不会**触发类的初始化?
+- A) `Class.forName("OrderService")`
+- B) `OrderService.class`
+- C) `new OrderService().getClass()`
+- D) `ClassLoader.loadClass("OrderService")`
+
+2. `getMethods()` 和 `getDeclaredMethods()` 的区别,描述正确的是?
+- A) `getMethods()` 返回本类的全部方法(含 private)
+- B) `getDeclaredMethods()` 返回 public 方法及其从父类继承的方法
+- C) `getMethods()` 返回 public 方法(含继承),`getDeclaredMethods()` 返回本类全部方法(含 private、不含继承)
+- D) 两者返回的结果完全相同,仅命名不同
+
+3. `setAccessible(true)` 的作用是?
+- A) 将 private 字段永久改为 public
+- B) 跳过**该处**的访问检查,允许反射调用私有成员
+- C) 修改字节码,消除 final 修饰符
+- D) 关闭整个 JVM 的安全管理器
+
+4. 以下代码中,`m.invoke(svc, new BigDecimal("18.00"))` 返回的结果最接近?
+```java
+var m = OrderService.class.getDeclaredMethod("applyDiscount", BigDecimal.class);
+m.setAccessible(true);
+var svc = OrderService.class.getDeclaredConstructor().newInstance();
+```
+
+- A) 18.00(原价未折)
+- B) 15.84(88折后)
+- C) 0.50(取 memberRate 的值)
+- D) 抛出 `NoSuchMethodException`
+
+5. 用反射调用方法时,参数需封装到 `Object[]` 中。对于 `int` 类型的参数,会发生什么?
+- A) 直接传入,无额外开销
+- B) 自动装箱为 `Integer`,再放进 `Object[]`
+- C) 编译错误,反射不支持基本类型
+- D) JIT 自动内联,消除装箱开销
+
+6. 以下关于反射性能慢的描述,**哪个是错误**的?
+- A) 每次调用需校验访问权限与参数匹配
+- B) 基本类型参数需装箱,产生对象分配
+- C) 反射调用对 JIT 是黑盒,无法内联
+- D) 反射调用比直接调用慢,但每次都慢 1000 倍以上
+
+7. 某框架需要在模块化应用中通过反射访问一个未 `opens` 的模块中的私有方法,运行时会抛出?
+- A) `ClassNotFoundException`
+- B) `NoSuchMethodException`
+- C) `InaccessibleObjectException`
+- D) `IllegalArgumentException`
+
+8. 阿零用反射获取了 `OrderService.class` 的 `memberRate` 字段,然后执行 `f.set(svc, new BigDecimal("0.50"))`。第二次获取同一个 Class 对象上的同一个 Field 再 `get(svc)`,结果是?
+- A) 0.88(原始值,反射修改不持久)
+- B) 0.50(被修改后的值)
+- C) null(反射修改仅在当前方法有效)
+- D) 抛出 `IllegalAccessException`
+
+9. 以下场景中,**不适合**使用反射的是?
+- A) JUnit 在启动时扫描带 `@Test` 的方法
+- B) Jackson 将 JSON 字段映射到 POJO 属性
+- C) 电商下单服务在每次请求时用反射调用扣库存方法
+- D) Spring 在容器启动时根据 `@Component` 扫描并实例化 Bean
+
+10. 已知框架在启动时用反射扫描注解并缓存 `Method` 对象。以下关于这种设计模式的描述,最准确的是?
+- A) 因为缓存了 `Method`,反射零开销,后续调用与直接调用一致
+- B) 缓存避免了每次重新查找,但 `invoke` 本身的校验/装箱/不可内联开销仍在
+- C) 缓存后 JIT 可以跨反射调用做内联
+- D) 缓存 `Method` 等价于把反射转成了 `MethodHandle`,性能完全一致
+
+### 解答题(5 道)
+
+**Q1(概念)** 简述获取 `Class` 对象的三种方式及其适用场景,特别说明哪种方式不会触发类的初始化。
+
+**Q2(解释)** 为什么 `getMethod("applyDiscount", BigDecimal.class)` 会抛出 `NoSuchMethodException`,而 `getDeclaredMethod` 能找到?找到后为什么 `invoke` 又抛出 `IllegalAccessException`?
+
+**Q3(场景)** 某项目需要从配置文件读取类名并动态创建实例。请写出核心代码,并说明相比 `new` 的优势与风险。
+
+**Q4(分析)** 本话提到反射慢的三大原因(校验/装箱/不可内联)。请分析:为什么框架(如 Spring)仍然大量使用反射,却不会因此成为性能瓶颈?
+
+**Q5(设计)** 你需要设计一个简单的依赖注入容器:扫描指定包下的 `@Component` 类,找到带 `@Autowired` 的字段并注入。请用反射写出核心流程(伪代码或关键代码均可),并说明对循环依赖你会如何处理。
+
+> [!答案]
+> **选择题**
+> 1-B。`OrderService.class` 不触发初始化;`Class.forName` 会触发;`getClass()` 触发(对象已存在);`loadClass` 不触发但非三种方式之一。★举一反三:编译期常量引用也不触发初始化,锁的是「主动引用」五个字。
+>
+> 2-C。`getXxx` = 公开 + 继承;`getDeclaredXxx` = 本类全部(含私有)。★举一反三:这个命名规律对 Method、Field、Constructor 三者统一。
+>
+> 3-B。`setAccessible` 只关**这一处**的访问检查,不改变字段本身修饰符。★举一反三:模块化时代,目标类在未 `opens` 的模块中时 `setAccessible` 直接抛异常。
+>
+> 4-B。`applyDiscount` 是私有方法,逻辑为 `price * memberRate`(0.88),18×0.88=15.84。★举一反三:setAccessible 只跳过访问检查,不改变方法本身的逻辑。
+>
+> 5-B。反射 `invoke` 的参数统一为 `Object[]`,基本类型必然装箱。★举一反三:这是反射慢的三原因之一——装拆箱产生 GC 压力。
+>
+> 6-D。「每次都慢 1000 倍」是未经预热的冷数据;稳态下差距远没有那么大,但不可内联的根本限制仍在。★举一反三:用 JMH 测微基准,别信单次秒表的假结论(下一话 #83 详细讲)。
+>
+> 7-C。Java 9+ 模块化下,未 `opens` 的包拒绝 `setAccessible`,抛 `InaccessibleObjectException`。★举一反三:框架通过 `--add-opens` 启动参数获得访问权,这是排查反射报错的必经之路。
+>
+> 8-B。Field 对象是同一个,`set` 修改的是**实例**的字段值,`get` 自然读到修改后的值。★举一反三:反射修改的是堆中对象的真实字段,不是临时拷贝。
+>
+> 9-C。反射应在**启动初始化阶段**一次性使用(如扫描注解、注入依赖),不应放在热路径上。★举一反三:Spring 在容器启动时完成所有反射工作,运行时 Bean 的调用是直接的。
+>
+> 10-B。缓存 `Method` 解决了查找开销,但 `invoke` 依然要过校验/装箱/不可内联三道坎。★举一反三:热路径需要更高性能的动态调用,可换 `MethodHandle` 或直接生成字节码(LambdaMetafactory)。
+>
+> **解答题**
+>
+> **Q1** 三种方式:① `类名.class`——编译期已知,最安全,不触发初始化,适合硬编码场景;② `对象.getClass()`——已有实例时使用,会触发初始化(因为对象已存在);③ `Class.forName("全限定名")`——只有字符串时使用(如读取配置文件),会触发初始化,框架最爱。★举一反三:理解「不触发初始化」对于排查类的初始化时机非常重要,尤其是静态块中有副作用的场景。
+>
+> **Q2** `getMethod` 只查**公开名录**(public 方法,含继承),`applyDiscount` 是 private,所以抛 `NoSuchMethodException`。`getDeclaredMethod` 查**全量名录**(本类所有方法含 private),找到了。但 `invoke` 之前会做访问检查,private 方法被拦下,抛 `IllegalAccessException`。★举一反三:找到 ≠ 能调用——这是两重检查:名录查找(方法存不存在)和访问控制(让不让调)。
+>
+> **Q3** 核心代码:`Class<?> clz = Class.forName(config.getClassName()); Object obj = clz.getDeclaredConstructor().newInstance();`。优势:松耦合,换实现只需改配置文件;风险:编译期类型检查失效,类名写错/构造器不匹配运行时才暴露,且绕过了封装。★举一反三:这就是 Spring 的 `@Component` 扫描和 Bean 实例化的底层机制。
+>
+> **Q4** 框架使用反射的策略是「**启动期一次性投入,运行期零成本**」:①只在容器启动时扫描注解、解析依赖、实例化 Bean,此时性能容忍度高;②扫描结果(如 Method、BeanDefinition)被缓存,运行时调用 Bean 的方法是**直接调用**而非反射;③反射只在控制反转(IoC)和依赖注入的初始化阶段干活,热路径不碰反射。★举一反三:Spring 的 AOP 代理虽然用到了反射思想,但运行时替身(`$Proxy`/CGLIB)的方法调用是直接调用,不是每次 invoke 都走反射。
+>
+> **Q5** 核心流程:①获取包路径下所有类→②过滤带 `@Component` 的→③每个类 `clz.getDeclaredConstructor().newInstance()` 实例化→④遍历 `clz.getDeclaredFields()`,找带 `@Autowired` 的→⑤`field.setAccessible(true); field.set(instance, container.getBean(field.getType()))`。循环依赖处理:setter 注入可以用「二级缓存」——先把半成品(实例化但未填充)放进早期缓存,当 B 需要 A 时从缓存中取半成品,B 填充完,A 再补填。构造器注入的循环依赖无解,需要拆类或 `@Lazy`。★举一反三:这就是 Spring IoC 容器的雏形——三级缓存储半成品、`ObjectFactory` 延迟创建代理,都是这个思路的工业化实现。
+>
+> ---
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

@@ -258,4 +258,81 @@ deploy@coffee:~$ █
 
 ---
 
-*本话属于连载《从零开始玩命令行》。全卷地图见 [/cli](/cli);前作《从零开始学 Java》见 [/java](/java)。*
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,接下来3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. "完整上线链"一般包含哪些步骤?
+- A) 只写代码　B) clone 代码→安装依赖→配置环境→启动服务→配置反向代理→测试　C) 只有启动服务　D) 上传文件即可
+
+2. 502 Bad Gateway 错误,在 nginx 反向代理架构中最可能的原因是什么?
+- A) 客户端网络故障　B) nginx 本身崩溃　C) nginx 可以工作,但**后端应用服务**(proxy_pass 的目标)没有运行或无法响应　D) DNS 解析失败
+
+3. "上线烟测四关"通常指什么?
+- A) 功能测试、性能测试、安全测试、兼容性测试　B) 端口监听(`ss`)、HTTP 可达(`curl`)、状态码正确、内容验证　C) 单元测试、集成测试、E2E 测试、压力测试　D) 代码审查、自动化测试、手动测试、上线审批
+
+4. 502 排查的"三板斧"是什么?
+- A) 重启 nginx、重启服务器、重装系统　B) ①`systemctl status <app>`检查后端服务状态 ②`docker ps`/`ss -tlnp`检查端口监听 ③`journalctl -u <app> -f`查看后端日志　C) `ping`、`traceroute`、`nslookup`　D) 清除浏览器缓存、重启路由器、换电脑
+
+5. `docker-compose ps` 在部署中的作用是什么?
+- A) 列出所有 Docker 镜像　B) 快速查看 compose 项目中各容器的状态(Up/Exited/端口映射)　C) 列出所有进程　D) 查看 compose 文件语法
+
+6. `git clone`→`cd project`→`docker compose up -d`→`ss -tlnp`→`nginx -t && systemctl reload nginx`→`curl -I localhost` 这段操作序列体现了什么思想?
+- A) 随机操作　B) 完整的上线链:代码获取→服务启动→端口确认→反向代理配置→HTTP 验证　C) 只有 Docker 操作　D) 只适合开发环境
+
+7. 部署后通过 `curl` 测试时,返回 404(Not Found)而非 502,这说明什么?
+- A) 后端服务没运行　B) 后端服务**正在运行**,但请求的 URL 路径/路由不对(nginx 正确转发了请求,但后端没有该路径的处理逻辑)　C) nginx 没有安装　D) 防火墙阻挡
+
+8. 关于"上线烟测",以下哪项是**不必要**的?
+- A) 确认端口在监听　B) 确认 HTTP 返回状态码 200　C) 确认页面内容包含预期关键字　D) 在服务器上打开浏览器用鼠标点击所有链接
+
+9. `docker-compose up -d` 后执行 `docker-compose logs -f app`,看到堆栈信息 `Connection refused: postgres:5432`,最可能的原因是什么?
+- A) PostgreSQL 容器还没启动完成(启动顺序问题,app 需要等待 postgres 就绪)　B) Docker 网络故障　C) Java 版本不兼容　D) nginx 配置错误
+
+10. 关于生产部署后的回滚策略,以下哪种做法**最有效**?
+- A) 每次部署前手动备份文件　B) 使用 Git tag+commit hash 标记版本,部署脚本保留最近 3 个版本的可运行包,回滚时切换到旧版本并重启服务　C) 依赖 Docker 镜像的 `latest` 标签自动回滚　D) 部署后立即删除旧版本代码
+
+### 解答题(5 道)
+
+**Q1 概念:** 画出"完整上线链"的流程图:从代码仓库到用户可访问的完整路径,标注每一步使用的命令和验证方式。
+
+**Q2 解释:** 为什么 502 Bad Gateway 被称为"后端服务的健康晴雨表"?解释 502 vs 503 vs 504 三种 nginx 错误的含义和排查方向。
+
+**Q3 操作:** 写出从零开始部署咖啡站的完整命令序列:clone 仓库→创建 .env 配置文件→docker compose 启动→确认所有服务→配置 nginx 反向代理→SSL 证书→烟测验证→记录部署日志。
+
+**Q4 排障:** 部署后访问 HTTPS 域名,浏览器显示 "ERR_CONNECTION_REFUSED"。请按分层排查给出诊断流程,并给出每种原因的解决方案。
+
+**Q5 综合设计:** 为咖啡站设计一套"零恐惧部署"方案(基于前面 24 话全部知识),要求包括:①基于 git tag 的版本管理 ②自动化部署脚本(含 rollback) ③健康检查(端口+HTTP+内容) ④部署日志和告警 ⑤"部署后 5 分钟监控期"(如果在 5 分钟内发现问题,自动回滚)。写出方案框架和关键命令。
+
+> [!答案]
+> **1-B** 完整上线链:代码获取(clone/pull)→环境准备(依赖安装/镜像构建)→配置注入(环境变量/配置文件)→服务启动→反向代理(nginx)→端口/HTTP 验证→域名 SSL→最终确认。**举一反三:**这是前面 24 话所有知识的综合实践——每一环都可能出问题,所以需要"烟测"在每个环节停下来验证。
+>
+> **2-C** 502 是 nginx(作为网关/代理)从上游服务器(upstream/proxy_pass 目标)收到了**无效响应**(通常是后端服务崩溃/未启动/超时被关闭连接)。**举一反三:**502 的三板斧:查后端进程状态、查端口监听、查后端日志——这三步通常能定位 90% 的问题。🪟 IIS 中 502 等价错误是 "502 - Web server received an invalid response while acting as a gateway or proxy server"。
+>
+> **3-B** "烟测"(Smoke Test)四关:①端口:`ss -tlnp | grep :8080`(服务在听吗?) ②HTTP 可达:`curl -I http://localhost:8080/`(能连上吗?) ③状态码:`curl -o /dev/null -s -w "%{http_code}\n" http://localhost/`(返回 200 吗?) ④内容验证:`curl -s http://localhost/ | grep "Coffee Shop"`(页面内容对吗?)。**举一反三:**烟测是部署的最后一道防线——不跑完整测试套件,只验证"最基本的烟能不能冒起来"。如果烟都没冒,不用深入排查,直接回滚。
+>
+> **4-B** 三板斧:①`systemctl status coffee-app` 或 `docker ps | grep coffee-app`(应用在运行吗?) ②`ss -tlnp | grep <port>`(应用端口在监听吗?) ③`journalctl -u coffee-app -n 50` 或 `docker logs --tail 50 coffee-app`(应用日志有什么错误?)。**举一反三:**502 是我们这一路学到的故障排查综合实践:`systemctl`(进程管理)+`ss`(网络)+`journalctl`/`docker logs`(日志)+`curl`(HTTP 验证)。四条命令就是你的排查工具箱。
+>
+> **5-B** `docker-compose ps` 按 compose 项目分组显示容器运行状态、端口映射等。**举一反三:**这是部署后第一个要敲的验证命令;`docker stats` 看资源使用;`docker-compose logs --tail 20` 快速抽查日志。
+>
+> **6-B** 这正是我们全系列 24 话打造的"命令流"思维方式:每一步一个命令,每一步验证一个状态,不跳步,不盲推。**举一反三:**把这 6-7 个命令写成 `deploy.sh` 脚本,每次上线不用手敲,减少人为失误。Linux 的"组合式思维"在这里达到最高境界:把简单工具串成流水线。
+>
+> **7-B** 404 说明请求**成功到达后端**(nginx 转发正常,后端服务在运行),但后端找不到对应的 URL 处理逻辑。**举一反三:**这是好消息——说明 nginx 和后端通信没问题,问题缩小到"URL 路由配置"。检查后端路由表是否正确注册了该 URL。
+>
+> **8-D** 服务器上通常没有 GUI 浏览器;烟测之所以叫"烟测",就是因为它是轻量级的**命令行快速验证**,不需要打开浏览器。**举一反三:**在开发环境用浏览器完整测试,在生产环境用命令行快速烟测——各司其职。
+>
+> **9-A** Docker Compose 的 `depends_on` 只保证**容器启动顺序**,不等待服务"就绪"。postgres 容器启动了但 postgres 进程还在初始化(创建数据库、加载扩展等,可能需要几十秒),此时 app 容器已经启动,尝试连接→遭到拒绝。**解决:**①应用中实现数据库连接重试逻辑 ②使用 `dockerize` 或 `wait-for-it.sh` 在 app 启动前等待 `postgres:5432` 可连接 ③使用 Compose v3.8+ 的 `condition: service_healthy`+`healthcheck`。**举一反三:**这是 Docker 新手最常遇到但最难理解的问题——"容器启动≠服务就绪"。
+>
+> **10-B** Git tag 标记版本号+保留可运行包的方案,可以在任何时间点精确回滚。`latest` 标签总是指向最新,无法精确回滚。**举一反三:**`git tag v1.2.3 && git push --tags` 标记版本;`docker tag coffee-app:v1.2.3 coffee-app:stable` 维护可工作指针;回滚脚本:`docker-compose down && git checkout v1.2.2 && docker-compose up -d`。
+>
+> **Q1** 完整上线链流程:①`git clone`/`git pull` 获取代码 ②`cd project` 进入项目 ③准备环境变量(`cp .env.example .env && vim .env`) ④`docker compose build` 构建镜像/`npm install` 安装依赖 ⑤`docker compose up -d` 启动服务 ⑥验证服务:`docker-compose ps`(所有 Up)→`ss -tlnp | grep :8080`(端口监听)→`curl localhost:8080/health`(健康端点) ⑦配置 nginx:`sudo vim /etc/nginx/sites-available/coffee`(server_name+proxy_pass)→`nginx -t`→`sudo systemctl reload nginx` ⑧SSL 证书:`sudo certbot --nginx -d coffee.com` ⑨烟测:`curl -I https://coffee.com/ | grep "200 OK"`→`curl -s https://coffee.com/ | grep "Coffee"` ⑩记录:`echo "$(date): deployed $(git rev-parse --short HEAD)" >> /var/log/deploy.log`。**核心:**每一步都验证,而不是一口气做完最后才发现问题。
+>
+> **Q2** 三种 nginx 错误码:①**502 Bad Gateway:**nginx 作为网关/代理,从上游收到无效响应。含义:后端服务**存在但有问题**(崩溃/返回了乱码/连接被 RST)。排查:后端进程状态、端口监听、应用日志(stack trace/OOM)。②**503 Service Unavailable:**nginx 暂时无法处理请求。含义:后端服务**不存在**(未启动/停机维护/连接池耗尽)。排查:后端进程是否存在(start/enable)、上游服务器配置是否正确。③**504 Gateway Timeout:**nginx 等待上游响应超时。含义:后端服务**在运行但太慢**(处理超时,默认 60s)。排查:应用性能(数据库慢查询/死锁/GC 长时间暂停)、`proxy_read_timeout` 是否过短。**晴雨表比喻:**502/503/504 的差异就像体温计的不同读数:502=发烧了(有问题)、503=昏过去了(不存在)、504=反应迟钝(太慢)。
+>
+> **Q3** 完整命令序列:`git clone git@github.com:coffee/shop.git && cd shop` → `cp .env.example .env && vim .env`(设置密码和密钥) → `docker compose build && docker compose up -d` → `docker-compose ps`(确认所有容器 Up) → `sudo vim /etc/nginx/sites-available/coffee`(配置反向代理) → `sudo ln -s /etc/nginx/sites-available/coffee /etc/nginx/sites-enabled/` → `sudo nginx -t && sudo systemctl reload nginx` → `sudo certbot --nginx -d coffee.com -d www.coffee.com` → 烟测:`ss -tlnp | grep :80`(nginx 监听)→`ss -tlnp | grep :8080`(app 监听)→`curl -o /dev/null -s -w "%{http_code}\n" https://coffee.com/`(应输出 200)→`curl -s https://coffee.com/ | grep "Welcome"`(内容验证) → `echo "$(date '+%Y-%m-%d %H:%M:%S') | $(git rev-parse --short HEAD) | deploy success" | sudo tee -a /var/log/coffee-deploy.log`。**举一反三:**把整段命令写成 `deploy.sh`,使用 `set -euo pipefail`(遇错立即退出),前面 24 话的技巧全部用上。
+>
+> **Q4** ERR_CONNECTION_REFUSED 分层排查:①**网络层:**`ping coffee.com`(能解析到正确 IP 吗?能 ping 通吗?) 如果不是,检查 DNS 解析和服务器网络 ②**防火墙:**`sudo ufw status`(防火墙是否阻挡 80/443?) + 云安全组检查 ③**端口监听:**`sudo ss -tlnp | grep -E ":80|:443"`(nginx 在监听吗?) ④**nginx 状态:**`sudo systemctl status nginx`(nginx 在运行吗?)→如果没运行,`sudo systemctl start nginx` ⑤**SSL 证书:**如果是 HTTPS 且 nginx 运行,检查 SSL 配置(`listen 443 ssl;` + 证书路径是否正确) ⑥**域名 DNS:**`dig coffee.com`(DNS 记录指向正确的服务器 IP 吗?) ⑦如果是刚部署就拒绝连接,等 1-2 分钟(DNS 传播延迟)。**解决矩阵:**nginx 没装→安装;firewall 没放行→ufw allow;服务没监听→start;DNS 指错→更新 DNS 记录;SSL 证书过期→certbot renew。
+>
+> **Q5** "零恐惧部署"方案框架:①**版本管理:**每次部署前打 tag:`git tag v$(date +%Y%m%d-%H%M%S) && git push --tags`;docker 镜像用 commit hash+timestamp 做标签:`docker build -t coffee-app:$(git rev-parse --short HEAD) .`。②**部署脚本:**`deploy.sh` 包含:备份当前版本→拉取新代码→构建镜像→启动新容器→烟测→如果烟测通过,清理旧版本;如果烟测失败,自动回滚。③**健康检查:**函数 `smoke_test() { curl -f -s -o /dev/null http://localhost:8080/health || return 1; }`;部署后调用该函数判断。④**5 分钟监控:**`./deploy.sh && sleep 300 && ./smoke_test.sh`(如果 5 分钟后健康检查失败,发告警);或者用 systemd timer 每分钟运行健康检查脚本。⑤**回滚:**保留最近 3 个版本的可运行包(镜像 tag);回滚脚本:`docker compose down && git checkout $PREV_TAG && docker compose up -d`。⑥**部署日志:**每次部署写入 JSON 格式日志:`{"time":"...","version":"...","result":"success|fail","duration":"...","who":"..."}` → 便于后续统计部署成功率。**举一反三:**当你走完这 25 话,掌握了部署链上每个环节的工具,你就建立了一个"命令自信":你知道每一步做什么、如何验证、错了怎么回滚。这就是"零恐惧"——不是不出错,而是每步可验证、每错可回滚。

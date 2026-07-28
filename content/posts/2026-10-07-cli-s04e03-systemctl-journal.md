@@ -245,4 +245,81 @@ $ curl -s localhost:3000/menu
 
 ---
 
-*本话属于连载《从零开始玩命令行》。全卷地图见 [/cli](/cli);前作《从零开始学 Java》见 [/java](/java)。*
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,接下来3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. `systemctl` 是哪个初始化系统的管理命令?
+- A) SysV init　B) Upstart　C) systemd　D) launchd
+
+2. `systemctl start nginx` 和 `systemctl enable nginx` 的区别是什么?
+- A) 完全相同　B) `start`=立即启动服务(本次运行),`enable`=设置开机自启动(下次启动生效),两者独立操作　C) `enable` 是 `start` 的别名　D) `start` 包含 `enable` 的功能
+
+3. `journalctl -u nginx` 的作用是什么?
+- A) 重启 nginx 服务　B) 查看 nginx 服务单元(unit)的所有日志　C) 更新 nginx 单元配置　D) 停止 nginx 服务
+
+4. `systemctl daemon-reload` 什么时候需要执行?
+- A) 每次启动系统时　B) 修改了 systemd 单元文件(`.service`/`.timer` 等)后,让 systemd 重新加载配置　C) 每次安装新软件后　D) 服务崩溃后
+
+5. `systemctl status nginx` 输出中 `Active: active (running)` 和 `Loaded: loaded (/lib/systemd/system/nginx.service; enabled)` 分别表示什么?
+- A) 两者含义相同　B) Active 表示服务当前是否在运行;Loaded+enabled 表示单元文件是否加载且设为开机启动　C) Active 表示开机启动状态,Loaded 表示内存占用　D) Active 表示网络连接,Loaded 表示 CPU 负载
+
+6. `journalctl -f` 的 `-f` 等价于什么功能?
+- A) 强制(force)　B) follow,持续追踪最新日志输出(类似 `tail -f`)　C) 全文搜索(full-text)　D) 过滤(filter)
+
+7. 一条服务单元文件(`.service`)的三要素是什么?
+- A) Name、Path、Owner　B) Description、ExecStart、Type　C) Unit、Service、Install(三段落)　D) Start、Stop、Restart
+
+8. `systemctl mask nginx` 和 `systemctl disable nginx` 的区别是什么?
+- A) 完全一样　B) `disable` 取消开机自启(但可以被手动或依赖启动);`mask` 彻底禁止启动(即使手动 start 也不行,单元文件被链接到 /dev/null)　C) `mask` 是 `disable` 的别名　D) `mask` 会删除服务
+
+9. `journalctl --since "2026-09-20" --until "2026-09-21"` 的作用?
+- A) 删除指定日期的日志　B) 查看 2026-09-20 这一天的所有日志　C) 备份日志　D) 统计日志行数
+
+10. 以下哪个是 systemd 单元文件的正确存放位置(用户自定义)?
+- A) `/usr/bin/`　B) `/etc/systemd/system/`　C) `/var/log/`　D) `/home/user/`
+
+### 解答题(5 道)
+
+**Q1 概念:** 解释 systemd 中"单元文件"(Unit)的概念。`.service`、`.timer`、`.socket` 三类单元各司何职?
+
+**Q2 解释:** 为什么 `systemctl start` 和 `systemctl enable` 是两件独立的事?举例说明一个需要 start 但不需要 enable 的场景。
+
+**Q3 操作:** 写出为咖啡站 Java 应用编写 systemd 单元文件并部署的完整步骤:创建 `.service` 文件→重载配置→启动→设置开机自启→验证。
+
+**Q4 排障:** 菜菜修改了 `/etc/systemd/system/coffee.service` 中的 `ExecStart`,执行 `systemctl restart coffee` 后服务仍然按旧配置运行。诊断原因并给出正确操作。
+
+**Q5 综合设计:** 咖啡站有 3 个微服务(order-service、payment-service、user-service),每个都需要:①systemd 管理 ②崩溃自动重启(Restart=on-failure) ③日志集中查看 ④依赖顺序(user-service 先于 order-service,order-service 先于 payment-service)。设计完整的 systemd 配置和运维命令集。
+
+> [!答案]
+> **1-C** `systemctl` 是 systemd 系统的控制工具。**举一反三:**systemd 是现代 Linux 发行版(Ubuntu 15.04+、CentOS 7+、Debian 8+)的标准初始化系统,替代了旧的 SysV init(`service` 命令)和 Upstart。🪟 Windows 的服务管理用 `services.msc`(GUI)或 `sc`/`Get-Service`(PowerShell)。
+>
+> **2-B** `start`=立即启动(本次开机);`enable`=设置开机自动启动(下次及以后)。两者独立:**需要同时执行两者**才能在"立即启动"同时"开机自启"。**举一反三:**可以 start 但不 enable(临时启动测试);可以 enable 但不 start(配置好但先不运行,下次重启生效)。🪟 Windows 中 `Start-Service` 和 `Set-Service -StartupType Automatic` 是类似的概念。
+>
+> **3-B** `journalctl -u nginx` 过滤显示指定 systemd 单元(unit)的日志。**举一反三:**`journalctl -u nginx -f` 跟踪 nginx 日志;`journalctl -u nginx --since today` 查看今天的日志;`journalctl -u nginx -p err` 只查看错误级别及以上日志。
+>
+> **4-B** 修改任何 systemd 单元文件后,必须运行 `systemctl daemon-reload` 让 systemd 重新读取配置。**举一反三:**这是最常见的 systemd 忘记步骤——改了 `.service` 文件直接 restart,发现没生效。正确的三步:`sudo systemctl daemon-reload`→`sudo systemctl restart <service>`→`sudo systemctl status <service>`。
+>
+> **5-B** `Active`=当前服务运行状态(active/running=运行中,inactive=已停止,failed=启动失败)。`Loaded`=单元文件是否被 systemd 加载,括号内显示文件路径和开机启动状态(enabled/disabled/static)。**举一反三:**`systemctl is-active nginx`(返回 active/inactive),`systemctl is-enabled nginx`(返回 enabled/disabled)——这两个子命令适合在脚本中使用。
+>
+> **6-B** `-f`=follow,等价于 `tail -f`,显示完最后几行后不退出,持续显示新的日志条目。按 `Ctrl+C` 退出。**举一反三:**`journalctl -f -u nginx` 同时跟踪指定服务的日志;`journalctl -f -n 100` 先显示最后 100 行再跟踪。
+>
+> **7-C** systemd 单元文件有三段结构:`[Unit]`(描述和依赖关系),`[Service]`(服务自身的启动/停止/重启行为),`[Install]`(定义如何"安装"到系统中,如哪些 target 下启用)。**举一反三:**`[Unit]` 中 `After=network.target` 表示网络可用后启动;`Wants=` 表示弱依赖(失败不影响自身);`Requires=` 表示强依赖(依赖失败则自身也失败)。
+>
+> **8-B** `disable`=取消开机自启,但服务仍然可以被手动 `start` 或被其他服务依赖而启动。`mask`=将单元文件符号链接到 `/dev/null`,服务被彻底"封禁",即使手动 `start` 也不行。**举一反三:**`systemctl unmask` 解封;`mask` 通常用于"这个服务绝对不能在系统上运行"的场景(如禁掉不安全的 telnet 服务)。
+>
+> **9-B** `--since` 和 `--until` 组合指定时间窗口。**举一反三:**时间格式灵活:`--since "1 hour ago"`,`--since yesterday`,`--since "2026-09-20 14:00:00"`。`journalctl --since "2026-09-20" --until "2026-09-21"` 显示一天内的所有日志。
+>
+> **10-B** `/etc/systemd/system/` 是管理员自定义单元文件的标准位置。**举一反三:**`/lib/systemd/system/`=包管理器安装的单元文件(如 nginx.service);`/etc/systemd/system/`=本地管理员自定义(优先于 /lib 的同名文件);`/run/systemd/system/`=运行时临时单文件。`systemctl cat nginx` 可以查看实际的单元文件内容。
+>
+> **Q1** 单元文件(Unit)是 systemd 管理的**万物**(服务、定时器、socket、挂载点等)的配置描述文件。三类:①`.service`=服务单元,定义如何启动/停止一个后台服务(最常用)。②`.timer`=定时器单元,替代 cron 任务(精确到秒级、支持随机延迟、可与服务单元关联)。③`.socket`=套接字激活单元,监听端口/文件,有连接时自动启动关联的服务(实现"按需启动",不活动时节省资源)。**核心思想:**一切都抽象为"单元",用统一的命令(`systemctl`)和格式管理——而不像旧时代 `service`、`crontab`、`inetd` 三套命令。
+>
+> **Q2** start 和 enable 是独立的,因为"立即运行"和"开机启动"是两个不同的管理意图。**不需要 enable 的场景:**①临时启动一个测试服务,测试完就停 ②手动维护时启动数据库备份脚本,不需要下次开机自启 ③用 systemd timer 触发的一次性任务(定时器会启动服务,不需要开机自启)。**正确配置新服务:**`systemctl enable --now service_name`(--now 同时 start+enable 一步完成)。
+>
+> **Q3** 完整步骤:①创建单元文件:`sudo vim /etc/systemd/system/coffee.service`,内容包含 `[Unit]` 描述/依赖、`[Service]` Type/ExecStart/User/Restart、`[Install]` WantedBy=multi-user.target ②`sudo systemctl daemon-reload`(重载配置) ③`sudo systemctl start coffee`(启动) ④`sudo systemctl enable coffee`(设置开机自启) ⑤验证:`sudo systemctl status coffee`(状态)、`sudo systemctl is-active coffee`(运行中?)、`sudo journalctl -u coffee -f`(查看日志输出)。**举一反三:**`systemctl cat coffee` 查看已加载的单元文件内容;`systemctl edit coffee --full` 编辑;`systemctl show coffee` 显示所有属性。
+>
+> **Q4** 原因:**忘记 `daemon-reload`**。修改单元文件后,systemd 不会自动重新读取文件,它内部缓存了旧版本。`restart` 是根据缓存的旧配置重启服务。**正确操作:**`sudo systemctl daemon-reload`→`sudo systemctl restart coffee`→`sudo systemctl status coffee`(确认配置生效)。**举一反三:**也可以用 `systemctl reenable coffee`(重新创建符号链接)如果需要更新 Install 段。养成习惯:改 unit file → 想三件事(reload → restart → status)。
+>
+> **Q5** 设计:①`user-service.service` 设 `Before=order-service.service` ②`order-service.service` 设 `After=user-service.service` 和 `Before=payment-service.service` ③`payment-service.service` 设 `After=order-service.service` ④所有服务都设:`Restart=on-failure`(崩溃自动重启)、`RestartSec=5s`(重启间隔)、`StandardOutput=journal` 和 `StandardError=journal`(标准输出和错误都进 journal) ⑤日志查看:`journalctl -u user-service -u order-service -u payment-service -f`(同时查看三个服务的实时日志) ⑥状态检查:`systemctl status user-service order-service payment-service`(一次查看多个服务状态)。**举一反三:**可以用 `systemctl list-dependencies order-service.service` 查看服务的依赖树;创建 systemd target(如 `coffee.target`)统一管理三个微服务:`Wants=` 关联三个服务,`systemctl start coffee.target` 一键启动所有。

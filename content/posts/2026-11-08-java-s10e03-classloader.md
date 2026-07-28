@@ -259,4 +259,127 @@ class DiscountConfigTest {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,中间3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. 类加载五阶段中,给静态变量分配内存并赋**零值**的是哪个阶段?
+- A) 加载
+- B) 验证
+- C) 准备
+- D) 初始化
+
+2. JDK 9+ 的三层类加载器从上到下依次是?
+- A) Application → Platform → Bootstrap
+- B) Bootstrap → Platform → Application
+- C) Bootstrap → Extension → Application
+- D) Platform → Bootstrap → Application
+
+3. `String.class.getClassLoader()` 返回 null,原因是?
+- A) String 类尚未加载
+- B) String 类由 Bootstrap ClassLoader 加载,它在 JVM 内部用 C/C++ 实现,没有对应的 Java 对象
+- C) String 是抽象类,不需要类加载器
+- D) getClassLoader() 对 JDK 核心类永远返回 null
+
+4. 双亲委派机制中,一个类加载请求的传递路径是?
+- A) 当前加载器先自己加载,失败再向上请求
+- B) 直接交给 Bootstrap,不再返回
+- C) 先向上级委派,一路到 Bootstrap;上级都不加载,才自己加载
+- D) 同时交给所有加载器,谁先完成谁返回
+
+5. `static int x = 8` 在**准备阶段**的值是?
+- A) 8
+- B) 0
+- C) null
+- D) 未定义
+
+6. 以下哪个场景**不会**触发类的初始化?
+- A) `new OrderService()`
+- B) `Class.forName("OrderService")`
+- C) 访问类的 `static final String BRAND = "豆豆咖啡站"`(编译期常量)
+- D) 调用类的静态方法
+
+7. `ClassNotFoundException` 与 `NoClassDefFoundError` 的关键区别是?
+- A) 没区别,只是版本不同
+- B) CNFE 是「名单上没这个人」(找不到字节码);NCDFE 是「人来过,初始化挂了」(类存在但加载失败)
+- C) CNFE 只在编译期出现,NCDFE 在运行期
+- D) CNFE 是 Error,NCDFE 是 Exception
+
+8. Tomcat 打破双亲委派的正确方式是?
+- A) 所有 webapp 共享一个类加载器
+- B) 每个 webapp 一个独立加载器,加载顺序是**先自己后父**(核心类除外)
+- C) 把所有 webapp 的类都交给 Bootstrap 加载
+- D) 完全不用双亲委派,随机加载
+
+9. 阿零的 `DiscountConfig` 静态块读文件失败后,第二次使用该类时直接抛 `NoClassDefFoundError`。此时类的状态是?
+- A) 类已正常加载,只是方法调用出错
+- B) 类被标记为**报废(Erroneous)**,JVM 不会再尝试初始化它
+- C) 类被卸载,需要重新加载
+- D) 类加载器会自动重试初始化
+
+10. 两个不同的类加载器各加载一份同名的 `User` 类(`com.example.User`)。用加载器 A 加载的 `User` 实例,通过加载器 B 的代码做 `instanceof User` 检查,结果是?
+- A) true
+- B) false
+- C) 编译错误
+- D) 抛出 `ClassCastException`
+
+### 解答题(5 道)
+
+**Q1(概念)** 画出类加载五阶段的流程图,并标注每个阶段的职责。特别说明为什么「准备阶段静态变量先给零值」这个设计是必要的。
+
+**Q2(解释)** JDBC 驱动加载(SPI 机制)是如何打破双亲委派的?为什么必须打破?
+
+**Q3(场景)** 某应用需要在不重启的情况下,将修改后的 `.class` 文件替换掉内存中已加载的类。请设计热部署的核心思路,并说明为什么必须换一个新的类加载器。
+
+**Q4(分析)** 分析以下代码中 `Roaster.BRAND` 和 `Roaster.slogan` 的访问分别是否触发类初始化,以及为什么。
+```java
+class Roaster {
+    static { System.out.println("Roaster 初始化了"); }
+    static final String BRAND = "豆豆咖啡站";
+    static String slogan = "深烘不加糖";
+}
+```
+
+**Q5(设计)** 你需要实现一个简单的「插件热加载」框架:指定一个目录,扫描其中的 `.jar` 文件,每个 jar 中有一个实现了 `Plugin` 接口的类,要求插件可随时加载/卸载。请设计核心架构,说明类加载器的使用策略。
+
+> [!答案]
+> **选择题**
+> 1-C。准备阶段分配内存并赋零值;初始化阶段才执行 `<clinit>`(静态赋值+静态块)。★举一反三:`static int x = 8` 在准备阶段是 0,初始化阶段才变 8——面试高频追问点。
+>
+> 2-B。Bootstrap(核心模块) → Platform(平台模块) → Application(类路径上的应用类)。★举一反三:JDK 9 前是 Bootstrap → Extension → Application;Extension 被 Platform 取代。
+>
+> 3-B。String 在 `java.base` 模块中,归 Bootstrap 加载。Bootstrap 用 C/C++ 实现,Java 层查询返回 null。★举一反三:`getClassLoader()` 返回 null 表示「被 Bootstrap 加载的」,不是「没加载」。
+>
+> 4-C。双亲委派的核心是「先向上问一圈」:请求从当前加载器层层上递,到 Bootstrap 为止,上级都不管才自己加载。★举一反三:这个「先父后子」的规矩从 JDK 1.2 沿用至今。
+>
+> 5-B。准备阶段只赋零值:引用→null、int→0、boolean→false。★举一反三:唯一例外是编译期常量(`static final int X = 8`),在准备阶段直接赋终值。
+>
+> 6-C。编译期常量在编译阶段就内联到调用方的字节码中,访问它不触发类初始化。★举一反三:把 `static final` 改成 `static`(去掉 final),就触发初始化了——和类加载的「主动引用」定义一致。
+>
+> 7-B。CNFE 是受检异常:「类名对应的 .class 文件找不到」;NCDFE 是 Error:「类找到了,但初始化阶段失败了,类被标记为报废」。★举一反三:见到 NCDFE,别找 jar,翻第一次的 `ExceptionInInitializerError` 日志。
+>
+> 8-B。Tomcat 每个 webapp 独立 ClassLoader,加载顺序「先己后父」(核心类如 java.* 除外)——各应用同名不同版本的库互不干扰。★举一反三:这是「打破双亲委派」的教科书案例,SPI 和热部署是另外两个。
+>
+> 9-B。静态块抛异常后,类被标记为 Erroneous(报废),之后任何对该类的使用都直接抛 NCDFE,不会再触发初始化。★举一反三:所以静态块里读配置/连网络要极端谨慎,做好兜底。
+>
+> 10-B。类的唯一标识 = 加载器 + 全限定名。两个加载器各装一份同名类,JVM 视它们为两个不同的类型,`instanceof` 判 false,强转抛 `ClassCastException`。★举一反三:Tomcat 跨 webapp 传对象翻车,大多是这个原因。
+>
+> **解答题**
+>
+> **Q1** 流程:加载(读字节流→Class 对象)→验证(检查魔数 CAFEBABE/版本/字节码合法性)→准备(分配内存+赋零值)→解析(符号引用→直接引用)→初始化(执行 `<clinit>`:静态赋值+静态块按顺序跑)。「准备阶段先赋零值」的设计必要性:①内存安全性——任何时刻读取静态字段都不会是未初始化的垃圾值;②顺序保证——所有静态变量在初始化代码执行前已有确定初始态,避免 `if (flag)` 读到不确定值。★举一反三:这个设计也意味着不能依赖「静态变量的赋值顺序跨过零值阶段」,`static int a = b + 1` 中如果 b 在准备阶段是 0,这里是合法的。
+>
+> **Q2** JDBC 的驱动接口(`java.sql.Driver`)在 `java.base` 模块(Bootstrap 加载),而具体驱动(如 `com.mysql.cj.jdbc.Driver`)在类路径上(Application 加载)。按双亲委派,Bootstrap 的儿子找不到 Bootstrap 的孙子——Bootstrap 加载的 `DriverManager` 反过来需要加载「下层」的驱动。解决方案:使用**线程上下文类加载器**(Thread Context ClassLoader)——`DriverManager` 通过 `Thread.currentThread().getContextClassLoader()` 拿到 Application ClassLoader,用后者加载驱动类。这就是「父加载器向子加载器借梯子」,SPI 的经典打破模式。★举一反三:这种打破不是设计缺陷,而是「上层接口需要加载下层实现」时必然的妥协。
+>
+> **Q3** 热部署核心思路:①监听 class 文件变化;②变化时创建**全新的 ClassLoader 实例**,用新加载器重新加载所有类;③旧类随旧加载器一起被 GC 回收;④业务请求路由到新加载器加载的类实例。必须换新加载器的原因:JVM 规范规定,同一个类加载器不能重复加载同一个类(会抛异常),且已加载的类无法被卸载——唯一卸载的方式是它所属的 ClassLoader 整个被回收。★举一反三:这就是 Spring DevTools 和 JRebel 的工作方式——重启快是因为只换了 ClassLoader,没重启 JVM。
+>
+> **Q4** `Roaster.BRAND` 不触发初始化:它是 `static final String` 且值是编译期常量,在编译阶段就内联到调用方字节码中(`ldc "豆豆咖啡站"`),不经过 `Roaster` 类。`Roaster.slogan` 触发初始化:它是 `static` 变量但不是编译期常量,访问它属于「主动引用」,先执行 `<clinit>`(打印"Roaster 初始化了"),再返回 `slogan` 的值。★举一反三:这个区别是面试中「类初始化时机」的经典追问——`static final` 的对象引用(如 `new Object()`)也不是编译期常量,会触发初始化!
+>
+> **Q5** 插件热加载框架设计:①定义 `Plugin` 接口(`void start()`/`void stop()`)；②`PluginClassLoader` 继承 `URLClassLoader`,每个插件一个实例;③扫描目录下 `.jar`,用独立的 `PluginClassLoader` 加载其中的 `Plugin` 实现类;④插件间隔离:不同插件用不同 ClassLoader,同名类互不冲突;⑤卸载:关闭对 ClassLoader 及其加载的类的所有引用,让 GC 回收——关键是不能有任何「根引用」指向已卸载插件的类/对象。⑥插件通信:通过 `Plugin` 接口或共享的「宿主 API」交互,避免直接传递插件内部的类(会引发 ClassCastException)。★举一反三:OSGi、Eclipse 的插件体系、Tomcat 的 webapp 隔离,都是这个思路的不同成熟度实现。
+>
+> ---
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

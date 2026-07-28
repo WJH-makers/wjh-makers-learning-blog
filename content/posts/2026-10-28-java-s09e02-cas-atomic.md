@@ -257,6 +257,100 @@ class HotSalesBoard {
 
 > 下一话《synchronized 内幕与锁升级兴衰》:锁的从来不是代码,是**对象**——对象头里的 Mark Word 藏着锁的全部秘密;八股背熟的「偏向锁」,在现代 JDK 里已经进了博物馆。阿零还会用两个看似无关的锁对象,锁出一场诡异的连环卡顿。
 
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,中间3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. CAS 操作依赖的三个要素是什么?
+- A) 内存地址、期望值、新值　　B) 内存值 V、期望值 E、新值 N　　C) 锁对象、线程 ID、时间戳　　D) 堆地址、栈地址、程序计数器
+
+2. 在 x86 平台上,CAS 对应的底层指令是?
+- A) `test-and-set`　　B) `lock cmpxchg`　　C) `mfence`　　D) `lock xadd`
+
+3. `AtomicInteger.incrementAndGet()` 内部,当 `compareAndSet` 失败后,下一次循环拿到的 expect 值来自哪里?
+- A) 从主内存重新读 `get()` 获取当前值　　B) 从失败时 `compareAndSet` 自动写入的寄存器读取　　C) 从 ThreadLocal 缓存中恢复上次的 expect　　D) 直接从上次 CAS 失败的返回码推算
+
+4. 下列代码片段中,哪个在高并发下最典型地面临 ABA 问题?
+- A) `AtomicInteger` 做递增计数器　　B) `AtomicReference<Node>` 实现无锁栈 pop,Node 对象被 GC 回收后又恰被重新分配为同一引用值　　C) `LongAdder.increment()` 做 QPS 统计　　D) `AtomicBoolean.compareAndSet(false, true)` 做一次性开关
+
+5. `LongAdder` 相比 `AtomicLong` 在高竞争下吞吐量显著更高的根本原因是?
+- A) 使用了更快的 CPU 指令集　　B) 内部用 `Cell[]` 数组将热点分散到多个内存位置,各线程落在不同 Cell 上独立 CAS,最后 sum 汇总　　C) 完全消除了 CAS 自旋,纯 wait-free 实现　　D) 用 `synchronized` 替代 CAS,减少了总线风暴
+
+6. 对于以下哪个场景,`AtomicStampedReference` 是最适合的选择?
+- A) 统计 CDN 带宽使用量,允许 5 秒延迟　　B) 无锁栈的 pop 操作——需要保证「弹出节点 A→压入新节点 B→又压回 A」这种中间变化能被检测到　　C) 用 `AtomicLong` 做分布式 ID 生成器　　D) 用 `AtomicBoolean` 做集群选主标记
+
+7. 下面关于 `AtomicInteger` 的使用,哪一段存在最典型的 check-then-act 竞态窗口?(多线程环境)
+- A) `atomic.getAndIncrement()`　　B) `if (atomic.get() > 0) { atomic.decrementAndGet(); }`　　C) `atomic.compareAndSet(5, 10)`　　D) `atomic.accumulateAndGet(3, Integer::sum)`
+
+8. 关于 `LongAdder.sum()` 方法的正确描述是?
+- A) 调用时内部会加全局锁,返回值是调用瞬间的精确值　　B) 遍历 `Cell[]` 累加时不加锁,返回值是某个近似快照,因为其他线程可能同时在写入 Cell　　C) sum() 只能由创建 LongAdder 的线程调用　　D) sum() 返回的是最近一个完整秒内的聚合值
+
+9. `AtomicInteger` 初始值为 0,线程 A 和 B 同时各执行一次 `getAndIncrement()`,以下哪组返回结果是不可能的?
+- A) A 得到 0,B 得到 1　　B) A 得到 1,B 得到 0　　C) A 得到 0,B 得到 0　　D) A 得到 0 和 B 得到 1 都是可能的,取决于调度
+
+10. 某服务需要统计过去 60 秒的请求量以计算实时 QPS,极高并发(>10 万 TPS),误差允许 ±2%。从以下方案中选一个最优的:
+- A) `AtomicLong.incrementAndGet()` + 定时任务每分钟读一次　　B) `synchronized` 计数器 + 定时 reset　　C) `LongAdder.increment()` + 每秒 `sumThenReset()` 采样写入滑动窗口　　D) 每个线程维护自己的局部计数器,定时汇总到全局
+
+### 解答题(5 道)
+
+1. 用自己的话解释:CAS 中的 "Compare" 和 "Swap" 各做了什么,为什么一个 CPU 指令就能实现无锁的原子更新?
+
+2. `AtomicInteger` 有 `getAndIncrement()` 和 `incrementAndGet()`,它们在底层 CAS 循环中分别返回什么值?两者的循环终止条件是否相同?
+
+3. 某「秒杀已抢」计数器使用 `AtomicInteger`,大促 QPS 上到 5 万后 CPU 飙高、吞吐骤降。请分析根因,并说明为什么换 `LongAdder` 能改善——重点阐述 `Cell[]` 是如何「分散热点」的。
+
+4. 假设你用 `AtomicReference<Node>` 实现了一个无锁栈:push 时 new Node,node.next=栈顶,CAS 更新栈顶;pop 时 CAS 把栈顶改为栈顶.next。请分析:若 Node 的内存被回收后又被新分配得到相同引用,会触发什么 Bug?它本质上属于哪类并发问题?`AtomicStampedReference` 为什么会是解药?
+
+5. 你的项目需要以下三种计数器,请逐一选型(从 `AtomicInteger`/`LongAdder`/`AtomicBoolean`/`AtomicReference`/`AtomicStampedReference` 中选)并写出 1 句话选型理由:① 商品库存扣减,需要精确,并发量约每秒 500 次;② 全站请求 QPS 统计,并发量超 10 万 TPS,展示可用近似值;③「是否已预热」一次性开关。
+
+> [!答案]
+> **1-1** B(CAS 三要素:内存值 V、期望值 E、新值 N——Compare 比较 V 与 E,Swap 在 V==E 时把内存写为 N)  
+> **举一反三**:把 CAS 理解为「带条件的 set」——不是「先读再改」,而是「读和改合并成一个原子操作」,这解释了为什么它能做无锁并发的基础件。
+>
+> **1-2** B(x86 上 `lock cmpxchg` 是 CAS 的直接指令映射,`lock` 前缀锁定总线/缓存行保证原子性)  
+> **举一反三**:`lock cmpxchg` 不仅完成比较交换,还自带内存屏障效果——这也是为什么 `AtomicInteger` 的 get/set 天然具备类似 volatile 的可见性语义。
+>
+> **1-3** A(循环内 `do { v = get(); } while (!compareAndSet(v, v+1))`——每次 CAS 失败后用 `get()` 重新读取当前内存值作为新一轮 expect)  
+> **举一反三**:看 OpenJDK 源码就会发现,循环体第一部分一定是 `get()` 拉取最新值,不是沿用上次的旧 expect。这保证了自旋总能基于最新状态重试。
+>
+> **1-4** B(无锁栈 pop 场景是 ABA 的教科书案例——引用值可能在「弹出去又被塞回来」之后重现,但中间发生过修改,单纯的引用等值判断无法察觉)  
+> **举一反三**:ABA 的必要条件:① 值能「绕一圈回到原点」② 中间发生的操作是你关心的。递增计数器值只涨不跌,天然免疫 ABA;引用型数据结构(栈/队列/链表)在内存复用场景下最容易中招。
+>
+> **1-5** B(`Cell[]` 分散热点是 LongAdder 的核心设计——每个 Cell 独立做 CAS,线程通过 hash 落到不同 Cell,从「多对一」变成「多对多」,冲突率指数级下降)  
+> **举一反三**:这个思想和 ConcurrentHashMap JDK7 的分段锁、以及 CPU 多级缓存的多 bank 设计同出一辙——「把全局热点拆成多个局部热点」是高性能系统设计的通用范式。
+>
+> **1-6** B(ABA 场景恰是 `AtomicStampedReference` 的唯一使命——在引用比较之外增加版本号比较,每次成功更新版本号+1)  
+> **举一反三**:`AtomicMarkableReference` 是二元标记版本(比如「已逻辑删除」标记),不需要递增版本号的场景用它更轻量。选型口诀:需要检测「变过几次」用 Stamped,只需要知道「是否被改过」用 Markable。
+>
+> **1-7** B(`get()` 检查值和 `decrementAndGet()` 修改值之间是两步——如果有线程在这两步之间把值从 1 改成 0,递减就多执行了一次)  
+> **举一反三**:这正是 #79 超卖事故的病根之一——原子类保证单个操作原子,但两个原子操作拼在一起,中间就有窗口。复合原子操作要么用 `compareAndSet` 循环,要么让锁罩住整个复合。
+>
+> **1-8** B(近似快照——`sum()` 遍历 `Cell[]` 不加锁,其他线程可能正在写某个 Cell,返回值不能视为瞬时精确值)  
+> **举一反三**:`LongAdder` 的设计取舍:以精确性换吞吐。如果需要精确瞬时值,用 `AtomicLong`;如果需要高频累加后再清零,用 `sumThenReset()`;如果只关心趋势和量级,直接用 `sum()`。
+>
+> **1-9** C(A 得到 0,B 也得到 0 是不可能的——`getAndIncrement()` 保证每个返回值唯一递增)  
+> **举一反三**:即使用 1000 个线程并发调 `getAndIncrement()`,返回的 1000 个值必然是 0 到 999 的一个排列。这是原子类的最根本保障:每个操作严格串行化,不丢不重。
+>
+> **1-10** C(`LongAdder` 分散写入 + 每秒 `sumThenReset()` 做滚动窗口聚合,是生产环境 QPS 统计的标准范式)  
+> **举一反三**:该方案在 Netflix、阿里的实时监控中都有类似用法。要点:写入走 `LongAdder.increment()` (低延迟),读取走定时采样 (低频),读写分离互不干扰。
+>
+> **2-1** "Compare"是比较内存当前值 V 与期望值 E:若 V==E,说明从上次读到现在的期间内没有其他线程修改过这个位置;"Swap"是把新值 N 写入内存。整个比较+交换由一个 CPU 指令(`lock cmpxchg`)原子完成——硬件保证指令执行期间总线/缓存行被锁定,其他核心无法插入操作。它之所以叫「无锁」,是指没有操作系统级别的锁(不阻塞线程、不切换上下文),失败后由软件自旋重试,本质是一种乐观并发策略。  
+> **举一反三**:用「便利贴改数字」类比:你看到门上贴的是 3,写一张「改成 5」的便利贴;但贴上去的瞬间如果门上还是 3 则换成功,如果已被改成 4 便利贴自动脱落,你再看一眼当前数字,重新写一张便利贴。
+>
+> **2-2** `getAndIncrement()` 返回旧值(自增前的值),底层: `do { v = get(); } while (!compareAndSet(v, v+1)); return v;`。`incrementAndGet()` 返回新值,底层: `do { v = get(); } while (!compareAndSet(v, v+1)); return v+1;`。两者循环终止条件完全相同——都是 `compareAndSet` 成功时跳出。区别仅在于最终 `return` 的表达式。  
+> **举一反三**:两个方法生成的 CPU 指令几乎一样。面试常问场景选择——「先拿号再办事」(取号排队)用 `getAndIncrement`,「想知道当前是多少号」用 `incrementAndGet`。但也别忘了,最简单的 `getAndAdd` 可以一步到位传任意增量。
+>
+> **2-3** 根因:所有线程竞争同一个 `AtomicInteger` 底层的内存地址。每次 CAS 失败后自旋重试,在高并发下大量 CPU 周期消耗在空转上;同时缓存一致性协议(MESI)导致这个缓存行在多个 CPU 核之间反复传输(缓存乒乓/bus-snooping),内存总线成为瓶颈。`LongAdder` 的改善:内部维护一个 `Cell[]` 数组,每个 Cell 是一个独立的 `long` 值+CAS 操作。线程通过 `ThreadLocalRandom.getProbe()` 哈希到某个 Cell,修改只在局部 Cell 的缓存行上进行,不同线程大概率落到不同 Cell,不存在竞争。只有极少数冲突情况(两个线程哈希到同一 Cell)需要自旋。`sum()` 遍历所有 Cell 累加,不要求每次写入都全局可见。代价是 sum 返回值是近似快照,恰好满足「展示用计数器」对精度的宽松要求。  
+> **举一反三**:这就是「分散热点,事后汇总」的思想——和 MapReduce、分库分表是同一个原理在不同层面的体现。关键判断:能不能接受最终一致性。
+>
+> **2-4** 场景:线程 A 读到栈顶 head=X,准备 CAS 改 head 为 X.next;在此期间:(a)线程 B pop 了 X,(b)线程 B 又 pop 了 Y,(c)线程 C 新 push 了一个节点 Z——但不幸 Z 刚好复用了 X 被 GC 回收后那块内存(引用值相同)。线程 A 执行 CAS:当前 head 引用==Z(地址碰巧等于旧 X 的地址),CAS「误以为」什么都没变,将 head 更新为 X.next(此时可能是无效指针)——造成链表断裂或丢数据。这本质是 ABA 问题:值回来了,但状态变了。`AtomicStampedReference` 的解法:每次 CAS 不仅比较引用值,还比较版本号(stamp)。每次成功的 CAS 都递增 stamp,即使引用值相同,版本号不同也会让 CAS 失败。  
+> **举一反三**:ABA 的本质是「值相等 ≠ 状态未变」。数据库乐观锁的 version 字段、分布式系统的 vector clock、甚至 Git 的 commit hash,全都是在不同层面解决同一类问题:如何检测「中间发生过变化」。
+>
+> **2-5** ① 库存扣减:`AtomicInteger`——需要精确值,每秒 500 次并发属于中等竞争,CAS 自旋开销可接受,且配合 `compareAndSet` 循环可实现「检查库存>扣减」的复合原子操作。② QPS 统计:`LongAdder`——10 万 TPS 级别的高竞争写入,必须分散热点,近似值满足展示需求。③ 预热开关:`AtomicBoolean`——语义最清晰,`compareAndSet(false, true)` 天然是一次性开关,不需要版本号,也不存在 ABA 风险。  
+> **举一反三**:计数器选型决策树——第一步「是否要求精确瞬时值」划定 AtomicLong vs LongAdder,第二步「是否有复合操作」决定是否配合锁或 CAS 循环,第三步「是否有回退/重复」判断是否需要 Stamped。三步走完,95% 的场景都能直接落子。
+
 ---
 
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

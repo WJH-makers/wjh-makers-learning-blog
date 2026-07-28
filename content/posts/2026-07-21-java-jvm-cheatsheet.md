@@ -1,16 +1,18 @@
 ---
-title: "Java JVM + 排障 + Spring Maven 命令速查"
+title: "Java JVM 排障 + Maven/Gradle 命令速查"
 date: 2026-07-21
-summary: "JVM 排查三板斧 CPU OOM 排障 Spring Boot Maven Gradle 速查表"
-tags: [CPU, Gradle, JDK, JVM, Java, Maven, OOM, Spring, Vim, systemctl]
+summary: "JVM 内存结构 · GC 日志读法 · jcmd/jstack/jmap/jstat 排查三板斧 · OOM 与 CPU 飙高套路 · JFR 飞行记录仪 · 常用启动参数,配套 Maven/Gradle 构建速查。基线 JDK 25 / Ubuntu 24.04。"
+tags: [JVM, JDK, Java, GC, OOM, JFR, jstack, jmap, Maven, Gradle, systemctl, Vim]
 ---
 
 
-# Java JVM + 排障 + Spring Maven 命令速查
+# Java JVM 排障 + Maven/Gradle 命令速查
 
-> 从[全栈指令速查大全](/posts/2026-07-15-command-reference-cheatsheet)拆分。
+> 从[全栈指令速查大全](/posts/2026-07-15-command-reference-cheatsheet)拆分。本篇聚焦 **JVM 线上排障**——内存结构、GC 日志读法、诊断工具（jcmd/jstack/jmap/jstat）、OOM 与 CPU 飙高套路、JFR 飞行记录仪、常用启动参数,并保留 Maven/Gradle 构建与常用运维命令。基线:JDK 25 / Ubuntu 24.04 / PowerShell 7。
 
-## Maven · S 极高频
+## 一、Maven 构建与依赖
+
+### Maven · S 极高频
 
 | 难度 | 命令 | 作用 | 阶段 |
 |------|------|------|------|

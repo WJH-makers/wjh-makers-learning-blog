@@ -264,4 +264,128 @@ db 的 `PORTS` 一栏只有 `27017/tcp`、没有箭头——**没临街**,正合
 
 ---
 
-*本话属于连载《从零开始玩命令行》。全卷地图见 [/cli](/cli);前作《从零开始学 Java》见 [/java](/java)。*
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,接下来3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. Docker 镜像(Image)和容器(Container)的关系,最恰当的类比是什么?
+- A) 文件与文件夹　B) 类(Class)与实例(Instance):镜像是只读模板,容器是镜像的运行实例　C) 压缩包与解压后的文件　D) 代码与编译器
+
+2. `docker run -d -p 8080:80 --name web nginx` 中 `-d`、`-p`、`--name` 分别代表什么?
+- A) daemon(后台运行)、port(端口映射 主机:容器)、name(容器名称)　B) delete、password、name　C) directory、process、namespace　D) detach、path、node
+
+3. `docker ps` 默认显示什么?
+- A) 所有容器(含已停止的)　B) 正在运行的容器列表　C) 所有镜像　D) 容器日志
+
+4. `docker logs -f web` 中 `-f` 的作用是?
+- A) 强制(force)　B) follow,持续跟踪输出(类似 tail -f),实时查看新日志　C) 过滤(filter)　D) 格式化(format)
+
+5. `docker exec -it web bash` 的作用是什么?
+- A) 停止名为 web 的容器　B) 在正在运行的 `web` 容器内**打开一个交互式 bash shell**　C) 创建新容器并命名为 bash　D) 查看容器日志
+
+6. `docker-compose up -d` 和 `docker-compose down` 是一对什么操作?
+- A) 无关联　B) `up -d` 以守护进程模式启动 compose 定义的所有服务,`down` 停止并移除所有相关容器/网络/卷　C) `up` 是部署,`down` 是下载镜像　D) 两者等价,只是语法不同
+
+7. 容器停止后数据丢失,正确的数据持久化方式是什么?
+- A) 把数据写进镜像　B) 使用 Docker Volume(卷)或 bind mount(绑定挂载)将数据存储在主机的持久化目录中　C) 容器内的数据永远不会丢失　D) 定期 `docker commit` 保存容器状态
+
+8. `docker stop web` 和 `docker kill web` 的区别?
+- A) 完全相同　B) `stop` 发送 SIGTERM(给应用优雅清理的时间,超时后 SIGKILL),`kill` 立即发送 SIGKILL(强制终止)　C) `stop` 删除容器,`kill` 暂停容器　D) `kill` 是 `stop` 的别名
+
+9. 关于 Docker 的"镜像分层"概念,以下说法**正确**的是?
+- A) 每个镜像只有一个层　B) 镜像由多个只读层堆叠而成,每个 Dockerfile 指令( RUN/COPY/ADD )创建一个新层,容器在顶部有一个可写层　C) 分层只是比喻,实际不存在　D) 分层会让镜像变得更大
+
+10. Docker Compose 文件的 `depends_on` 指令作用是什么?
+- A) 复制文件到容器　B) 定义服务间的启动依赖顺序(如 db 先于 app 启动)　C) 安装依赖包　D) 指定挂载卷
+
+### 解答题(5 道)
+
+**Q1 概念:** 用 Java 的"类与实例"类比 Docker 的"镜像与容器",并解释 Dockerfile、Image、Container、Registry(如 Docker Hub)四者之间的关系。
+
+**Q2 解释:** `docker run -p 8080:80 nginx` 中端口映射 `8080:80` 是什么意思?为什么需要端口映射而不直接访问容器?
+
+**Q3 操作:** 写出用 Docker 部署咖啡站 Java 应用(`coffee-app.jar`,监听 8080)的完整步骤:写 Dockerfile→构建镜像→运行容器(含端口映射、环境变量、后台运行、自动重启)→查看日志→进入容器排查。
+
+**Q4 排障:** 容器启动后立即退出(`docker ps -a` 状态为 `Exited (0)`),用 `docker logs` 看不到明显错误。分析可能原因和排查方法。
+
+**Q5 综合设计:** 咖啡站由 app(Java,8080)、postgres(5432)、redis(6379) 三服务组成。设计 docker-compose.yml:①三个服务定义 ②app 依赖 postgres 和 redis ③数据库密码通过环境变量传入(不用硬编码) ④app 和 postgres 的数据持久化(volume) ⑤使用自定义网络使服务间通过服务名通信 ⑥开发和生产的 compose 文件分离策略。
+
+> [!答案]
+> **1-B** 镜像=类(class):定义了"这个应用运行需要哪些文件和配置",是静态的、只读的、可复用的模板。容器=实例(instance):基于镜像创建的**运行中的进程**,有自己的文件系统层、网络栈、进程空间。**举一反三:**一个镜像可以启动多个容器(像一个类可以 new 多个对象);修改容器不会影响镜像(除非 commit)。🪟 Windows 中 Docker Desktop 同样使用镜像/容器模型。
+>
+> **2-A** `-d`=detached(后台运行,不占用终端),`-p 8080:80`=端口映射(主机 8080→容器 80),`--name web`=给容器命名(方便后续引用,否则 Docker 随机分配名称)。**举一反三:**`docker run --rm` 容器退出后自动删除(适合一次性测试);`-e VAR=value` 传入环境变量;`-v /host/path:/container/path` 挂载数据卷。
+>
+> **3-B** `docker ps` 默认只显示正在运行的容器。**举一反三:**`docker ps -a` 显示所有容器(含已停止);`docker ps -q` 只输出容器 ID(适合脚本);`docker container ls` 是新命令格式(与 `docker ps` 效果相同,但更明确是操作容器)。
+>
+> **4-B** `-f`=follow,跟踪日志输出。**举一反三:**`docker logs --tail 100 web` 只显示最后 100 行;`docker logs --since 10m web` 显示最近 10 分钟的日志;`docker logs -t web` 在每行前加时间戳。调试时先 `logs` 再 `exec` 进入容器。
+>
+> **5-B** `exec -it web bash` = execute interactive terminal:在名为 `web` 的容器内启动 bash 并给你一个交互终端。**举一反三:**`-i`=stdin 保持打开,`-t`=分配伪终端(TTY)。`docker exec web ls /app` 执行单个命令不进入交互。如果容器内没有 bash,用 `/bin/sh` 或 `ash`(Alpine)。
+>
+> **6-B** `up -d`=启动 compose 文件中定义的所有服务(后台);`down`=停止+删除所有相关资源(容器、默认网络、匿名卷)。**举一反三:**`up`(不加 -d)=前台运行(适合调试,按 Ctrl+C 停止);`down -v` 同时删除命名卷(清除数据);`restart` 重启服务;`ps` 查看 compose 项目中的容器状态。
+>
+> **7-B** 容器是无状态的(设计意图):每个新容器从镜像启动,有自己的可写层,容器被删除时可写层也消失。**持久化数据需要 Volume:**
+>①Docker Volume:`docker volume create data && docker run -v data:/app/data`(由 Docker 管理,路径在 `/var/lib/docker/volumes/`) ②Bind Mount:`-v /home/user/data:/app/data`(直接挂载主机目录)。**举一反三:**数据库容器务必挂载 volume!`docker-compose` 的 `volumes:` 段是生产必需;无 volume 的数据库容器删除后数据永久丢失。
+>
+> **8-B** `stop`=SIGTERM(15),给应用 10 秒(默认)优雅退出,超时后 SIGKILL。`kill`=立即 SIGKILL(9),不给清理机会。**举一反三:**与之前学的 `kill` 命令一致——Docker 也只是给容器内进程发信号。`docker stop -t 30`(自定义超时 30 秒);`docker kill -s SIGTERM`(发送 SIGTERM 而非默认的 SIGKILL)。数据库容器务必用 stop。
+>
+> **9-B** 镜像分层(layered)是 Docker 的核心机制:每个 Dockerfile 指令(RUN/COPY/ADD)创建一个新的**只读层**,堆叠起来形成完整镜像。容器启动时在顶部追加一个**可写层**(所有修改都在这里)。**举一反三:**分层的好处:①共享层(多个镜像共用同一基础层,节省磁盘) ②缓存加速构建(未变更的层复用缓存) ③快照式回滚。`docker image history nginx` 可以看到所有层及其大小。
+>
+> **10-B** `depends_on` 定义启动顺序(如先启动数据库,再启动应用),但不等待服务"就绪"(只等容器启动,不验证服务是否 ready)。**举一反三:**对于需要等待服务就绪的场景(如数据库接受连接),应在应用容器内实现重试逻辑或使用 `wait-for-it.sh` 等工具;Compose v3 的 `depends_on` 配合 `condition: service_healthy` 可以等待健康检查通过。
+>
+> **Q1** Docker 四者关系:①Dockerfile="建筑蓝图"(文本文件,描述如何构建镜像——FROM 基础、RUN 安装、COPY 文件、CMD 启动命令等) ②Image="建筑模具"(由 Dockerfile `docker build` 生成,只读模板,可以上传到 Registry 分享) ③Container="用模具倒出来的实物房子"(`docker run` 镜像创建的运行实例,有自己的可写层) ④Registry="模具仓库"(如 Docker Hub,存储和分发镜像,供全球 `docker pull` 下载)。**Java 类比:**Dockerfile=`.java` 源文件,Image=`.class` 字节码(编译后,可分发),Container=JVM 中的运行对象(运行实例),Registry=Maven Central(共享仓库)。
+>
+> **Q2** `8080:80` = 主机端口:容器端口。主机 8080→容器 80。意义:容器有自己的**隔离网络**,外界不能直接访问容器的 IP(`172.17.0.x` 内部 IP),需要通过主机端口映射暴露服务。**访问路径:**外部请求→主机 IP:8080→Docker 代理(iptables NAT)→容器内 80 端口→nginx 进程处理。**不映射:**容器内服务只有从主机用 `docker exec` 或其他容器(同一网络内)才能访问,外界不可达。**多容器冲突:**主机上的端口只能被一个进程占用,所以映射时注意端口规划(如 app=8081,api=8082)。
+>
+> **Q3** 步骤:①Dockerfile:
+```
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+COPY coffee-app.jar app.jar
+EXPOSE 8080
+CMD ["java", "-jar", "app.jar"]
+```
+②`docker build -t coffee-app:latest .`(构建镜像) ③`docker run -d --name coffee -p 8080:8080 -e JAVA_OPTS="-Xmx512m" --restart=unless-stopped coffee-app:latest`(运行容器,自动重启策略) ④`docker logs -f coffee`(查看启动日志) ⑤`docker exec -it coffee bash` 进入容器排查(如 `ls /app`、`ps aux`、`cat /etc/hosts`)。**举一反三:**小优化:用 multi-stage build(Dockerfile 中先编译再打包,最终镜像极小);`docker run --rm` 调试时不残留已停止容器。
+>
+> **Q4** 容器退出可能原因:①主进程(PID 1)执行完就退出了——前台命令如 `echo hello` 执行完容器自然退出,应用应以前台模式运行(如 Java 不要加 `&` 或 `nohup`) ②应用启动失败——日志可能输出到了 stderr(用 `docker logs coffee 2>&1` 捕获) ③CMD/ENTRYPOINT 错误——命令不存在或路径不对,但错误信息可能在 stdout/stderr ④环境变量缺失——如数据库密码未设置,应用检测后直接退出。**排查方法:**①`docker ps -a` 查看退出码(0=正常退出,非 0=错误退出) ②`docker logs coffee` 查看所有输出(包括退出前的错误信息) ③修改 CMD 为 `sleep 3600`(保持容器运行),然后 `docker exec -it coffee bash` 进去手动启动应用排查 ④用 `docker run -it`(不分离,前台运行)直接看启动过程的实时输出。
+>
+> **Q5** compose 文件框架:
+```yaml
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: coffee
+      POSTGRES_PASSWORD: ${DB_PASSWORD}  # 从 .env 读
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - coffee-net
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    networks:
+      - coffee-net
+  app:
+    build: ./app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/coffee
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - coffee-net
+volumes:
+  pgdata:
+  redisdata:
+networks:
+  coffee-net:
+    driver: bridge
+```
+**开发/生产分离:**①共用基础 compose ②`docker-compose.override.yml`(开发:挂载源码、暴露调试端口、volumes 热加载) ③`docker-compose.prod.yml`(生产:不挂载源码、配置日志驱动、限制资源 limits、使用特定镜像 tag 而非 latest) ④启动:`docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`。**举一反三:**`.env` 文件存放密码等敏感变量,不提交到 Git;生产密码通过 Docker Swarm secrets 或外部密钥管理服务注入。

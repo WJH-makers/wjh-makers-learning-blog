@@ -108,6 +108,100 @@ SELECT * FROM (
 ) t WHERE rn = 1;
 ```
 
+### MySQL · 索引类型与设计原则（InnoDB）
+
+InnoDB 索引底层是 **B+ 树**：非叶子节点只存键、叶子节点存数据（聚簇索引）或主键（二级索引），因此二级索引查询需**回表**（先查二级索引拿主键，再回聚簇索引取整行）。
+
+| 索引类型 | 语法 | 作用 / 场景 | 备注 / 坑 |
+|----------|------|-------------|-----------|
+| 主键/聚簇索引 | `PRIMARY KEY (id)` | 数据行本身按主键组织 | InnoDB 必有聚簇索引；无显式主键时用第一个非空唯一索引，再无则生成 6 字节隐藏 `_rowid`。主键应**单调递增**（`BIGINT AUTO_INCREMENT`），用 UUID/雪花字符串做主键会导致页分裂+索引膨胀 |
+| 二级索引 | `CREATE INDEX idx ON t(col)` | 加速非主键列查询 | 每个二级索引叶子存主键值，主键过长会放大所有二级索引体积 |
+| 唯一索引 | `CREATE UNIQUE INDEX ux ON t(col)` | 保证唯一 + 加速 | 唯一检查会关闭 change buffer，写入比普通索引略慢；NULL 不参与唯一约束（可多行 NULL） |
+| 复合索引 | `CREATE INDEX idx ON t(a,b,c)` | 多列联合 | **最左前缀原则**：能命中 `a`、`a,b`、`a,b,c`，命中不了 `b`、`b,c`；范围列（`>`/`<`/`LIKE`）之后的列失效，故把等值列放前、范围列放后 |
+| 覆盖索引 | `SELECT a,b FROM t WHERE a=?` 且有 `idx(a,b)` | 免回表 | `EXPLAIN` 的 Extra 出现 `Using index` 即命中；查询列尽量落在索引内可显著提速 |
+| 前缀索引 | `CREATE INDEX idx ON t(name(10))` | 长文本列节省空间 | 前缀无法用于覆盖索引和 `ORDER BY`；前缀区分度不足时形同虚设，先用 `COUNT(DISTINCT LEFT(col,n))/COUNT(*)` 估区分度 |
+| 函数索引 8.0.13+ | `CREATE INDEX idx ON t((YEAR(dt)))` | 让函数查询也能走索引 | 8.0.13 之前不支持，只能建虚拟生成列再索引 |
+| 全文索引 | `CREATE FULLTEXT INDEX ...` + `MATCH() AGAINST()` | 文本搜索 | InnoDB 从 5.6 支持；中文需 ngram 解析器，能力有限，重搜索场景上 ES |
+
+**设计口诀**：区分度高的列建索引；联合索引遵循最左前缀、等值在前范围在后；用覆盖索引免回表；单表索引控制在 5 个以内（每个索引都拖慢写入并占空间）。⚠ 在大表上 `CREATE INDEX` 会长时间持有元数据锁，务必用 `ALGORITHM=INPLACE, LOCK=NONE`（8.0 默认在线 DDL）或低峰期 + `pt-online-schema-change`。
+
+### MySQL · 事务隔离级别（面试必背）
+
+| 隔离级别 | 脏读 | 不可重复读 | 幻读 | 说明 |
+|----------|:----:|:----------:|:----:|------|
+| READ UNCOMMITTED | 可能 | 可能 | 可能 | 读未提交，几乎不用 |
+| READ COMMITTED | 否 | 可能 | 可能 | 读已提交（Oracle/PG 默认） |
+| **REPEATABLE READ** | 否 | 否 | **基本避免** | **InnoDB 默认**；靠 MVCC+间隙锁 |
+| SERIALIZABLE | 否 | 否 | 否 | 串行化，读加共享锁，并发最差 |
+
+```sql
+SELECT @@transaction_isolation;                 -- 查当前级别（8.0，旧版是 @@tx_isolation）
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;  -- 改会话级
+SET GLOBAL  TRANSACTION ISOLATION LEVEL READ COMMITTED;  -- 改全局（只对新连接生效）
+```
+
+**关键点**：
+- **MVCC**（多版本并发控制）：InnoDB 靠 undo log + 隐藏列 `DB_TRX_ID`/`DB_ROLL_PTR` 构建 ReadView，实现快照读（普通 `SELECT`）不加锁。RR 下事务首次快照读时生成 ReadView 并沿用；RC 下每次快照读都生成新 ReadView，故 RC 会不可重复读。
+- **当前读**：`SELECT ... FOR UPDATE`、`SELECT ... LOCK IN SHARE MODE`、`UPDATE`、`DELETE` 读的是最新版本并加锁。
+- **间隙锁（Gap Lock）+ Next-Key Lock**：RR 下 InnoDB 对当前读的范围加锁，锁住记录及记录间的"间隙"，从而避免幻读——这是 InnoDB RR 比标准 RR 更强的地方。⚠ 间隙锁是很多死锁的根源；RC 级别不加间隙锁，高并发写入场景（如电商）常主动降到 RC。
+
+### MySQL · 常用运维 / DBA SQL
+
+| 命令/SQL | 作用 | 备注 / 坑 |
+|----------|------|-----------|
+| `SELECT VERSION();` | 查版本 | 区分 5.7 / 8.0 行为差异 |
+| `SHOW VARIABLES LIKE 'innodb_buffer_pool_size';` | 查缓冲池大小 | 生产建议设物理内存 50–70%；这是 InnoDB 最重要的性能参数 |
+| `SHOW STATUS LIKE 'Threads_connected';` | 当前连接数 | 对比 `max_connections`，接近上限会报 "Too many connections" |
+| `SHOW VARIABLES LIKE 'max_connections';` | 最大连接数 | 默认 151，云库常调至几千 |
+| `SELECT table_schema, ROUND(SUM(data_length+index_length)/1024/1024,2) AS MB FROM information_schema.tables GROUP BY table_schema;` | 各库磁盘占用 | 定位大库 |
+| `SELECT table_name, ROUND((data_length+index_length)/1024/1024,2) MB, table_rows FROM information_schema.tables WHERE table_schema='库名' ORDER BY MB DESC;` | 库内各表大小 | 找大表 |
+| `SHOW ENGINE INNODB STATUS\G` | InnoDB 全景（死锁/缓冲/事务） | 看 `LATEST DETECTED DEADLOCK` 段定位死锁双方 SQL |
+| `ANALYZE TABLE t;` | 重新统计索引基数 | 优化器选错索引时先做这个 |
+| `OPTIMIZE TABLE t;` | 回收碎片空间 | ⚠ 会锁表重建（InnoDB 实为 `ALTER TABLE … FORCE`），大表在低峰做 |
+| `CHECK TABLE t;` | 检查表损坏 | |
+| `SELECT * FROM performance_schema.data_locks;` | 当前持有的锁（8.0） | 排查锁等待，配合 `data_lock_waits` |
+| `RESET MASTER;` ⚠ | 清空 binlog | 破坏性：清掉所有二进制日志，从库会失联，仅在初始化时用 |
+| `PURGE BINARY LOGS BEFORE '2026-07-01';` | 清理指定日期前 binlog | 释放磁盘，比 RESET 安全 |
+| `SHOW REPLICA STATUS\G` | 查主从状态（8.0.22+ 术语） | 旧版 `SHOW SLAVE STATUS`；看 `Seconds_Behind_Source` 复制延迟、`Replica_IO/SQL_Running` 是否 Yes |
+
+**在线备份（推荐现代方式）**：
+
+```bash
+# 逻辑备份：加 --single-transaction 保证一致性快照（InnoDB 不锁表）
+mysqldump -u root -p --single-transaction --routines --triggers --events \
+  --set-gtid-purged=OFF 库名 > backup_$(date +%F).sql
+
+# 物理备份（大库首选，热备不停机）：Percona XtraBackup
+xtrabackup --backup --target-dir=/data/bak --user=root --password=***
+```
+
+> ⚠ 直接 `mysqldump` 不加 `--single-transaction` 会隐式 `LOCK TABLES` 锁全库，生产严禁。
+
+### MySQL · 慢查询定位实操
+
+```sql
+-- 1) 开启慢查询日志（运行时动态开，重启失效；永久生效写 my.cnf）
+SET GLOBAL slow_query_log = ON;
+SET GLOBAL long_query_time = 1;                 -- 超过 1 秒记录（改后需重连生效）
+SET GLOBAL log_queries_not_using_indexes = ON;  -- 未走索引的也记（慎开，日志暴涨）
+SHOW VARIABLES LIKE 'slow_query_log_file';      -- 日志位置
+
+-- 2) performance_schema 直接查 TOP 慢 SQL（免翻日志，8.0 推荐）
+SELECT DIGEST_TEXT, COUNT_STAR, ROUND(AVG_TIMER_WAIT/1e9,2) AS avg_ms,
+       ROUND(SUM_TIMER_WAIT/1e12,2) AS total_s
+FROM performance_schema.events_statements_summary_by_digest
+ORDER BY SUM_TIMER_WAIT DESC LIMIT 10;
+```
+
+```bash
+# 3) 离线聚合慢日志：mysqldumpslow 按平均耗时排序取 Top10
+mysqldumpslow -s t -t 10 /var/lib/mysql/slow.log
+# 更强的第三方：pt-query-digest（Percona Toolkit），输出指纹聚合 + 采样
+pt-query-digest /var/lib/mysql/slow.log
+```
+
+**定位流程**：慢日志/`performance_schema` 找出慢 SQL → `EXPLAIN`/`EXPLAIN ANALYZE` 看执行计划 → 检查 `type=ALL`、`key=NULL`、`Extra` 有无 `Using filesort/temporary` → 补索引或改写 SQL（拆分、避免 `SELECT *`、分页深翻用游标 `WHERE id>上次最大id LIMIT n` 代替 `LIMIT 大偏移`）→ 再验证。
+
 ---
 
 # Redis 命令（难度 × 频次）
@@ -188,5 +282,83 @@ Redis 核心读写模块为**单线程事件循环模型**，执行耗时 O(N) �
 | **B/★★★★** | Stream `XADD/XREADGROUP/XACK` | 消息队列+消费者组 |
 | **S/★★★** | `SCAN` 替 `KEYS` | 生产禁止 KEYS |
 | **A/★★★** | `--bigkeys`/`--hotkeys`/`SLOWLOG`/`MEMORY USAGE` | 运维剖析 |
+
+### Redis · 数据类型选型（别只会 String）
+
+| 需求 | 该用的类型 | 原因 / 备注 |
+|------|-----------|------------|
+| 缓存对象、且要**改单个字段** | Hash | 用 String 存 JSON 改一个字段要整体反序列化+写回；Hash 可 `HSET` 改单 field。但 Hash 无法对单 field 设 TTL |
+| 计数器 / 限流 | String `INCR` | 原子自增；限流配合 `EXPIRE` 或用 `INCR` + Lua 滑动窗口 |
+| 排行榜 / 带分数排序 | ZSet | `ZADD`+`ZREVRANGE`；`ZRANGEBYSCORE` 范围查；分页排行首选 |
+| 最新 N 条 / 消息流 | List 或 Stream | List 简单但无消费确认；需消费者组+ACK 用 Stream |
+| 去重统计（精确） | Set | `SADD`+`SCARD`；元素多时内存大 |
+| UV 等海量去重（可容误差） | HyperLogLog | 固定约 12KB，误差 0.81%，不能取出成员 |
+| 签到 / 布尔状态海量 | Bitmap | `SETBIT`；1 亿用户签到仅约 12MB |
+| 附近的人 / 地理 | GEO | 底层是 ZSet+GeoHash |
+| 布隆过滤 / 防穿透 | Bitmap 或 RedisBloom 模块 | 判断"一定不存在" |
+
+> ⚠ **大 key 陷阱**：单个 Hash/Set/List/ZSet 元素过多（万级以上）或 String 过大（>10KB），会导致 `HGETALL`/`DEL` 阻塞、集群迁移卡顿、内存分布不均。用 `redis-cli --bigkeys` 扫描，`DEL` 大 key 改用 `UNLINK`（4.0+，后台异步回收，不阻塞主线程）。
+
+### Redis · 持久化（RDB / AOF 深度）
+
+| 维度 | RDB（快照） | AOF（追加日志） |
+|------|------------|-----------------|
+| 原理 | 定时 fork 子进程把内存 dump 成二进制 `dump.rdb` | 记录每条写命令到 `appendonly.aof` |
+| 触发 | `save 900 1`（900秒内≥1次写）/ 手动 `SAVE`(⚠阻塞) / `BGSAVE`(后台 fork) | `appendfsync` 策略持续追加 |
+| 恢复速度 | 快（直接加载内存镜像） | 慢（重放命令） |
+| 数据安全 | 差（两次快照间宕机会丢） | 好（`always` 几乎不丢，`everysec` 最多丢 1 秒） |
+| 文件体积 | 小（压缩二进制） | 大（AOF 重写 `BGREWRITEAOF` 可压缩） |
+| 适用 | 允许分钟级丢失、要快速恢复/迁移 | 要求高数据安全 |
+
+```bash
+# 关键配置（redis.conf）
+save 900 1                 # RDB 触发规则，多条并存；save "" 关闭 RDB
+appendonly yes             # 开启 AOF
+appendfsync everysec       # always(每命令刷盘,最安全最慢) / everysec(默认,均衡) / no(交OS)
+aof-use-rdb-preamble yes   # 4.0+ 混合持久化：AOF 文件头部是 RDB 全量 + 增量命令，恢复快又安全
+```
+
+**要点**：
+- ⚠ `SAVE` 在主线程执行，会**阻塞所有客户端**，生产只用 `BGSAVE`。
+- `BGSAVE` / AOF 重写靠 `fork` 子进程 + 写时复制（COW），fork 瞬间若内存大且写入频繁会造成延迟毛刺；`INFO persistence` 看 `latest_fork_usec`。
+- 生产**推荐 RDB + AOF 同开**（`aof-use-rdb-preamble yes` 混合模式）：兼顾快速恢复与低丢失。
+- 云 Redis / 主从场景，从库还可靠 `INFO replication` 的复制流做冗余；但复制不能替代持久化。
+
+### Redis · 缓存三大问题（穿透 / 击穿 / 雪崩）
+
+| 问题 | 定义 | 典型场景 | 应对方案 |
+|------|------|----------|----------|
+| **缓存穿透** | 查一个**数据库里也不存在**的 key，请求每次都打到 DB | 恶意用非法 ID 刷接口 | ① 缓存空值 `SET id "" EX 60`（短 TTL）；② **布隆过滤器**前置拦截"一定不存在"的 key；③ 接口层参数校验 |
+| **缓存击穿** | 某个**热点 key 到期瞬间**，大量并发同时穿透到 DB | 秒杀商品、热搜词缓存过期 | ① **互斥锁**：`SET lock nx ex` 抢到锁的线程回源，其余等待/重试；② 热点 key **逻辑过期**（不设物理 TTL，value 里存过期时间，异步重建）；③ 热点数据永不过期 |
+| **缓存雪崩** | **大量 key 同一时刻集中过期**，或 Redis 宕机，流量瞬间压垮 DB | 批量预热的缓存设了相同 TTL | ① TTL 加**随机抖动** `EX (3600 + rand(0,300))`；② 多级缓存（本地 Caffeine + Redis）；③ Redis 高可用（哨兵/集群）；④ DB 侧限流+熔断降级 |
+
+```bash
+# 击穿：互斥锁回源（伪代码）
+val = GET key
+if val is nil:
+    if SET lock:key 1 NX EX 10:      # 抢锁，NX 保证只有一个线程回源
+        val = 查DB; SET key val EX 300
+        DEL lock:key
+    else:
+        sleep(50ms); 重试 GET        # 未抢到锁，短暂等待后读缓存
+```
+
+> **区分记忆**：穿透 = 查不存在的数据（打空气）；击穿 = 单个热点 key 失效（一个点被打穿）；雪崩 = 大面积 key 同时失效（一整片塌方）。
+
+### Redis · 分布式锁（生产正确姿势）
+
+```bash
+# ✅ 加锁：一条命令原子完成"不存在才设 + 带过期"，value 用唯一标识（如 UUID）
+SET lock:order UUID_xxx NX EX 10
+# ❌ 反例：SETNX + EXPIRE 两条命令，中间宕机会造成锁永不释放（死锁）
+
+# ✅ 解锁：必须用 Lua 保证"判断是自己的锁 + 删除"原子，防误删别人的锁
+EVAL "if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end" 1 lock:order UUID_xxx
+```
+
+**要点**：
+- ⚠ 解锁必须校验 value（是不是自己加的锁）：否则 A 的锁超时自动释放、B 拿到锁后，A 执行完直接 `DEL` 会误删 B 的锁。
+- 锁过期时间要 > 业务执行时间，否则业务没跑完锁就没了；生产用 **Redisson** 的看门狗（watchdog）自动续期。
+- 单机 Redis 主从切换有丢锁风险（主宕机时锁未同步到从）；强一致场景用 **RedLock**（多独立节点）或改用 etcd/ZooKeeper。
 
 ---
