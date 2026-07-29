@@ -208,4 +208,45 @@ void negative_qty_is_rejected_with_400() throws Exception {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。每道答案都带一句「举一反三」,帮你把这一个点连成一片。
+
+### 选择题(10 道)
+
+1. `@Valid` 加在 Controller 参数上的作用是?
+   - A) 转换 JSON　B) 触发 Bean Validation,把脏输入挡在进 Service 之前　C) 记录日志　D) 开启事务
+2. 去掉 `@Valid` 后传 `qty = -1`,会发生什么?
+   - A) 报 400　B) `-1 > 3` 为 false 跳过缺货检查,库存 `3 - (-1)` 变成 **4** —— 卖出去反而多了一杯　C) 抛空指针　D) 订单被忽略
+3. 上题这种 Bug 的可怕之处在于?
+   - A) 会让服务崩溃　B) 不报错、不崩溃,却在悄悄污染数据　C) 只在高并发出现　D) 会拖慢接口
+4. 参数非法应该返回哪个状态码?
+   - A) `200`　B) `400`　C) `500`　D) `409`
+5. 「库存不足」这类**状态冲突**最贴切的状态码是?
+   - A) `400`　B) `404`　C) `409`　D) `403`
+6. `@RestControllerAdvice` 的本质是?
+   - A) 一个过滤器　B) AOP —— 横切所有 `@RequestMapping` 方法,集中拦截异常　C) 一个拦截器链　D) 一个 Servlet
+7. 关于把异常栈直接返回给前端,正确的说法是?
+   - A) 方便前端排查,应该返回　B) **绝不该** —— 既泄露实现细节(安全风险),又不友好　C) 只在测试环境返回即可　D) 由框架决定
+8. Spring Boot 3/4 里校验注解的包名是?
+   - A) `javax.validation.constraints.*`　B) `jakarta.validation.constraints.*`　C) `org.springframework.validation.*`　D) `java.validation.*`
+9. 校验失败时 Spring 抛出的异常是?
+   - A) `IllegalArgumentException`　B) `MethodArgumentNotValidException`　C) `ConstraintViolationException`(仅 `@RequestBody` 场景)　D) `ValidationFailedException`
+10. 4xx 和 5xx 的归属划分是?
+    - A) 4xx 服务端的锅、5xx 客户端的锅　B) **4xx 客户端的锅**(参数/权限/格式),**5xx 服务端的锅**(未预料的异常)　C) 都是服务端的锅　D) 由业务自行约定
+
+> [!答案]
+> **1-B**　门卫上岗,不合格的进不来。**举一反三**:校验放在最外层最省事 —— 越往里走,脏数据造成的破坏面越大。
+> **2-B**　负数绕过了「大于库存」的判断。**举一反三**:所有「只判上界不判下界」的校验都有同类风险,和第 12 话的 `choice = -1` 是同一个错误家族。
+> **3-B**　静默污染比崩溃更难查。**举一反三**:崩溃会立刻暴露,脏数据可能三个月后才被财务发现,修复成本天差地别。
+> **4-B**　`400 Bad Request`。**举一反三**:配合统一错误体 `{code, message}`,前端才能精准提示用户改哪个字段。
+> **5-C**　`409 Conflict` 表示「请求本身没问题,但当前状态不允许」。**举一反三**:重复下单、版本冲突、并发修改都适合 409。
+> **6-B**　它是 AOP 的一个应用。**举一反三**:所以它能集中处理所有 Controller 的异常,而不必在每个方法里写 try-catch。
+> **7-B**　栈里可能有类名、路径、SQL 片段。**举一反三**:已知业务异常给明确 4xx,未知异常给一个不含栈的 500,并把完整栈记进服务端日志。
+> **8-B**　Jakarta EE 迁移。**举一反三**:Spring Boot 2→3 升级最常见的编译错就出在这个包名上。
+> **9-B**　`@RequestBody` + `@Valid` 触发的是它。**举一反三**:而 `@RequestParam`/路径变量上的约束失败抛的是 `ConstraintViolationException`,两者要分别处理。
+> **10-B**　分清归属才能定位责任。**举一反三**:接口设计时主动把可预期的错误映射成 4xx,能显著减少前后端扯皮。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与创作规范见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 [/java](/java)。*

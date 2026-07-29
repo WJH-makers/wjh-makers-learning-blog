@@ -1,10 +1,10 @@
 import "./write.css";
 import type { Route } from "next";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { createDatabasePost, databaseProviderLabel, deleteDatabasePost, hasDatabaseConfig, updateDatabasePost } from "@/lib/db";
-import { getPublishedPost } from "@/lib/posts";
+import { getPublishedPost, PUBLISHED_POSTS_CACHE_TAG } from "@/lib/posts";
 import WriteEditorClient from "./WriteEditorClient";
 import { safeCompare } from "@/lib/safe-compare";
 
@@ -37,6 +37,9 @@ function safeErrorForUrl(error: unknown): string {
 }
 
 function revalidateBlog(slug?: string) {
+  // Next 16 的 updateTag 让本次 Server Action 后的跳转立刻读到新文章，
+  // 同时清掉所有列表/标签/RSS 共用的数据缓存，避免逐路由打 Atlas。
+  updateTag(PUBLISHED_POSTS_CACHE_TAG);
   revalidatePath("/");
   revalidatePath("/posts");
   revalidatePath("/tags");

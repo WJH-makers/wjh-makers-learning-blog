@@ -267,6 +267,130 @@ class OpeningCeremonyTest {
 
 > 下一话《异步编排:CompletableFuture》:把每一步变成可组合的未来值,`thenApply` 接力、`thenCombine` 汇流、`allOf` 收网——多解台里预告过的那位,正式登场。
 
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,中间3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. `CountDownLatch` 的计数器到零后,是否可以重置复用?
+- A) 可以,调用 `reset()` 方法重置计数器　　B) 不可以——它是「一次性门闩」,count 到零后 latch 的 state 不能恢复,需要重新 new 一个　　C) 可以,调用 `countDown()` 传入负数恢复　　D) 可以通过反射重置
+
+2. `CyclicBarrier` 的 `await()` 调用后,当最后一个线程到达时,barrier 的动作是什么?
+- A) 随机唤醒一个等待线程　　B) 先执行构造时传入的 barrierAction(如果有的话),然后所有等待线程被同时释放,barrier 的计数恢复到初始值,进入下一轮——所以叫「Cyclic」　　C) 只释放最后一个线程,前面的继续等待　　D) 所有线程按到达顺序依次释放
+
+3. `Semaphore` 的 `acquire()` 和 `release()` 与锁的最关键区别是什么?
+- A) Semaphore 没有区别,就是另一种锁　　B) `release()` 不需要由获取许可的线程调用——任何线程都可以 release 许可,且 release 的次数可以超过 acquire 的次数(增加总许可数)　　C) Semaphore 自动处理死锁　　D) Semaphore 是基于 CAS 的无锁结构
+
+4. `CountDownLatch` 和 `CyclicBarrier` 的核心区别是什么?
+- A) 没有区别,只是 API 不同　　B) CountDownLatch 是「等待其他线程完成」——主线程等 N 个子线程 countDown;CyclicBarrier 是「线程相互等待」——N 个线程各自 await,最后一个到达时全体释放　　C) CountDownLatch 可以重用,CyclicBarrier 不能　　D) CountDownLatch 基于 AQS,CyclicBarrier 不是
+
+5. 从 AQS 的视角看,`CountDownLatch` 的 `tryAcquireShared` 返回什么表示「门闩已开」?
+- A) state == 0 时返回正数表示成功,state > 0 时返回负数表示仍需等待　　B) 始终返回 true　　C) 只检查队列是否为空　　D) 返回 state 的原始值
+
+6. `Semaphore` 用 AQS 实现时,`tryAcquireShared` 的逻辑是?
+- A) 检查 state 是否 > 0,是则 CAS 减 state 返回剩余许可数;否则返回负数　　B) 检查 state 是否等于 0　　C) 检查是否有排队的线程　　D) 直接加 state
+
+7. 以下代码中,`countDown()` 没有放在 finally 中的隐患是什么?
+
+```java
+CountDownLatch latch = new CountDownLatch(5);
+for (int i = 0; i < 5; i++) {
+    executor.submit(() -> {
+        doWork();           // 可能抛异常
+        latch.countDown();  // ❌ 没放 finally
+    });
+}
+latch.await(); // 主线程永久等
+```
+
+- A) latch 会自动检测异常并 countDown　　B) 如果 `doWork()` 抛异常,`countDown()` 不执行,latch 永远不会到零,主线程永久阻塞　　C) 编译器会警告,阻止编译　　D) `await()` 有内置超时,不会永久阻塞
+
+8. `CyclicBarrier` 内部使用什么锁机制?
+- A) CAS 自旋　　B) `ReentrantLock` + Condition(CyclicBarrier 内部有 `lock = new ReentrantLock()` 和 `trip = lock.newCondition()`)　　C) `synchronized`　　D) `StampedLock`
+
+9. 以下关于 `Semaphore(1)` 和 `ReentrantLock` 的对比,哪项不正确?
+- A) Semaphore(1) 可以实现互斥效果,类似于 lock　　B) Semaphore 的 release 可以由非获取线程执行(如线程 A acquire,线程 B release),而 lock 的 unlock 只能由持有锁的线程执行　　C) Semaphore(1) 是可重入的　　D) Semaphore 不支持 Condition
+
+10. `await(long timeout, TimeUnit unit)` 在三个工具中的表现——哪个工具的超时后需要特别处理「部分线程超时导致计数器混乱」?
+- A) CountDownLatch——超时后 latch 仍可能被其他线程 countDown 到零,但 await 已返回 false,不会影响计数　　B) CyclicBarrier——如果某个线程 await 超时抛出 TimeoutException,barrier 被标记为 broken,其他等待中的线程收到 BrokenBarrierException;如果不处理,barrier 处于损坏状态需重置　　C) Semaphore——超时后许可被永久扣减　　D) 三者都没有超时后的副作用
+
+### 解答题(5 道)
+
+1. 用「等待模式」的视角,区分 `CountDownLatch`、`CyclicBarrier`、`Semaphore` 三个工具的语义:各是谁等谁、等什么、一次还是反复?
+
+2. 从 AQS 源码角度,解释为什么 `CountDownLatch` 用 `tryAcquireShared` 实现,而 `Semaphore` 也用 `tryAcquireShared`——两者在 state 语义上有什么不同?共享锁和独占锁的区别在代码中如何体现?
+
+3. 你的咖啡站需要这样一个启动流程:① 磨豆机、蒸汽锅炉、收银台 3 个设备各自初始化(并行) ② 全部初始化完成后,吧台才能开始接单。同时还需要限流:最多 3 个咖啡师同时操作。请设计——要用 `CountDownLatch` + `Semaphore` 还是 `CyclicBarrier` 搭配什么?写出核心代码逻辑。
+
+4. `CyclicBarrier` 的 `barrierAction` 和 broken 状态的深层问题:① 如果在 barrierAction 中抛异常,等待的线程会怎样?② 如果某线程 await 超时,其他线程会收到什么?③ 为什么 barrier broken 状态需要显式重置?给出一个场景:如果 broken 状态不处理,下次复用时有什么后果?
+
+5. 从 AQS 的设计哲学出发,分析这三个工具如何用「对 state 的不同语义解释」实现三种完全不同的同步模式。再基于这个分析,判断:JDK 的 `Phaser` 为什么比 `CyclicBarrier` 更灵活?它本质上也是 AQS 吗?
+
+> [!答案]
+> **1-1** B(一次性——count 到 0 后 latch 的 AQS state 不可逆,无法重置。需要重用用 CyclicBarrier 或 Phaser)  
+> **举一反三**:CountDownLatch 的名字已经暗示了——count down(倒计数),到了就锁死。AQS 的 `tryAcquireShared` 在 state==0 时返回正数,一旦 state 到 0,没有方法能把它改回正数。
+>
+> **1-2** B(先执行 barrierAction → 然后所有等待线程同时释放 → 计数恢复到 parties → 进入下一轮。「先 action 再释放」保证 action 在下一轮开始前执行)  
+> **举一反三**:barrierAction 的典型用途——汇总上一轮的结果、打印检查点日志、重置共享状态。它在「所有线程都到达但还没释放」的时间点执行,所以能看到完整的一轮中间结果。
+>
+> **1-3** B(所有权无关——锁有持有者(owner)概念,谁 lock 谁 unlock;Semaphore 没有所有权,任何线程都可以 release,release 次数也不受 acquire 次数限制(你可以 release 10 次,即使只 acquire 过 3 次,多出的许可会扩大总容量))  
+> **举一反三**:这是 Semaphore 最容易误用的点——release 无所有权检查,多 release 会「凭空造许可」。如果需要「谁 acquire 谁 release」的语义,用锁而不是 Semaphore。
+>
+> **1-4** B(Latch 是「一等多」——一个或多个线程等 N 个线程完成任务;Barrier 是「多等一」(互相等)——N 个线程各自执行到 barrier 点,等所有人都到齐再一起继续)  
+> **举一反三**:简单记忆:Latch 是你等我(我等你们干完活),Barrier 是我们互相等(每个线程都等等彼此)。`join()` 是一种特殊的 Latch(等一线程)。
+>
+> **1-5** A(state==0 时 `tryAcquireShared` 返回正数,表示可以通行;state>0 返回 -1,表示还需要等待。AQS 的 acquireShared 检测到负数就 park 当前线程)  
+> **举一反三**:AQS 的共享锁模板:`tryAcquireShared` 返回负→阻塞,返回非负→获取成功。CountDownLatch 的 `countDown()` 只是 `releaseShared(1)`——把 state 减 1,减到 0 唤醒所有等待者。
+>
+> **1-6** A(检查 state(许可数) > 0,是则 CAS 减 1 并返回剩余数;否则返回负数表示无许可。`acquire()` 失败则 park 等待,`release()` 则 CAS 加 state)  
+> **举一反三**:Semaphore 和 CountDownLatch 都是 AQS 共享模式,核心区别在 state 语义:Latch 是「还剩多少没完成」(向下减),Semaphore 是「还有多少许可」(向上减)。
+>
+> **1-7** B(countDown 不执行 → latch 永远到不了零 → `await()` 永久阻塞。如果 await 没设超时,主线程挂掉)  
+> **举一反三**:CountDownLatch 的第一纪律:`countDown()` 永远放 finally 里。如果你连有几个 countDown 都不确定,更应该用 `await(timeout)`——设置一个最大等待时间,超时就降级处理而不是死等。
+>
+> **1-8** B(CyclicBarrier 内部使用 `ReentrantLock` + Condition——`lock.lock()` 保护计数,`trip.await()` 让线程等待,最后一个线程 `trip.signalAll()` 唤醒全部。不是基于 AQS 的同步器,而是用 AQS 的锁来保护)  
+> **举一反三**:区别:CountDownLatch 和 Semaphore 的直接父类是 AQS(自己就是同步器);CyclicBarrier 内部「包含」一个 ReentrantLock,用锁+Codition 实现,它是 AQS 的使用者而非子类。
+>
+> **1-9** C(Semaphore(1) **不可重入**——如果同一线程 acquire 两次,第二次会阻塞(因为许可已被自己用掉,只剩 0 个许可,第二次 acquire 需要等别人 release))  
+> **举一反三**:互斥锁和二叉信号量的区别是经典的并发面试题。互斥锁(=可重入+owner 检查+不可跨线程 unlock),二叉信号量(=不可重入+无 owner+可跨线程 release)。选 Semaphore(1) 还是 ReentrantLock 取决于你需要可重入性和所有权语义。
+>
+> **1-10** B(CyclicBarrier 的 broken 是最危险的——某线程 await 超时/中断/异常,barrier 被标记为 broken,所有其他在 await 的线程立即收到 `BrokenBarrierException`,需要 `reset()` 恢复。如果不 reset,后续所有 `await()` 调用全部抛异常)  
+> **举一反三**:CyclicBarrier 在生产中最容易翻车的就是 broken 状态没有正确处理。好的实践:① `await` 永远带超时 ② 捕获 BrokenBarrierException 后调用 `reset()` ③ 区分「本轮失败」(超时)和「底层故障」(barrier 损坏)。
+>
+> **2-1** CountDownLatch:主线程(们)等 N 个子线程完成「一件事」——等点:子线程 countDown 把计数器降到零。等一次。CyclicBarrier:N 个线程互相等,全部到达屏障点后一起释放——等点:最后一个到达者。可反复循环。Semaphore:不「等」——它控制同时做某事的线程数。acquire 拿不到许可就等(不限谁),release 还许可(不限谁)。等点:获取许可。没有「完成」概念,只有「目前容量」。  
+> **举一反三**:三者的等待模式记忆法:Latch=「你们干完我上」,Barrier=「我们一起冲」,Semaphore=「限流,不准太多人同时上」。
+>
+> **2-2** 两者都用 AQS 共享模式的 `tryAcquireShared`,但 state 语义完全不同:CountDownLatch 的 state = 还需要 countDown 多少次。`tryAcquireShared` 的实现:`return (getState() == 0) ? 1 : -1;` → 只要 state 没到 0,所有 acquireShared 调用都阻塞。Semaphore 的 state = 当前剩余许可数。`tryAcquireShared` 的实现:`for (;;) { int avail = getState(); int rem = avail - acquires; if (rem < 0) return rem; if (CAS state from avail to rem) return rem; }` → 只要还有剩余许可,CAS 减掉并通;不够就阻塞。区别在代码:CountDownLatch 是「等 state 到 0 就放」,Semaphore 是「state 持续减加,每次减都要有剩余」。共享锁 vs 独占锁的区别:AQS 的 `acquireShared` 成功后可能连锁唤醒后续等待者(因为共享模式允许多个线程同时持有)——如 Semaphore 有 3 个许可,releaseShared 后可能唤醒 3 个等待者。独占锁一次只唤醒一个。  
+> **举一反三**:AQS 的设计之美:同一套模板(acquireShared/releaseShared),只需改变 `tryAcquireShared` 中 state 的语义解释,就能产生完全不同的同步行为。这就是「框架」的力量——将不变的部分(排队、park/unpark)和变化的部分(state 语义)分离。
+>
+> **2-3** 设计:① 用 `CountDownLatch(3)`——3 个设备线程各自初始化,完成后 `latch.countDown()`。主线程 `latch.await()` 等到三个设备就绪后接单。② 用 `Semaphore(3)`——控制「最多 3 个咖啡师同时操作」这个限流:每个咖啡师任务执行前 `sem.acquire()`,执行后 `sem.release()`。
+> ```java
+> CountDownLatch ready = new CountDownLatch(3);
+> Semaphore baristas = new Semaphore(3);
+>
+> // 设备初始化(3 个线程)
+> init("磨豆机", ready); init("蒸汽锅炉", ready); init("收银台", ready);
+>
+> // 主线程:等全部就绪
+> ready.await();
+> System.out.println("所有设备就绪,开门接单!");
+>
+> // 接单后:咖啡师执行(不限线程数,但最多 3 个同时)
+> void makeCoffee(Order order) {
+>     baristas.acquire();
+>     try { brew(order); }
+>     finally { baristas.release(); }
+> }
+> ```
+> 用 CountDownLatch(一次性)而不是 CyclicBarrier:因为设备初始化只做一次,不需要反复同步。CyclicBarrier 适合「多轮反复」场景——如每轮打包前统计数量,最后一轮收尾。这里只需要启动时等一次。  
+> **举一反三**:选择 Latch vs Barrier 的决策:看「这件事要做几次」。一次→Latch,多次→Barrier 或 Phaser。
+>
+> **2-4** ① barrierAction 抛异常:异常会传播到**最后到达的那个线程**(执行 action 的线程),同时 barrier 被标记为 broken。其他等待线程立即收到 `BrokenBarrierException`,不再等待。② await 超时:超时的线程收到 `TimeoutException`,与此同时 barrier 被标记为 broken,其他等待线程收到 `BrokenBarrierException`。③ broken 状态不重置的后果:barrier 的 generation 损坏后,任何后续对 `await()` 的调用都会立即抛 `BrokenBarrierException`——即使所有线程都准备好了,barrier 也不会释放它们。需要显式 `reset()`——它创建新的 generation、重置 count。场景:第一轮计算中某个线程超时(网络调用超时),barrier 变 broken。如果没有 `reset()`,第二轮计算时第一个 `await()` 的线程直接抛 BrokenBarrierException,其他线程莫名其妙。正确做法:`try { barrier.await(5, SECONDS); } catch (TimeoutException | BrokenBarrierException e) { barrier.reset(); /* 通知其他线程终止本轮 */ }`  
+> **举一反三**:barrier broken 是 CyclicBarrier 的「默认 fail-fast」设计——只要一个人掉队,全队停止。这要求使用者必须处理 two-phase:「正常完成」或「全队取消」。如果没有这个心理准备,线上会发生雪崩式的 BrokenBarrierException 风暴。
+>
+> **2-5** 三个工具的 state 语义:AQS state 是一个 `volatile int`。① CountDownLatch:state = 剩余未 countDown 次数。`countDown()` = `state--`;acquireShared 等 state==0。② Semaphore:state = 剩余许可数。`acquire()` = state--(如果 state>0);`release()` = state++。③ CyclicBarrier:不用 AQS 子类(而是内含 ReentrantLock),但可以类比——它也有一个 count 字段,每轮初始化为 parties,`await()` 时 count--,到 0 则执行 barrierAction 并 reset。三者本质全是「对同一计数器的不同操作规则」——Latch 只减不增,到 0 停止;Semaphore 可增可减,保持非负;Barrier 每次减到 0 后重置。`Phaser` 更灵活的原因:① 支持动态注册/注销 parties(到达时 register/deregister,不像 Barrier 固定 parties) ② 多阶段(Phase)自动推进,不需要手动 reset ③ 支持分层(树状 Phaser,减少协调开销) ④ 没有 broken 状态——某个线程异常不会拖垮整个 phaser。Phaser **不是** AQS——它使用的是基于 `AtomicReference` 的 Treiber 栈 + ForkJoinPool 的 ManagedBlocker,完全不同的实现路线。  
+> **举一反三**:Phaser 取代 CyclicBarrier 的趋势在 JDK 7 就开始了——对于任何需要「动态参与方数量」或「多阶段迭代」的场景,Phaser 都更合适。Barrier 的优势仅限于「最简单的固定人数反复同步」场景,代码量比 Phaser 少。
 ---
 
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

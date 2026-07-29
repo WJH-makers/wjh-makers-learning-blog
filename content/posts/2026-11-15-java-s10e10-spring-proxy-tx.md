@@ -209,4 +209,118 @@ class StockDeductServiceTest {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,中间3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. `@Transactional` 的真身是?
+- A) 一个修改字节码的编译器插件
+- B) 代理环绕:代理对象在方法调用前后开事务、提交/回滚
+- C) 数据库层面的触发器
+- D) JDK 内置的事务管理器
+
+2. Spring Boot 中 `@Transactional` 默认在什么异常类型上触发回滚?
+- A) 所有异常(包括 Checked Exception)
+- B) RuntimeException 和 Error
+- C) 只回滚 RuntimeException
+- D) 不回滚任何异常
+
+3. 传播行为 `REQUIRED`(默认)的含义是?
+- A) 总是新建一个事务
+- B) 当前有事务就加入,没有就新建
+- C) 必须在已有事务中运行
+- D) 挂起当前事务,另开新事务
+
+4. `@SpringBootApplication` 三合一包含哪三个注解?
+- A) `@Configuration` + `@ComponentScan` + `@EnableTransactionManagement`
+- B) `@SpringBootConfiguration` + `@EnableAutoConfiguration` + `@ComponentScan`
+- C) `@SpringBootConfiguration` + `@Component` + `@Transactional`
+- D) `@Configuration` + `@Bean` + `@ComponentScan`
+
+5. 以下哪种情况 `@Transactional` **不会**失效?
+- A) 在同一个 Service 类中,非事务方法 `this.` 调用带 `@Transactional` 的方法
+- B) 方法被 `final` 修饰
+- C) 从 Controller 注入 Service,调用 Service 的 public 事务方法
+- D) 方法抛出 `IOException`(受检异常),未设置 `rollbackFor`
+
+6. 传播行为 `REQUIRES_NEW` 的典型使用场景是?
+- A) 下单和扣库存必须在同一个事务中
+- B) 操作日志:主事务回滚了,日志也必须保留(不受主事务回滚影响)
+- C) 只读查询
+- D) 嵌套保存点
+
+7. `TransactionSynchronizationManager.isActualTransactionActive()` 返回 false 说明?
+- A) 事务已提交
+- B) 当前线程没有激活的事务——通常是事务代理被绕过(自调用等)
+- C) 数据库连接已关闭
+- D) 事务管理器未配置
+
+8. 修复「自调用绕过代理」的最佳实践是?
+- A) 启用 `exposeProxy=true`,用 `AopContext.currentProxy()` 调用
+- B) 通过 `@Lazy` 自注入代理
+- C) 将事务方法**拆到独立的 Service 类**中,从外部注入调用——调用必过代理
+- D) 去掉 `@Transactional`,手动管理事务
+
+9. 以下关于 Spring Boot 自动配置原理的描述,**正确**的是?
+- A) Spring Boot 自动扫描所有类并自动注册 Bean
+- B) 读各 jar 中 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` 清单,逐条过 `@ConditionalOn*` 条件,用户自定义 Bean 优先
+- C) 自动配置等同于 `@ComponentScan`
+- D) 所有自动配置一定生效,无法排除
+
+10. DispatcherServlet 在 Spring MVC 中的角色是?
+- A) 处理数据库事务
+- B) 前端控制器:所有 HTTP 请求的**唯一入口**,将请求分发给对应的 Controller
+- C) 配置 Spring Bean
+- D) 渲染 JSP 页面
+
+### 解答题(5 道)
+
+**Q1(概念)** `@Transactional` 失效的三大场景分别是什么?请说明各自的原理和排查方法。
+
+**Q2(解释)** 传播行为 REQUIRED / REQUIRES_NEW / NESTED 三者的区别是什么?请用「下单(主事务)+ 记录操作日志(辅助)」的场景举例说明。
+
+**Q3(场景)** 你的 `CheckoutService` 中 `checkout()` 调用 `this.deduct()`,`deduct()` 贴了 `@Transactional`,压测发现异常后没有回滚。请写出栈帧的差异(正常走代理 vs 自调用),并给出修复方案。
+
+**Q4(分析)** 分析 Spring Boot 如何通过 `@ConditionalOnClass` / `@ConditionalOnMissingBean` 做到「classpath 有货才配,你配了它就让位」。请以 `DataSourceAutoConfiguration` 为例说明。
+
+**Q5(设计)** 你需要设计一个「分布式事务」方案:订单服务(MySQL)和库存服务(MySQL)跨库,要求最终一致性。请对比 Seata AT 模式、TCC 模式、本地消息表三种方案,并给出你的推荐。
+
+> [!答案]
+> **选择题**
+> 1-B。`@Transactional` 本质上是在代理对象的方法调用前后织入 `TransactionInterceptor`:①开事务(`getTransaction`)→②`invoke` 本体→③成功 commit/异常 rollback。★举一反三:把 `@Transactional` 理解为「代理环绕」而非「魔法」,就理解了一切失效场景。
+>
+> 2-B。默认只对 `RuntimeException` 和 `Error` 回滚。受检异常(如 `IOException`、`SQLException`)默认**不回滚**,需 `@Transactional(rollbackFor = Exception.class)`。★举一反三:这是 Spring 的设计选择——受检异常通常被视为「可恢复」的,回滚由开发者显式声明意图。
+>
+> 3-B。REQUIRED:当前有事务则加入,无则新建。★举一反三:这是默认值,99% 的场景够用——调用方有事务时共用,没有时自动开。
+>
+> 4-B。`@SpringBootApplication` = `@SpringBootConfiguration`(`@Configuration` 的 Spring Boot 版本)+`@EnableAutoConfiguration`(自动配置引擎)+`@ComponentScan`(扫描当前包及子包的组件)。★举一反三:你可以把 `@SpringBootApplication` 拆成三个分别写——效果一样,只是没必要。
+>
+> 5-C。从外部(Controller)注入 Service 并调用 public 方法时,调用到达的是代理对象→代理拦截→开事务→调本体。A:自调用绕过代理;B:final 方法 CGLIB 覆盖不了;D:受检异常需显式 `rollbackFor`。★举一反三:判断事务是否生效的最快方法——看调用路径上有没有 `TransactionInterceptor.invoke` 在栈里。
+>
+> 6-B。REQUIRES_NEW:挂起当前事务,新开一个独立事务。操作日志的典型场景——即使主业务回滚了,日志事务已经独立提交,不受影响。★举一反三:这是「写操作的最终一致性兜底」的常用手段——至少记录了什么被尝试过。
+>
+> 7-B。事务代理通过 `TransactionInterceptor` 在调用链上绑定事务同步管理器。如果该静态方法返回 false,说明当前线程没有事务上下文——最可能:调用没经过代理(自调用/直接 new)。★举一反三:把 `isActualTransactionActive()` 打印在可疑方法入口,事务失效秒确诊。
+>
+> 8-C。拆类是最干净的解法——把事务方法独立为单独的 Service,外部通过注入调用时必然经过代理。A 和 B 是绕过手段,能把失效修好但设计上绕了一圈还裸着。★举一反三:#88 拆环考的是「抽类消除循环」,#89 自调用失效考的还是「拆类解决自调用」——设计的归设计,别用配置硬绕。
+>
+> 9-B。自动配置不是扫描,是按「清单文件」逐条过条件:`@ConditionalOnClass`(classpath 有相关库才配)、`@ConditionalOnMissingBean`(用户自己配了就不覆盖)。用户 Bean 优先。★举一反三:要排除某个自动配置,用 `@SpringBootApplication(exclude = ...)` 或 `spring.autoconfigure.exclude`。
+>
+> 10-B。DispatcherServlet 是 Spring MVC 的前端控制器,所有 HTTP 请求统一入口:接收请求→`HandlerMapping` 找匹配的 Controller→`HandlerAdapter` 调方法→`ViewResolver` 渲染。★举一反三:一个 Spring Boot Web 应用可以有多个 Servlet,但 DispatcherServlet 只应有一个(默认 / 映射)。
+>
+> **解答题**
+>
+> **Q1** 失效三场景:①**同类自调用 `this.xxx()`**:`this` 是本体引用,不经过代理,`TransactionInterceptor` 不在调用链上→排查:打印 `isActualTransactionActive()` 或检查栈帧中有无 `TransactionInterceptor`。②**非 public 或 final 方法**:CGLIB 代理是生成子类覆盖 public 方法;非 public 不覆盖(部分版本),final 无法覆盖→排查:检查方法修饰符。③**受检异常默认不回滚**:Spring 默认只认 RuntimeException/Error,受检异常如 IOException 抛出不回滚→排查:检查异常类型 + `@Transactional` 的 `rollbackFor` 属性。★举一反三:这三个场景背后是同一个原理——「没有经过代理」或「代理的规则不匹配」。
+>
+> **Q2** REQUIRED(默认):有事务加入,无则新建。下单+扣库存用此——同一张账单,同成同退。REQUIRES_NEW:挂起外层,新开独立事务。记录操作日志用此——主单回滚了,日志也得留下(证明「曾经尝试过」)。两事务独立提交,互不影响。NESTED:外层里设保存点(SAVEPOINT)。赠品发放失败只需回退到保存点——主单继续;主单崩则全退。★举一反三:三个行为的核心区别是「对已存在事务的态度」:加入/独立/嵌套保存点。
+>
+> **Q3** 栈帧差异:正常走代理:`checkout(代理)→TransactionInterceptor.invoke→TransactionAspectSupport→本体.checkout→本体.deduct`(deduct 也在代理中→再进 TransactionInterceptor)。自调用:`checkout(代理)→TransactionInterceptor.invoke→本体.checkout→this.deduct(直接本体调用,无代理)`——deduct 上方的 TransactionInterceptor 消失了。修复方案:①(推荐)将 `deduct` 拆到独立的 `StockDeductService` 类中,注入到 `CheckoutService`,外部调用;②自注入:`@Autowired @Lazy private CheckoutService self`,用 `self.deduct()` 而非 `this.deduct()`;③`AopContext.currentProxy()`。★举一反三:所有「代理不生效」的问题本质都一样——调用没从代理对象入口进入。
+>
+> **Q4** `DataSourceAutoConfiguration` 为例:①清单文件声明了该类会在启动时被加载;②类上有 `@ConditionalOnClass({DataSource.class, EmbeddedDatabaseType.class})`→ 只有在 classpath 有 DataSource 相关类(如 HikariCP 或 DBCP2)时才生效;③类上有 `@ConditionalOnMissingBean(DataSource.class)`→ 如果用户自己定义了 `DataSource` Bean(如手动配置了多数据源),这个自动配置就自动让位。④如果没有自己配,它按配置前缀 `spring.datasource.*` 创建默认的 HikariCP DataSource。★举一反三:条件装配的总原则是「约定优于配置,但配置优于约定」——能满足 80% 的默认场景,又绝不覆盖用户的定制。
+>
+> **Q5** 三种方案对比:①**Seata AT 模式**:对业务代码零侵入,通过代理 SQL 自动生成 undo log(前镜像/后镜像),第一阶段执行 SQL+记录 undo,第二阶段提交(删 undo)或回滚(按 undo 补偿)。优:接入简单;缺:性能损耗(SQL 被代理+undo 写入),依赖 Seata Server。②**TCC(Try-Confirm-Cancel)**:业务自己实现三个方法——Try(预留资源)、Confirm(确认执行)、Cancel(释放资源)。优:性能好(无 undo 日志);缺:代码侵入大,每个业务都要实现三方法,复杂。③**本地消息表**:订单库事务中同时写「消息表」,定时任务扫描未发送消息,调用库存服务接口;库存服务保证幂等(按消息 ID 去重)。优:无分布式事务框架依赖,阿里/美团常用;缺:最终一致性(有秒级延迟)。推荐:金融/支付类用 TCC(强模型),通用业务用本地消息表(简单可控),如果有 Seata 基础设施用 AT(省代码)。★举一反三:分布式事务没有银弹——CAP 定理决定了你必须选 AP(可用+分区容忍,最终一致)还是 CP(一致+分区容忍,可能牺牲可用)。
+>
+> ---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

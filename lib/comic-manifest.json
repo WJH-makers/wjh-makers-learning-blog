@@ -3,7 +3,303 @@
     "w": 1055,
     "h": 1491
   },
+  "java-academy-cover-background": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s02e08-list-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s02e09-set-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s02e10-map-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s02e11-generics-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s02e12-oop-cafe-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s03e01-exception-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s03e02-custom-exception-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s03e03-files-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s03e04-stream-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s03e05-maven-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s03e06-junit-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s03e07-git-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s03e08-multimodule-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s04e01-http-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s04e02-springboot-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s04e03-layers-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s04e04-mysql-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s04e05-validation-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s04e06-security-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s04e07-api-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s05e01-network-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s05e02-threadpool-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s05e03-lock-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s05e04-cpu-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s05e05-oom-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s05e06-gc-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s06e01-why-distributed-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s06e02-redis-cache-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s06e03-distributed-lock-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s06e04-mq-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s06e05-microservice-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s06e06-docker-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s07e01-k8s-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s07e02-cicd-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s07e03-observability-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s07e04-tracing-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s07e05-finale-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e01-pass-by-value-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e02-bitwise-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e03-autoboxing-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e04-bigdecimal-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e05-enum-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e06-java-time-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e07-regex-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e08-queue-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e09-sorted-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e10-io-streams-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e11-serialization-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e12-functional-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s08e13-renovation-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s09e01-jmm-volatile-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s09e02-cas-atomic-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s09e03-sync-lock-upgrade-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s09e04-aqs-locks-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s09e05-concurrenthashmap-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s09e06-threadlocal-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s09e07-sync-tools-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s09e08-completablefuture-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s09e09-virtual-threads-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s09e10-concurrency-finale-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e01-reflection-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e02-annotation-proxy-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e03-classloader-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e04-bytecode-jit-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e05-gc-collectors-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e06-mysql-index-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e07-mysql-mvcc-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e08-redis-internals-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e09-spring-bean-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e10-spring-proxy-tx-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java-s10e11-interview-night-zh": {
+    "w": 1024,
+    "h": 1536
+  },
+  "s01e01-first-program-speaks-zh": {
+    "w": 1055,
+    "h": 1491
+  },
   "s01e01-first-program-speaks": {
+    "w": 1055,
+    "h": 1491
+  },
+  "s01e02-variable-warehouse-zh": {
     "w": 1055,
     "h": 1491
   },
@@ -11,11 +307,23 @@
     "w": 1055,
     "h": 1491
   },
+  "s01e03-operators-zh": {
+    "w": 887,
+    "h": 1774
+  },
   "s01e03-operators": {
     "w": 887,
     "h": 1774
   },
+  "s01e04-if-zh": {
+    "w": 1024,
+    "h": 1536
+  },
   "s01e04-if": {
+    "w": 1024,
+    "h": 1536
+  },
+  "s01e05-switch-zh": {
     "w": 1024,
     "h": 1536
   },
@@ -23,7 +331,15 @@
     "w": 1024,
     "h": 1536
   },
+  "s01e06-loops-zh": {
+    "w": 1024,
+    "h": 1536
+  },
   "s01e06-loops": {
+    "w": 1024,
+    "h": 1536
+  },
+  "s01e07-arrays-zh": {
     "w": 1024,
     "h": 1536
   },
@@ -31,7 +347,15 @@
     "w": 1024,
     "h": 1536
   },
+  "s01e08-methods-zh": {
+    "w": 1024,
+    "h": 1536
+  },
   "s01e08-methods": {
+    "w": 1024,
+    "h": 1536
+  },
+  "s01e09-scanner-zh": {
     "w": 1024,
     "h": 1536
   },
@@ -39,7 +363,15 @@
     "w": 1024,
     "h": 1536
   },
+  "s01e10-string-zh": {
+    "w": 1024,
+    "h": 1536
+  },
   "s01e10-string": {
+    "w": 1024,
+    "h": 1536
+  },
+  "s01e11-bugs-zh": {
     "w": 1024,
     "h": 1536
   },
@@ -47,7 +379,15 @@
     "w": 1024,
     "h": 1536
   },
+  "s01e12-coffee-machine-zh": {
+    "w": 1024,
+    "h": 1536
+  },
   "s01e12-coffee-machine": {
+    "w": 1024,
+    "h": 1536
+  },
+  "s02e01-class-zh": {
     "w": 1024,
     "h": 1536
   },
@@ -55,7 +395,15 @@
     "w": 1024,
     "h": 1536
   },
+  "s02e02-encapsulation-zh": {
+    "w": 1024,
+    "h": 1536
+  },
   "s02e02-encapsulation": {
+    "w": 1024,
+    "h": 1536
+  },
+  "s02e03-inheritance-zh": {
     "w": 1024,
     "h": 1536
   },
@@ -63,7 +411,15 @@
     "w": 1024,
     "h": 1536
   },
+  "s02e04-polymorphism-zh": {
+    "w": 1024,
+    "h": 1536
+  },
   "s02e04-polymorphism": {
+    "w": 1024,
+    "h": 1536
+  },
+  "s02e05-interface-zh": {
     "w": 1024,
     "h": 1536
   },
@@ -71,7 +427,15 @@
     "w": 1024,
     "h": 1536
   },
+  "s02e06-abstract-zh": {
+    "w": 1024,
+    "h": 1536
+  },
   "s02e06-abstract": {
+    "w": 1024,
+    "h": 1536
+  },
+  "s02e07-object-zh": {
     "w": 1024,
     "h": 1536
   },

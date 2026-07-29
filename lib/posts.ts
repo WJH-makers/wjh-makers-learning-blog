@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { getDatabasePost, getDatabasePosts } from "@/lib/db";
 import { estimateReadingMinutes } from "@/lib/text";
 
@@ -19,6 +20,40 @@ export type Post = {
 };
 
 const postsDirectory = path.join(process.cwd(), "content", "posts");
+// 文章列表、标签、RSS、站点地图和文章页共用这一个数据源；缓存标签让发布操作能原子失效所有读取入口。
+export const PUBLISHED_POSTS_CACHE_TAG = "published-posts";
+
+// React cache() 只去重同一次 RSC 请求；这里再用 Next 数据缓存避免每次 ISR/路由请求都访问 Atlas。
+// 60 秒兜底刷新，发布操作会通过 updateTag() 立即使其失效。
+const getCachedDatabasePosts = unstable_cache(
+  async () => getDatabasePosts(),
+  ["learning-blog-database-posts"],
+  { revalidate: 60, tags: [PUBLISHED_POSTS_CACHE_TAG] },
+);
+
+const getCachedDatabasePost = unstable_cache(
+  async (slug: string) => getDatabasePost(slug),
+  ["learning-blog-database-post"],
+  { revalidate: 60, tags: [PUBLISHED_POSTS_CACHE_TAG] },
+);
+
+/**
+ * 漫画正文只维护故事文本；图片路径由 slug 稳定推导，避免 90 篇文章重复维护。
+ * 已有分镜会切到同内容的 `-zh` 标题版，后续话则自动注入对应的中文封面图。
+ */
+function withJavaComicIllustration(slug: string, content: string): string {
+  const episode = /^\d{4}-\d{2}-\d{2}-java-s(\d{2})e(\d{2})-(.+)$/.exec(slug);
+  if (!episode || !/^##\s+二、漫画/m.test(content)) return content;
+
+  const existing = /\/comics\/java\/([^/\s)]+)\.png/.exec(content);
+  const stem = existing
+    ? `${existing[1]}-zh`
+    : `java-s${episode[1]}e${episode[2]}-${episode[3]}-zh`;
+  const image = `![《从零开始学 Java》中文漫画配图](/comics/java/${stem}.png)`;
+
+  if (existing) return content.replace(existing[0], `/comics/java/${stem}.png`);
+  return content.replace(/^(##\s+二、漫画[^\n]*\n)/m, `$1\n${image}\n`);
+}
 
 function parseFrontMatter(raw: string): { data: Record<string, string>; content: string } {
   if (!raw.startsWith("---")) return { data: {}, content: raw.trim() };
@@ -64,7 +99,7 @@ function postFromFile(fileName: string): Post {
     summary: data.summary ?? "学习记录",
     tags: parseTags(data.tags),
     readingMinutes: estimateReadingMinutes(content),
-    content,
+    content: withJavaComicIllustration(slug, content),
   };
 }
 
@@ -94,22 +129,24 @@ export const getAllPublishedPosts = cache(async (): Promise<Post[]> => {
   let databasePosts: Post[] = [];
 
   try {
-    databasePosts = await getDatabasePosts();
+    databasePosts = await getCachedDatabasePosts();
   } catch (error) {
     console.warn("[learning-blog] database read failed, falling back to Markdown only:", error);
   }
 
   const merged = new Map<string, Post>();
   for (const post of markdownPosts) merged.set(post.slug, post);
-  for (const post of databasePosts) merged.set(post.slug, post);
+  for (const post of databasePosts) {
+    merged.set(post.slug, { ...post, content: withJavaComicIllustration(post.slug, post.content) });
+  }
 
   return [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
 });
 
 export const getPublishedPost = cache(async (slug: string): Promise<Post | undefined> => {
   try {
-    const databasePost = await getDatabasePost(slug);
-    if (databasePost) return databasePost;
+    const databasePost = await getCachedDatabasePost(slug);
+    if (databasePost) return { ...databasePost, content: withJavaComicIllustration(databasePost.slug, databasePost.content) };
   } catch (error) {
     console.warn("[learning-blog] database post read failed, falling back to Markdown:", error);
   }

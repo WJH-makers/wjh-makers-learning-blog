@@ -68,10 +68,13 @@ function hashIp(ip: string): string {
   return createHash("sha256").update(salt + ip).digest("hex").slice(0, 16);
 }
 
-/** Cloudflare Turnstile 服务端校验。未配置 secret 时跳过(仍受蜜罐/限流/敏感词保护)。 */
+/** Cloudflare Turnstile 服务端校验。缺少服务端密钥时必须拒绝，不能降级成裸评论。 */
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
-  if (!secret) return true;
+  if (!secret) {
+    console.error("Turnstile is not configured: TURNSTILE_SECRET_KEY is missing.");
+    return false;
+  }
   if (!token) return false;
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {

@@ -266,6 +266,122 @@ JUnit 质检员:「证据呢?——十万单一单不少,这才叫证据。」
 
 > 下一话《一人一托盘:ThreadLocal》:每个线程一份私有副本,上下文不传参也不串号;以及那个让无数生产环境中招的问题——为什么在线程池里不 remove,就是内存泄漏。
 
+## 🎯 随堂练习
+
+先自己做,再对答案。难度递进:前3题基础识记,中间3题理解应用,最后4题分析判断与综合。
+
+### 选择题(10 道)
+
+1. 两个线程并发向 `HashMap` put 不同键值对,最可能发生的故障是?
+- A) 抛出 `ConcurrentModificationException`　　B) 数据丢失——put 过程中链表/红黑树被并发破坏,导致某些条目不可达被「丢掉」　　C) 死锁　　D) 内存溢出
+
+2. `ConcurrentHashMap` 在 JDK 7 和 JDK 8 中的实现机制,以下哪个说法正确?
+- A) JDK 7 用 `synchronized` + 分段锁(16 个 Segment),JDK 8 用 CAS + 桶头 `synchronized`　　B) JDK 7 用分段锁(Segment extends ReentrantLock),JDK 8 用 CAS 放桶头 + 桶头元素 `synchronized`　　C) JDK 7 和 JDK 8 都用分段锁,没变化　　D) JDK 8 完全无锁,纯 CAS 实现
+
+3. `ConcurrentHashMap` 为什么不允许 null 键和 null 值?
+- A) `HashMap` 也不允许,是 Map 接口的通用约定　　B) 并发环境下 null 有二义性——`get(key)` 返回 null,到底是 key 不存在还是 value 是 null?如果允许 null,`containsKey` 的判断就不可靠了;且在并发下 put 和 get 交替,这个二义性会放大　　C) 因为 CAS 操作不能处理 null　　D) 为了和 `Hashtable` 保持一致
+
+4. 以下哪个操作是原子的(不需要额外同步)?
+
+```java
+ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
+```
+
+- A) `map.get("key")`　　B) `if (map.get("key") == null) { map.put("key", 1); }`　　C) `map.replace("key", map.get("key") + 1)`　　D) 以上所有操作都是原子的
+
+5. `computeIfAbsent` 和 `putIfAbsent` 的核心区别是什么?
+- A) 没有区别,只是方法名不同　　B) `putIfAbsent` 传的是具体值,`computeIfAbsent` 传的是 Function——只有当 key 不存在时才会调用 Function 计算值,可以避免「先算出值→发现 key 已存在→值浪费」的问题　　C) `computeIfAbsent` 比 `putIfAbsent` 快　　D) `putIfAbsent` 是原子的,`computeIfAbsent` 不是
+
+6. `ConcurrentHashMap` 迭代器的「弱一致性」指的是?
+- A) 迭代过程中会抛出 `ConcurrentModificationException`　　B) 迭代器遍历的是创建迭代器那一刻或某一时刻的快照,遍历期间其他线程的修改可能不会被反映到迭代结果中,但不会抛异常　　C) 迭代器每次 `next()` 都会重新读取最新值　　D) 迭代器的结果总是精确反映当前 map 的状态
+
+7. `CopyOnWriteArrayList` 适合哪种场景?
+- A) 读多写多、需要实时一致性的场景　　B) 读多写极少(如监听器列表、路由表)——写时复制整个数组,读写不互斥,适合「遍历远多于修改」的场景　　C) 所有并发 List 场景,是 `ArrayList` 的万能替代　　D) 需要频繁在列表中间插入删除的场景
+
+8. 以下代码在多线程下同时执行,`compute` 方法是原子的吗?
+
+```java
+map.compute("counter", (k, v) -> v == null ? 1 : v + 1);
+```
+
+- A) 是原子的——`compute` 内部锁住整个桶,Function 在桶锁的保护下执行,整个计算替换过程原子　　B) 不是原子的,Function 的执行不在锁保护范围内　　C) 是原子的但需要配合 `synchronized`　　D) 原子性取决于 key 的 hashCode 分布
+
+9. 关于 `synchronized` 的适用场景,以下哪项是正确的?
+- A) 全部替换为 `BlockingQueue`　　B) 多次写比较少,每次写复制整个底层数组——适合「读多写极少」,不适合「读多写多」　　C) `CopyOnWriteArrayList` 的写操作是 O(1)　　D) `CopyOnWriteArrayList` 的迭代器是 fail-fast 的
+
+10. 假设你用一个 `ConcurrentHashMap<String, Integer>` 实现商品库存,以下哪种写法能**原子地**实现「扣减:仅当 key 存在且 value > 0 时减 1」?
+- A) `if (map.get("A") > 0) { map.put("A", map.get("A") - 1); }`　　B) `map.computeIfPresent("A", (k, v) -> v > 0 ? v - 1 : v);`　　C) `map.replace("A", map.get("A"), map.get("A") - 1);`　　D) `synchronized (map) { map.get("A"); map.put(...); }`
+
+### 解答题(5 道)
+
+1. 用一句话解释 HashMap 为什么并发 put 会丢数据——从 put 过程中链表插入的步骤说明。
+
+2. `ConcurrentHashMap` JDK 7 → JDK 8,从 Segment 分段锁到 CAS + 桶头 synchronized,请从锁粒度、并发度、实现复杂度三个角度解释这个替换的动因。
+
+3. 你维护的代码中有一段:
+```java
+ConcurrentHashMap<String, Long> counters = new ConcurrentHashMap<>();
+// 多线程执行
+counters.put("qps", counters.get("qps") + 1);
+```
+这段代码线程安全吗?如果不是,请给出至少两种修复方案,并说明各自适用场景。
+
+4. `ConcurrentHashMap` 的迭代器不抛 `ConcurrentModificationException`——这到底是优点还是潜在陷阱?请结合一个具体场景(如遍历所有 key 做批量清理),分析「弱一致性」可能导致的业务问题,以及如何规避。
+
+5. 你需要在咖啡站系统中存储「每个门店的每类饮品的实时库存」,并发度高(200 个门店 × 50 种饮品 = 10000 个 key),操作包括读、扣减、补货、新品上架。请设计选型方案:① 存储容器选型及理由 ② 针对扣减写出原子复合操作的实现 ③ 如果有跨门店的汇总统计需求(如「所有门店的拿铁总库存」),该如何保证统计的近似一致性而不是精确一致性?
+
+> [!答案]
+> **1-1** B(HashMap 并发 put 时,链表/红黑树的数据结构被多个线程同时修改,可能导致指针断裂或形成环——数据在遍历路径上「消失」)  
+> **举一反三**:这个 bug 需要实际触发。经典死锁场景:JDK 7 HashMap 并发 put 时 resize 过程中的头插法链表反转可能形成死循环环(CPU 100%),JDK 8 改为尾插法解决了环但未解决丢数据。
+>
+> **1-2** B(JDK 7 Segment 分段锁(每 Segment 一把 ReentrantLock,默认 16 段),JDK 8 CAS 做桶头无锁插入(桶为空时),桶非空时对桶头元素 `synchronized`)  
+> **举一反三**:JDK 7 分段锁的思想延续了「分段锁=高并发度」的设计,但 16 段固定,段级竞争仍可发生。JDK 8 把锁下放到桶级别——数组扩容前有 N 个桶就有 N 把桶头锁,并发度理论上 = N。
+>
+> **1-3** B(null 的二义性在并发下更致命——`map.get(key)` 返回 null,你无法区分「key 不存在」还是「value 是 null」。如果允许 null,在并发检查 `containsKey` 时 key 可能刚好被删掉,判断结果立即失效。禁止 null 从源头消除了这个歧义)  
+> **举一反三**:`HashMap` 允许 null 键值是因为它能通过 `containsKey` 来消除歧义,但在并发下 `containsKey` 结果不可靠——查完就过时了。CHM 的禁止 null 是一项安全设计。
+>
+> **1-4** A(单个 `get` 是原子的——它读的是 volatile 读(数组的 volatile 读),保证看到最新值。但 B 和 C 都是复合操作,在 get 和后续操作之间有窗口,不原子)  
+> **举一反三**:CHM 的原子性范围:单个 `get/put/remove/compute*/merge*` 是原子的。任何「先 get 再根据结果做操作」的组合都需要用 `compute/computeIfPresent/computeIfAbsent/replace` 等原子方法。
+>
+> **1-5** B(`putIfAbsent` 传的是已计算好的值——如果 key 不存在才放入;`computeIfAbsent` 传的是计算逻辑——只有在 key 不存在时才执行 Function,延迟计算,开销更低)  
+> **举一反三**:选型口诀:值已经算好了用 `putIfAbsent`,值需要「按需创建」(比如创建新 List、创建数据库连接)用 `computeIfAbsent`——后者避免了不必要的对象创建。
+>
+> **1-6** B(弱一致性——迭代器创建时拿到数组引用,遍历这个引用,期间其他线程的修改(新增/删除)不会反映到迭代过程,但也不会抛 CME 异常。这是一个有意的设计取舍:用弱一致性换无锁遍历)  
+> **举一反三**:如果必须看到最新全量快照,用 `ConcurrentHashMap` 写时复制整个 map 的办法太重。更实际的处理:接受弱一致性,或用 `synchronized` 包裹遍历(恢复强一致性但失去并发读)。
+>
+> **1-7** B(读写比极高、写极少——监听器列表、路由表、白名单、配置项等。写操作 add/set/remove 复制整个数组,内存和 CPU 开销大,适合「会变但变得慢」的数据)  
+> **举一反三**:读多写少是唯一合适场景。如果读写比没到「极多vs极少」,用 `Collections.synchronizedList()` 或直接用 `ConcurrentLinkedQueue`/`ConcurrentHashMap` 替代 List 语义。
+>
+> **1-8** A(`compute` 内部对整个桶加锁——找到 key 所在的桶,对桶头元素 `synchronized`,然后执行传入的 Function,计算结果直接原子地更新到桶中)  
+> **举一反三**:**`compute` 族的实现原理:先 CAS 拿桶头(如果桶空则直接 CAS 放),再 `synchronized (桶头元素)` 保护整个 compute 过程——Function 执行 + 节点更新都在锁内。这就是 CHM 原子复合操作的核心实现。**
+>
+> **1-9** B(写入时复制整个底层数组——add 操作 new 一个数组把旧数据全拷贝过去,新元素加进去,再把引用指向新数组——O(n) 拷贝。读操作直接读当前数组引用,O(1)无锁)  
+> **举一反三**:`CopyOnWriteArrayList` 的读写分离思想与 MVCC 同源——写时创建新版本,读操作持续看到旧版本。代价就是写开销大,且内存占用翻倍。
+>
+> **1-10** B(`computeIfPresent` 在桶锁保护下原子执行:检查 key 存在→传当前值给 Function→仅在返回值不为 null 时代替旧值。整个过程在桶锁内一气呵成)  
+> **举一反三**:CHM 复合原子操作三剑客——`compute`(无中生有可)、`computeIfPresent`(有则更新可删除返回 null 即删)、`computeIfAbsent`(无则新建)。三种覆盖了 95% 的复合操作场景,不需要额外锁。
+>
+> **2-1** HashMap put 过程:计算 hash → 定位桶 → 遍历链表找 key。并发 put 时,两个线程同时定位到同一桶,同时走到「尾插入新节点」:① 线程 A 读到链表尾,准备插入 ② 线程 B 也读到链表尾(还没看到 A 的插入),也准备插入 ③ B 先完成,链表尾变 B ④ A 完成,把自己插入到旧尾后——A 的节点插入成功,但 B 的节点可能丢失(A 的 next 指向旧尾而不是 B)。或更糟:resize 期间并发 put,可能形成循环链表。精简一句话:并发修改链表结构,没有互斥保护,导致指针覆盖或断裂。  
+> **举一反三**:**HashMap 非线程安全的本质原因——它所有操作(put/get/remove/resize)都假设只有一个线程在操作内部数据结构,没有 CAS 也没有锁。任何并发访问都违反了这个假设,行为就是 undefined。**
+>
+> **2-2** 锁粒度:Segment 锁住一段 hash 范围(16 个桶一组)→ 桶头锁只锁一个桶。并发度固定(默认 16 段)→ 随扩容自然提升(N 个桶 = N 个可并发更新的点)。实现复杂度:分段逻辑额外维护了 Segment 对象和跨段操作(如 size)→ 简化,没有 Segment 层,只维护桶数组。替换动因:① 现代多核环境并发度要求高,固定段数不够用,动态桶锁更灵活 ② CAS 技术成熟,省去 Segment 初始化的内存开销 ③ `synchronized` 锁升级(JIT 优化)使桶头锁在低竞争时实际退化为 CAS 自旋,性能不输显式锁。④ 代码量减少——去掉 Segment,内聚性提升。结论:JDK 8 的改造本质是将「粗粒度显式锁」降为「细粒度内置锁+CAS」的混合方案,兼顾低竞争性能和高竞争安全。  
+> **举一反三**:这个演进的启示——不是锁越显式越好,而是「锁的粒度」和「锁的实现成本」之间取得平衡。JDK 8 证明了内置 `synchronized` 在 JIT 优化下可以匹敌显式锁,而细粒度大大减少了竞争概率。
+>
+> **2-3** 不是线程安全的——`get` 和 `put` 两步之间存在窗口:线程 A get 到 1,线程 B 也 get 到 1,两者都 put 2,结果少加了一次。修复方案一:`counters.compute("qps", (k, v) -> v == null ? 1 : v + 1)`——原子复合操作,桶内锁定,适合需要精确计数、key 数量可控的场景。修复方案二:如果用 `ConcurrentHashMap` 只是当 key-value 存储,不如换成 `LongAdder` 做 QPS 计数器——如果统计的是「总 QPS」而不是按某维度分 key,CHM 的 key-value 模型根本就是多余的,直接用 `LongAdder.increment()` 更好。方案选择:需要按维度分组(key=接口名)时用方案一;只统计总量时用方案二。  
+> **举一反三**:很多「CHM 复合操作不线程安全」的问题其实是选型错误——如果只是全局计数器,就不该用 CHM 模拟,直接上 `LongAdder`/`AtomicLong`。CHM 的复合操作能力(`compute` 族)是用来处理复杂 key-value 更新的,全局计数器太轻量了。
+>
+> **2-4** 优点:不会抛 CME,遍历时不需要锁表,并发性能好——适合「对数据有一致性要求不那么强」的场景(如监控、展示)。潜在陷阱:① 场景:遍历所有 key 做批量清理(如遍历库存 map,清理过期 key)。线程 A 遍历时,线程 B 删掉了某个 key,B put 了一个新 key——A 的迭代器可能看到删除前的旧值、看不到新增的 key、甚至同一个 key 看到两次。② 业务问题:如果清理逻辑对「全量数据」有严格精确性要求(如持久化到外存),弱一致迭代可能导致:某个 key 被删了但迭代器仍看到它(重复删除),或者新增 key 迭代器漏掉(未清理)。③ 规避方式:a) 接受弱一致:在清理逻辑中加入幂等保护(重复清理无害)。b) 如果需要强一致性 flush,创建快照后再关闭新写入:用一个 `CountDownLatch` 等待写入完毕→ `new HashMap<>(chm)`(此时拿到近似快照)→基于快照清理。c) 对于关键的删除操作,不用「遍历中删除」而用「收集 key→遍历后批量删除」。  
+> **举一反三**:CHM 的弱一致性本质——它帮你解决了「遍历不抛异常」,但语义上的「一致性」是业务责任。理解不一致的窗口范围:单 key 的 put/remove 是原子的,但跨 key 的快照不是——别把它当成数据库的事务 snapshot。
+>
+> **2-5** ① **存储容器选型**:`ConcurrentHashMap<String, Integer>`——key=`"门店ID:饮品ID"`。理由:CHM 桶级锁支持 10000 个 key 的高并发,读不阻塞,写仅桶内互斥。不用分段锁:桶锁粒度更细,10000 个 key 落入不同桶,绝大部分操作无竞争。不用 Redis:10000 个 key 本地操作延迟远低于网络,且库存扣减要求强一致性,本地锁+CAS 比分布式锁性能高。② **原子扣减**:
+> ```java
+> stores.compute(key, (k, v) -> {
+>     if (v == null || v <= 0) return null;   // 没上架或库存不足→删 key
+>     return v - 1;
+> });
+> ```
+> `compute` 在桶锁保护下原子执行:检查库存 → 减 1 → 返回 null 则删 key。如果 value 降到 0,返回 null 会自动 remove 掉这个 key(节约内存)。③ **跨门店汇总统计**:10000 个 key 精确汇总——`stores.values().stream().mapToInt(v -> v).sum()`——但这是在弱一致性迭代器之上的,不能保证精确同步。近似一致性设计:维护一个 `LongAdder totalLatte` 辅助计数器——每次扣减拿铁时除了 `stores.compute`,也 `totalLatte.decrement()`。查询总库存时 `totalLatte.sum()`(也是近似但误差在可接受范围)。如果要求绝对精确:阶段性快照——`synchronized` 包裹汇总操作,遍历所有 key 的同时暂停所有写操作(不实用)。更现实:每 5 秒定时跑一次汇总到快照表,业务读快照表。  
+> **举一反三**:分布式场景下的近似一致性与精确一致性的权衡——CAP 中的 C(一致性)是相对的。实时监控、前端展示用近似快照(高性能),对账、财务用精确汇总(强一致)。两者用一个「定时快照」桥接——近似数据持续写入,定时跑精确汇总纠正。
 ---
 
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*

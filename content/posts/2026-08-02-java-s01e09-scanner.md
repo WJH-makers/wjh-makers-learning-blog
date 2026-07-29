@@ -201,4 +201,45 @@ void parses_valid_choice() {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。每道答案都带一句「举一反三」,帮你把这一个点连成一片。
+
+### 选择题(10 道)
+
+1. `sc.nextInt()` 紧跟 `sc.nextLine()`,后者读到空串的根本原因是?
+   - A) `nextLine()` 有 bug　B) `nextInt()` 只咬走一个 token,把行尾的 `\n` 留在了缓冲区　C) 键盘输入太快　D) `Scanner` 不支持中文
+2. 让 `nextInt()` 读到 `abc`,会发生什么?
+   - A) 返回 0　B) 返回 -1　C) 抛 `InputMismatchException`　D) 阻塞等待重新输入
+3. 修法 A 是怎么修的?
+   - A) 把 `nextLine()` 换成 `next()`　B) 在 `nextInt()` 后补一句 `sc.nextLine()`,专门吃掉残留换行　C) 每次重建 `Scanner`　D) 用 `try-catch` 包住
+4. 很多老手默认的修法 B 是?
+   - A) 全程只用 `nextInt()`　B) 输入一律用 `nextLine()` 读成字符串,再自己转类型　C) 改用 `System.in.read()`　D) 输入前先 `flush`
+5. `Scanner sc = new Scanner(System.in);` 里的 `System.in` 是?
+   - A) 一个文件　B) 标准输入流,通常就是键盘　C) 控制台窗口对象　D) 一个字符串
+6. `nextLine()` 的语义是?
+   - A) 读一个单词　B) 读到「下一个换行符」为止　C) 读固定长度的字符　D) 读整个输入缓冲区
+7. 「备注被吞掉」这个问题属于哪一类?
+   - A) 编译错误　B) 运行期异常　C) 不报错、不崩溃的 Logic Bug,比抛异常更阴险　D) 环境配置问题
+8. 把 `parseChoice(String raw)` 单独抽出来的意义是?
+   - A) 代码更短　B) 让解析与校验脱离键盘,可以被 JUnit 直接测　C) 提高读取速度　D) 避免 `InputMismatchException`
+9. `Integer.parseInt("abc")` 会抛?
+   - A) `InputMismatchException`　B) `NumberFormatException`　C) `IllegalArgumentException`　D) 返回 0
+10. 要读几十万行输入、追求吞吐时,更合适的是?
+    - A) `Scanner.nextInt()`　B) `Scanner.nextLine()`　C) `BufferedReader.readLine()`　D) 一次性 `System.in.readAllBytes()`
+
+> [!答案]
+> **1-B**　`nextInt()` 把换行符吐回缓冲,`nextLine()` 一出发就撞上它、当场收工。**举一反三**:这不是 bug,是两种方法「对换行符的态度不同」导致的必然结果 —— 理解机制比背结论管用。
+> **2-C**　让它听整数却喂了字母,当场「滋啦」。**举一反三**:第三季异常季会回来驯服它,那时你会用 `hasNextInt()` 先问一句再读。
+> **3-B**　多读一行,把残留的 `\n` 吃掉。**举一反三**:同理 `nextDouble()`、`next()` 之后接 `nextLine()` 都有这个坑。
+> **4-B**　一律读整行再自己 parse,从源头掐掉混用问题。**举一反三**:代价是每个数字要手动转,换来的是**可预测** —— 工程上通常值这个价。
+> **5-B**　`System.in` 是标准输入流。**举一反三**:所以命令行里 `java Cafe < input.txt` 能把文件重定向成输入,程序一行都不用改。
+> **6-B**　它以换行符为终点。**举一反三**:正因为如此,它才会被残留的换行「秒结束」。
+> **7-C**　没有红字提醒,输入被悄悄吞掉。**举一反三**:凡是「静默错误」都要靠测试和输出校验兜住,不能指望异常提醒你。
+> **8-B**　交互本身没法自动测,但纯逻辑可以。**举一反三**:「把 IO 和逻辑拆开」是可测试代码的第一课,后面每一季都会再用到。
+> **9-B**　`parseInt` 失败抛 `NumberFormatException`(它是 `IllegalArgumentException` 的子类)。**举一反三**:所以修法 B 只是把异常类型换了,校验一样不能省。
+> **10-C**　`BufferedReader` 是为吞吐设计的重武器。**举一反三**:入门和交互式小程序用 `Scanner` 最顺手,别一上来就上重武器 —— 选型看场景。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 `/java`。*

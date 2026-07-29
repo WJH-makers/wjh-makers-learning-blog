@@ -233,4 +233,45 @@ class HelloControllerTest {
 
 ---
 
+## 🎯 随堂练习
+
+先自己做,再对答案。每道答案都带一句「举一反三」,帮你把这一个点连成一片。
+
+### 选择题(10 道)
+
+1. `@SpringBootApplication` 是哪三个注解的组合?
+   - A) `@Configuration` + `@Bean` + `@Import`　B) `@SpringBootConfiguration` + `@EnableAutoConfiguration` + `@ComponentScan`　C) `@RestController` + `@Service` + `@Repository`　D) `@Component` + `@Autowired` + `@Value`
+2. Spring Boot「自动配置」的判断依据是?
+   - A) 配置文件里写了什么　B) **classpath 里有什么**,靠 `@ConditionalOnClass` 之类条件装配　C) 启动参数　D) 运行时探测端口
+3. 所有请求先到达的「总分拣台」是?
+   - A) `Tomcat`　B) `DispatcherServlet`　C) `@RestController`　D) `HttpMessageConverter`
+4. 把 `@RestController` 注释掉后访问 `/hello`,结果是?
+   - A) 500 服务器错误　B) 404 —— 这个类没被当成控制器,`@GetMapping` 没被登记进处理表　C) 启动失败　D) 返回空字符串
+5. 控制器类必须放在哪里才会被扫描到?
+   - A) 任意位置　B) 启动类**同包或其子包**(`@ComponentScan` 默认扫描范围)　C) 必须和启动类同一个文件　D) `src/main/resources` 下
+6. `spring-boot-starter-web` 带来了什么?
+   - A) 只有 Spring MVC　B) 内嵌 Tomcat + Spring MVC 等一整套 Web 依赖　C) 数据库连接池　D) 日志框架
+7. Spring Boot 3/4 相比 1/2 的重大基线变化是?
+   - A) 不再内嵌服务器　B) 包名从 `javax.*` 迁到 **`jakarta.*`**,基线 Java 17+　C) 放弃注解改用 XML　D) 不再支持 Maven
+8. 「约定优于配置」的准确含义是?
+   - A) 没有配置　B) 不是没配置,而是它**按约定替你配好了**,你只在偏离约定时才需要写　C) 配置只能写在 yaml　D) 配置由运行时决定
+9. `MockMvc` 的价值是?
+   - A) 生成假数据　B) 不用真启动服务器就能测接口的请求-响应　C) 压测工具　D) 替代 JUnit
+10. 内嵌服务器相比传统「装外部 Tomcat + web.xml」的优势是?
+    - A) 性能更高　B) 应用自带服务器,一个 jar 就能跑,部署与配置大幅简化　C) 支持更多协议　D) 不需要 JVM
+
+> [!答案]
+> **1-B**　三合一注解。**举一反三**:所以启动类的位置很关键 —— 它同时决定了组件扫描的根包。
+> **2-B**　按 classpath 条件装配。**举一反三**:所以「引入一个 starter 就自动生效」不是魔法,是一堆 `@Conditional` 在起作用,`--debug` 启动能看到自动配置报告。
+> **3-B**　`DispatcherServlet` 是前端控制器。**举一反三**:它按 URL 查处理器映射表,查不到就 404 —— 第 4 题的答案就藏在这里。
+> **4-B**　没贴标签就没登记。**举一反三**:同类问题还有「贴了 `@Controller` 却忘了 `@ResponseBody`」,返回值会被当成视图名去找模板。
+> **5-B**　默认扫描启动类所在包及子包。**举一反三**:类放到了平级的另一个顶层包,就会「怎么都扫不到」—— 这是新手最常见的诡异问题之一。
+> **6-B**　starter 是一组依赖的打包。**举一反三**:starter 的本质就是「一个 pom + 一套自动配置」,理解这点你也能写自己的 starter。
+> **7-B**　jakarta 迁移是硬分水岭。**举一反三**:老代码升级 Spring Boot 3 的最大工作量往往就是这个包名替换。
+> **8-B**　约定不等于没有配置。**举一反三**:所以想改端口只需 `server.port=9090` 一行 —— 偏离约定的地方才需要你出手。
+> **9-B**　它跑完整的 MVC 流程但不开真端口。**举一反三**:比起启动完整服务再发 HTTP 请求,它快得多,适合放进日常单元测试。
+> **10-B**　一个 jar 就能跑。**举一反三**:这也是容器化部署的前提 —— 镜像里不用再装应用服务器。
+
+---
+
 *本话属于连载《从零开始学 Java》。世界观与创作规范见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 [/java](/java)。*

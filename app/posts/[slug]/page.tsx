@@ -10,6 +10,7 @@ import EpisodeExercises from "./EpisodeExercises";
 import Comments from "./Comments";
 import ShareBar from "./ShareBar";
 import CodeCopy from "./CodeCopy";
+import QuizInteractions from "./QuizInteractions";
 import { getComments } from "@/lib/comments";
 import { jsonLdSafe } from "@/lib/jsonld";
 
@@ -183,6 +184,7 @@ export default async function PostPage({ params }: Props) {
 
       <div className="article-content" dangerouslySetInnerHTML={{ __html: fullHtml }} />
       <CodeCopy />
+      <QuizInteractions />
 
       <ShareBar url={url} title={post.title} />
 

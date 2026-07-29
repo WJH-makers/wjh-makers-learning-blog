@@ -9,6 +9,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"tests/**/*.test.ts\"",
+    "comics:build": "node scripts/build-java-comic-covers.mjs && node scripts/build-comic-variants.mjs",
     "deploy:doctor": "node scripts/doctor-deploy.mjs",
     "post:new": "node scripts/new-post.mjs"
   },
