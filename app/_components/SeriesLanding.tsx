@@ -1,0 +1,163 @@
+/**
+ * 连载线首页的唯一实现。
+ *
+ * 在此之前,24 条「蓝图先行」的连载线各自持有一份逐字相同的 143 行页面
+ * (仅函数名与 XXX_SEASONS/XXX_SERIES_META 前缀不同),改一处版式要动 24 个文件,
+ * 且新开一条线必须整页复制 —— 复制粘贴本身就是最容易漂移的地方。
+ *
+ * 现在数据全部走 SeriesRef(注册表已收口 title/alias/tagline/project/route/storageKey/seasons),
+ * 页面只剩「取哪条线」这一个变量,各线的 page.tsx 退化成十来行的薄壳。
+ * java / cli / cafe 三条已开更的线有各自的定制版式,不走这里。
+ */
+import type { Metadata } from "next";
+import Link from "next/link";
+import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
+import { publishedEpisodesOf, allEpisodesOf, type SeriesRef } from "@/lib/series-registry";
+import { siteUrl } from "@/lib/posts";
+import { jsonLdSafe } from "@/lib/jsonld";
+import { OG_BASE } from "@/lib/og-base";
+import JavaProgress from "../java/JavaProgress";
+import SeriesMap from "../java/SeriesMap";
+
+/** 各线 page.tsx 的 `export const metadata` 一律由这里生成,标题/canonical/OG 口径统一。 */
+export function seriesLandingMetadata(series: SeriesRef): Metadata {
+  const title = series.alias ? `${series.title} · ${series.alias}` : series.title;
+  const url = `${siteUrl()}${series.route}`;
+  return {
+    title,
+    description: series.tagline,
+    alternates: { canonical: url },
+    // 未开更的蓝图页对搜索引擎是薄内容;开更后自动恢复索引。
+    robots: publishedEpisodesOf(series).length === 0 ? { index: false, follow: true } : undefined,
+    openGraph: {
+      ...OG_BASE,
+      title,
+      description: series.tagline,
+      url,
+      type: "website",
+    },
+  };
+}
+
+export default function SeriesLanding({ series }: { series: SeriesRef }) {
+  const published = publishedEpisodesOf(series);
+  const total = allEpisodesOf(series).length;
+  const done = published.length;
+  const progressSeasons = series.seasons
+    .map((s) => ({ code: s.code, title: s.title, slugs: seasonPublishedSlugs(s) }))
+    .filter((s) => s.slugs.length > 0);
+
+  // 系列主实体:与文章页 isPartOf 里的 CreativeWorkSeries 引用(name/url)严格一致,形成双向闭环。
+  const seriesJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWorkSeries",
+    name: series.title,
+    url: `${siteUrl()}${series.route}`,
+    description: series.tagline,
+    inLanguage: "zh-CN",
+    author: {
+      "@type": "Person",
+      name: "WJH-makers",
+      alternateName: "WJH-makers",
+      url: "https://github.com/WJH-makers",
+    },
+    hasPart: published.map((ep, i) => ({
+      "@type": "BlogPosting",
+      position: i + 1,
+      name: ep.title,
+      url: `${siteUrl()}/posts/${ep.slug}`,
+    })),
+  };
+
+  return (
+    <div className="page-shell">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(seriesJsonLd) }} />
+      <section className="hero">
+        <div>
+          <p className="eyebrow">连载特刊 · 蓝图先行</p>
+          <h1>{series.title}</h1>
+          <p className="hero-text">{series.tagline}</p>
+          <div className="hero-actions">
+            {done > 0 && (
+              <Link className="button primary" href={`/posts/${published[0].slug}`}>
+                从第一话开始 →
+              </Link>
+            )}
+            <Link className="button" href="/java">起点:从零开始学 Java</Link>
+          </div>
+        </div>
+        <div className="hero-panel">
+          <p className="eyebrow">连载进度</p>
+          <p>
+            已连载 <strong>{done}</strong> / 规划 {total} 话 · 蓝图先行,逐话开更
+          </p>
+          <p className="muted">
+            长期项目:{series.project}
+          </p>
+        </div>
+      </section>
+
+      {progressSeasons.length > 0 && (
+        <JavaProgress seasons={progressSeasons} storageKey={series.storageKey} />
+      )}
+
+      <section className="section-head" style={{ marginTop: "2.5rem" }}>
+        <div>
+          <p className="eyebrow">Knowledge Map · 知识地图</p>
+          <h2>脉络版图</h2>
+        </div>
+        <span className="muted">点节点直达 · 读过的自动打勾</span>
+      </section>
+      <SeriesMap seasons={series.seasons} storageKey={series.storageKey} />
+
+      {series.seasons.map((season) => (
+        <section key={season.season} style={{ marginTop: "2.5rem" }}>
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">
+                {season.code} · {season.subtitle}
+              </p>
+              <h2>
+                第{season.season}卷 · {season.title}
+              </h2>
+            </div>
+            <span className="muted">{season.covers.join(" · ")}</span>
+          </div>
+          <p className="muted" style={{ marginBottom: "0.75rem" }}>
+            {season.goal}
+          </p>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>话</th>
+                  <th>标题</th>
+                  <th>形态</th>
+                  <th>项目阶段</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                {season.episodes.map((ep) => (
+                  <tr key={ep.episode} className={ep.status === "published" ? undefined : "row-planned"}>
+                    <td>{String(ep.episode).padStart(2, "0")}</td>
+                    <td>
+                      {ep.status === "published" && ep.slug ? (
+                        <Link href={`/posts/${ep.slug}`}>{ep.title}</Link>
+                      ) : (
+                        ep.title
+                      )}
+                    </td>
+                    <td>{CHAPTER_TYPE_LABEL[ep.chapterType]}</td>
+                    <td>{ep.projectStage}</td>
+                    <td>{STATUS_LABEL[ep.status] ?? ep.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
