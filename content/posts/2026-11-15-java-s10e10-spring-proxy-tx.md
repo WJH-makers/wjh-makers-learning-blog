@@ -39,7 +39,7 @@ tags: [Java, Java漫画, Spring, 事务, AOP, 番外, 阿零与豆豆]
 ## 三、本话目标
 
 - 讲透 `@Transactional` 真身:代理环绕(开事务→invoke→提交/回滚);
-- 背下并讲透失效三场景:自调用 / 非 public 与 final / 受检异常不回滚;
+- 背下并讲透失效三场景:自调用 / 无法被代理的方法边界 / 受检异常不回滚;
 - 用三个传播行为看懂「事务套事务」;
 - 拆掉自动配置魔法:三合一 + imports 清单 + 条件装配;
 - 一张图走完 MVC 请求流程。
@@ -61,7 +61,7 @@ CGLIB 代理(本体子类;Boot 默认 proxyTargetClass=true)
 **失效三场景:**
 
 1. **同类自调用 `this.xxx()`**:`this` 是本体,不过代理的门,环绕逻辑整段跳过;
-2. **非 public / final 方法**:CGLIB 靠「生成子类 + 覆盖方法」织入,`final` 覆盖不了,非 public 默认不织入;
+2. **无法被代理的方法边界**:`final` 方法无法被 CGLIB 子类覆盖;事务边界默认应写在 `public` Service 方法上。Spring 6 的类代理可在配置允许时处理部分非 `public` 方法,但接口代理只会拦截接口方法——不要把可见性当成可移植的事务技巧;
 3. **受检异常默认不回滚**:默认只认 `RuntimeException` / `Error`;`throws Exception` 的必须 `@Transactional(rollbackFor=Exception.class)`。
 
 **传播行为讲三个够用:**
@@ -84,7 +84,7 @@ HTTP 请求 → DispatcherServlet(唯一前门,jakarta.servlet.Servlet)
 ```
 
 > **🎯 面试直击**:事务失效场景说三个?自动配置怎么按条件生效?
-> 失效:①同类自调用绕过代理;②非 public 或 final,CGLIB 子类覆盖不了;③受检异常默认不回滚,需 rollbackFor。自动配置:读 `AutoConfiguration.imports` 清单,逐条过 `@ConditionalOn*`,用户 Bean 优先。追问点:Boot 为何默认 CGLIB?——不强迫业务类实现接口,代理行为一致。
+> 失效:①同类自调用绕过代理;②调用没有进入可代理的方法边界(`final` 不能被类代理覆盖;事务边界优先 public);③受检异常默认不回滚,需 `rollbackFor`。自动配置:读 `AutoConfiguration.imports` 清单,逐条过 `@ConditionalOn*`,用户 Bean 优先。追问点:别背「非 public 一定失效」——先问 Spring 版本、JDK/CGLIB 代理和 `publicMethodsOnly` 配置。
 
 ---
 
@@ -271,7 +271,7 @@ class StockDeductServiceTest {
 
 10. DispatcherServlet 在 Spring MVC 中的角色是?
 - A) 处理数据库事务
-- B) 前端控制器:所有 HTTP 请求的**唯一入口**,将请求分发给对应的 Controller
+- B) Spring MVC 的前端控制器:处理映射到它的请求,并分发给对应的 Controller
 - C) 配置 Spring Bean
 - D) 渲染 JSP 页面
 
@@ -307,19 +307,19 @@ class StockDeductServiceTest {
 >
 > 9-B。自动配置不是扫描,是按「清单文件」逐条过条件:`@ConditionalOnClass`(classpath 有相关库才配)、`@ConditionalOnMissingBean`(用户自己配了就不覆盖)。用户 Bean 优先。★举一反三:要排除某个自动配置,用 `@SpringBootApplication(exclude = ...)` 或 `spring.autoconfigure.exclude`。
 >
-> 10-B。DispatcherServlet 是 Spring MVC 的前端控制器,所有 HTTP 请求统一入口:接收请求→`HandlerMapping` 找匹配的 Controller→`HandlerAdapter` 调方法→`ViewResolver` 渲染。★举一反三:一个 Spring Boot Web 应用可以有多个 Servlet,但 DispatcherServlet 只应有一个(默认 / 映射)。
+> 10-B。DispatcherServlet 是 Spring MVC 的前端控制器:接收**映射到它的**请求→`HandlerMapping` 找匹配的 Controller→`HandlerAdapter` 调方法→`ViewResolver` 或 `HttpMessageConverter` 生成响应。★举一反三:它不是 JVM 中所有 HTTP 的唯一入口;应用可以注册其他 Servlet 或使用不同 Web 栈,要先看实际映射。
 >
 > **解答题**
 >
-> **Q1** 失效三场景:①**同类自调用 `this.xxx()`**:`this` 是本体引用,不经过代理,`TransactionInterceptor` 不在调用链上→排查:打印 `isActualTransactionActive()` 或检查栈帧中有无 `TransactionInterceptor`。②**非 public 或 final 方法**:CGLIB 代理是生成子类覆盖 public 方法;非 public 不覆盖(部分版本),final 无法覆盖→排查:检查方法修饰符。③**受检异常默认不回滚**:Spring 默认只认 RuntimeException/Error,受检异常如 IOException 抛出不回滚→排查:检查异常类型 + `@Transactional` 的 `rollbackFor` 属性。★举一反三:这三个场景背后是同一个原理——「没有经过代理」或「代理的规则不匹配」。
+> **Q1** 失效三场景:①**同类自调用 `this.xxx()`**:`this` 是本体引用,不经过代理,`TransactionInterceptor` 不在调用链上→排查:打印 `isActualTransactionActive()` 或检查栈帧中有无 `TransactionInterceptor`。②**无法被代理的方法边界**:`final` 方法不能被 CGLIB 子类覆盖;事务边界默认应写在 public Service 方法上。Spring 6 的类代理在特定配置下可处理部分非 public 方法,接口代理仍只拦接口方法→排查:检查代理类型、方法可见性与 `publicMethodsOnly` 配置。③**受检异常默认不回滚**:Spring 默认只认 RuntimeException/Error,受检异常如 IOException 抛出不回滚→排查:检查异常类型 + `@Transactional` 的 `rollbackFor` 属性。★举一反三:这三个场景背后是同一个原理——「没有经过代理」或「代理的规则不匹配」。
 >
-> **Q2** REQUIRED(默认):有事务加入,无则新建。下单+扣库存用此——同一张账单,同成同退。REQUIRES_NEW:挂起外层,新开独立事务。记录操作日志用此——主单回滚了,日志也得留下(证明「曾经尝试过」)。两事务独立提交,互不影响。NESTED:外层里设保存点(SAVEPOINT)。赠品发放失败只需回退到保存点——主单继续;主单崩则全退。★举一反三:三个行为的核心区别是「对已存在事务的态度」:加入/独立/嵌套保存点。
+> **Q2** REQUIRED(默认):有事务加入,无则新建。下单+扣库存用此——同一张账单,同成同退。REQUIRES_NEW:挂起外层,新开独立事务。记录操作日志用此——主单回滚了,日志也得留下(证明「曾经尝试过」)。两事务独立提交,互不影响，但会额外占用连接。NESTED:在**支持保存点的事务管理器**里，外层事务内设保存点;赠品发放失败可回退到保存点，主单继续;主单崩则全退。★举一反三:三个行为的核心区别是「对已存在事务的态度」:加入/独立/嵌套保存点;它们都不是跨服务分布式事务。
 >
-> **Q3** 栈帧差异:正常走代理:`checkout(代理)→TransactionInterceptor.invoke→TransactionAspectSupport→本体.checkout→本体.deduct`(deduct 也在代理中→再进 TransactionInterceptor)。自调用:`checkout(代理)→TransactionInterceptor.invoke→本体.checkout→this.deduct(直接本体调用,无代理)`——deduct 上方的 TransactionInterceptor 消失了。修复方案:①(推荐)将 `deduct` 拆到独立的 `StockDeductService` 类中,注入到 `CheckoutService`,外部调用;②自注入:`@Autowired @Lazy private CheckoutService self`,用 `self.deduct()` 而非 `this.deduct()`;③`AopContext.currentProxy()`。★举一反三:所有「代理不生效」的问题本质都一样——调用没从代理对象入口进入。
+> **Q3** 栈帧差异:本例的 `checkout` 本身没有事务注解;正常修复后是`Controller→CheckoutService→StockDeductService(代理)→TransactionInterceptor.invoke→本体.deduct`。自调用则是`Controller→CheckoutService(本体).checkout→this.deduct`——`deduct` 上方没有 `TransactionInterceptor`。修复方案:①(推荐)将 `deduct` 拆到独立的 `StockDeductService` 类中,注入到 `CheckoutService`,外部调用;②自注入:`@Autowired @Lazy private CheckoutService self`,用 `self.deduct()` 而非 `this.deduct()`;③`AopContext.currentProxy()`。★举一反三:所有「代理不生效」的问题本质都一样——调用没从代理对象入口进入。
 >
 > **Q4** `DataSourceAutoConfiguration` 为例:①清单文件声明了该类会在启动时被加载;②类上有 `@ConditionalOnClass({DataSource.class, EmbeddedDatabaseType.class})`→ 只有在 classpath 有 DataSource 相关类(如 HikariCP 或 DBCP2)时才生效;③类上有 `@ConditionalOnMissingBean(DataSource.class)`→ 如果用户自己定义了 `DataSource` Bean(如手动配置了多数据源),这个自动配置就自动让位。④如果没有自己配,它按配置前缀 `spring.datasource.*` 创建默认的 HikariCP DataSource。★举一反三:条件装配的总原则是「约定优于配置,但配置优于约定」——能满足 80% 的默认场景,又绝不覆盖用户的定制。
 >
-> **Q5** 三种方案对比:①**Seata AT 模式**:对业务代码零侵入,通过代理 SQL 自动生成 undo log(前镜像/后镜像),第一阶段执行 SQL+记录 undo,第二阶段提交(删 undo)或回滚(按 undo 补偿)。优:接入简单;缺:性能损耗(SQL 被代理+undo 写入),依赖 Seata Server。②**TCC(Try-Confirm-Cancel)**:业务自己实现三个方法——Try(预留资源)、Confirm(确认执行)、Cancel(释放资源)。优:性能好(无 undo 日志);缺:代码侵入大,每个业务都要实现三方法,复杂。③**本地消息表**:订单库事务中同时写「消息表」,定时任务扫描未发送消息,调用库存服务接口;库存服务保证幂等(按消息 ID 去重)。优:无分布式事务框架依赖,阿里/美团常用;缺:最终一致性(有秒级延迟)。推荐:金融/支付类用 TCC(强模型),通用业务用本地消息表(简单可控),如果有 Seata 基础设施用 AT(省代码)。★举一反三:分布式事务没有银弹——CAP 定理决定了你必须选 AP(可用+分区容忍,最终一致)还是 CP(一致+分区容忍,可能牺牲可用)。
+> **Q5** 三种方案对比:①**Seata AT 模式**:通过代理 SQL 自动生成 undo log(前镜像/后镜像),第一阶段执行 SQL+记录 undo,第二阶段提交(删 undo)或回滚(按 undo 补偿)。优:接入相对快;缺:依赖兼容性、锁与 undo 成本都要压测。②**TCC(Try-Confirm-Cancel)**:业务自己实现预留、确认、取消。优:模型清晰且可针对关键资源设计;缺:要处理幂等、悬挂、空回滚和补偿。③**本地消息表/outbox**:订单库事务中同时写业务状态和待投递消息,可靠投递器重试;库存服务按消息 ID 幂等。优:不依赖全局事务协调器;缺:只能最终一致，需要监控积压和人工补偿。推荐取决于一致性目标、资源类型、团队运维能力和失败演练结果;不要用「金融必 TCC」或 CAP 两分法替代设计。
 >
 > ---
 
