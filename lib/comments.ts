@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import type { Collection } from "mongodb";
 import { getDb, hasDatabaseConfig } from "@/lib/db";
 
@@ -62,43 +62,25 @@ export async function getComments(slug: string, limit = MAX_COMMENTS_PER_POST): 
 
 // ---------- 反垃圾 ----------
 
-// 未配置 COMMENT_IP_SALT 时的兜底盐:进程启动时随机生成,永不落盘。
-// 不能像原来那样在仓库里写死默认值 —— IPv4 空间只有 2^32,盐一旦公开就能穷举反解,
-// 等于明文存 IP,与前端「仅加密存储」的承诺不符。
-// 也不能返回 undefined:{ipHash: undefined} 在 Mongo 里会匹配所有缺该字段的文档,
-// 一个人发言就会把全站限流卡死。随机盐同时守住隐私与限流,代价只是重启后限流窗口重置。
-const FALLBACK_IP_SALT = randomBytes(32).toString("hex");
-
 /** 不存原始 IP,只存 salted sha256 前 16 位,用于同 IP 限流。 */
 function hashIp(ip: string): string {
-  const salt = process.env.COMMENT_IP_SALT?.trim() || FALLBACK_IP_SALT;
+  const salt = process.env.COMMENT_IP_SALT ?? "wjh-blog-salt";
   return createHash("sha256").update(salt + ip).digest("hex").slice(0, 16);
 }
 
-/** Cloudflare Turnstile 服务端校验。未配置 secret 时跳过(仍受蜜罐/限流/敏感词保护)。 */
+/** Cloudflare Turnstile 服务端校验。缺少服务端密钥时必须拒绝，不能降级成裸评论。 */
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
-  if (!secret) return true;
-  if (!token) {
-    // secret 配了、site key 没配 = 典型的半截配置:前端压根不渲染 widget,于是每条评论
-    // 都缺 token 被拒,而用户只看到「请重试」——重试一万次也没用。这里把根因写进日志,
-    // 免得下次又从前端一路查到 CF。仍然拒绝(fail-closed),但要让运维一眼看见为什么。
-    if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()) {
-      console.error(
-        "[comments] 配置不一致:TURNSTILE_SECRET_KEY 已设,但 NEXT_PUBLIC_TURNSTILE_SITE_KEY 缺失。" +
-        "后者是构建期内联的前端变量,须通过 docker compose build args 传入,否则评论会被全部拒绝。",
-      );
-    }
+  if (!secret) {
+    console.error("Turnstile is not configured: TURNSTILE_SECRET_KEY is missing.");
     return false;
   }
+  if (!token) return false;
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ secret, response: token, remoteip: ip }),
-      // 无超时的话,CF 一次慢响应就把整个评论 Server Action 挂住;
-      // 1cpu/512m 上会放大成全站卡顿。超时按校验失败处理(fail-closed)。
-      signal: AbortSignal.timeout(3000),
     });
     const data = (await res.json()) as { success?: boolean };
     return data.success === true;

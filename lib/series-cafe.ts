@@ -12,6 +12,7 @@
  * 豆豆的吐槽/彩蛋用 markdown 便利贴语法 `> [!吐槽]` / `> [!打趣]` / `> [!彩蛋]`。
  */
 import type { JavaEpisode, JavaSeason } from "@/lib/series";
+import { isPublicEpisode } from "@/lib/publication";
 
 export const CAFE_SERIES_META = {
   slug: "cafe-academy",
@@ -144,5 +145,5 @@ export function cafeAllEpisodes(): JavaEpisode[] {
 }
 
 export function cafePublishedEpisodes(): JavaEpisode[] {
-  return cafeAllEpisodes().filter((e) => e.status === "published" && e.slug);
+  return cafeAllEpisodes().filter((e) => e.status === "published" && isPublicEpisode(e.slug));
 }

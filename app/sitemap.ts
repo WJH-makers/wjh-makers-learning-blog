@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getAllPublishedPosts, getAllPublishedTags, outboundDate, siteUrl } from "@/lib/posts";
-import { SERIES_LIST } from "@/lib/series-registry";
+import { publicEpisodes, SERIES_LIST } from "@/lib/series-registry";
 import type { JavaEpisode } from "@/lib/series";
 
 export const revalidate = 3600;
@@ -32,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 连载页遍历注册表:新开一条线不改这里也会自动进 sitemap。
   // 只收录已开更的线 —— 全 planned 的蓝图页对搜索引擎是薄内容。
   const seriesEntries: MetadataRoute.Sitemap = SERIES_LIST.flatMap((series) => {
-    const published = series.seasons.flatMap((s) => s.episodes).filter((e) => e.status === "published" && e.slug);
+    const published = publicEpisodes(series);
     if (published.length === 0) return [];
     return [{
       url: `${base}${series.route}`,

@@ -298,8 +298,24 @@ export function allEpisodes(): JavaEpisode[] {
   return SEASONS.flatMap((s) => s.episodes);
 }
 
+/**
+ * Public-facing maps keep the editorial roadmap visible but remove links from
+ * scheduled chapters. The source status remains "published" to record that
+ * the manuscript is complete; public availability is a separate concern.
+ */
+export function publicFacingSeasons(seasons: JavaSeason[]): JavaSeason[] {
+  return seasons.map((season) => ({
+    ...season,
+    episodes: season.episodes.map((episode) => (
+      episode.status === "published" && !isPublicEpisode(episode.slug)
+        ? { ...episode, status: "planned" }
+        : episode
+    )),
+  }));
+}
+
 export function publishedEpisodes(): JavaEpisode[] {
-  return allEpisodes().filter((e) => e.status === "published" && e.slug);
+  return allEpisodes().filter((e) => e.status === "published" && isPublicEpisode(e.slug));
 }
 
 export function totalEpisodeCount(): number {
@@ -334,5 +350,6 @@ export const STATUS_LABEL: Record<EpisodeStatus, string> = {
 
 /** 一卷内已发布话的 slug 列表(flatMap 窄化,免去 as string 断言)。 */
 export function seasonPublishedSlugs(season: JavaSeason): string[] {
-  return season.episodes.flatMap((e) => (e.status === "published" && e.slug ? [e.slug] : []));
+  return season.episodes.flatMap((e) => (e.status === "published" && e.slug && isPublicEpisode(e.slug) ? [e.slug] : []));
 }
+import { isPublicEpisode } from "@/lib/publication";

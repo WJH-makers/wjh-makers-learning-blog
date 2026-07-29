@@ -30,6 +30,7 @@ import { BIGDATA_SEASONS, BIGDATA_SERIES_META } from "@/lib/series-bigdata";
 import { SEARCH_SEASONS, SEARCH_SERIES_META } from "@/lib/series-search";
 import { GITADV_SEASONS, GITADV_SERIES_META } from "@/lib/series-gitadv";
 import { CAREER_SEASONS, CAREER_SERIES_META } from "@/lib/series-career";
+import { isPublicEpisode } from "@/lib/publication";
 
 export type SeriesRef = {
   title: string;
@@ -105,14 +106,19 @@ export function allEpisodesOf(series: SeriesRef): JavaEpisode[] {
   return series.seasons.flatMap((s) => s.episodes);
 }
 
-/** 一条线已开更的话次,按卷话顺序。 */
+/** 一条线已开更、且已到公开日期的话次,按卷话顺序。 */
 export function publishedEpisodesOf(series: SeriesRef): JavaEpisode[] {
-  return allEpisodesOf(series).filter((e) => e.status === "published" && e.slug);
+  return allEpisodesOf(series).filter((e) => e.status === "published" && isPublicEpisode(e.slug));
 }
 
 /** 一条线的连载进度(已发布 / 规划总数)。 */
 export function seriesProgress(series: SeriesRef): { done: number; total: number } {
   return { done: publishedEpisodesOf(series).length, total: allEpisodesOf(series).length };
+}
+
+/** 服务器侧引入的调用名,语义等同 publishedEpisodesOf —— 两者都已含公开性过滤,保留别名避免改动各调用点。 */
+export function publicEpisodes(series: SeriesRef): JavaEpisode[] {
+  return publishedEpisodesOf(series);
 }
 
 /**
@@ -153,9 +159,7 @@ export function findEpisodeInfo(slug: string): EpisodeInfo | undefined {
     for (const season of series.seasons) {
       const episode = season.episodes.find((e) => e.slug === slug);
       if (!episode) continue;
-      const published = series.seasons
-        .flatMap((s) => s.episodes)
-        .filter((e) => e.status === "published" && e.slug);
+      const published = publicEpisodes(series);
       const i = published.findIndex((e) => e.slug === slug);
       return {
         series,
@@ -163,7 +167,7 @@ export function findEpisodeInfo(slug: string): EpisodeInfo | undefined {
         episode,
         prev: i > 0 ? published[i - 1] : undefined,
         next: i >= 0 ? published[i + 1] : undefined,
-        seasonSlugs: season.episodes.filter((e) => e.status === "published" && e.slug).map((e) => e.slug as string),
+        seasonSlugs: season.episodes.filter((e) => e.status === "published" && isPublicEpisode(e.slug)).map((e) => e.slug as string),
       };
     }
   }
