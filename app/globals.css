@@ -675,6 +675,37 @@ a:focus-visible {
 .episode-exercises summary { cursor: pointer; font-weight: 700; }
 .episode-exercises details p { margin: 0.6rem 0 0; }
 
+.java-lab {
+  margin-top: 2rem;
+  padding: clamp(18px, 3vw, 30px);
+  border: 1px solid var(--border);
+  background: rgba(var(--paper-rgb), 0.94);
+}
+.java-lab > h2 { margin: 0.25rem 0 0.7rem; }
+.lab-contract {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 1rem 0;
+}
+.lab-contract span {
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--border);
+  font: 700 0.78rem/1 var(--font-mono);
+  color: var(--muted);
+}
+.lab-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1rem; }
+.lab-status { min-height: 1.5em; margin: 0.85rem 0; color: var(--muted); }
+.java-lab > details,
+.lab-data-controls {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--neutral-100);
+}
+.java-lab summary,
+.lab-data-controls summary { cursor: pointer; font-weight: 700; }
+.lab-checkbox { display: flex; align-items: center; gap: 0.5rem; margin: 0.75rem 0; }
+
 .comic-intro {
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(280px, 1.2fr);
