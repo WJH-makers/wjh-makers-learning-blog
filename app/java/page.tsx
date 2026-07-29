@@ -8,6 +8,7 @@ import {
   CHAPTER_TYPE_LABEL,
   STATUS_LABEL,
   allEpisodes,
+  publicFacingSeasons,
   publishedEpisodes,
   seasonPublishedSlugs,
 } from "@/lib/series";
@@ -34,6 +35,7 @@ export const metadata: Metadata = {
 };
 
 export default function JavaSeriesPage() {
+  const visibleSeasons = publicFacingSeasons(SEASONS);
   const total = allEpisodes().length;
   const done = publishedEpisodes().length;
   const progressSeasons = SEASONS.map((s) => ({
@@ -155,9 +157,9 @@ export default function JavaSeriesPage() {
         </div>
         <span className="muted">点节点直达 · 读过的自动打勾</span>
       </section>
-      <SeriesMap seasons={SEASONS} storageKey="java-academy:completed" stages={PROJECT_STAGES.map((s) => ({ season: s.season, stage: s.stage }))} />
+  <SeriesMap seasons={visibleSeasons} storageKey="java-academy:completed" stages={PROJECT_STAGES.map((s) => ({ season: s.season, stage: s.stage }))} />
 
-      {SEASONS.map((season) => (
+      {visibleSeasons.map((season) => (
         <section key={season.season} style={{ marginTop: "2.5rem" }}>
           <div className="section-head">
             <div>

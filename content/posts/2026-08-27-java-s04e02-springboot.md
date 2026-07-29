@@ -20,6 +20,8 @@ tags: [Java, Java漫画, Spring Boot, 自动配置, REST, 阿零与豆豆]
 
 ## 二、漫画 · Spring 管家与地下机械
 
+![《从零开始学 Java》34 · 第一个 Spring Boot 服务 —— 阿零与豆豆分镜漫画](/comics/java/s04e02-springboot.png)
+
 > **〔1〕** 一位穿燕尾服的 `Spring` 管家推门而入,弹指间一座服务器"嗡"地启动。
 > 阿零:「就……就好了?我 Tomcat 都还没装啊。」
 

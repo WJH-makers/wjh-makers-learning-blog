@@ -11,6 +11,7 @@
  */
 
 import type { JavaEpisode, JavaSeason } from "@/lib/series";
+import { isPublicEpisode } from "@/lib/publication";
 
 export const CLI_SERIES_META = {
   slug: "cli-academy",
@@ -104,5 +105,5 @@ export function cliAllEpisodes(): JavaEpisode[] {
 }
 
 export function cliPublishedEpisodes(): JavaEpisode[] {
-  return cliAllEpisodes().filter((e) => e.status === "published" && e.slug);
+  return cliAllEpisodes().filter((e) => e.status === "published" && isPublicEpisode(e.slug));
 }

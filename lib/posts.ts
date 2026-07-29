@@ -3,6 +3,7 @@ import path from "node:path";
 import { cache } from "react";
 import { getDatabasePost, getDatabasePosts } from "@/lib/db";
 import { estimateReadingMinutes } from "@/lib/text";
+import { isAlwaysPublicCurriculum, isPublicOn } from "@/lib/publication";
 
 // 渲染引擎已拆到 lib/markdown.ts(纯函数、可单测);此处 re-export 保持既有 import 路径不变。
 export { markdownToHtml, renderMarkdown } from "@/lib/markdown";
@@ -17,6 +18,10 @@ export type Post = {
   readingMinutes: number;
   content: string;
 };
+
+export function isPublicPost(post: Pick<Post, "date" | "slug">, now = new Date()): boolean {
+  return isAlwaysPublicCurriculum(post.slug) || isPublicOn(post.date, now);
+}
 
 const postsDirectory = path.join(process.cwd(), "content", "posts");
 
@@ -103,22 +108,25 @@ export const getAllPublishedPosts = cache(async (): Promise<Post[]> => {
   for (const post of markdownPosts) merged.set(post.slug, post);
   for (const post of databasePosts) merged.set(post.slug, post);
 
-  return [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
+  return [...merged.values()]
+    .filter((post) => isPublicPost(post))
+    .sort((a, b) => b.date.localeCompare(a.date));
 });
 
 export const getPublishedPost = cache(async (slug: string): Promise<Post | undefined> => {
   try {
     const databasePost = await getDatabasePost(slug);
-    if (databasePost) return databasePost;
+    if (databasePost) return isPublicPost(databasePost) ? databasePost : undefined;
   } catch (error) {
     console.warn("[learning-blog] database post read failed, falling back to Markdown:", error);
   }
-  return getPost(slug);
+  const post = getPost(slug);
+  return post && isPublicPost(post) ? post : undefined;
 });
 
 export function getAllTags(): { tag: string; count: number }[] {
   const counts = new Map<string, number>();
-  for (const post of getAllPosts()) {
+  for (const post of getAllPosts().filter((post) => isPublicPost(post))) {
     for (const tag of post.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   }
   return [...counts.entries()]
@@ -138,7 +146,7 @@ export async function getAllPublishedTags(): Promise<{ tag: string; count: numbe
 
 export function getPostsByTag(tag: string): Post[] {
   const decoded = decodeURIComponent(tag);
-  return getAllPosts().filter((post) => post.tags.includes(decoded));
+  return getAllPosts().filter((post) => isPublicPost(post) && post.tags.includes(decoded));
 }
 
 export async function getPublishedPostsByTag(tag: string): Promise<Post[]> {
