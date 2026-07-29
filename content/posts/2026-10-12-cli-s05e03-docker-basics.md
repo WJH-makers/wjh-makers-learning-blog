@@ -271,34 +271,34 @@ db 的 `PORTS` 一栏只有 `27017/tcp`、没有箭头——**没临街**,正合
 ### 选择题(10 道)
 
 1. Docker 镜像(Image)和容器(Container)的关系,最恰当的类比是什么?
-- A) 文件与文件夹　B) 类(Class)与实例(Instance):镜像是只读模板,容器是镜像的运行实例　C) 压缩包与解压后的文件　D) 代码与编译器
+   - A) 文件与文件夹　B) 类(Class)与实例(Instance):镜像是只读模板,容器是镜像的运行实例　C) 压缩包与解压后的文件　D) 代码与编译器
 
 2. `docker run -d -p 8080:80 --name web nginx` 中 `-d`、`-p`、`--name` 分别代表什么?
-- A) daemon(后台运行)、port(端口映射 主机:容器)、name(容器名称)　B) delete、password、name　C) directory、process、namespace　D) detach、path、node
+   - A) daemon(后台运行)、port(端口映射 主机:容器)、name(容器名称)　B) delete、password、name　C) directory、process、namespace　D) detach、path、node
 
 3. `docker ps` 默认显示什么?
-- A) 所有容器(含已停止的)　B) 正在运行的容器列表　C) 所有镜像　D) 容器日志
+   - A) 所有容器(含已停止的)　B) 正在运行的容器列表　C) 所有镜像　D) 容器日志
 
 4. `docker logs -f web` 中 `-f` 的作用是?
-- A) 强制(force)　B) follow,持续跟踪输出(类似 tail -f),实时查看新日志　C) 过滤(filter)　D) 格式化(format)
+   - A) 强制(force)　B) follow,持续跟踪输出(类似 tail -f),实时查看新日志　C) 过滤(filter)　D) 格式化(format)
 
 5. `docker exec -it web bash` 的作用是什么?
-- A) 停止名为 web 的容器　B) 在正在运行的 `web` 容器内**打开一个交互式 bash shell**　C) 创建新容器并命名为 bash　D) 查看容器日志
+   - A) 停止名为 web 的容器　B) 在正在运行的 `web` 容器内**打开一个交互式 bash shell**　C) 创建新容器并命名为 bash　D) 查看容器日志
 
 6. `docker-compose up -d` 和 `docker-compose down` 是一对什么操作?
-- A) 无关联　B) `up -d` 以守护进程模式启动 compose 定义的所有服务,`down` 停止并移除所有相关容器/网络/卷　C) `up` 是部署,`down` 是下载镜像　D) 两者等价,只是语法不同
+   - A) 无关联　B) `up -d` 以守护进程模式启动 compose 定义的所有服务,`down` 停止并移除所有相关容器/网络/卷　C) `up` 是部署,`down` 是下载镜像　D) 两者等价,只是语法不同
 
 7. 容器停止后数据丢失,正确的数据持久化方式是什么?
-- A) 把数据写进镜像　B) 使用 Docker Volume(卷)或 bind mount(绑定挂载)将数据存储在主机的持久化目录中　C) 容器内的数据永远不会丢失　D) 定期 `docker commit` 保存容器状态
+   - A) 把数据写进镜像　B) 使用 Docker Volume(卷)或 bind mount(绑定挂载)将数据存储在主机的持久化目录中　C) 容器内的数据永远不会丢失　D) 定期 `docker commit` 保存容器状态
 
 8. `docker stop web` 和 `docker kill web` 的区别?
-- A) 完全相同　B) `stop` 发送 SIGTERM(给应用优雅清理的时间,超时后 SIGKILL),`kill` 立即发送 SIGKILL(强制终止)　C) `stop` 删除容器,`kill` 暂停容器　D) `kill` 是 `stop` 的别名
+   - A) 完全相同　B) `stop` 发送 SIGTERM(给应用优雅清理的时间,超时后 SIGKILL),`kill` 立即发送 SIGKILL(强制终止)　C) `stop` 删除容器,`kill` 暂停容器　D) `kill` 是 `stop` 的别名
 
 9. 关于 Docker 的"镜像分层"概念,以下说法**正确**的是?
-- A) 每个镜像只有一个层　B) 镜像由多个只读层堆叠而成,每个 Dockerfile 指令( RUN/COPY/ADD )创建一个新层,容器在顶部有一个可写层　C) 分层只是比喻,实际不存在　D) 分层会让镜像变得更大
+   - A) 每个镜像只有一个层　B) 镜像由多个只读层堆叠而成,每个 Dockerfile 指令( RUN/COPY/ADD )创建一个新层,容器在顶部有一个可写层　C) 分层只是比喻,实际不存在　D) 分层会让镜像变得更大
 
 10. Docker Compose 文件的 `depends_on` 指令作用是什么?
-- A) 复制文件到容器　B) 定义服务间的启动依赖顺序(如 db 先于 app 启动)　C) 安装依赖包　D) 指定挂载卷
+   - A) 复制文件到容器　B) 定义服务间的启动依赖顺序(如 db 先于 app 启动)　C) 安装依赖包　D) 指定挂载卷
 
 ### 解答题(5 道)
 

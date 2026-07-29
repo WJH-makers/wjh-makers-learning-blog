@@ -68,7 +68,7 @@ HttpMessageConverter 把返回值写进响应体 → 浏览器收到
 
 ## 五、配置与代码:三个文件起一个服务
 
-下面是**可直接保存并运行的完整** `pom.xml`（继承 Spring Boot 父 POM，统一依赖版本）：
+下面是**可直接保存并运行的完整** `pom.xml`(继承 Spring Boot 父 POM,统一依赖版本):
 
 ```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0"

@@ -247,34 +247,34 @@ LISTEN  0  511  0.0.0.0:3000  0.0.0.0:*  users:(("node",pid=21501,fd=18))
 ### 选择题(10 道)
 
 1. `ping` 命令使用什么网络协议?
-- A) TCP　B) UDP　C) ICMP　D) HTTP
+   - A) TCP　B) UDP　C) ICMP　D) HTTP
 
 2. `curl -I https://example.com` 中 `-I` 的作用是什么?
-- A) 忽略 SSL 证书校验　B) 只获取 HTTP 响应头(HEAD 请求)　C) 交互模式　D) 显示请求头
+   - A) 忽略 SSL 证书校验　B) 只获取 HTTP 响应头(HEAD 请求)　C) 交互模式　D) 显示请求头
 
 3. `ss -tlnp` 中 `-t`、`-l`、`-n`、`-p` 分别代表什么?
-- A) tcp、listening(监听)、numeric(数字端口号)、process(显示进程)　B) test、local、name、port　C) timeout、log、new、path　D) tl、nl 等协议选项
+   - A) tcp、listening(监听)、numeric(数字端口号)、process(显示进程)　B) test、local、name、port　C) timeout、log、new、path　D) tl、nl 等协议选项
 
 4. 服务监听在 `0.0.0.0:8080` 和 `127.0.0.1:8080` 有什么区别?
-- A) 完全相同　B) `0.0.0.0` 监听所有网络接口(外部可访问),`127.0.0.1` 只监听本地回环(只本机可访问)　C) `0.0.0.0` 更快　D) `127.0.0.1` 是最新版写法
+   - A) 完全相同　B) `0.0.0.0` 监听所有网络接口(外部可访问),`127.0.0.1` 只监听本地回环(只本机可访问)　C) `0.0.0.0` 更快　D) `127.0.0.1` 是最新版写法
 
 5. `curl -v https://example.com` 中 `-v` 的用途是什么?
-- A) 验证(verify)SSL 证书　B) verbose(详细模式),显示请求和响应的完整 HTTP 头部和握手过程　C) 版本(version)信息　D) 虚拟(virtual)主机
+   - A) 验证(verify)SSL 证书　B) verbose(详细模式),显示请求和响应的完整 HTTP 头部和握手过程　C) 版本(version)信息　D) 虚拟(virtual)主机
 
 6. 浏览器访问 `http://server:3000` 提示 "Connection refused",而 `ping server` 正常,这说明了什么?
-- A) 服务器宕机了　B) 端口 3000 上没有服务在监听(或被防火墙阻止)　C) DNS 解析失败　D) 浏览器坏了
+   - A) 服务器宕机了　B) 端口 3000 上没有服务在监听(或被防火墙阻止)　C) DNS 解析失败　D) 浏览器坏了
 
 7. `Connection refused` 和 `Connection timeout` 的关键区别是什么?
-- A) 没有区别,都是网络不通　B) refused=目标主机**明确拒绝**了连接(端口没开或无服务),timeout=请求发出去了但**没有收到任何响应**(防火墙丢包或主机不可达)　C) refused 是本地问题,timeout 是远程问题　D) timeout 一定是网络断了
+   - A) 没有区别,都是网络不通　B) refused=目标主机**明确拒绝**了连接(端口没开或无服务),timeout=请求发出去了但**没有收到任何响应**(防火墙丢包或主机不可达)　C) refused 是本地问题,timeout 是远程问题　D) timeout 一定是网络断了
 
 8. 网络分层排查的正确顺序(自底向上)是什么?
-- A) 应用层→传输层→网络层→链路层　B) 链路层(ping)→网络层(ping)→传输层(ss/telnet)→应用层(curl)　C) 应用层→链路层→网络层→传输层　D) 没有标准顺序
+   - A) 应用层→传输层→网络层→链路层　B) 链路层(ping)→网络层(ping)→传输层(ss/telnet)→应用层(curl)　C) 应用层→链路层→网络层→传输层　D) 没有标准顺序
 
 9. `ss -tlnp | grep :80` 没有输出,但 nginx 在运行。最可能的原因是什么?
-- A) nginx 没有运行,`ss` 命令故障　B) nginx 可能只监听 IPv4 或只监听 IPv6(需要分别用 `ss -tlnp4` 和 `ss -tlnp6` 检查),或者监听了其他端口　C) `ss` 不能看 nginx 的状态　D) nginx 使用了其他协议
+   - A) nginx 没有运行,`ss` 命令故障　B) nginx 可能只监听 IPv4 或只监听 IPv6(需要分别用 `ss -tlnp4` 和 `ss -tlnp6` 检查),或者监听了其他端口　C) `ss` 不能看 nginx 的状态　D) nginx 使用了其他协议
 
 10. `curl` 返回 `curl: (7) Failed to connect to example.com port 443: Connection refused`,诊断的正确流程是什么?
-- A) 重新安装 curl　B) 先 ping 确认网络→用 `ss -tlnp` 确认端口是否有服务监听→检查防火墙是否阻挡→检查服务是否绑定到正确地址　C) 直接重启服务器　D) 换浏览器试
+   - A) 重新安装 curl　B) 先 ping 确认网络→用 `ss -tlnp` 确认端口是否有服务监听→检查防火墙是否阻挡→检查服务是否绑定到正确地址　C) 直接重启服务器　D) 换浏览器试
 
 ### 解答题(5 道)
 

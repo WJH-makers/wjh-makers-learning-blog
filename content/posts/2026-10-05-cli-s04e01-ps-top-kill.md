@@ -232,34 +232,34 @@ $ uptime                     # 负载缓缓落地
 ### 选择题(10 道)
 
 1. `ps aux` 和 `ps -ef` 的关系是什么?
-- A) 完全不同的命令　B) 两者都列出系统中所有正在运行的进程,只是格式和选项风格不同(BSD vs Unix)　C) `ps aux` 只显示当前用户的进程　D) `ps -ef` 是 Windows 命令
+   - A) 完全不同的命令　B) 两者都列出系统中所有正在运行的进程,只是格式和选项风格不同(BSD vs Unix)　C) `ps aux` 只显示当前用户的进程　D) `ps -ef` 是 Windows 命令
 
 2. `top` 命令中,按哪个键按 CPU 使用率排序?
-- A) `c`　B) `P`(大写)　C) `m`　D) `s`
+   - A) `c`　B) `P`(大写)　C) `m`　D) `s`
 
 3. `kill -9 PID` 中的 `-9` 代表什么信号?
-- A) SIGTERM(终止)　B) SIGKILL(强制杀死,不可被进程捕获)　C) SIGINT(中断)　D) SIGHUP(挂断)
+   - A) SIGTERM(终止)　B) SIGKILL(强制杀死,不可被进程捕获)　C) SIGINT(中断)　D) SIGHUP(挂断)
 
 4. SIGTERM(15) 和 SIGKILL(9) 的关键区别是什么?
-- A) 效果一样,只是编号不同　B) SIGTERM 给进程清理和保存数据的机会(可被捕获),SIGKILL 由内核立即终止进程(不可被捕获/忽略)　C) SIGKILL 更温和　D) SIGTERM 是 Windows 信号
+   - A) 效果一样,只是编号不同　B) SIGTERM 给进程清理和保存数据的机会(可被捕获),SIGKILL 由内核立即终止进程(不可被捕获/忽略)　C) SIGKILL 更温和　D) SIGTERM 是 Windows 信号
 
 5. `top` 输出第一行的 `load average: 0.05, 0.10, 0.15` 中,三个数字分别代表什么?
-- A) 当前 CPU 温度、内存使用率、磁盘使用率　B) 过去 1 分钟、5 分钟、15 分钟的平均负载(等待 CPU 的进程数)　C) 系统启动时间、运行进程数、空内存　D) 网络流量、磁盘 IO、CPU 空闲率
+   - A) 当前 CPU 温度、内存使用率、磁盘使用率　B) 过去 1 分钟、5 分钟、15 分钟的平均负载(等待 CPU 的进程数)　C) 系统启动时间、运行进程数、空内存　D) 网络流量、磁盘 IO、CPU 空闲率
 
 6. `ps aux` 输出的 `VSZ` 和 `RSS` 列分别代表什么?
-- A) VSZ=虚拟内存大小(含共享库),RSS=物理内存实际占用　B) VSZ=CPU 使用率,RSS=内存使用率　C) VSZ=进程 ID,RSS=父进程 ID　D) VSZ=启动时间,RSS=运行时间
+   - A) VSZ=虚拟内存大小(含共享库),RSS=物理内存实际占用　B) VSZ=CPU 使用率,RSS=内存使用率　C) VSZ=进程 ID,RSS=父进程 ID　D) VSZ=启动时间,RSS=运行时间
 
 7. 一个服务进程占满 CPU(100%),应该用什么信号终止它?
-- A) `kill -1 PID`　B) `kill -15 PID`(先尝试优雅终止),无效再用 `kill -9 PID`　C) 只能重启系统　D) `kill -STOP PID`
+   - A) `kill -1 PID`　B) `kill -15 PID`(先尝试优雅终止),无效再用 `kill -9 PID`　C) 只能重启系统　D) `kill -STOP PID`
 
 8. 在 `top` 界面中,按哪个键可以**杀死**选中的进程?
-- A) `q`　B) `k`(然后输入 PID 和信号编号)　C) `x`　D) `d`
+   - A) `q`　B) `k`(然后输入 PID 和信号编号)　C) `x`　D) `d`
 
 9. `kill -0 PID` 的作用是什么?
-- A) 发送信号 0(无实际信号),用于**检测进程是否存在**(不终止进程)　B) 强制杀死进程　C) 暂停进程　D) 恢复进程
+   - A) 发送信号 0(无实际信号),用于**检测进程是否存在**(不终止进程)　B) 强制杀死进程　C) 暂停进程　D) 恢复进程
 
 10. 关于 `ps aux | grep nginx`,为什么输出中总是出现 `grep --color=auto nginx` 这一行?
-- A) 这是 bug　B) 因为 `grep nginx` 这个命令本身也在进程列表中,它的命令行包含 "nginx" 所以被自己匹配到　C) nginx 真的包含了 grep 进程　D) grep 命令自动重新运行
+   - A) 这是 bug　B) 因为 `grep nginx` 这个命令本身也在进程列表中,它的命令行包含 "nginx" 所以被自己匹配到　C) nginx 真的包含了 grep 进程　D) grep 命令自动重新运行
 
 ### 解答题(5 道)
 

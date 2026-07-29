@@ -204,34 +204,34 @@ $ pwd               # 我在哪(任何时候迷路,先敲它)
 ### 选择题(10 道)
 
 1. 以下哪一项是 SSH 远程登录服务器的命令格式?
-- A) `ssh user@host`　B) `ssh host@user`　C) `ssh -u user host`　D) `ftp user@host`
+   - A) `ssh user@host`　B) `ssh host@user`　C) `ssh -u user host`　D) `ftp user@host`
 
 2. 提示符 `ubuntu@coffee-server:~$` 中,`~` 代表什么?
-- A) 系统根目录　B) 当前用户的 home 目录　C) 临时目录　D) 最后一个访问的目录
+   - A) 系统根目录　B) 当前用户的 home 目录　C) 临时目录　D) 最后一个访问的目录
 
 3. 执行 `pwd` 命令的作用是?
-- A) 修改当前工作目录　B) 列出当前目录下的文件　C) 打印当前工作目录的绝对路径　D) 切换到上级目录
+   - A) 修改当前工作目录　B) 列出当前目录下的文件　C) 打印当前工作目录的绝对路径　D) 切换到上级目录
 
 4. 用户位于 `/home/ubuntu/projects`,执行 `cd ..` 后,`pwd` 输出是什么?
-- A) `/home/ubuntu`　B) `/home`　C) `/home/ubuntu/projects/..`　D) `/`
+   - A) `/home/ubuntu`　B) `/home`　C) `/home/ubuntu/projects/..`　D) `/`
 
 5. 在 Linux 中,以下哪两个文件名会被视为**同一个文件**?
-- A) `Readme.md` 和 `readme.md`　B) `Readme.md` 和 `README.md`　C) `readme.md` 和 `README.md`　D) 以上都不是,Linux 大小写敏感
+   - A) `Readme.md` 和 `readme.md`　B) `Readme.md` 和 `README.md`　C) `readme.md` 和 `README.md`　D) 以上都不是,Linux 大小写敏感
 
 6. 报错 `No such file or directory` 的第一排查步骤是什么?
-- A) 重新安装系统　B) `ls` 列出当前目录确认文件名拼写和大小写　C) 重启终端　D) 用 `sudo` 再执行一次
+   - A) 重新安装系统　B) `ls` 列出当前目录确认文件名拼写和大小写　C) 重启终端　D) 用 `sudo` 再执行一次
 
 7. 以下路径中,哪个是**绝对路径**?
-- A) `../var/log`　B) `./config/app.conf`　C) `/etc/nginx/nginx.conf`　D) `~/.ssh/id_rsa`
+   - A) `../var/log`　B) `./config/app.conf`　C) `/etc/nginx/nginx.conf`　D) `~/.ssh/id_rsa`
 
 8. 执行 `cd /var/log && cd ../../home/ubuntu` 后,最终所在目录是什么?
-- A) `/var/log/home/ubuntu`　B) `/home/ubuntu`　C) `/var/home/ubuntu`　D) `/var/../home/ubuntu`
+   - A) `/var/log/home/ubuntu`　B) `/home/ubuntu`　C) `/var/home/ubuntu`　D) `/var/../home/ubuntu`
 
 9. 关于 Linux 文件系统树,以下说法**错误**的是?
-- A) 所有文件和目录都挂在唯一的根 `/` 下　B) `.` 代表当前目录,`..` 代表父目录　C) `~` 永远等于 `/root`　D) `/` 是文件系统树的根节点
+   - A) 所有文件和目录都挂在唯一的根 `/` 下　B) `.` 代表当前目录,`..` 代表父目录　C) `~` 永远等于 `/root`　D) `/` 是文件系统树的根节点
 
 10. 在 `~/projects/coffee` 目录下执行 `cd /etc` 然后执行 `cd -`,最终在哪个目录?
-- A) `/etc`　B) `/home`　C) `~/projects/coffee`　D) `/root`
+   - A) `/etc`　B) `/home`　C) `~/projects/coffee`　D) `/root`
 
 ### 解答题(5 道)
 

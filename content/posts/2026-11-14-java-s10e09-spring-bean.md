@@ -269,64 +269,64 @@ Bean 生得明明白白了。阿零信心爆棚,顺手重构:把带 `@Transactio
 ### 选择题(10 道)
 
 1. Spring Bean 完整生命周期中,「实例化」阶段的核心动作是?
-- A) 从单例池中取出已创建的对象
-- B) 反射调用构造器创建对象(此时字段还是默认值)
-- C) 通过 `@Autowired` 注入依赖
-- D) 调用 `@PostConstruct` 方法
+   - A) 从单例池中取出已创建的对象
+   - B) 反射调用构造器创建对象(此时字段还是默认值)
+   - C) 通过 `@Autowired` 注入依赖
+   - D) 调用 `@PostConstruct` 方法
 
 2. `@Autowired` 和 `@Resource` 的注入策略区别是?
-- A) `@Autowired` 按名称注入,`@Resource` 按类型注入
-- B) `@Autowired` 按类型注入(配合 `@Qualifier` 按名),`@Resource` 默认按名称注入
-- C) 两者完全一致
-- D) `@Autowired` 只能注入接口,`@Resource` 只能注入实现类
+   - A) `@Autowired` 按名称注入,`@Resource` 按类型注入
+   - B) `@Autowired` 按类型注入(配合 `@Qualifier` 按名),`@Resource` 默认按名称注入
+   - C) 两者完全一致
+   - D) `@Autowired` 只能注入接口,`@Resource` 只能注入实现类
 
 3. Spring 三级缓存中,`singletonObjects`(一级缓存)存储的是?
-- A) Bean 的半成品(未完成属性填充)
-- B) 提前曝光的早期引用
-- C) 走完全部生命周期工序的成品 Bean
-- D) ObjectFactory 工厂对象
+   - A) Bean 的半成品(未完成属性填充)
+   - B) 提前曝光的早期引用
+   - C) 走完全部生命周期工序的成品 Bean
+   - D) ObjectFactory 工厂对象
 
 4. AOP 代理是在 Bean 生命周期的哪个阶段「换的包」?
-- A) 实例化
-- B) 属性填充
-- C) 初始化(`@PostConstruct` 之后)
-- D) BeanPostProcessor 后置处理
+   - A) 实例化
+   - B) 属性填充
+   - C) 初始化(`@PostConstruct` 之后)
+   - D) BeanPostProcessor 后置处理
 
 5. setter 循环依赖(A 需要 B,B 需要 A)能被 Spring 解决的原理是?
-- A) Spring 会自动将 setter 注入改为构造器注入
-- B) 三级缓存:先暴露「半成品的获取方式」(三级 ObjectFactory),B 需要 A 时拿到 A 的早期引用,B 造完入池后 A 再完成填充
-- C) Spring 禁止 setter 循环依赖,必须手动拆
-- D) Spring 将两个 Bean 合并成一个
+   - A) Spring 会自动将 setter 注入改为构造器注入
+   - B) 三级缓存:先暴露「半成品的获取方式」(三级 ObjectFactory),B 需要 A 时拿到 A 的早期引用,B 造完入池后 A 再完成填充
+   - C) Spring 禁止 setter 循环依赖,必须手动拆
+   - D) Spring 将两个 Bean 合并成一个
 
 6. 构造器循环依赖无解的根本原因是?
-- A) 构造器注入性能太差
-- B) 实例化(①)阶段就需要对方,而半成品要等实例化完成才能曝光——两人堵在产房门口等对方先出生
-- C) Spring 不支持构造器注入
-- D) Java 不支持构造器
+   - A) 构造器注入性能太差
+   - B) 实例化(①)阶段就需要对方,而半成品要等实例化完成才能曝光——两人堵在产房门口等对方先出生
+   - C) Spring 不支持构造器注入
+   - D) Java 不支持构造器
 
 7. 第三级缓存(`singletonFactories`)存在的必要性是?
-- A) 纯粹为了代码对称
-- B) 把「要不要提前生成代理」的决定推迟到**真发生循环**时才做——没循环零成本
-- C) 支持多例(prototype)Bean
-- D) 替代一级缓存
+   - A) 纯粹为了代码对称
+   - B) 把「要不要提前生成代理」的决定推迟到**真发生循环**时才做——没循环零成本
+   - C) 支持多例(prototype)Bean
+   - D) 替代一级缓存
 
 8. 以下关于 `@Lazy` 解决循环依赖的描述,**正确**的是?
-- A) `@Lazy` 真正拆解了循环依赖
-- B) `@Lazy` 注入的是一个代理占位符,首次真调用时才取真身——环还在,只是被推迟和隐藏了
-- C) `@Lazy` 让构造器注入变得和 setter 注入一样
-- D) `@Lazy` 是解决循环依赖的首选方案
+   - A) `@Lazy` 真正拆解了循环依赖
+   - B) `@Lazy` 注入的是一个代理占位符,首次真调用时才取真身——环还在,只是被推迟和隐藏了
+   - C) `@Lazy` 让构造器注入变得和 setter 注入一样
+   - D) `@Lazy` 是解决循环依赖的首选方案
 
 9. `orderService` 和 `stockService` 构成循环依赖,最佳的设计解法是?
-- A) 加 `@Lazy` 注解
-- B) 相互调用的职责抽成第三个类(如 `StockLedger`),两边都依赖它,环自然消失
-- C) 启用 `allow-circular-references`
-- D) 把 setter 注入改成构造器注入
+   - A) 加 `@Lazy` 注解
+   - B) 相互调用的职责抽成第三个类(如 `StockLedger`),两边都依赖它,环自然消失
+   - C) 启用 `allow-circular-references`
+   - D) 把 setter 注入改成构造器注入
 
 10. Spring Boot 较新版本对循环依赖的默认态度是?
-- A) 完全允许,不做任何限制
-- B) **默认禁止**(包括 setter 循环),需 `spring.main.allow-circular-references=true` 手动打开(不推荐)
-- C) 允许 setter 但不允许构造器
-- D) 自动拆解所有循环依赖
+   - A) 完全允许,不做任何限制
+   - B) **默认禁止**(包括 setter 循环),需 `spring.main.allow-circular-references=true` 手动打开(不推荐)
+   - C) 允许 setter 但不允许构造器
+   - D) 自动拆解所有循环依赖
 
 ### 解答题(5 道)
 

@@ -240,22 +240,22 @@ rsync 把最新代码送上服务器,`systemctl restart coffee`,journalctl 里�
 ### 选择题(10 道)
 
 1. `ssh-keygen -t ed25519` 生成的是什么?
-- A) 一条 SSH 连接　B) 一对公钥和私钥(用于免密 SSH 登录)　C) 服务器证书　D) SSL 证书
+   - A) 一条 SSH 连接　B) 一对公钥和私钥(用于免密 SSH 登录)　C) 服务器证书　D) SSL 证书
 
 2. `scp file.txt user@server:/tmp/` 的作用是什么?
-- A) 从服务器下载文件　B) 将本地 `file.txt` 上传到服务器的 `/tmp/` 目录　C) 在服务器上创建文件　D) 备份文件到本地
+   - A) 从服务器下载文件　B) 将本地 `file.txt` 上传到服务器的 `/tmp/` 目录　C) 在服务器上创建文件　D) 备份文件到本地
 
 3. `rsync -avz source/ dest/` 中 `-a`、`-v`、`-z` 分别代表什么?
-- A) archive(归档/保留属性)、verbose(详细输出)、compress(传输中压缩)　B) all、version、zip　C) append、verify、zero　D) auto、view、zlib
+   - A) archive(归档/保留属性)、verbose(详细输出)、compress(传输中压缩)　B) all、version、zip　C) append、verify、zero　D) auto、view、zlib
 
 4. `scp` 中冒号 `:` 的作用是什么?
-- A) 分隔文件名和端口号　B) 分隔主机名和远程路径(冒号后是远程路径)　C) 表示压缩传输　D) 分隔用户名和密码
+   - A) 分隔文件名和端口号　B) 分隔主机名和远程路径(冒号后是远程路径)　C) 表示压缩传输　D) 分隔用户名和密码
 
 5. `~/.ssh/authorized_keys` 文件的作用是什么?
-- A) 存储客户端的私钥　B) 存储**允许免密登录**的公钥列表(放公钥的人可以登录这台服务器)　C) 存储已知主机列表　D) 存储用户密码
+   - A) 存储客户端的私钥　B) 存储**允许免密登录**的公钥列表(放公钥的人可以登录这台服务器)　C) 存储已知主机列表　D) 存储用户密码
 
 6. `rsync` 相比 `scp` 的核心优势是什么?
-- A) rsync 更快(总是)　B) rsync 支持增量传输(只传差异部分)、断点续传、可排除文件　C) rsync 不需要 SSH　D) rsync 只能本地使用
+   - A) rsync 更快(总是)　B) rsync 支持增量传输(只传差异部分)、断点续传、可排除文件　C) rsync 不需要 SSH　D) rsync 只能本地使用
 
 7. `~/.ssh/config` 中配置以下内容:
 ```
@@ -267,13 +267,13 @@ Host coffee
 - A) `ssh coffee`　B) `ssh 10.0.0.5`　C) `ssh deploy@coffee`　D) 以上都可以,A 最简洁
 
 8. `rsync -avz --delete source/ dest/` 中 `--delete` 的作用是什么?
-- A) 删除源目录　B) 删除目标目录中多余的文件(使 dest 成为 source 的**精确镜像**)　C) 删除所有文件后同步　D) 删除源和目标中不同的文件
+   - A) 删除源目录　B) 删除目标目录中多余的文件(使 dest 成为 source 的**精确镜像**)　C) 删除所有文件后同步　D) 删除源和目标中不同的文件
 
 9. 关于 SSH 密钥对,以下说法**正确**的是?
-- A) 私钥放在服务器,公钥放在本地　B) 私钥是锁(public),公钥是钥匙(private)　C) 私钥是**身份证明**(绝不能泄露),公钥是"锁"(放在要登录的服务器上)　D) 公钥和私钥可以互换使用
+   - A) 私钥放在服务器,公钥放在本地　B) 私钥是锁(public),公钥是钥匙(private)　C) 私钥是**身份证明**(绝不能泄露),公钥是"锁"(放在要登录的服务器上)　D) 公钥和私钥可以互换使用
 
 10. 用户执行 `scp root@server:/etc/nginx/nginx.conf ./`,以下哪种冒号方向的解读是**正确**的?
-- A) 冒号后的路径是本地路径　B) `server:` = 在 host:path 中,冒号标识远程路径(从远程**下载**)　C) 冒号开头的路径表示绝对路径　D) 冒号是注释符号
+   - A) 冒号后的路径是本地路径　B) `server:` = 在 host:path 中,冒号标识远程路径(从远程**下载**)　C) 冒号开头的路径表示绝对路径　D) 冒号是注释符号
 
 ### 解答题(5 道)
 

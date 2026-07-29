@@ -264,34 +264,34 @@ class HotSalesBoard {
 ### 选择题(10 道)
 
 1. CAS 操作依赖的三个要素是什么?
-- A) 内存地址、期望值、新值　　B) 内存值 V、期望值 E、新值 N　　C) 锁对象、线程 ID、时间戳　　D) 堆地址、栈地址、程序计数器
+   - A) 内存地址、期望值、新值　　B) 内存值 V、期望值 E、新值 N　　C) 锁对象、线程 ID、时间戳　　D) 堆地址、栈地址、程序计数器
 
 2. 在 x86 平台上,CAS 对应的底层指令是?
-- A) `test-and-set`　　B) `lock cmpxchg`　　C) `mfence`　　D) `lock xadd`
+   - A) `test-and-set`　　B) `lock cmpxchg`　　C) `mfence`　　D) `lock xadd`
 
 3. `AtomicInteger.incrementAndGet()` 内部,当 `compareAndSet` 失败后,下一次循环拿到的 expect 值来自哪里?
-- A) 从主内存重新读 `get()` 获取当前值　　B) 从失败时 `compareAndSet` 自动写入的寄存器读取　　C) 从 ThreadLocal 缓存中恢复上次的 expect　　D) 直接从上次 CAS 失败的返回码推算
+   - A) 从主内存重新读 `get()` 获取当前值　　B) 从失败时 `compareAndSet` 自动写入的寄存器读取　　C) 从 ThreadLocal 缓存中恢复上次的 expect　　D) 直接从上次 CAS 失败的返回码推算
 
 4. 下列代码片段中,哪个在高并发下最典型地面临 ABA 问题?
-- A) `AtomicInteger` 做递增计数器　　B) `AtomicReference<Node>` 实现无锁栈 pop,Node 对象被 GC 回收后又恰被重新分配为同一引用值　　C) `LongAdder.increment()` 做 QPS 统计　　D) `AtomicBoolean.compareAndSet(false, true)` 做一次性开关
+   - A) `AtomicInteger` 做递增计数器　　B) `AtomicReference<Node>` 实现无锁栈 pop,Node 对象被 GC 回收后又恰被重新分配为同一引用值　　C) `LongAdder.increment()` 做 QPS 统计　　D) `AtomicBoolean.compareAndSet(false, true)` 做一次性开关
 
 5. `LongAdder` 相比 `AtomicLong` 在高竞争下吞吐量显著更高的根本原因是?
-- A) 使用了更快的 CPU 指令集　　B) 内部用 `Cell[]` 数组将热点分散到多个内存位置,各线程落在不同 Cell 上独立 CAS,最后 sum 汇总　　C) 完全消除了 CAS 自旋,纯 wait-free 实现　　D) 用 `synchronized` 替代 CAS,减少了总线风暴
+   - A) 使用了更快的 CPU 指令集　　B) 内部用 `Cell[]` 数组将热点分散到多个内存位置,各线程落在不同 Cell 上独立 CAS,最后 sum 汇总　　C) 完全消除了 CAS 自旋,纯 wait-free 实现　　D) 用 `synchronized` 替代 CAS,减少了总线风暴
 
 6. 对于以下哪个场景,`AtomicStampedReference` 是最适合的选择?
-- A) 统计 CDN 带宽使用量,允许 5 秒延迟　　B) 无锁栈的 pop 操作——需要保证「弹出节点 A→压入新节点 B→又压回 A」这种中间变化能被检测到　　C) 用 `AtomicLong` 做分布式 ID 生成器　　D) 用 `AtomicBoolean` 做集群选主标记
+   - A) 统计 CDN 带宽使用量,允许 5 秒延迟　　B) 无锁栈的 pop 操作——需要保证「弹出节点 A→压入新节点 B→又压回 A」这种中间变化能被检测到　　C) 用 `AtomicLong` 做分布式 ID 生成器　　D) 用 `AtomicBoolean` 做集群选主标记
 
 7. 下面关于 `AtomicInteger` 的使用,哪一段存在最典型的 check-then-act 竞态窗口?(多线程环境)
-- A) `atomic.getAndIncrement()`　　B) `if (atomic.get() > 0) { atomic.decrementAndGet(); }`　　C) `atomic.compareAndSet(5, 10)`　　D) `atomic.accumulateAndGet(3, Integer::sum)`
+   - A) `atomic.getAndIncrement()`　　B) `if (atomic.get() > 0) { atomic.decrementAndGet(); }`　　C) `atomic.compareAndSet(5, 10)`　　D) `atomic.accumulateAndGet(3, Integer::sum)`
 
 8. 关于 `LongAdder.sum()` 方法的正确描述是?
-- A) 调用时内部会加全局锁,返回值是调用瞬间的精确值　　B) 遍历 `Cell[]` 累加时不加锁,返回值是某个近似快照,因为其他线程可能同时在写入 Cell　　C) sum() 只能由创建 LongAdder 的线程调用　　D) sum() 返回的是最近一个完整秒内的聚合值
+   - A) 调用时内部会加全局锁,返回值是调用瞬间的精确值　　B) 遍历 `Cell[]` 累加时不加锁,返回值是某个近似快照,因为其他线程可能同时在写入 Cell　　C) sum() 只能由创建 LongAdder 的线程调用　　D) sum() 返回的是最近一个完整秒内的聚合值
 
 9. `AtomicInteger` 初始值为 0,线程 A 和 B 同时各执行一次 `getAndIncrement()`,以下哪组返回结果是不可能的?
-- A) A 得到 0,B 得到 1　　B) A 得到 1,B 得到 0　　C) A 得到 0,B 得到 0　　D) A 得到 0 和 B 得到 1 都是可能的,取决于调度
+   - A) A 得到 0,B 得到 1　　B) A 得到 1,B 得到 0　　C) A 得到 0,B 得到 0　　D) A 得到 0 和 B 得到 1 都是可能的,取决于调度
 
 10. 某服务需要统计过去 60 秒的请求量以计算实时 QPS,极高并发(>10 万 TPS),误差允许 ±2%。从以下方案中选一个最优的:
-- A) `AtomicLong.incrementAndGet()` + 定时任务每分钟读一次　　B) `synchronized` 计数器 + 定时 reset　　C) `LongAdder.increment()` + 每秒 `sumThenReset()` 采样写入滑动窗口　　D) 每个线程维护自己的局部计数器,定时汇总到全局
+   - A) `AtomicLong.incrementAndGet()` + 定时任务每分钟读一次　　B) `synchronized` 计数器 + 定时 reset　　C) `LongAdder.increment()` + 每秒 `sumThenReset()` 采样写入滑动窗口　　D) 每个线程维护自己的局部计数器,定时汇总到全局
 
 ### 解答题(5 道)
 

@@ -252,34 +252,34 @@ $ curl -s localhost:3000/menu
 ### 选择题(10 道)
 
 1. `systemctl` 是哪个初始化系统的管理命令?
-- A) SysV init　B) Upstart　C) systemd　D) launchd
+   - A) SysV init　B) Upstart　C) systemd　D) launchd
 
 2. `systemctl start nginx` 和 `systemctl enable nginx` 的区别是什么?
-- A) 完全相同　B) `start`=立即启动服务(本次运行),`enable`=设置开机自启动(下次启动生效),两者独立操作　C) `enable` 是 `start` 的别名　D) `start` 包含 `enable` 的功能
+   - A) 完全相同　B) `start`=立即启动服务(本次运行),`enable`=设置开机自启动(下次启动生效),两者独立操作　C) `enable` 是 `start` 的别名　D) `start` 包含 `enable` 的功能
 
 3. `journalctl -u nginx` 的作用是什么?
-- A) 重启 nginx 服务　B) 查看 nginx 服务单元(unit)的所有日志　C) 更新 nginx 单元配置　D) 停止 nginx 服务
+   - A) 重启 nginx 服务　B) 查看 nginx 服务单元(unit)的所有日志　C) 更新 nginx 单元配置　D) 停止 nginx 服务
 
 4. `systemctl daemon-reload` 什么时候需要执行?
-- A) 每次启动系统时　B) 修改了 systemd 单元文件(`.service`/`.timer` 等)后,让 systemd 重新加载配置　C) 每次安装新软件后　D) 服务崩溃后
+   - A) 每次启动系统时　B) 修改了 systemd 单元文件(`.service`/`.timer` 等)后,让 systemd 重新加载配置　C) 每次安装新软件后　D) 服务崩溃后
 
 5. `systemctl status nginx` 输出中 `Active: active (running)` 和 `Loaded: loaded (/lib/systemd/system/nginx.service; enabled)` 分别表示什么?
-- A) 两者含义相同　B) Active 表示服务当前是否在运行;Loaded+enabled 表示单元文件是否加载且设为开机启动　C) Active 表示开机启动状态,Loaded 表示内存占用　D) Active 表示网络连接,Loaded 表示 CPU 负载
+   - A) 两者含义相同　B) Active 表示服务当前是否在运行;Loaded+enabled 表示单元文件是否加载且设为开机启动　C) Active 表示开机启动状态,Loaded 表示内存占用　D) Active 表示网络连接,Loaded 表示 CPU 负载
 
 6. `journalctl -f` 的 `-f` 等价于什么功能?
-- A) 强制(force)　B) follow,持续追踪最新日志输出(类似 `tail -f`)　C) 全文搜索(full-text)　D) 过滤(filter)
+   - A) 强制(force)　B) follow,持续追踪最新日志输出(类似 `tail -f`)　C) 全文搜索(full-text)　D) 过滤(filter)
 
 7. 一条服务单元文件(`.service`)的三要素是什么?
-- A) Name、Path、Owner　B) Description、ExecStart、Type　C) Unit、Service、Install(三段落)　D) Start、Stop、Restart
+   - A) Name、Path、Owner　B) Description、ExecStart、Type　C) Unit、Service、Install(三段落)　D) Start、Stop、Restart
 
 8. `systemctl mask nginx` 和 `systemctl disable nginx` 的区别是什么?
-- A) 完全一样　B) `disable` 取消开机自启(但可以被手动或依赖启动);`mask` 彻底禁止启动(即使手动 start 也不行,单元文件被链接到 /dev/null)　C) `mask` 是 `disable` 的别名　D) `mask` 会删除服务
+   - A) 完全一样　B) `disable` 取消开机自启(但可以被手动或依赖启动);`mask` 彻底禁止启动(即使手动 start 也不行,单元文件被链接到 /dev/null)　C) `mask` 是 `disable` 的别名　D) `mask` 会删除服务
 
 9. `journalctl --since "2026-09-20" --until "2026-09-21"` 的作用?
-- A) 删除指定日期的日志　B) 查看 2026-09-20 这一天的所有日志　C) 备份日志　D) 统计日志行数
+   - A) 删除指定日期的日志　B) 查看 2026-09-20 这一天的所有日志　C) 备份日志　D) 统计日志行数
 
 10. 以下哪个是 systemd 单元文件的正确存放位置(用户自定义)?
-- A) `/usr/bin/`　B) `/etc/systemd/system/`　C) `/var/log/`　D) `/home/user/`
+   - A) `/usr/bin/`　B) `/etc/systemd/system/`　C) `/var/log/`　D) `/home/user/`
 
 ### 解答题(5 道)
 

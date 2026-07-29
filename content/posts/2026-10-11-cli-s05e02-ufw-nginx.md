@@ -262,34 +262,34 @@ $ curl -s -o /dev/null -w "%{http_code}\n" http://203.0.113.10
 ### 选择题(10 道)
 
 1. `ufw` 是什么工具的简称?
-- A) Universal Firewall　B) Uncomplicated Firewall(简化防火墙,iptables 的前端)　C) User File Watcher　D) Unix Forward Web
+   - A) Universal Firewall　B) Uncomplicated Firewall(简化防火墙,iptables 的前端)　C) User File Watcher　D) Unix Forward Web
 
 2. 第一次启用 `ufw` 前,**必须**先执行什么操作?
-- A) 重启服务器　B) 允许 SSH 端口(`ufw allow ssh` 或 `ufw allow 22`),否则启用后 SSH 会被断开　C) 安装 iptables　D) 关闭所有应用
+   - A) 重启服务器　B) 允许 SSH 端口(`ufw allow ssh` 或 `ufw allow 22`),否则启用后 SSH 会被断开　C) 安装 iptables　D) 关闭所有应用
 
 3. nginx 配置中 `server { listen 80; server_name coffee.com; ... }` 的 `server_name` 作用是什么?
-- A) 设置服务器的操作系统主机名　B) 基于域名的虚拟主机匹配(HTTP Host 头匹配)　C) 设置监听 IP　D) 命名 nginx 进程
+   - A) 设置服务器的操作系统主机名　B) 基于域名的虚拟主机匹配(HTTP Host 头匹配)　C) 设置监听 IP　D) 命名 nginx 进程
 
 4. `nginx -t` 命令的作用是什么?
-- A) 启动 nginx　B) 测试配置文件语法是否正确(不实际启动)　C) 显示 nginx 版本　D) 停止 nginx
+   - A) 启动 nginx　B) 测试配置文件语法是否正确(不实际启动)　C) 显示 nginx 版本　D) 停止 nginx
 
 5. `systemctl reload nginx` 和 `systemctl restart nginx` 的关键区别是什么?
-- A) 完全相同　B) `reload` 重载配置文件**不中断现有连接**(优雅重载),`restart` 停止并重新启动(瞬间中断所有连接)　C) `reload` 更快　D) `restart` 不会检查配置文件
+   - A) 完全相同　B) `reload` 重载配置文件**不中断现有连接**(优雅重载),`restart` 停止并重新启动(瞬间中断所有连接)　C) `reload` 更快　D) `restart` 不会检查配置文件
 
 6. nginx 的 `proxy_pass` 指令作用是什么?
-- A) 设置 nginx 的密码　B) 将请求转发(反向代理)到后端应用服务器(如 `http://localhost:3000`)　C) 直接提供静态文件　D) 设置代理服务器地址
+   - A) 设置 nginx 的密码　B) 将请求转发(反向代理)到后端应用服务器(如 `http://localhost:3000`)　C) 直接提供静态文件　D) 设置代理服务器地址
 
 7. 配置了 `ufw allow 80` 后再 `ufw enable`,以下说法**正确**的是?
-- A) 只有 80 端口对外可访问,所有其他端口(包括 22)都被拒绝　B) 所有端口都开放　C) 只有 80 和 22 开放　D) 除了 80,之前配置的其他 allow 规则也生效(如已有的 SSH 规则)
+   - A) 只有 80 端口对外可访问,所有其他端口(包括 22)都被拒绝　B) 所有端口都开放　C) 只有 80 和 22 开放　D) 除了 80,之前配置的其他 allow 规则也生效(如已有的 SSH 规则)
 
 8. nginx 配置文件中缺少一个分号 `;`,nginx 能正常运行吗?
-- A) 能,分号不重要　B) nginx 会使用默认分号位置自动修正　C) `nginx -t` 会报告语法错误并指出具体行号,`reload`/`restart` 会失败　D) nginx 会崩溃且无法启动
+   - A) 能,分号不重要　B) nginx 会使用默认分号位置自动修正　C) `nginx -t` 会报告语法错误并指出具体行号,`reload`/`restart` 会失败　D) nginx 会崩溃且无法启动
 
 9. 为什么生产环境中推荐使用 `reload` 而非 `restart`?
-- A) reload 更快　B) reload 实现零停机(zero-downtime):旧 worker 处理完现有请求后退出,新 worker 加载新配置接收新请求,期间服务不中断　C) restart 会丢失日志　D) reload 是新的命令,restart 已废弃
+   - A) reload 更快　B) reload 实现零停机(zero-downtime):旧 worker 处理完现有请求后退出,新 worker 加载新配置接收新请求,期间服务不中断　C) restart 会丢失日志　D) reload 是新的命令,restart 已废弃
 
 10. 以下关于 ufw 默认策略的说法,**合理**的是?
-- A) 默认允许所有入站和出站连接　B) 默认拒绝所有入站(deny incoming),允许所有出站(allow outgoing)　C) 默认拒绝所有出站和入站　D) ufw 没有默认策略
+   - A) 默认允许所有入站和出站连接　B) 默认拒绝所有入站(deny incoming),允许所有出站(allow outgoing)　C) 默认拒绝所有出站和入站　D) ufw 没有默认策略
 
 ### 解答题(5 道)
 

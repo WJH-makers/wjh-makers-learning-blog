@@ -265,34 +265,34 @@ deploy@coffee:~$ █
 ### 选择题(10 道)
 
 1. "完整上线链"一般包含哪些步骤?
-- A) 只写代码　B) clone 代码→安装依赖→配置环境→启动服务→配置反向代理→测试　C) 只有启动服务　D) 上传文件即可
+   - A) 只写代码　B) clone 代码→安装依赖→配置环境→启动服务→配置反向代理→测试　C) 只有启动服务　D) 上传文件即可
 
 2. 502 Bad Gateway 错误,在 nginx 反向代理架构中最可能的原因是什么?
-- A) 客户端网络故障　B) nginx 本身崩溃　C) nginx 可以工作,但**后端应用服务**(proxy_pass 的目标)没有运行或无法响应　D) DNS 解析失败
+   - A) 客户端网络故障　B) nginx 本身崩溃　C) nginx 可以工作,但**后端应用服务**(proxy_pass 的目标)没有运行或无法响应　D) DNS 解析失败
 
 3. "上线烟测四关"通常指什么?
-- A) 功能测试、性能测试、安全测试、兼容性测试　B) 端口监听(`ss`)、HTTP 可达(`curl`)、状态码正确、内容验证　C) 单元测试、集成测试、E2E 测试、压力测试　D) 代码审查、自动化测试、手动测试、上线审批
+   - A) 功能测试、性能测试、安全测试、兼容性测试　B) 端口监听(`ss`)、HTTP 可达(`curl`)、状态码正确、内容验证　C) 单元测试、集成测试、E2E 测试、压力测试　D) 代码审查、自动化测试、手动测试、上线审批
 
 4. 502 排查的"三板斧"是什么?
-- A) 重启 nginx、重启服务器、重装系统　B) ①`systemctl status <app>`检查后端服务状态 ②`docker ps`/`ss -tlnp`检查端口监听 ③`journalctl -u <app> -f`查看后端日志　C) `ping`、`traceroute`、`nslookup`　D) 清除浏览器缓存、重启路由器、换电脑
+   - A) 重启 nginx、重启服务器、重装系统　B) ①`systemctl status <app>`检查后端服务状态 ②`docker ps`/`ss -tlnp`检查端口监听 ③`journalctl -u <app> -f`查看后端日志　C) `ping`、`traceroute`、`nslookup`　D) 清除浏览器缓存、重启路由器、换电脑
 
 5. `docker-compose ps` 在部署中的作用是什么?
-- A) 列出所有 Docker 镜像　B) 快速查看 compose 项目中各容器的状态(Up/Exited/端口映射)　C) 列出所有进程　D) 查看 compose 文件语法
+   - A) 列出所有 Docker 镜像　B) 快速查看 compose 项目中各容器的状态(Up/Exited/端口映射)　C) 列出所有进程　D) 查看 compose 文件语法
 
 6. `git clone`→`cd project`→`docker compose up -d`→`ss -tlnp`→`nginx -t && systemctl reload nginx`→`curl -I localhost` 这段操作序列体现了什么思想?
-- A) 随机操作　B) 完整的上线链:代码获取→服务启动→端口确认→反向代理配置→HTTP 验证　C) 只有 Docker 操作　D) 只适合开发环境
+   - A) 随机操作　B) 完整的上线链:代码获取→服务启动→端口确认→反向代理配置→HTTP 验证　C) 只有 Docker 操作　D) 只适合开发环境
 
 7. 部署后通过 `curl` 测试时,返回 404(Not Found)而非 502,这说明什么?
-- A) 后端服务没运行　B) 后端服务**正在运行**,但请求的 URL 路径/路由不对(nginx 正确转发了请求,但后端没有该路径的处理逻辑)　C) nginx 没有安装　D) 防火墙阻挡
+   - A) 后端服务没运行　B) 后端服务**正在运行**,但请求的 URL 路径/路由不对(nginx 正确转发了请求,但后端没有该路径的处理逻辑)　C) nginx 没有安装　D) 防火墙阻挡
 
 8. 关于"上线烟测",以下哪项是**不必要**的?
-- A) 确认端口在监听　B) 确认 HTTP 返回状态码 200　C) 确认页面内容包含预期关键字　D) 在服务器上打开浏览器用鼠标点击所有链接
+   - A) 确认端口在监听　B) 确认 HTTP 返回状态码 200　C) 确认页面内容包含预期关键字　D) 在服务器上打开浏览器用鼠标点击所有链接
 
 9. `docker-compose up -d` 后执行 `docker-compose logs -f app`,看到堆栈信息 `Connection refused: postgres:5432`,最可能的原因是什么?
-- A) PostgreSQL 容器还没启动完成(启动顺序问题,app 需要等待 postgres 就绪)　B) Docker 网络故障　C) Java 版本不兼容　D) nginx 配置错误
+   - A) PostgreSQL 容器还没启动完成(启动顺序问题,app 需要等待 postgres 就绪)　B) Docker 网络故障　C) Java 版本不兼容　D) nginx 配置错误
 
 10. 关于生产部署后的回滚策略,以下哪种做法**最有效**?
-- A) 每次部署前手动备份文件　B) 使用 Git tag+commit hash 标记版本,部署脚本保留最近 3 个版本的可运行包,回滚时切换到旧版本并重启服务　C) 依赖 Docker 镜像的 `latest` 标签自动回滚　D) 部署后立即删除旧版本代码
+   - A) 每次部署前手动备份文件　B) 使用 Git tag+commit hash 标记版本,部署脚本保留最近 3 个版本的可运行包,回滚时切换到旧版本并重启服务　C) 依赖 Docker 镜像的 `latest` 标签自动回滚　D) 部署后立即删除旧版本代码
 
 ### 解答题(5 道)
 

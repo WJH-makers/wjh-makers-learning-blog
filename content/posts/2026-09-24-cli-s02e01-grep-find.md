@@ -219,34 +219,34 @@ grep 有个和别的命令不同的脾气:**命中 `$?`=0,没命中=1,出错=2**
 ### 选择题(10 道)
 
 1. `grep` 命令的核心功能是什么?
-- A) 查找文件　B) 在文本中搜索匹配指定模式的行　C) 替换文本内容　D) 统计文件行数
+   - A) 查找文件　B) 在文本中搜索匹配指定模式的行　C) 替换文本内容　D) 统计文件行数
 
 2. `find` 命令的路径参数应该放在什么位置?
-- A) 命令的最后　B) 命令的最前面(紧接 find 之后)　C) 放在 -name 参数之后　D) 任意位置
+   - A) 命令的最后　B) 命令的最前面(紧接 find 之后)　C) 放在 -name 参数之后　D) 任意位置
 
 3. `grep -i "error" log.txt` 中的 `-i` 代表什么?
-- A) 忽略大小写(insensitive)　B) 反向匹配(invert)　C) 显示行号(index)　D) 交互模式(interactive)
+   - A) 忽略大小写(insensitive)　B) 反向匹配(invert)　C) 显示行号(index)　D) 交互模式(interactive)
 
 4. `grep -r "TODO" src/` 与 `grep "TODO" src/*` 的关键区别是?
-- A) 完全一样　B) `-r` 递归搜索所有子目录,`*` 只搜索当前层文件　C) `-r` 更快　D) `*` 搜索隐藏文件,`-r` 不搜索
+   - A) 完全一样　B) `-r` 递归搜索所有子目录,`*` 只搜索当前层文件　C) `-r` 更快　D) `*` 搜索隐藏文件,`-r` 不搜索
 
 5. `find /var/log -name "*.log" -type f` 中 `-type f` 的作用是?
-- A) 只匹配普通文件(regular file)　B) 只匹配目录　C) 匹配任意类型　D) 按文件大小过滤
+   - A) 只匹配普通文件(regular file)　B) 只匹配目录　C) 匹配任意类型　D) 按文件大小过滤
 
 6. 关于正则表达式元字符,以下哪个是 `grep` 默认模式下的"任意单个字符"?
-- A) `*`　B) `?`　C) `.`　D) `+`
+   - A) `*`　B) `?`　C) `.`　D) `+`
 
 7. `grep -c "404" access.log` 的输出是什么?
-- A) 所有包含 404 的行　B) 第一个包含 404 的行　C) 包含 404 的总行数(计数值)　D) 不包含 404 的行
+   - A) 所有包含 404 的行　B) 第一个包含 404 的行　C) 包含 404 的总行数(计数值)　D) 不包含 404 的行
 
 8. 以下 `find` 命令哪个能找出 `/home` 下 7 天内修改过的所有 `.java` 文件?
-- A) `find /home -name "*.java" -mtime -7`　B) `find /home -mtime -7 -name "*.java"`　C) `find /home -name "*.java" -mtime +7`　D) 以上 A 和 B 都对
+   - A) `find /home -name "*.java" -mtime -7`　B) `find /home -mtime -7 -name "*.java"`　C) `find /home -name "*.java" -mtime +7`　D) 以上 A 和 B 都对
 
 9. `grep -F "a.txt" file_list.txt` 中的 `-F` 是什么意思?
-- A) 强制搜索(force)　B) 固定字符串匹配(不解释正则元字符)　C) 只显示文件名　D) 全文搜索(full-text)
+   - A) 强制搜索(force)　B) 固定字符串匹配(不解释正则元字符)　C) 只显示文件名　D) 全文搜索(full-text)
 
 10. 以下哪条命令最准确地查找包含 IP 地址 `192.168.1.1` 的行(不匹配 `192.168.1.10`)?
-- A) `grep "192.168.1.1" file`　B) `grep "192\.168\.1\.1\b" file`　C) `grep -w "192.168.1.1" file`　D) 以上 B 和 C 都可以
+   - A) `grep "192.168.1.1" file`　B) `grep "192\.168\.1\.1\b" file`　C) `grep -w "192.168.1.1" file`　D) 以上 B 和 C 都可以
 
 ### 解答题(5 道)
 

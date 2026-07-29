@@ -227,25 +227,25 @@ class OrderContextTest {
 ### 选择题(10 道)
 
 1. `ThreadLocal` 的值实际存储在哪里?
-- A) `ThreadLocal` 对象内部的 Map 中　　B) 每个 `Thread` 对象的 `threadLocals` 字段(`ThreadLocalMap`)中　　C) JVM 方法区的静态 Map 中　　D) 堆上的全局 `ConcurrentHashMap` 中
+   - A) `ThreadLocal` 对象内部的 Map 中　　B) 每个 `Thread` 对象的 `threadLocals` 字段(`ThreadLocalMap`)中　　C) JVM 方法区的静态 Map 中　　D) 堆上的全局 `ConcurrentHashMap` 中
 
 2. `ThreadLocalMap` 中,Entry 的 key(`ThreadLocal`)是什么引用类型?
-- A) 强引用　　B) 软引用　　C) 弱引用　　D) 虚引用
+   - A) 强引用　　B) 软引用　　C) 弱引用　　D) 虚引用
 
 3. `ThreadLocalMap` 中,Entry 的 value 是什么引用类型?
-- A) 强引用　　B) 弱引用　　C) 软引用　　D) 虚引用
+   - A) 强引用　　B) 弱引用　　C) 软引用　　D) 虚引用
 
 4. 线程池中使用 `ThreadLocal` 未 `remove`,会导致什么问题?
-- A) 编译错误　　B) 线程池中的线程是复用的——前一个任务在线程上 set 的值,后一个任务仍能看到,导致「串号」(张三看到李四的数据);同时 value 强引用永远不被 GC,造成内存泄漏　　C) 线程池中 `ThreadLocal` 会自动清理　　D) 只会造成轻微的内存浪费,不影响业务
+   - A) 编译错误　　B) 线程池中的线程是复用的——前一个任务在线程上 set 的值,后一个任务仍能看到,导致「串号」(张三看到李四的数据);同时 value 强引用永远不被 GC,造成内存泄漏　　C) 线程池中 `ThreadLocal` 会自动清理　　D) 只会造成轻微的内存浪费,不影响业务
 
 5. `InheritableThreadLocal` 的「继承」发生在什么时机?
-- A) 每次 `ThreadLocal.get()` 时自动从父线程拷贝　　B) 子线程创建时(new Thread 调用 init),JVM 把父线程的 `InheritableThreadLocal` 值浅拷贝到子线程的 `inheritableThreadLocals` 中　　C) 父线程 `set()` 时自动推送到所有子线程　　D) 线程间通过共享内存自动同步
+   - A) 每次 `ThreadLocal.get()` 时自动从父线程拷贝　　B) 子线程创建时(new Thread 调用 init),JVM 把父线程的 `InheritableThreadLocal` 值浅拷贝到子线程的 `inheritableThreadLocals` 中　　C) 父线程 `set()` 时自动推送到所有子线程　　D) 线程间通过共享内存自动同步
 
 6. 以下哪个场景最适合用 `ThreadLocal`?
-- A) 全局缓存,多个线程共享同一份数据　　B) Web 应用中存储当前请求的用户信息——每个请求由线程池中的一个线程处理,`ThreadLocal` 保证同一线程处理的请求不串数据　　C) 多个线程汇总计算结果到同一个累加器　　D) 跨服务的会话共享
+   - A) 全局缓存,多个线程共享同一份数据　　B) Web 应用中存储当前请求的用户信息——每个请求由线程池中的一个线程处理,`ThreadLocal` 保证同一线程处理的请求不串数据　　C) 多个线程汇总计算结果到同一个累加器　　D) 跨服务的会话共享
 
 7. `ThreadLocal` 内存泄漏的根本链条是什么?
-- A) `ThreadLocal` 对象本身太大　　B) Thread → `ThreadLocalMap` → Entry(key 弱引用→`ThreadLocal` 被 GC,value 强引用→value 还在 Map 中)→核心线程不死→`ThreadLocalMap` 不死→value 永不回收　　C) `ThreadLocal.get()` 返回的副本被 GC 回收　　D) `ThreadLocalMap` 的数组自动扩容导致旧引用丢失
+   - A) `ThreadLocal` 对象本身太大　　B) Thread → `ThreadLocalMap` → Entry(key 弱引用→`ThreadLocal` 被 GC,value 强引用→value 还在 Map 中)→核心线程不死→`ThreadLocalMap` 不死→value 永不回收　　C) `ThreadLocal.get()` 返回的副本被 GC 回收　　D) `ThreadLocalMap` 的数组自动扩容导致旧引用丢失
 
 8. 以下代码中,如果线程 t 执行完 run 后结束,会发生什么?
 
@@ -261,10 +261,10 @@ t.start(); t.join(); // 等待线程结束
 - A) 10MB 会被 GC 回收——线程 t 结束后,它的 `ThreadLocalMap` 随 `Thread` 对象一起被 GC,value 不可达,被回收　　B) 10MB 不会回收,因为 `ThreadLocal` 还在 main 线程的栈上　　C) 10MB 不回收,因为 `ThreadLocalMap` 是静态的　　D) 10MB 立即回收,不等 GC
 
 9. `ThreadLocal` 如何避免线程池场景下的数据串号?最佳实践是:
-- A) 每次任务开始时调 `ThreadLocal.set(null)`　　B) 在任务结束时,在 finally 块中调用 `ThreadLocal.remove()`——确保无论任务正常完成还是抛异常,`ThreadLocal` 都被清空　　C) 使用 `InheritableThreadLocal` 替代 `ThreadLocal`　　D) 给每个 `ThreadLocal` 设置一个过期时间
+   - A) 每次任务开始时调 `ThreadLocal.set(null)`　　B) 在任务结束时,在 finally 块中调用 `ThreadLocal.remove()`——确保无论任务正常完成还是抛异常,`ThreadLocal` 都被清空　　C) 使用 `InheritableThreadLocal` 替代 `ThreadLocal`　　D) 给每个 `ThreadLocal` 设置一个过期时间
 
 10. 关于 JDK 21 中 `ScopedValue` 相比 `ThreadLocal` 的优势,以下哪项描述最准确?
-- A) `ScopedValue` 只是 `ThreadLocal` 的语法糖　　B) `ScopedValue` 是不可变的、有作用域的——一旦设置就被限定在 `where(...).run(...)` 的代码块内,块结束后值失效;且虚拟线程挂载/卸载时自动切换,特别适合虚拟线程场景;相比 `ThreadLocal` 不需要 `remove()` 也不会泄漏　　C) `ScopedValue` 比 `ThreadLocal` 更快,因为使用 CAS 实现　　D) `ScopedValue` 支持跨线程共享
+   - A) `ScopedValue` 只是 `ThreadLocal` 的语法糖　　B) `ScopedValue` 是不可变的、有作用域的——一旦设置就被限定在 `where(...).run(...)` 的代码块内,块结束后值失效;且虚拟线程挂载/卸载时自动切换,特别适合虚拟线程场景;相比 `ThreadLocal` 不需要 `remove()` 也不会泄漏　　C) `ScopedValue` 比 `ThreadLocal` 更快,因为使用 CAS 实现　　D) `ScopedValue` 支持跨线程共享
 
 ### 解答题(5 道)
 

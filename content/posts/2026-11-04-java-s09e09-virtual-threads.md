@@ -255,34 +255,34 @@ class MillionCustomersTest {
 ### 选择题(10 道)
 
 1. 平台线程(Platform Thread)和 OS 线程的关系是?
-- A) 多个平台线程映射到一个 OS 线程(N:1)　　B) 一个平台线程映射到一个 OS 线程(1:1)——Java 的平台线程就是对 OS 线程的包装,每个 `Thread` 对象底面对应一个内核线程　　C) 平台线程完全在用户态,与 OS 线程无关　　D) 平台线程和 OS 线程的关系取决于 JVM 版本
+   - A) 多个平台线程映射到一个 OS 线程(N:1)　　B) 一个平台线程映射到一个 OS 线程(1:1)——Java 的平台线程就是对 OS 线程的包装,每个 `Thread` 对象底面对应一个内核线程　　C) 平台线程完全在用户态,与 OS 线程无关　　D) 平台线程和 OS 线程的关系取决于 JVM 版本
 
 2. 虚拟线程(Virtual Thread)的栈内存大小是多少?
-- A) 默认 1MB,和平台线程一样　　B) 默认几十到几百 KB,且由 JVM 动态管理——栈以「堆栈块(continuation frames)」形式存储在堆上,按需分配和缩小,不需要预留 1MB　　C) 不使用栈,使用堆上的 ArrayList 模拟　　D) 固定 256KB
+   - A) 默认 1MB,和平台线程一样　　B) 默认几十到几百 KB,且由 JVM 动态管理——栈以「堆栈块(continuation frames)」形式存储在堆上,按需分配和缩小,不需要预留 1MB　　C) 不使用栈,使用堆上的 ArrayList 模拟　　D) 固定 256KB
 
 3. 虚拟线程最受益的场景是?
-- A) 纯 CPU 计算密集型(如加密解密、图像处理)　　B) IO 密集型(如数据库查询、HTTP 调用、文件读写)——阻塞时虚拟线程在 JVM 内 mount/unmount 到平台线程,不阻塞 OS 线程,使平台线程能服务其他虚拟线程,大幅提升并发吞吐　　C) 所有场景都受益　　D) 只是语法糖,没有性能提升
+   - A) 纯 CPU 计算密集型(如加密解密、图像处理)　　B) IO 密集型(如数据库查询、HTTP 调用、文件读写)——阻塞时虚拟线程在 JVM 内 mount/unmount 到平台线程,不阻塞 OS 线程,使平台线程能服务其他虚拟线程,大幅提升并发吞吐　　C) 所有场景都受益　　D) 只是语法糖,没有性能提升
 
 4. 虚拟线程的「pin(钉住)」问题指的是什么?
-- A) 虚拟线程被固定在某个 CPU 核上　　B) 当虚拟线程执行 `synchronized` 块或 native 方法时,不能被 unmount(不能从平台线程上卸下)——导致阻塞期间独占该平台线程,其他虚拟线程无法使用它,削弱了虚拟线程的并发优势　　C) 虚拟线程被 GC 标记为不可移动的对象　　D) 虚拟线程和平台线程的绑定关系不可改变
+   - A) 虚拟线程被固定在某个 CPU 核上　　B) 当虚拟线程执行 `synchronized` 块或 native 方法时,不能被 unmount(不能从平台线程上卸下)——导致阻塞期间独占该平台线程,其他虚拟线程无法使用它,削弱了虚拟线程的并发优势　　C) 虚拟线程被 GC 标记为不可移动的对象　　D) 虚拟线程和平台线程的绑定关系不可改变
 
 5. 以下关于虚拟线程的创建方式,正确的是?
-- A) `new Thread(() -> {}).start()`——和创建平台线程一样　　B) `Thread.ofVirtual().start(() -> {})`——JDK 19+ 的虚拟线程工厂方法,创建的 Thread 默认以虚拟线程身份运行　　C) `Executors.newVirtualThreadPerTaskExecutor()`——提交的任务在每个虚拟线程中执行,不需池化管理　　D) B 和 C 都正确
+   - A) `new Thread(() -> {}).start()`——和创建平台线程一样　　B) `Thread.ofVirtual().start(() -> {})`——JDK 19+ 的虚拟线程工厂方法,创建的 Thread 默认以虚拟线程身份运行　　C) `Executors.newVirtualThreadPerTaskExecutor()`——提交的任务在每个虚拟线程中执行,不需池化管理　　D) B 和 C 都正确
 
 6. 虚拟线程和线程池的关系,以下哪个说法正确?
-- A) 应该创建一个固定大小的虚拟线程池来复用虚拟线程　　**B) 虚拟线程不应池化——它们是廉价的(几乎不消耗系统资源),应该「一任务一线程」直接创建;池化反而违背了虚拟线程的设计初衷(每个任务隔离,无状态污染)**　　C) 虚拟线程也必须池化,否则会内存溢出　　D) 虚拟线程不需要管理,也不能显式创建
+   - A) 应该创建一个固定大小的虚拟线程池来复用虚拟线程　　**B) 虚拟线程不应池化——它们是廉价的(几乎不消耗系统资源),应该「一任务一线程」直接创建;池化反而违背了虚拟线程的设计初衷(每个任务隔离,无状态污染)**　　C) 虚拟线程也必须池化,否则会内存溢出　　D) 虚拟线程不需要管理,也不能显式创建
 
 7. 虚拟线程的 `ThreadLocal` 使用需要注意什么?
-- A) 完全不能用　　**B) 能用,但要严守 `remove` 纪律——虚拟线程虽然库存百万条,但每条仍携带 `ThreadLocal` 的 value 强引用,不 remove 仍会泄漏;且 JDK 21+ 推荐将不可变上下文迁移到 `ScopedValue`,既无泄漏风险又自动在 mount/unmount 时传播**　　C) 虚拟线程的 ThreadLocal 值会被 GC 自动回收　　D) 虚拟线程创建 ThreadLocal 时会自动设置过期时间
+   - A) 完全不能用　　**B) 能用,但要严守 `remove` 纪律——虚拟线程虽然库存百万条,但每条仍携带 `ThreadLocal` 的 value 强引用,不 remove 仍会泄漏;且 JDK 21+ 推荐将不可变上下文迁移到 `ScopedValue`,既无泄漏风险又自动在 mount/unmount 时传播**　　C) 虚拟线程的 ThreadLocal 值会被 GC 自动回收　　D) 虚拟线程创建 ThreadLocal 时会自动设置过期时间
 
 8. 以下哪种代码模式会导致虚拟线程被「pin」?
-- A) `Thread.sleep(1000)`　　**B) `synchronized(obj) { blockingIO(); }`——在 `synchronized` 块内执行阻塞操作,虚拟线程无法 unmount,期间绑定的平台线程被独占**　　C) `lock.lockInterruptibly()`　　D) `CompletableFuture.supplyAsync(() -> work())`
+   - A) `Thread.sleep(1000)`　　**B) `synchronized(obj) { blockingIO(); }`——在 `synchronized` 块内执行阻塞操作,虚拟线程无法 unmount,期间绑定的平台线程被独占**　　C) `lock.lockInterruptibly()`　　D) `CompletableFuture.supplyAsync(() -> work())`
 
 9. 虚拟线程的数量级通常在什么范围?
-- A) 几百到几千,和平台线程一样　　**B) 可达数十万甚至百万——虚拟线程只占堆内存(每个几百字节到几 KB 栈),不消耗 OS 线程资源,理论上受限于 JVM 堆内存大小而非 OS 线程限制**　　C) 受限于 CPU 核数 × 2　　D) 虚拟线程有硬上限 65535
+   - A) 几百到几千,和平台线程一样　　**B) 可达数十万甚至百万——虚拟线程只占堆内存(每个几百字节到几 KB 栈),不消耗 OS 线程资源,理论上受限于 JVM 堆内存大小而非 OS 线程限制**　　C) 受限于 CPU 核数 × 2　　D) 虚拟线程有硬上限 65535
 
 10. JDK 21 的结构化并发 `StructuredTaskScope` 与虚拟线程的关系是?
-- A) 两者没有关系,是完全独立的两个 API　　**B) `StructuredTaskScope` 是虚拟线程的「组织者」——它在一段代码中 fork 出多个子虚拟线程,并在所有子线程结束时自动 join,提供清晰的父子关系和作用域管理;两者配合解决「虚拟线程泄漏」(fork 出去的线程不知何时结束)的问题**　　C) `StructuredTaskScope` 只支持平台线程　　D) `StructuredTaskScope` 是虚拟线程的另一种写法
+   - A) 两者没有关系,是完全独立的两个 API　　**B) `StructuredTaskScope` 是虚拟线程的「组织者」——它在一段代码中 fork 出多个子虚拟线程,并在所有子线程结束时自动 join,提供清晰的父子关系和作用域管理;两者配合解决「虚拟线程泄漏」(fork 出去的线程不知何时结束)的问题**　　C) `StructuredTaskScope` 只支持平台线程　　D) `StructuredTaskScope` 是虚拟线程的另一种写法
 
 ### 解答题(5 道)
 

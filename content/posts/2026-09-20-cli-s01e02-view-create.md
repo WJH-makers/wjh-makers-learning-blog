@@ -230,34 +230,34 @@ $ tail -n 1 memo.txt               # 刚学的 tail 立刻上岗:只验最后一
 ### 选择题(10 道)
 
 1. 要查看一个长文本文件的全部内容,用哪个命令最合适(支持上下翻页)?
-- A) `cat`　B) `more`　C) `less`　D) `head`
+   - A) `cat`　B) `more`　C) `less`　D) `head`
 
 2. 创建一个多层嵌套目录 `a/b/c/d`,用一条命令完成,正确的是?
-- A) `touch a/b/c/d`　B) `mkdir a/b/c/d`　C) `mkdir -p a/b/c/d`　D) `mkdir --recursive a/b/c/d`
+   - A) `touch a/b/c/d`　B) `mkdir a/b/c/d`　C) `mkdir -p a/b/c/d`　D) `mkdir --recursive a/b/c/d`
 
 3. `echo "hello" > file.txt` 执行两次后,`file.txt` 的内容是什么?
-- A) `hello\nhello`(两行)　B) `hello`(一行)　C) `hellohello`(同一行)　D) 第二次执行报错
+   - A) `hello\nhello`(两行)　B) `hello`(一行)　C) `hellohello`(同一行)　D) 第二次执行报错
 
 4. `cat` 与 `less` 的核心区别是什么?
-- A) `cat` 更快,`less` 更慢　B) `cat` 一次输出全部,`less` 支持分页浏览/搜索/回退　C) `cat` 只能看文本,`less` 能看二进制　D) 没有区别,只是不同时代的产物
+   - A) `cat` 更快,`less` 更慢　B) `cat` 一次输出全部,`less` 支持分页浏览/搜索/回退　C) `cat` 只能看文本,`less` 能看二进制　D) 没有区别,只是不同时代的产物
 
 5. 用 `tail -f /var/log/app.log` 查看日志时,以下说法正确的是?
-- A) 显示文件最后 10 行然后退出　B) 显示文件全部内容　C) 持续追踪文件末尾新增内容,实时显示　D) 只显示文件第一行
+   - A) 显示文件最后 10 行然后退出　B) 显示文件全部内容　C) 持续追踪文件末尾新增内容,实时显示　D) 只显示文件第一行
 
 6. 已有文件 `a.txt` 内容为 "old",执行 `echo "new" > a.txt`,以下说法**错误**的是?
-- A) `a.txt` 内容变为 "new"　B) 原有内容 "old" 被覆盖　C) 如果文件不存在会创建新文件　D) "new" 被追加到 "old" 后面
+   - A) `a.txt` 内容变为 "new"　B) 原有内容 "old" 被覆盖　C) 如果文件不存在会创建新文件　D) "new" 被追加到 "old" 后面
 
 7. 在 `less` 中,按哪个键可以搜索关键字?
-- A) 按 `q` 然后输入关键字　B) 按 `/` 然后输入关键字　C) 按 `s` 然后输入关键字　D) `less` 不支持搜索
+   - A) 按 `q` 然后输入关键字　B) 按 `/` 然后输入关键字　C) 按 `s` 然后输入关键字　D) `less` 不支持搜索
 
 8. `head -n 5 file.txt` 和 `tail -n 5 file.txt` 分别输出什么?
-- A) 都是文件的前 5 行　B) 分别是文件的前 5 行和后 5 行　C) 分别是文件的后 5 行和前 5 行　D) 都是文件的后 5 行
+   - A) 都是文件的前 5 行　B) 分别是文件的前 5 行和后 5 行　C) 分别是文件的后 5 行和前 5 行　D) 都是文件的后 5 行
 
 9. 以下哪个命令会**清空**已有文件 `log.txt` 的内容?
-- A) `cat log.txt`　B) `echo "" >> log.txt`　C) `> log.txt`　D) `tail log.txt`
+   - A) `cat log.txt`　B) `echo "" >> log.txt`　C) `> log.txt`　D) `tail log.txt`
 
 10. 当前目录存在 `notes/`,执行 `touch notes` 会怎样?
-- A) 创建一个名为 `notes` 的空文件,覆盖目录　B) 更新 `notes/` 目录的时间戳,不破坏目录　C) 报错:与已有目录名冲突　D) 删除目录并创建同名空文件
+   - A) 创建一个名为 `notes` 的空文件,覆盖目录　B) 更新 `notes/` 目录的时间戳,不破坏目录　C) 报错:与已有目录名冲突　D) 删除目录并创建同名空文件
 
 ### 解答题(5 道)
 

@@ -234,40 +234,40 @@ class MiniAopTest {
 ### 选择题(10 道)
 
 1. 要使自定义注解在运行时能通过反射读取,`@Retention` 必须设为?
-- A) `RetentionPolicy.SOURCE`
-- B) `RetentionPolicy.CLASS`
-- C) `RetentionPolicy.RUNTIME`
-- D) 不需要,注解默认即可运行时读取
+   - A) `RetentionPolicy.SOURCE`
+   - B) `RetentionPolicy.CLASS`
+   - C) `RetentionPolicy.RUNTIME`
+   - D) 不需要,注解默认即可运行时读取
 
 2. `@Target(ElementType.METHOD)` 的作用是?
-- A) 限定该注解只能贴在方法上,贴错位置编译器拒收
-- B) 让注解在运行时生效
-- C) 指定注解在编译后保留
-- D) 定义注解的处理逻辑
+   - A) 限定该注解只能贴在方法上,贴错位置编译器拒收
+   - B) 让注解在运行时生效
+   - C) 指定注解在编译后保留
+   - D) 定义注解的处理逻辑
 
 3. `Proxy.newProxyInstance` 的三个参数分别是?
-- A) 类加载器、目标类、InvocationHandler
-- B) 类加载器、接口数组、InvocationHandler
-- C) 接口数组、目标实例、类加载器
-- D) InvocationHandler、接口数组、类加载器
+   - A) 类加载器、目标类、InvocationHandler
+   - B) 类加载器、接口数组、InvocationHandler
+   - C) 接口数组、目标实例、类加载器
+   - D) InvocationHandler、接口数组、类加载器
 
 4. JDK 动态代理中,每次调用代理对象的方法时,实际执行的是?
-- A) 目标对象的原方法直接执行
-- B) `InvocationHandler` 的 `invoke` 方法
-- C) 代理类自动生成的同名方法
-- D) `Proxy` 类的静态 `invoke` 方法
+   - A) 目标对象的原方法直接执行
+   - B) `InvocationHandler` 的 `invoke` 方法
+   - C) 代理类自动生成的同名方法
+   - D) `Proxy` 类的静态 `invoke` 方法
 
 5. 以下关于 JDK 动态代理与 CGLIB 的对比,**正确的是**?
-- A) JDK 代理通过生成子类实现,CGLIB 通过接口实现
-- B) JDK 代理可以代理任意类,CGLIB 只能代理有接口的类
-- C) JDK 代理基于接口,CGLIB 通过生成子类字节码实现
-- D) JDK 代理和 CGLIB 都需要目标类实现接口
+   - A) JDK 代理通过生成子类实现,CGLIB 通过接口实现
+   - B) JDK 代理可以代理任意类,CGLIB 只能代理有接口的类
+   - C) JDK 代理基于接口,CGLIB 通过生成子类字节码实现
+   - D) JDK 代理和 CGLIB 都需要目标类实现接口
 
 6. 阿零在实现类的方法上贴了 `@Discount`,但通过 JDK 代理调用时 `getAnnotation` 返回 null,原因是?
-- A) `@Retention` 没设为 RUNTIME
-- B) 标签贴在**实现类**方法上,而代理的 `invoke` 拿到的是**接口**的 Method 对象
-- C) 代理类不支持注解
-- D) 调用链太深,注解丢失
+   - A) `@Retention` 没设为 RUNTIME
+   - B) 标签贴在**实现类**方法上,而代理的 `invoke` 拿到的是**接口**的 Method 对象
+   - C) 代理类不支持注解
+   - D) 调用链太深,注解丢失
 
 7. 以下代码中,`svc.checkout(prices)` 虽然调了 `total`,但打折逻辑**不会**对 `total` 生效,根本原因是?
 ```java
@@ -284,22 +284,22 @@ class OrderImpl implements OrderService {
 - D) JDK 代理不支持多层调用
 
 8. 以下哪个场景最适合用静态代理而非动态代理?
-- A) 需要为 100 个 Service 接口统一记录日志
-- B) 需要为目标类(无接口)的所有方法做权限校验
-- C) 只需要为某个特定类的特定方法添加缓存,且需求稳定不变
-- D) 运行时根据配置文件决定是否开启代理
+   - A) 需要为 100 个 Service 接口统一记录日志
+   - B) 需要为目标类(无接口)的所有方法做权限校验
+   - C) 只需要为某个特定类的特定方法添加缓存,且需求稳定不变
+   - D) 运行时根据配置文件决定是否开启代理
 
 9. 以下关于 CGLIB 代理的限制,描述**错误**的是?
-- A) 无法代理 `final` 类
-- B) 无法代理 `final` 方法
-- C) 无法代理没有实现接口的类
-- D) 需要额外引入 CGLIB 依赖(或 Spring 内置的版本)
+   - A) 无法代理 `final` 类
+   - B) 无法代理 `final` 方法
+   - C) 无法代理没有实现接口的类
+   - D) 需要额外引入 CGLIB 依赖(或 Spring 内置的版本)
 
 10. Spring Boot 中 AOP 和事务默认使用 CGLIB 代理(而非 JDK 动态代理),最重要的原因是?
-- A) CGLIB 性能比 JDK 代理高很多
-- B) 避免强制所有业务类实现接口,提供一致的代理行为
-- C) CGLIB 是 JDK 内置的,不需要额外依赖
-- D) JDK 代理已废弃
+   - A) CGLIB 性能比 JDK 代理高很多
+   - B) 避免强制所有业务类实现接口,提供一致的代理行为
+   - C) CGLIB 是 JDK 内置的,不需要额外依赖
+   - D) JDK 代理已废弃
 
 ### 解答题(5 道)
 

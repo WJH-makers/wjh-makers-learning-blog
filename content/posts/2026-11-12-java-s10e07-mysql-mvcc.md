@@ -228,64 +228,64 @@ class MemberServiceTest {
 ### 选择题(10 道)
 
 1. MVCC 中,undo 版本链的「糖葫芦」结构依赖哪两个隐藏列?
-- A) row_id 和 db_ver
-- B) trx_id 和 roll_pointer
-- C) create_time 和 update_time
-- D) lock_bit 和 version_num
+   - A) row_id 和 db_ver
+   - B) trx_id 和 roll_pointer
+   - C) create_time 和 update_time
+   - D) lock_bit 和 version_num
 
 2. InnoDB 默认的隔离级别是?
-- A) READ UNCOMMITTED
-- B) READ COMMITTED(RC)
-- C) REPEATABLE READ(RR)
-- D) SERIALIZABLE
+   - A) READ UNCOMMITTED
+   - B) READ COMMITTED(RC)
+   - C) REPEATABLE READ(RR)
+   - D) SERIALIZABLE
 
 3. 「快照读」和「当前读」的区别是?
-- A) 快照读是 `SELECT`,当前读是 `UPDATE`/`DELETE`
-- B) 快照读读的是 ReadView 裁定的版本(不加锁),当前读读最新版本并加锁
-- C) 快照读在读已提交级别生效,当前读在可重复读级别生效
-- D) 快照读性能更好,当前读结果更准确(两个永远不同)
+   - A) 快照读是 `SELECT`,当前读是 `UPDATE`/`DELETE`
+   - B) 快照读读的是 ReadView 裁定的版本(不加锁),当前读读最新版本并加锁
+   - C) 快照读在读已提交级别生效,当前读在可重复读级别生效
+   - D) 快照读性能更好,当前读结果更准确(两个永远不同)
 
 4. ACID 中,持久性(D)由什么保证?
-- A) undo log
-- B) 锁 + MVCC
-- C) redo log + binlog(两阶段提交绑定)
-- D) 外键约束
+   - A) undo log
+   - B) 锁 + MVCC
+   - C) redo log + binlog(两阶段提交绑定)
+   - D) 外键约束
 
 5. RR 隔离级别下,ReadView 的生成时机是?
-- A) 每条 SELECT 语句执行时新生成一个
-- B) 整个事务开始时生成,之后所有 SELECT 共用同一份
-- C) 每次 UPDATE 时生成
-- D) 由用户手动指定
+   - A) 每条 SELECT 语句执行时新生成一个
+   - B) 整个事务开始时生成,之后所有 SELECT 共用同一份
+   - C) 每次 UPDATE 时生成
+   - D) 由用户手动指定
 
 6. 「查了再插」在 RR 隔离级别下也会出现 Duplicate,原因是?
-- A) SELECT 是快照读,看到的是「开始时的世界」;中间别人提交了,SLEECT 看不见但 INSERT 的当前读撞到了
-- B) MySQL 不支持唯一约束
-- C) 索引失效导致的
-- D) 事务未提交
+   - A) SELECT 是快照读,看到的是「开始时的世界」;中间别人提交了,SLEECT 看不见但 INSERT 的当前读撞到了
+   - B) MySQL 不支持唯一约束
+   - C) 索引失效导致的
+   - D) 事务未提交
 
 7. 以下关于 InnoDB 行锁的描述,正确的是?
-- A) 行锁直接锁在数据行上
-- B) 行锁加在**索引记录**上;若 WHERE 条件无索引,退化为锁全表
-- C) 行锁只在主键索引上加
-- D) 行锁不会产生死锁
+   - A) 行锁直接锁在数据行上
+   - B) 行锁加在**索引记录**上;若 WHERE 条件无索引,退化为锁全表
+   - C) 行锁只在主键索引上加
+   - D) 行锁不会产生死锁
 
 8. 死锁的两个必要条件是?
-- A) 两个事务同时修改同一行
-- B) 两个事务以不同顺序获取同一组资源,形成循环等待
-- C) 两个事务都使用 `SELECT FOR UPDATE`
-- D) 隔离级别是 SERIALIZABLE
+   - A) 两个事务同时修改同一行
+   - B) 两个事务以不同顺序获取同一组资源,形成循环等待
+   - C) 两个事务都使用 `SELECT FOR UPDATE`
+   - D) 隔离级别是 SERIALIZABLE
 
 9. 以下关于「幂等注册」的描述,**错误**的是?
-- A) 直接 INSERT,捕获 Duplicate 异常后转查询已存在的 id
-- B) 可替代「先 SELECT 再 INSERT」的并发不安全写法
-- C) 必须依赖唯一约束(uk_phone)作为守门员
-- D) 幂等注册可以不用唯一约束,仅靠 SELECT 防重
+   - A) 直接 INSERT,捕获 Duplicate 异常后转查询已存在的 id
+   - B) 可替代「先 SELECT 再 INSERT」的并发不安全写法
+   - C) 必须依赖唯一约束(uk_phone)作为守门员
+   - D) 幂等注册可以不用唯一约束,仅靠 SELECT 防重
 
 10. RR 隔离级别防幻读靠的是?
-- A) 只靠 MVCC 快照读
-- B) 快照读靠 MVCC(全事务一张 ReadView,新插入行不可见) + 当前读靠临键锁(记录锁 + 间隙锁,不许往范围里插)
-- C) 只靠间隙锁
-- D) InnoDB 的 RR 级别无法防幻读
+   - A) 只靠 MVCC 快照读
+   - B) 快照读靠 MVCC(全事务一张 ReadView,新插入行不可见) + 当前读靠临键锁(记录锁 + 间隙锁,不许往范围里插)
+   - C) 只靠间隙锁
+   - D) InnoDB 的 RR 级别无法防幻读
 
 ### 解答题(5 道)
 
