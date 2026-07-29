@@ -151,7 +151,7 @@ export default function Comments({ slug, initial }: { slug: string; initial: Com
         </div>
         {siteKey && tsReady && <div className="cf-turnstile" data-sitekey={siteKey} data-theme="auto" />}
         <div className="comment-actions-row">
-          <button type="submit" disabled={pending} className="button primary">{pending ? "提交中…" : "发表评论"}</button>
+          <button type="submit" disabled={pending || !siteKey} className="button primary">{pending ? "提交中…" : "发表评论"}</button>
           {/* 常驻 live region:提交结果(成功/失败)自动向读屏播报,容器始终在 DOM 中 */}
           <span role="status">
             {state && !state.ok ? (
@@ -162,6 +162,7 @@ export default function Comments({ slug, initial }: { slug: string; initial: Com
           </span>
           <span className="comment-privacy">🔒 匿名发言 · 不存邮箱 · IP 仅加密用于反刷</span>
         </div>
+        {!siteKey && <p className="comment-error">评论验证正在配置中，暂时关闭提交。</p>}
       </form>
 
       {siteKey && tsReady && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />}
