@@ -1,6 +1,6 @@
 # 万佳泓的学习日志
 
-这是一个通过 GitHub Actions 部署到 Docker 服务器的个人学习博客，用来记录每天学习 Java 全栈、Git、MySQL、AI、系统与工程配置的成果。
+这是一个由 GitHub Actions 验证、txcloud 服务器拉取式发布到 Docker 的个人学习博客，用来记录每天学习 Java 全栈、Git、MySQL、AI、系统与工程配置的成果。
 
 ## 技术栈
 
@@ -129,7 +129,7 @@ tags: Java, Git, MySQL
 
 ## Docker 部署
 
-推送到 `main` 会触发 GitHub Actions：先执行 `npm ci`、类型检查、生产构建和 critical 依赖审计，再通过 SSH 在服务器的 `/home/ubuntu/blog` 执行 `git pull` 与 `docker compose up -d --build`。
+推送到 `main` 会触发 GitHub Actions：先执行 `npm ci`、类型检查、生产构建和 critical 依赖审计。全部通过后，工作流只更新受控的 `production` 引用；txcloud 的 systemd timer 再从服务器主动拉取该引用、构建容器并等待健康检查。它不依赖 GitHub hosted runner 的入站 SSH。
 
 服务器目录的 `.env` 需要配置 MongoDB、`BLOG_ADMIN_TOKEN`；评论反机器人可选配成对的 `TURNSTILE_SECRET_KEY` 与 `NEXT_PUBLIC_TURNSTILE_SITE_KEY`。`NEXT_PUBLIC_SITE_URL` 未设置时默认使用 `https://wwjjhh.online`。
 
@@ -146,6 +146,8 @@ npm run deploy:doctor
 ```
 
 它会检查 `.env` / `.env.local`、必需环境变量和 MongoDB Atlas ping，不会打印真实密钥。
+
+服务器安装、回滚边界与排障命令见 [txcloud 拉取式发布说明](docs/txcloud-pull-deploy.md)。
 
 ## 目录
 
