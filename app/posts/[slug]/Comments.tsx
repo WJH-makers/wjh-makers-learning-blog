@@ -55,7 +55,7 @@ function renderBody(body: string): ReactNode[] {
 
 const PREVIEW = 5;
 
-export default function Comments({ slug, initial }: { slug: string; initial: Comment[] }) {
+export default function Comments({ slug, initial, enabled }: { slug: string; initial: Comment[]; enabled: boolean }) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [state, action, pending] = useActionState<SubmitResult | null, FormData>(postComment, null);
   const [list, setList] = useState<Comment[]>(initial);
@@ -131,7 +131,7 @@ export default function Comments({ slug, initial }: { slug: string; initial: Com
         </button>
       )}
 
-      <form ref={formRef} action={action} className="comment-form">
+      {enabled ? <form ref={formRef} action={action} className="comment-form">
         <input type="hidden" name="slug" value={slug} />
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="comment-honeypot" aria-hidden="true" />
         <input name="name" aria-label="昵称" placeholder="昵称(免登录,不收集邮箱)" maxLength={24} required className="comment-input" />
@@ -162,7 +162,9 @@ export default function Comments({ slug, initial }: { slug: string; initial: Com
           </span>
           <span className="comment-privacy">🔒 匿名发言 · 不存邮箱 · IP 仅加密用于反刷</span>
         </div>
-      </form>
+      </form> : (
+        <p className="comment-empty">评论功能正在建设；发现勘误请留意后续站内反馈入口。</p>
+      )}
 
       {siteKey && tsReady && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />}
     </section>

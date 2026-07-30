@@ -63,12 +63,11 @@ function status(ok) {
 }
 
 const env = loadLocalEnv();
-const projectFile = resolve(root, ".vercel", "project.json");
+const localEnvFile = existsSync(resolve(root, ".env")) ? ".env" : ".env.local";
 
-console.log("Learning Blog deployment doctor");
+console.log("Learning Blog Docker deployment doctor");
 console.log("================================");
-console.log(`${status(existsSync(projectFile))} Vercel project link: ${existsSync(projectFile) ? ".vercel/project.json found" : "not linked yet"}`);
-console.log(`${status(existsSync(resolve(root, ".env.local")))} Local env file: ${existsSync(resolve(root, ".env.local")) ? ".env.local found" : "missing .env.local"}`);
+console.log(`${status(existsSync(resolve(root, localEnvFile)))} Local env file: ${existsSync(resolve(root, localEnvFile)) ? `${localEnvFile} found` : "missing .env or .env.local"}`);
 
 for (const key of requiredKeys) {
   const ok = !isPlaceholder(env[key]);
@@ -87,4 +86,4 @@ if (hasDatabaseUrl) {
 }
 
 console.log("");
-console.log("When all items are OK, /write can publish daily notes on Vercel.");
+console.log("When all items are OK, /write can publish daily notes on the Docker deployment.");

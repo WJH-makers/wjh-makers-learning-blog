@@ -10,6 +10,7 @@ import { join } from "node:path";
  * 但兜底字重是 400,与 700 主字重有肉眼可见差异——eyebrow 文案尽量只用子集内字符)。
  */
 export const OG_SIZE = { width: 1200, height: 630 };
+const SITE_HOST = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online").host;
 
 // 模块加载时读一次(build 预生成时复用)
 export const ogFontData = readFileSync(join(process.cwd(), "public", "fonts", "noto-sc-bold-subset.ttf"));
@@ -36,8 +37,8 @@ export function ogCard({ eyebrow, title }: { eyebrow: string; title: string }) {
         {title}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 28, color: "#555555" }}>
-        <div style={{ display: "flex" }}>wwjjhh.online</div>
-        <div style={{ display: "flex" }}>@WJH-makers</div>
+        <div style={{ display: "flex" }}>{SITE_HOST}</div>
+        <div style={{ display: "flex" }}>@豆豆课程组</div>
       </div>
     </div>
   );

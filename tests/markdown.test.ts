@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
 import { markdownToHtml, renderMarkdown, slugify } from "../lib/markdown.ts";
 
 // ---------- 行内代码隔离(诊断 #1/#4:code 内容曾被 emphasis/link 正则二次解析) ----------
@@ -133,6 +134,35 @@ test("同层 ul/ol 切换保持原行为", async () => {
   const html = await markdownToHtml("- a\n1. b");
   const flat = html.replace(/\n/g, "");
   assert.equal(flat, "<ul><li>a</li></ul><ol><li>b</li></ol>");
+});
+
+test("被空行和选项拆开的选择题仍保留原始序号", async () => {
+  const html = await markdownToHtml("1. 题一\n- A) 甲\n\n2. 题二\n- A) 乙\n\n10. 题十\n- A) 丙");
+  const flat = html.replace(/\n/g, "");
+  assert.ok(flat.includes("<ol><li>题一</li></ol>"), html);
+  assert.ok(flat.includes('<ol start="2"><li>题二</li></ol>'), html);
+  assert.ok(flat.includes('<ol start="10"><li>题十</li></ol>'), html);
+});
+
+test("25 话命令行课程的课后选择题始终显示 1–10", async () => {
+  const posts = new URL("../content/posts/", import.meta.url);
+  const files = readdirSync(posts).filter((file) => /-cli-s\d+e\d+-.+\.md$/.test(file));
+  assert.equal(files.length, 25, "命令行课程应包含 25 话");
+  for (const file of files) {
+    const source = readFileSync(new URL(file, posts), "utf8");
+    const quiz = /### 选择题\(10 道\)\r?\n([\s\S]*?)\r?\n### 解答题\(5 道\)/.exec(source)?.[1];
+    assert.ok(quiz, `${file} 缺少标准选择题区块`);
+    const sourceNumbers = [...quiz.matchAll(/^(\d+)\.\s+/gm)].map((match) => Number(match[1]));
+    assert.deepEqual(sourceNumbers, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], `${file} 的题目源序号不连续`);
+
+    const { html } = await renderMarkdown(source);
+    const start = html.indexOf('<h3 id="选择题-10-道">');
+    const end = html.indexOf('<h3 id="解答题-5-道">', start);
+    assert.ok(start >= 0 && end > start, `${file} 的选择题 HTML 区块不完整`);
+    const renderedQuiz = html.slice(start, end);
+    const renderedStarts = [...renderedQuiz.matchAll(/<ol(?: start="(\d+)")?>/g)].map((match) => Number(match[1] ?? "1"));
+    assert.deepEqual(renderedStarts, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], `${file} 的显示题号回退为 1`);
+  }
 });
 
 test("任务列表回归", async () => {

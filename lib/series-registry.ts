@@ -30,6 +30,7 @@ import { BIGDATA_SEASONS, BIGDATA_SERIES_META } from "@/lib/series-bigdata";
 import { SEARCH_SEASONS, SEARCH_SERIES_META } from "@/lib/series-search";
 import { GITADV_SEASONS, GITADV_SERIES_META } from "@/lib/series-gitadv";
 import { CAREER_SEASONS, CAREER_SERIES_META } from "@/lib/series-career";
+import { isPublicEpisode } from "@/lib/publication";
 
 export type SeriesRef = {
   title: string;
@@ -103,7 +104,11 @@ export const SERIES_LIST: SeriesRef[] = [
 /** 一条线的连载进度(已发布 / 规划总数)。 */
 export function seriesProgress(series: SeriesRef): { done: number; total: number } {
   const all = series.seasons.flatMap((s) => s.episodes);
-  return { done: all.filter((e) => e.status === "published" && e.slug).length, total: all.length };
+  return { done: all.filter((e) => e.status === "published" && isPublicEpisode(e.slug)).length, total: all.length };
+}
+
+export function publicEpisodes(series: SeriesRef): JavaEpisode[] {
+  return series.seasons.flatMap((s) => s.episodes).filter((e) => e.status === "published" && isPublicEpisode(e.slug));
 }
 
 /** 全站连载总量,首页/关于页/统计页共用一个口径。 */
@@ -134,9 +139,7 @@ export function findEpisodeInfo(slug: string): EpisodeInfo | undefined {
     for (const season of series.seasons) {
       const episode = season.episodes.find((e) => e.slug === slug);
       if (!episode) continue;
-      const published = series.seasons
-        .flatMap((s) => s.episodes)
-        .filter((e) => e.status === "published" && e.slug);
+      const published = publicEpisodes(series);
       const i = published.findIndex((e) => e.slug === slug);
       return {
         series,
@@ -144,7 +147,7 @@ export function findEpisodeInfo(slug: string): EpisodeInfo | undefined {
         episode,
         prev: i > 0 ? published[i - 1] : undefined,
         next: i >= 0 ? published[i + 1] : undefined,
-        seasonSlugs: season.episodes.filter((e) => e.status === "published" && e.slug).map((e) => e.slug as string),
+        seasonSlugs: season.episodes.filter((e) => e.status === "published" && isPublicEpisode(e.slug)).map((e) => e.slug as string),
       };
     }
   }

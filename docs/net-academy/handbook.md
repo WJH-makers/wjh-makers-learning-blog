@@ -9,7 +9,7 @@
 
 ## 0. 一句话定位
 
-跟着阿零和一只退役载波信鸽,从三次握手一路飞到 QUIC 与 ECH——**每一话都在博主自己的真实链路(浏览器 → Cloudflare → nginx → txcloud)上抓包验证,拒绝纸上谈兵**。
+跟着阿零和一只退役载波信鸽,从三次握手一路飞到 QUIC 与 ECH——**每一话都在博主自己的真实链路(浏览器 → Cloudflare → nginx → deployment-server)上抓包验证,拒绝纸上谈兵**。
 
 叙事外壳:豆豆咖啡站要上线"线上点单"小程序,第一天就遭遇三连击——"外卖员找不到店"(DNS 炸了)、"订单重复下了三杯"(重传 + 非幂等)、"隔壁桌能看到你点了啥"(明文 HTTP)。阿零意识到:不懂网络,咖啡站永远走不出这条街。
 
@@ -78,14 +78,14 @@
 
 ## 3. 本线专属深度栏目:📡 真链路实验室
 
-**作用**:每话第 9 步,帕特带阿零在博主真实站点 `wwjjhh.online` 的链路(浏览器 → Cloudflare → nginx → txcloud)上复现本话知识点。卖点 = **每个知识点都有一份可复制的真机实验命令**。对标 Java 线 🎯 面试直击、CLI 线 🪟 双系统对照。
+**作用**:每话第 9 步,帕特带阿零在博主真实站点 `example.invalid` 的链路(浏览器 → Cloudflare → nginx → deployment-server)上复现本话知识点。卖点 = **每个知识点都有一份可复制的真机实验命令**。对标 Java 线 🎯 面试直击、CLI 线 🪟 双系统对照。
 
 ### 格式模板
 
 ```text
 > **📡 真链路实验室 · <本话知识点>上真机**
 >
-> 环境:<本机 PowerShell 7 / txcloud Ubuntu / 浏览器 DevTools,三选一并标明>。目标:一句话。
+> 环境:<本机 PowerShell 7 / deployment-server Ubuntu / 浏览器 DevTools,三选一并标明>。目标:一句话。
 >
 > ```bash
 > <可直接复制的命令,1–3 条>
@@ -107,13 +107,13 @@
 > 环境:本机 PowerShell 7。目标:看同一条 A 记录的剩余 TTL 随缓存倒数。
 >
 > ```bash
-> dig wwjjhh.online A +noall +answer
+> dig example.invalid A +noall +answer
 > # 隔 30 秒再跑一次,对比第二列
 > ```
 >
 > ```text
-> wwjjhh.online.  300  IN  A  104.21.x.x
-> wwjjhh.online.  270  IN  A  104.21.x.x   ← 30 秒后:TTL 在倒数
+> example.invalid.  300  IN  A  104.21.x.x
+> example.invalid.  270  IN  A  104.21.x.x   ← 30 秒后:TTL 在倒数
 > ```
 >
 > 三行解读:① 第二列就是剩余 TTL(秒);② 在倒数说明命中的是递归解析器缓存,不是权威;
@@ -124,7 +124,7 @@
 
 ### 实验室硬规则
 
-1. 命令必须在真实环境跑过(基线:本机 Windows 11 / PowerShell 7;服务器 txcloud Ubuntu,以实机为准),**严禁编造输出**。
+1. 命令必须在真实环境跑过(基线:本机 Windows 11 / PowerShell 7;服务器 deployment-server Ubuntu,以实机为准),**严禁编造输出**。
 2. 一话恰好一个实验,不贪多;输出节选 ≤15 行。
 3. **脱敏红线**:不出现 token、证书私钥、内网拓扑细节;IP 与域名以已公开信息为限。
 4. 三行解读是固定格式,第 ③ 条必须回指本话原理图,形成"漫画 → 原理 → 真机"闭环。
@@ -221,7 +221,7 @@ Java 并发、Netty 等超出前置的内容出现时(话 32 涉及),只给最�
 | 前向保密 | 完美前向保密 |
 | 递归解析器 / 权威服务器 | 泛称"DNS 服务器" |
 | SYN、ACK、FIN、TIME_WAIT 原文大写 | syn / ack 小写混排 |
-| 域名统一 `wwjjhh.online`、服务器统一称 txcloud | 随手换示例域名 |
+| 域名统一 `example.invalid`、服务器统一称 deployment-server | 随手换示例域名 |
 
 ### 7.3 真实性与安全红线
 
@@ -246,11 +246,11 @@ Java 并发、Netty 等超出前置的内容出现时(话 32 涉及),只给最�
 | 01 | 豆豆:小程序上线即瘫的受害者 | 线内开场,建立"服务端视角化身"定位 |
 | 05 | 特米客串,掏出 curl / ss | CLI 线读者回访入口;回指 CLI C2 管道 |
 | 06 | 豆豆 = 被三次握手的咖啡机 | 线内名场面 |
-| 10 | BBR 在 txcloud 跨境链路实测 | 实测数据同步发一篇博客侧记,引流到 /net |
+| 10 | BBR 在 deployment-server 跨境链路实测 | 实测数据同步发一篇博客侧记,引流到 /net |
 | 11 | 豆豆:大促夜端口耗尽事故 | 线内卷终 |
 | 22 | gRPC"后厨内部对讲机" | 埋钩子"详见 Java 线微服务卷"→ Java 线联动番外 |
 | 29 | 特米客串 nginx 前台;Monitor 登录串号 bug 真实还原 | 回指 CLI C5 部署卷 + 博客真实事故存档 |
-| 31 | CF Tunnel"不开门也能营业" | 回指 CLI C5;与 txcloud 实际架构互证 |
+| 31 | CF Tunnel"不开门也能营业" | 回指 CLI C5;与 deployment-server 实际架构互证 |
 | 32 | 帕特把 Wireshark 传给阿零 | 大结局;番外预留《阿零面试记 · 网络专场》(复用 🎯 题库形式,把 32 句点睛台词串成面试答案) |
 | — | cafe 线联动**单向**:帕特可去《豆豆咖啡站》特别篇客串(比照《企鹅来信》先例) | cafe 的 MOKA-0 悬疑绝不流入本线(见 §1 客串铁律) |
 

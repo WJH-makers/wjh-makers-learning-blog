@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: { canonical: `${siteUrl()}/tags/${encodeURIComponent(decoded)}` },
     openGraph: {
       ...OG_BASE,
-      title: `标签：${decoded} | WJH-makers`,
+      title: `标签：${decoded} | 豆豆课程组`,
       description: `${decoded} 主题下的学习记录集合`,
     },
   };

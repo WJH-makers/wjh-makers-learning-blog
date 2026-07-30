@@ -18,18 +18,59 @@ export default async function HomePage() {
 
   const latestPosts = posts.slice(0, 3);
   const seriesDone = publishedEpisodes().length;
+  const totalLessons = seriesDone + cliPublishedEpisodes().length + cafePublishedEpisodes().length;
 
   return (
     <div className="page-shell">
       <section className="hero">
         <div>
           <p className="eyebrow">Learn Publicly</p>
-          <h1>WJH-makers</h1>
+          <h1>豆豆课程组</h1>
           <p className="hero-text">CS · 遥感 VQA / 全栈 / 系统</p>
+          <p className="hero-lede">把学习过程做成能阅读、能动手、也允许偶尔绕路的个人实验室。</p>
           <div className="hero-actions">
             <Link className="button primary" href="/posts">阅读博客</Link>
             <Link className="button" href="/java">Java 系列</Link>
+            <Link className="button ghost" href="/random">闭眼开一页 ↗</Link>
           </div>
+        </div>
+        <aside className="hero-panel home-hero-panel" aria-label="学习现场速览">
+          <p className="eyebrow">Learning desk · 今日工位</p>
+          <strong>{totalLessons}<small> 个已发布学习节点</small></strong>
+          <p>这里没有“从头读完”的压力。选一条线、完成一个小动作，再回到你的项目里。</p>
+          <dl className="home-hero-stats">
+            <div><dt>Java</dt><dd>{seriesDone} 话</dd></div>
+            <div><dt>命令行</dt><dd>{cliPublishedEpisodes().length} 话</dd></div>
+            <div><dt>咖啡站</dt><dd>{cafePublishedEpisodes().length} 话</dd></div>
+          </dl>
+        </aside>
+      </section>
+
+      <section className="home-start" aria-labelledby="start-here">
+        <div className="home-start-head">
+          <p className="eyebrow">Pick a door · 从一个入口开始</p>
+          <h2 id="start-here">今天想让哪件事发生？</h2>
+          <p>每条路线都有一个足够小的起点：读一话、敲一段、或给一段旧知识重新接上电。</p>
+        </div>
+        <div className="home-start-grid">
+          <Link href="/posts/2026-07-25-java-s01e01-hello" className="home-start-card home-start-java">
+            <span className="home-start-no">01 / 让程序开口</span>
+            <strong>从第一句输出开始</strong>
+            <span>读完就能在 Java 17 单文件实验里检查自己的第一段代码。</span>
+            <b>进入最小实验 →</b>
+          </Link>
+          <Link href="/posts/2026-09-19-cli-s01e01-terminal" className="home-start-card home-start-cli">
+            <span className="home-start-no">02 / 进入终端</span>
+            <strong>和闪烁的光标打个招呼</strong>
+            <span>从 pwd、ls、cd 三个立足指令，走进真实服务器的文件树。</span>
+            <b>走进命令行 →</b>
+          </Link>
+          <Link href="/cafe" className="home-start-card home-start-cafe">
+            <span className="home-start-no">03 / 读一段故事</span>
+            <strong>先在咖啡站坐一会儿</strong>
+            <span>不急着背概念；先跟着角色看一次系统为什么会在深夜出问题。</span>
+            <b>打开故事地图 →</b>
+          </Link>
         </div>
       </section>
 

@@ -19,7 +19,7 @@ export async function GET() {
     .map(({ s, p }) => `- [${s.title}](${base}${s.route}): ${s.tagline}(${p.done}/${p.total} 话)`)
     .join("\n");
 
-  const body = `# WJH-makers
+  const body = `# 豆豆课程组
 
 > 中文技术学习博客，记录 Java 全栈、工程实践与遥感 VQA / MoE 研究。
 > 特色:把 Java 工程师需要的整个知识面写成同一个咖啡站宇宙下的漫画连载。

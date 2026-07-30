@@ -31,7 +31,7 @@ export async function GET() {
     <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"
          xmlns:atom="http://www.w3.org/2005/Atom">
       <channel>
-        <title>WJH-makers 的技术学习与工程实践</title>
+        <title>豆豆课程组 的技术学习与工程实践</title>
         <link>${base}</link>
         <atom:link href="${base}/rss.xml" rel="self" type="application/rss+xml"/>
         <description>Java 全栈、系统实践、遥感 VQA 与 MoE 研究记录</description>

@@ -1,8 +1,6 @@
 # 万佳泓的学习日志
 
-这是一个部署到 Vercel 的个人学习博客，用来记录每天学习 Java 全栈、Git、MySQL、AI、系统与工程配置的成果。
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/WJH-makers/wjh-makers-learning-blog&project-name=wjh-makers-learning-blog&repository-name=wjh-makers-learning-blog)
+这是一个通过 GitHub Actions 部署到 Docker 服务器的个人学习博客，用来记录每天学习 Java 全栈、Git、MySQL、AI、系统与工程配置的成果。
 
 ## 技术栈
 
@@ -13,7 +11,7 @@
 - 本地 Markdown 只读内容：`content/posts/*.md`
 - 线上云数据库写入：MongoDB Atlas M0 Free Cluster
 - 无 ORM / 无 CMS：只使用 MongoDB 官方 Node.js Driver 直连
-- Vercel Functions 连接池管理：`@vercel/functions` 的 `attachDatabasePool`
+- Docker 常驻服务连接池管理：MongoDB 官方 Node.js Driver
 
 ## 常用命令
 
@@ -33,7 +31,7 @@ npm run post:new -- "今天学到的主题" --tags="Java, MySQL, 复盘"
 - 文章只从 `content/posts/*.md` 读取。
 - 没有云数据库驱动。
 - 没有 Server Action 写入入口。
-- Vercel 的文件系统不能当作持久写入空间，网页表单不能直接把 Markdown 永久写回仓库。
+- 外部托管平台 的文件系统不能当作持久写入空间，网页表单不能直接把 Markdown 永久写回仓库。
 
 现在新增了 MongoDB Atlas 云数据库写入链路：配置 `MONGODB_URI` 后，打开 `/write` 就能把每天心得写入 `learning_posts` collection。
 
@@ -42,9 +40,9 @@ npm run post:new -- "今天学到的主题" --tags="Java, MySQL, 复盘"
 `/write` 是唯一的线上写作入口，目标是每天能快速写、快速发、快速复盘：
 
 - **直连**：Next.js Server Action 直接调用 MongoDB 官方 Node.js Driver，不引入 ORM、CMS 或额外后台。
-- **Serverless 连接池**：在 Vercel Functions 中把 `MongoClient` 交给 `attachDatabasePool`，避免函数挂起/恢复时连接泄漏。
-- **安全**：必须输入 `BLOG_ADMIN_TOKEN`，真实 token 只放在 Vercel / `.env.local`，不进 Git。
-- **可诊断**：页面会 ping MongoDB，并提示 `MONGODB_URI`、Atlas 用户、Network Access、Vercel 环境变量是否需要检查。
+- **Serverless 连接池**：在 外部托管平台 Functions 中把 `MongoClient` 交给 `attachDatabasePool`，避免函数挂起/恢复时连接泄漏。
+- **安全**：必须输入 `BLOG_ADMIN_TOKEN`，真实 token 只放在 外部托管平台 / `.env.local`，不进 Git。
+- **可诊断**：页面会 ping MongoDB，并提示 `MONGODB_URI`、Atlas 用户、Network Access、外部托管平台 环境变量是否需要检查。
 - **块编辑**：正文使用 BlockNote，发布前自动转换成 Markdown 存入 MongoDB，数据库结构不变。
 - **知识卡片模板**：默认按「概念 / 为什么重要 / 核心知识点 / 示例命令代码 / 易错点 / 练习验证 / 明天继续」生成。
 - **本地草稿**：浏览器 `localStorage` 自动保存，key 为 `wjh-learning-blog:write-draft:v1`。
@@ -71,10 +69,10 @@ npm run post:new -- "今天学到的主题" --tags="Java, MySQL, 复盘"
 2. 新建一个 **M0 Free** cluster。
 3. 在 **Database Access** 创建数据库用户，权限选择当前库 `readWrite`。
 4. 在 **Network Access** 添加允许访问来源。
-   - Vercel 没有固定出口 IP，个人博客最简单是临时使用 `0.0.0.0/0`。
+   - 外部托管平台 没有固定出口 IP，个人博客最简单是临时使用 `0.0.0.0/0`。
    - 同时务必使用强数据库密码和 `BLOG_ADMIN_TOKEN` 保护 `/write`。
 5. 在 **Connect → Drivers → Node.js** 复制连接字符串。
-6. 在 Vercel Project Settings → Environment Variables 添加：
+6. 在 外部托管平台 Project Settings → Environment Variables 添加：
 
 ```text
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster-host>/learning_blog?retryWrites=true&w=majority
@@ -84,7 +82,7 @@ BLOG_ADMIN_TOKEN=一个很长的写入密钥
 NEXT_PUBLIC_SITE_URL=https://你的域名
 ```
 
-如果某个工具只给 `DATABASE_URL`，项目也能兼容读取；但 Vercel MongoDB 集成推荐保留 `MONGODB_URI`。
+如果某个工具只给 `DATABASE_URL`，项目也能兼容读取；但 外部托管平台 MongoDB 集成推荐保留 `MONGODB_URI`。
 
 本地开发同样复制环境变量模板：
 
@@ -129,18 +127,11 @@ tags: Java, Git, MySQL
 正文内容...
 ```
 
-## Vercel 部署
+## Docker 部署
 
-推荐流程一：网页一键导入
+推送到 `main` 会触发 GitHub Actions：先执行 `npm ci`、类型检查、生产构建和 critical 依赖审计，再通过 SSH 在服务器的 `/home/ubuntu/blog` 执行 `git pull` 与 `docker compose up -d --build`。
 
-1. 点击上面的 **Deploy with Vercel**。
-2. 用你的 Vercel 账号登录。
-3. 选择 GitHub 仓库 `WJH-makers/wjh-makers-learning-blog`。
-4. Project Name 建议使用 `wjh-makers-learning-blog`，避免和别人已有的 `learning-blog.vercel.app` 冲突。
-5. Framework Preset 保持 `Next.js`。
-6. Build Command 使用 `npm run build`。
-7. 在 Environment Variables 中配置 MongoDB Atlas 和 `BLOG_ADMIN_TOKEN`。
-8. 点击 Deploy。
+服务器目录的 `.env` 需要配置 MongoDB、`BLOG_ADMIN_TOKEN`；评论反机器人可选配成对的 `TURNSTILE_SECRET_KEY` 与 `NEXT_PUBLIC_TURNSTILE_SITE_KEY`。`NEXT_PUBLIC_SITE_URL` 未设置时默认使用 `https://wwjjhh.online`。
 
 部署后检查：
 
@@ -148,21 +139,13 @@ tags: Java, Git, MySQL
 - 提交一篇测试文章后，首页、`/posts`、`/tags`、`/rss.xml` 都能看到更新。
 - 如果 Atlas Network Access 使用 `0.0.0.0/0`，请确保数据库用户只给当前库 `readWrite`，并使用高强度密码。
 
-推荐流程二：Vercel CLI
-
-```bash
-npx vercel@latest login
-npx vercel@latest link --yes --project wjh-makers-learning-blog
-npx vercel@latest --prod
-```
-
 本机配置完成后可运行：
 
 ```bash
 npm run deploy:doctor
 ```
 
-它会检查 `.env.local`、Vercel 项目绑定、必需环境变量和 MongoDB Atlas ping，不会打印真实密钥。
+它会检查 `.env` / `.env.local`、必需环境变量和 MongoDB Atlas ping，不会打印真实密钥。
 
 ## 目录
 
@@ -177,10 +160,9 @@ npm run deploy:doctor
 ## 设计与实现参考
 
 - Next.js Forms / Server Actions：<https://nextjs.org/docs/app/guides/forms>
-- Vercel Environment Variables：<https://vercel.com/docs/environment-variables>
+- 外部托管平台 Environment Variables：<https://vercel.com/docs/environment-variables>
 - MongoDB Node.js Driver `MongoClient`：<https://www.mongodb.com/docs/drivers/node/current/connect/mongoclient/>
 - MongoDB Atlas Free Cluster：<https://www.mongodb.com/docs/atlas/tutorial/deploy-free-tier-cluster/>
-- Vercel MongoDB starter：<https://vercel.com/templates/next.js/mongodb-starter>
-- Vercel / Next.js blog starter：<https://github.com/vercel/next.js/tree/canary/examples/blog-starter>
+- 外部托管平台 MongoDB starter：<https://vercel.com/templates/next.js/mongodb-starter>
 - W3C WCAG target size：<https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html>
 - GOV.UK / Material / Apple 按钮规范：用于校验按钮主次、触控尺寸、可访问焦点和清晰文案。

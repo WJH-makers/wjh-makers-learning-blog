@@ -10,7 +10,7 @@
 
 ## 0. 一句话定位
 
-豆豆咖啡站要开连锁了——从一台咖啡机到一支舰队。跟着阿零和库舵,把"单机部署的手艺"炼成"声明式运维的道法",**每一话都能在博主自己那台 txcloud 服务器上真机复现**。
+豆豆咖啡站要开连锁了——从一台咖啡机到一支舰队。跟着阿零和库舵,把"单机部署的手艺"炼成"声明式运维的道法",**每一话都能在博主自己那台 deployment-server 服务器上真机复现**。
 
 故事引擎一个隐喻贯穿到底:**咖啡站连锁化 = 应用云原生化**。开分店=多实例;任何一家断电顾客无感=自愈与弹性;新品配方全城同步上架=CI/CD;知道哪家店排队最长=可观测。
 
@@ -93,12 +93,12 @@ CLI 线导师。**卷四(22–27 话)以"流水线脚本顾问"常驻**:Actions 
 
 ## 3. 本线专属深度栏目:⚓ 真机靠港(每话必有,固定在第 9 步)
 
-**作用**:把当话概念"靠港"到博主真实部署链路——GitHub Actions 构建 → 镜像 → txcloud 服务器 docker compose → nginx → Cloudflare Tunnel → wwjjhh.online。左栏教科书姿势,右栏 2C 小水管的务实姿势,**明说取舍**。这与 CLI 线的 🪟双系统对照呼应:那边对照两种 shell,这边对照"理想集群 vs 真实小服务器"。
+**作用**:把当话概念"靠港"到博主真实部署链路——GitHub Actions 构建 → 镜像 → deployment-server 服务器 docker compose → nginx → Cloudflare Tunnel → example.invalid。左栏教科书姿势,右栏 2C 小水管的务实姿势,**明说取舍**。这与 CLI 线的 🪟双系统对照呼应:那边对照两种 shell,这边对照"理想集群 vs 真实小服务器"。
 
 **格式模板**:
 
 ```text
-> **⚓ 真机靠港 · <本话概念>落在 wwjjhh.online**
+> **⚓ 真机靠港 · <本话概念>落在 example.invalid**
 
 | | 教科书姿势(K8s / 云上) | 我这台 2C 小水管(compose / 单机) |
 |---|---|---|
@@ -111,7 +111,7 @@ CLI 线导师。**卷四(22–27 话)以"流水线脚本顾问"常驻**:Actions 
 
 **示例(E06 断电惊魂 · Volume 持久化)**:
 
-> **⚓ 真机靠港 · 数据持久化落在 wwjjhh.online**
+> **⚓ 真机靠港 · 数据持久化落在 example.invalid**
 >
 > | | 教科书姿势(K8s / 云上) | 我这台 2C 小水管(compose / 单机) |
 > |---|---|---|
@@ -240,6 +240,6 @@ CLI 线导师。**卷四(22–27 话)以"流水线脚本顾问"常驻**:Actions 
      - 「eBPF 可观测与零插桩 — 内核层抓取网络/系统调用/profile,无需改应用;Profiling 作为 OTel 第四信号已在 beta(预计 2026 内 GA)⚠」
      - 「WebAssembly 运行时与边缘 — Wasm 容器(runwasi/SpinKube)冷启动毫秒级;"下一代容器"叙事,生产采用仍早期 ⚠」
    - **标 ✅ 的结论核实于 2026-07,时效会过期**;当话发布前仍须复核一次:K8s 稳定版 v1.36.x(1.35 In-Place Resize GA / 1.36 User Namespaces GA、OCI VolumeSource GA)、Ingress NGINX 退役与 2026-03 停补时间、Gateway API v1.5、Docker Engine 29、OTel 三信号 stable 与 2026-05 CNCF 毕业、Actions 并行 step/`case` 新语法、Terraform(BUSL)/OpenTofu 格局、Spring Boot 4 与 Java 25 基线。
-2. **一切输出真实可复现**:kubectl/docker/Actions 的报错与 Events 必须真跑得出(单机用 kind/minikube 或 txcloud 真机);编造输出 = 红线。
+2. **一切输出真实可复现**:kubectl/docker/Actions 的报错与 Events 必须真跑得出(单机用 kind/minikube 或 deployment-server 真机);编造输出 = 红线。
 3. **术语与隐喻一致性**(§7 词典),中途换喻 = 红线;便利贴/分格/署名等符号沿用,不另起炉灶。
 4. **不做**:一次写完 32 话再发;每个 CNCF 名词都造角色;把前沿番外内容混进正篇当必学;脱离真机靠港凭空谈架构;为显得深注水拉长;先用后讲造成知识倒挂;在 ⚓ 栏目里泄露真实服务器敏感信息。

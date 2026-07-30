@@ -45,9 +45,9 @@ export default function CloudSeriesPage() {
     inLanguage: "zh-CN",
     author: {
       "@type": "Person",
-      name: "WJH-makers",
-      alternateName: "WJH-makers",
-      url: "https://github.com/WJH-makers",
+      name: "豆豆课程组",
+      alternateName: "豆豆课程组",
+      url: "https://github.com/example",
     },
     hasPart: cloudPublishedEpisodes().map((ep, i) => ({
       "@type": "BlogPosting",

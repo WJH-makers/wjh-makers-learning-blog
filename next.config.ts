@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   experimental: {
     optimizePackageImports: ["@blocknote/core", "@blocknote/mantine"],
+    // 小规格自托管机器上，默认静态生成会同时拉起大量 worker；数百篇课程页会与在线容器争抢
+    // 内存。发布可以慢，不能因构建把服务挤掉，因此固定为单 worker、单页并发。
+    staticGenerationMaxConcurrency: 1,
+    staticGenerationMinPagesPerWorker: 1000,
+    cpus: 1,
   },
   redirects: async () => [
     {
@@ -24,11 +29,11 @@ const nextConfig: NextConfig = {
           key: "Content-Security-Policy",
           value: [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.clarity.ms https://scripts.clarity.ms https://static.cloudflareinsights.com",
+            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "font-src 'self' data:",
-            "connect-src 'self' https://challenges.cloudflare.com https://*.clarity.ms https://cloudflareinsights.com",
+            "connect-src 'self' https://challenges.cloudflare.com",
             "frame-src https://challenges.cloudflare.com",
             "object-src 'none'",
             "base-uri 'none'",

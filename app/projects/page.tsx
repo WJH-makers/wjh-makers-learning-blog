@@ -9,7 +9,7 @@ export const revalidate = 86400;
 export const runtime = "nodejs";
 
 const TITLE = "项目集";
-const DESC = "在做和做过的东西:博客本身、咖啡站宇宙的多线连载、遥感 VQA 与 MoE 研究、自托管监控栈、开发主机工程化 —— 每条都写清解决了什么问题。";
+const DESC = "课程平台与漫画连载的公开内容索引。";
 
 export const metadata: Metadata = {
   title: TITLE,

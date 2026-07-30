@@ -80,7 +80,7 @@ Java 线教你"会写",这一部带阿零钻进烘豆炉——**看懂 JDK 21→
 
 - **定位**:对标 Java 线的 🔀 多解台、CLI 线的 🪟 双系统对照;差异化 = **永远给出"可自己复现的观测命令"+ 真实输出实录**。口号:"上层一行糖,炉底几行霜。"
 - **规则**:
-  1. 命令照抄可跑,基线 JDK 25;Windows(PowerShell 7)与 Linux(txcloud Ubuntu)写法有差异时一句注明。
+  1. 命令照抄可跑,基线 JDK 25;Windows(PowerShell 7)与 Linux(deployment-server Ubuntu)写法有差异时一句注明。
   2. 输出必须真实跑出来再节选,**≤15 行**,不许手编;逐行解读 2–4 条,每条一句话。
   3. 按卷推荐工具箱:卷一 `javap -c/-p`;卷二 `java` 单文件直跑 + JShell;卷三 `javap` + 反射耗时对比;卷四 `jcmd <pid> Thread.dump_to_file`、JFR 虚拟线程事件;卷五 `-Xlog:gc*`、`-XX:+PrintCompilation`、`jfr print`。
 - **格式模板与示例**(以第 02 话 record 为例):

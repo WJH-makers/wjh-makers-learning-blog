@@ -45,9 +45,9 @@ export default function GitadvSeriesPage() {
     inLanguage: "zh-CN",
     author: {
       "@type": "Person",
-      name: "WJH-makers",
-      alternateName: "WJH-makers",
-      url: "https://github.com/WJH-makers",
+      name: "豆豆课程组",
+      alternateName: "豆豆课程组",
+      url: "https://github.com/example",
     },
     hasPart: gitadvPublishedEpisodes().map((ep, i) => ({
       "@type": "BlogPosting",

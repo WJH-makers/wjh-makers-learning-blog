@@ -9,27 +9,23 @@ import { OG_BASE } from "@/lib/og-base";
 export const revalidate = 86400;
 export const runtime = "nodejs";
 
-const GITHUB_URL = "https://github.com/WJH-makers";
-
 export const metadata: Metadata = {
   title: "关于",
-  description: "WJH-makers:CS 科班、Java 全栈与系统方向,做遥感视觉问答与 MoE 研究,业余把整个知识体系写成漫画连载。",
+  description: "豆豆课程组:把工程知识写成漫画连载与可验证练习。",
   alternates: { canonical: `${siteUrl()}/about` },
   openGraph: {
     ...OG_BASE,
-    title: "关于 | WJH-makers",
-    description: "CS 科班、Java 全栈与系统方向,把知识体系写成漫画连载。",
+    title: "关于 | 豆豆课程组",
+    description: "把工程知识写成漫画连载与可验证练习。",
     url: `${siteUrl()}/about`,
   },
 };
 
 // 技术栈按层归类,一眼看清广度而不是堆一长串。
 const STACK: { group: string; items: string[] }[] = [
-  { group: "语言", items: ["Java", "TypeScript", "Python", "Rust", "SQL"] },
-  { group: "后端与框架", items: ["Spring Boot 4", "Next.js", "Node.js", "JPA / MyBatis"] },
-  { group: "数据与中间件", items: ["MongoDB", "MySQL", "Redis", "Kafka"] },
-  { group: "系统与运维", items: ["Linux", "Docker", "Nginx", "Cloudflare", "PowerShell"] },
-  { group: "AI / 研究", items: ["PyTorch", "多模态 / VQA", "MoE", "遥感"] },
+  { group: "编程基础", items: ["Java", "命令行", "Git", "SQL"] },
+  { group: "工程实践", items: ["构建", "测试", "调试", "部署"] },
+  { group: "系统主题", items: ["网络", "数据库", "并发", "分布式"] },
 ];
 
 export default async function AboutPage() {
@@ -40,17 +36,16 @@ export default async function AboutPage() {
   const personJsonLd = {
     "@context": "https://schema.org",
     "@type": "AboutPage",
-    name: "关于 WJH-makers",
+    name: "关于 豆豆课程组",
     url: `${siteUrl()}/about`,
-    description: "WJH-makers 的技术学习与工程实践",
+    description: "豆豆课程组 的技术学习与工程实践",
     inLanguage: "zh-CN",
     mainEntity: {
-      "@type": "Person",
-      name: "WJH-makers",
-      alternateName: "WJH-makers",
+      "@type": "Organization",
+      name: "豆豆课程组",
+      alternateName: "豆豆课程组",
       url: `${siteUrl()}/about`,
-      sameAs: [GITHUB_URL],
-      knowsAbout: ["Java", "Spring", "全栈开发", "分布式系统", "JVM", "遥感视觉问答", "MoE", "系统设计"],
+      knowsAbout: ["Java", "命令行", "工程实践", "分布式系统", "JVM", "系统设计"],
     },
   };
 
@@ -60,10 +55,9 @@ export default async function AboutPage() {
 
       <div className="page-title">
         <p className="eyebrow">About · 关于</p>
-        <h1>WJH-makers</h1>
+        <h1>豆豆课程组</h1>
         <p>
-          CS 科班,Java 全栈与系统方向,业余做遥感视觉问答与 MoE 研究 ——
-          也是这个站上全部漫画连载和速查手册的作者。
+          面向初学者的工程课程与漫画连载,把抽象概念变成可执行、可验证的练习。
         </p>
       </div>
 
@@ -77,14 +71,13 @@ export default async function AboutPage() {
 
       <section className="about-block">
         <p>
-          我写东西的标准只有一条:<strong>删掉所有技术名词之后,它仍然值得读</strong>。
+          课程的标准只有一条:<strong>删掉所有技术名词之后,它仍然值得读</strong>。
           所以这个站上的教程都长成了漫画——阿零和豆豆在一家咖啡站里,把一行 Hello World
           一路建设成能扛住大促的分布式系统。技术是人物解决问题、承担后果、成长的方式,不是主题本身。
         </p>
         <p>
           正经的部分同样不含糊:代码要能跑、命令要可复现、结论要有验证。
-          这个博客本身就是一个练手项目——自研 Markdown 渲染器、构建期语法高亮、三级缓存链路,
-          踩过的坑都写进了文章里。
+          每一课都优先给出最小实验、边界测试和明确的下一步。
         </p>
       </section>
 
@@ -143,10 +136,8 @@ export default async function AboutPage() {
       </section>
 
       <section className="about-section">
-        <h2>联系</h2>
+        <h2>订阅</h2>
         <ul className="about-contact">
-          <li>GitHub · <a href={GITHUB_URL} target="_blank" rel="noreferrer">@WJH-makers</a></li>
-          <li>博客 · <a href="https://wwjjhh.online" target="_blank" rel="noreferrer">wwjjhh.online</a></li>
           <li>订阅 · <a href="/rss.xml">RSS</a></li>
         </ul>
       </section>

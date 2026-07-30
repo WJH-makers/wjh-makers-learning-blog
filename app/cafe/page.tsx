@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
 import { CAFE_SEASONS, CAFE_SERIES_META, CAFE_STAGES, cafeAllEpisodes, cafePublishedEpisodes } from "@/lib/series-cafe";
 import { siteUrl } from "@/lib/posts";
-import { jsonLdSafe } from "@/lib/jsonld";
+import { jsonLdSafe, personRef } from "@/lib/jsonld";
 import { OG_BASE } from "@/lib/og-base";
 import JavaProgress from "../java/JavaProgress";
 import SeriesMap from "../java/SeriesMap";
@@ -43,12 +43,7 @@ export default function CafeSeriesPage() {
     url: `${siteUrl()}/cafe`,
     description: CAFE_SERIES_META.tagline,
     inLanguage: "zh-CN",
-    author: {
-      "@type": "Person",
-      name: "WJH-makers",
-      alternateName: "WJH-makers",
-      url: "https://github.com/WJH-makers",
-    },
+    author: personRef(siteUrl()),
     hasPart: cafePublishedEpisodes().map((ep, i) => ({
       "@type": "BlogPosting",
       position: i + 1,

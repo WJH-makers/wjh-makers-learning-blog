@@ -1,17 +1,11 @@
 # Security.txt — https://securitytxt.org
-# Canonical URI
+# Security.txt — https://securitytxt.org
 Canonical: https://wwjjhh.online/.well-known/security.txt
 
-# Contact — GitHub Issues 是公开报告入口
+# GitHub Issues 是公开报告入口；请勿在公开 Issue 中附带敏感数据。
 Contact: https://github.com/WJH-makers/wjh-makers-learning-blog/issues
 
-# 首选中文 + English
 Preferred-Languages: zh, en
-
-# 披露政策:请通过 GitHub Issues 报告安全问题,
-# 切勿直接提交包含敏感信息的公开 Issue。
-# 报告前请先与我们联系,以便协调披露。
 Policy: https://github.com/WJH-makers/wjh-makers-learning-blog/security/policy
 
-# 最后修订
-Expires: 2027-07-25T05:00:00.000Z
+Expires: 2027-07-29T00:00:00.000Z

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
 import { CLI_SEASONS, CLI_SERIES_META, cliAllEpisodes, cliPublishedEpisodes } from "@/lib/series-cli";
 import { siteUrl } from "@/lib/posts";
-import { jsonLdSafe } from "@/lib/jsonld";
+import { jsonLdSafe, personRef } from "@/lib/jsonld";
 import { OG_BASE } from "@/lib/og-base";
 import JavaProgress from "../java/JavaProgress";
 import SeriesMap from "../java/SeriesMap";
@@ -43,12 +43,7 @@ export default function CliSeriesPage() {
     url: `${siteUrl()}/cli`,
     description: CLI_SERIES_META.tagline,
     inLanguage: "zh-CN",
-    author: {
-      "@type": "Person",
-      name: "WJH-makers",
-      alternateName: "WJH-makers",
-      url: "https://github.com/WJH-makers",
-    },
+    author: personRef(siteUrl()),
     hasPart: cliPublishedEpisodes().map((ep, i) => ({
       "@type": "BlogPosting",
       position: i + 1,

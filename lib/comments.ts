@@ -76,7 +76,7 @@ function hashIp(ip: string): string {
 }
 
 /** Cloudflare Turnstile 服务端校验。未配置 secret 时跳过(仍受蜜罐/限流/敏感词保护)。 */
-async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
+async function verifyTurnstile(token: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
   if (!secret) return true;
   if (!token) {
@@ -95,7 +95,8 @@ async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ secret, response: token, remoteip: ip }),
+      // 浏览器已与人机验证服务完成挑战；不再额外转交访问者 IP。
+      body: new URLSearchParams({ secret, response: token }),
       // 无超时的话,CF 一次慢响应就把整个评论 Server Action 挂住;
       // 1cpu/512m 上会放大成全站卡顿。超时按校验失败处理(fail-closed)。
       signal: AbortSignal.timeout(3000),
@@ -145,7 +146,7 @@ export async function submitComment(input: SubmitInput): Promise<SubmitResult> {
   }
 
   // 3) 人机验证
-  if (!(await verifyTurnstile(input.turnstileToken, input.ip))) {
+  if (!(await verifyTurnstile(input.turnstileToken))) {
     return { ok: false, error: "人机验证未通过,请重试。" };
   }
 

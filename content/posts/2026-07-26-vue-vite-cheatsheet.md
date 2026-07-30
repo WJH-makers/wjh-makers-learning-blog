@@ -168,7 +168,7 @@ export default defineConfig({
 | `vite preview --host --port 5000` | 暴露到局域网 + 指定端口 | 要先 `build` 过,否则预览的是旧产物 |
 | Nginx:`try_files $uri $uri/ /index.html;` | SPA history 回退,修「刷新 404」 | history 模式必配;hash 模式不需要 |
 | `base` + `createWebHistory(import.meta.env.BASE_URL)` | 子路径部署两处保持一致 | ⚠ 只改一处会导致资源或路由错乱 |
-| 静态托管(Netlify/Vercel/GH Pages) | 上传 `dist` 即可 | 平台侧配 SPA 回退;GH Pages 注意仓库子路径 base |
+| 静态托管(Netlify/外部托管平台/GH Pages) | 上传 `dist` 即可 | 平台侧配 SPA 回退;GH Pages 注意仓库子路径 base |
 
 ## 10、环境变量与代理
 

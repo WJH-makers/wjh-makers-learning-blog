@@ -123,7 +123,7 @@ $ history                       # 敲过的命令都有编号(节选)
 $ !!                            # 重跑上一条(屏幕会先回显 ls src/*.js 再执行)
 ```
 
-> **特米旁白**:Ctrl+R 是历史的搜索框——按下后敲几个字母,出现 `` (reverse-i-search)`conf': cat config/app.conf ``,回车执行,Esc 放弃,再按 Ctrl+R 找更早的。**长命令只敲一次**,是这个世界的礼仪。
+> **特米旁白**:Ctrl+R 是历史的搜索框——按下后敲几个字母,出现 `(reverse-i-search) 'conf': cat config/app.conf`,回车执行,Esc 放弃,再按 Ctrl+R 找更早的。**长命令只敲一次**,是这个世界的礼仪。
 
 ---
 

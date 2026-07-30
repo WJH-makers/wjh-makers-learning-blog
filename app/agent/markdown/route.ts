@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const entries = posts.map((post) =>
       `- [${post.title}](${base}/posts/${post.slug}) — ${post.summary}`
     ).join("\n");
-    return response(`# WJH-makers\n\n中文技术学习博客。完整机器可读目录：${base}/llms.txt\n\n## 文章\n\n${entries}\n`);
+    return response(`# 豆豆课程组\n\n中文技术学习博客。完整机器可读目录：${base}/llms.txt\n\n## 文章\n\n${entries}\n`);
   }
 
   const slug = path?.match(/^\/posts\/([^/]+)$/)?.[1];

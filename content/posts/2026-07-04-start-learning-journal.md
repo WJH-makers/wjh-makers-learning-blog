@@ -19,7 +19,7 @@ tags: 学习方法, 学习路线, Java全栈, 站点导航, 博客, 复盘
 ## 内容方向
 
 - Java 全栈：Java、Spring、Maven、Gradle、MySQL。
-- 工程工具：Git、GitHub、Vercel、Neovim、终端配置。
+- 工程工具：Git、GitHub、外部托管平台、Neovim、终端配置。
 - AI 与系统：PyTorch、遥感 VQA、操作系统、编译原理。
 - 个人成长：学习计划、复盘、项目总结。
 

@@ -277,7 +277,7 @@ function renderTable(header: string[], aligns: string[], rows: string[][]): stri
 
 // ---------- 列表(支持缩进嵌套) ----------
 
-type ListItem = { indent: number; ordered: boolean; task?: { checked: boolean }; text: string };
+type ListItem = { indent: number; ordered: boolean; number?: number; task?: { checked: boolean }; text: string };
 
 function parseListItem(line: string): ListItem | null {
   const m = line.match(/^(\s*)(?:(\d+)\.|([-*]))\s+(.*)$/);
@@ -293,7 +293,7 @@ function parseListItem(line: string): ListItem | null {
       text = t[2];
     }
   }
-  return { indent, ordered, task, text };
+  return { indent, ordered, number: ordered ? Number(m[2]) : undefined, task, text };
 }
 
 /**
@@ -306,15 +306,22 @@ function renderListBlock(items: ListItem[]): string {
   const top = () => stack[stack.length - 1];
   // </li> 就地拼接(不独立成行):平铺列表输出与旧实现逐字节一致,黄金对比零噪声
   const closeLi = () => { out[out.length - 1] += "</li>"; };
+  // Markdown 中两段有序列表可能被空行或答案选项隔开；浏览器会把每个 <ol> 从 1
+  // 重新开始。保留源码的起始编号，才能让 2.–10. 在文章中仍按原题号展示。
+  const openList = (type: "ul" | "ol", item: ListItem) => (
+    type === "ol" && item.number !== undefined && item.number !== 1
+      ? `<ol start="${item.number}">`
+      : `<${type}>`
+  );
 
   for (const it of items) {
     const type = it.ordered ? "ol" : "ul";
     if (stack.length === 0) {
       stack.push({ type, indent: it.indent });
-      out.push(`<${type}>`);
+      out.push(openList(type, it));
     } else if (it.indent >= top().indent + 2) {
       stack.push({ type, indent: it.indent });
-      out.push(`<${type}>`);
+      out.push(openList(type, it));
     } else {
       closeLi();
       while (stack.length > 1 && it.indent < top().indent) {
@@ -324,7 +331,7 @@ function renderListBlock(items: ListItem[]): string {
       if (top().type !== type) {
         out.push(`</${stack.pop()!.type}>`);
         stack.push({ type, indent: it.indent });
-        out.push(`<${type}>`);
+        out.push(openList(type, it));
       }
     }
     out.push(it.task

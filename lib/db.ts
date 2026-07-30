@@ -1,4 +1,3 @@
-import { attachDatabasePool } from "@vercel/functions";
 import { MongoClient, ServerApiVersion, type Collection, type MongoClientOptions, type WithId } from "mongodb";
 import type { Post } from "@/lib/posts";
 import { estimateReadingMinutes } from "@/lib/text";
@@ -68,7 +67,7 @@ function getClient(): Promise<MongoClient> {
 
   if (!clientPromise) {
     const options: MongoClientOptions = {
-      appName: "wjh-makers-blog",
+      appName: "doudou-learning-blog",
       maxPoolSize: 10,
       // 自有长驻服务器(非 serverless):留热连接,免得稀疏查询每次都重做 Atlas TLS 握手
       minPoolSize: 1,
@@ -81,7 +80,6 @@ function getClient(): Promise<MongoClient> {
       },
     };
     const client = new MongoClient(uri, options);
-    attachDatabasePool(client);
     // 首连失败必须把 promise 丢掉:否则这个 rejected promise 会被缓存到容器生命周期结束,
     // Atlas 一次抖动 = 评论/写作台/DB 文章在本次进程里永久静默失效。
     clientPromise = client.connect().catch((error) => {

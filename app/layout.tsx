@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Playfair_Display, Lora, Inter, JetBrains_Mono, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
-import ClarityAnalytics from "./ClarityAnalytics";
 import { jsonLdSafe, personNode, personId, websiteId } from "@/lib/jsonld";
 import { SERIES_LIST, seriesProgress } from "@/lib/series-registry";
 
@@ -19,11 +18,10 @@ const notoSerif = Noto_Serif_SC({ weight: ["400", "700", "900"], subsets: [], va
 const fontVars = `${playfair.variable} ${lora.variable} ${inter.variable} ${jetbrainsMono.variable} ${notoSerif.variable}`;
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online";
-const SITE_NAME = "WJH-makers";
+const SITE_NAME = "豆豆课程组";
 const SITE_TAGLINE = "技术学习与工程实践";
-const SITE_DESC = "原创编程漫画连载《从零开始学 Java》《从零开始玩命令行》《豆豆咖啡站》——以及 Java 全栈、系统实践、遥感 VQA 与 MoE 研究记录。";
-const SITE_AUTHOR = "WJH-makers";
-const GITHUB_URL = "https://github.com/WJH-makers";
+const SITE_DESC = "原创编程漫画连载与可验证的工程学习课程。";
+const SITE_AUTHOR = "豆豆课程组";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -38,7 +36,7 @@ export const metadata: Metadata = {
     // 漫画站不给大图预览等于自弃图片搜索与 Discover 的位置。
     googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
   },
-  authors: [{ name: SITE_AUTHOR, url: GITHUB_URL }],
+  authors: [{ name: SITE_AUTHOR }],
   creator: SITE_AUTHOR,
   publisher: SITE_AUTHOR,
   alternates: {
@@ -81,7 +79,7 @@ const identityGraph = {
       "@type": "WebSite",
       "@id": websiteId(SITE),
       name: SITE_NAME,
-      alternateName: "WJH-makers 的技术学习与工程实践",
+      alternateName: "豆豆课程组 的技术学习与工程实践",
       url: SITE,
       inLanguage: "zh-CN",
       publisher: { "@id": personId(SITE) },
@@ -101,19 +99,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(identityGraph) }} />
         <header className="site-header">
           <div className="edition-bar">
-            <span>WJH-makers</span>
-            <span>WJH-makers 的技术学习与工程实践</span>
+            <span>豆豆课程组</span>
+            <span>豆豆课程组 的技术学习与工程实践</span>
             <span>Java · 系统 · AI</span>
           </div>
           <nav className="nav" aria-label="主导航">
-            <Link className="brand" href="/">WJH-makers</Link>
+            <Link className="brand" href="/">豆豆课程组</Link>
             <div className="nav-links">
               <Link href="/series">连载</Link>
               <Link href="/cheatsheets">速查</Link>
               <Link href="/archive">归档</Link>
               <Link href="/tags">标签</Link>
               <Link href="/about">关于</Link>
-              <a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a>
             </div>
           </nav>
         </header>
@@ -135,21 +132,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </div>
           <div className="footer-col">
             <p className="footer-head">关于与订阅</p>
-            <Link href="/about">关于我</Link>
+            <Link href="/about">关于课程</Link>
             <Link href="/projects">项目集</Link>
             <Link href="/now">现在在做</Link>
             <Link href="/stats">站点数据</Link>
             <a href="/rss.xml">RSS 订阅</a>
-            <a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a>
             <a href="/llms.txt">llms.txt</a>
           </div>
           <div className="footer-bar">
-            <span>Crafted with ♥ by WJH-makers</span>
+            <span>豆豆课程组</span>
             <span>&copy; {new Date().getFullYear()} All Rights Reserved</span>
-            <a className="beian" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">鄂ICP备2026036494号-1</a>
           </div>
         </footer>
-        <ClarityAnalytics />
       </body>
     </html>
   );

@@ -11,8 +11,6 @@ export function jsonLdSafe(obj: unknown): string {
 // 全站实体图的规范 @id:各页面此前各发一个匿名 Person 节点(约 145 个),
 // 搜索引擎无法把它们识别为同一个人。统一成固定 @id 后,layout 发一次完整定义,
 // 其余页面(文章 author/publisher、about、系列 author)全部用 {"@id": ...} 引用,串成一张图。
-const GITHUB_URL = "https://github.com/WJH-makers";
-
 export function personId(base: string): string {
   return `${base}/#person`;
 }
@@ -20,15 +18,14 @@ export function websiteId(base: string): string {
   return `${base}/#website`;
 }
 
-/** layout 发一次的完整 Person 节点。其余页面用 personRef(base) 引用。 */
+/** layout 发一次的完整 Organization 节点。其余页面用 personRef(base) 引用。 */
 export function personNode(base: string) {
   return {
-    "@type": "Person",
+    "@type": "Organization",
     "@id": personId(base),
-    name: "WJH-makers",
-    alternateName: "WJH-makers",
+    name: "豆豆课程组",
+    alternateName: "豆豆课程组",
     url: `${base}/about`,
-    sameAs: [GITHUB_URL],
   };
 }
 

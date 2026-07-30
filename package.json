@@ -1,8 +1,8 @@
 {
-  "name": "wjh-makers-learning-blog",
+  "name": "doudou-learning-blog",
   "version": "0.1.0",
   "private": true,
-  "description": "WJH-makers 的个人学习成果博客，部署到 Vercel。",
+  "description": "隐私优先的技术学习课程网站。",
   "engines": {
     "node": ">=22.18"
   },
@@ -19,7 +19,6 @@
     "@blocknote/core": "0.52.1",
     "@blocknote/mantine": "0.52.1",
     "@blocknote/react": "0.52.1",
-    "@vercel/functions": "3.7.6",
     "mongodb": "7.5.0",
     "next": "16.2.12",
     "react": "19.2.8",

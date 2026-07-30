@@ -4,13 +4,16 @@ import { notFound } from "next/navigation";
 import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, outboundDate, renderMarkdown, siteUrl } from "@/lib/posts";
 import { CHAPTER_TYPE_LABEL } from "@/lib/series";
 import { findEpisodeInfo } from "@/lib/series-registry";
+import { findJavaLab } from "@/lib/java-labs";
 import AdminEditLink from "./AdminEditLink";
 import EpisodeProgress from "./EpisodeProgress";
 import EpisodeExercises from "./EpisodeExercises";
+import JavaLab from "./JavaLab";
 import Comments from "./Comments";
 import ShareBar from "./ShareBar";
 import CodeCopy from "./CodeCopy";
 import { getComments } from "@/lib/comments";
+import { hasDatabaseConfig } from "@/lib/db";
 import { jsonLdSafe, personRef } from "@/lib/jsonld";
 
 type Props = {
@@ -49,7 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: { canonical: url },
     openGraph: {
       // Next 对 openGraph 是整体替换而非深合并:siteName/locale 需在页面级补齐,否则丢失
-      siteName: "WJH-makers",
+      siteName: "豆豆课程组",
       locale: "zh_CN",
       title: post.title,
       description: post.summary,
@@ -57,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: isoDate,
       modifiedTime: isoDate,
-      authors: ["https://github.com/WJH-makers"],
+      authors: ["豆豆课程组"],
       tags: post.tags,
     },
     twitter: {
@@ -75,8 +78,12 @@ export default async function PostPage({ params }: Props) {
 
   // 若本文属于任一连载,从注册表拿系列信息(banner + 上一话/下一话 + 进度)
   const info = findEpisodeInfo(post.slug);
+  const javaLab = findJavaLab(post.slug);
   const episode = info?.episode;
   const season = info?.season;
+  // Turnstile 是可选的反机器人增强；未配置时服务端仍会使用蜜罐与限流。
+  // 因此不能把它作为渲染评论表单的前置条件，否则现有 MongoDB 部署会被误下线。
+  const commentsEnabled = hasDatabaseConfig();
 
   const url = `${siteUrl()}/posts/${post.slug}`;
   const isoDate = outboundDate(post.date).toISOString();
@@ -275,6 +282,8 @@ export default async function PostPage({ params }: Props) {
         />
       )}
 
+      {javaLab && <JavaLab lab={javaLab} />}
+
       {!info && (chronoPrev || chronoNext) && (
         <nav className="chrono-pager" aria-label="上一篇下一篇">
           {chronoPrev ? (
@@ -320,14 +329,13 @@ export default async function PostPage({ params }: Props) {
 
       <aside className="follow-card">
         <p className="eyebrow">觉得有用?</p>
-        <p className="follow-text">关注更新、源码在 GitHub,或用 RSS 订阅《从零开始学 Java》连载。</p>
+        <p className="follow-text">关注更新，或用 RSS 订阅{info ? `《${info.series.title}》` : "本站"}。</p>
         <div className="follow-links">
-          <a href="https://github.com/WJH-makers" target="_blank" rel="noreferrer" className="button">GitHub @WJH-makers</a>
           <a href="/rss.xml" className="button ghost">RSS 订阅</a>
         </div>
       </aside>
 
-      <Comments slug={post.slug} initial={comments} />
+      <Comments slug={post.slug} initial={comments} enabled={commentsEnabled} />
     </article>
   );
 }

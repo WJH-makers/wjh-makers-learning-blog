@@ -89,7 +89,7 @@ CLI 线 C3「Git 卷」教阿零"会用" add/commit/push,这一部带他潜进 `
 
 - **定位**:用 **plumbing 命令还原一次 porcelain 操作**——"你敲的一条 `git commit`,墨叔在底层搬了这几步墨"。差异化 = 永远给可自己复现的 plumbing 命令 + 真实输出。
 - **规则**:
-  1. 命令照抄可跑,基线 Git 2.4x;Windows(PowerShell 7 / Git Bash)与 Linux(txcloud Ubuntu)写法有差异时一句注明。
+  1. 命令照抄可跑,基线 Git 2.4x;Windows(PowerShell 7 / Git Bash)与 Linux(deployment-server Ubuntu)写法有差异时一句注明。
   2. 输出真实跑出再节选,**≤15 行**,不许手编;逐行解读 2–4 条。
   3. 按卷推荐 plumbing 工具箱:卷一 `hash-object` / `cat-file -p` / `write-tree` / `commit-tree` / `update-ref`;卷二 `merge-base` / `rev-parse` / `rev-list`;卷三 `ls-files` / `check-attr` / `for-each-ref`;卷四 `reflog` / `fsck --lost-found` / `bisect` / `filter-repo`。
 - **格式模板与示例**(以卷一"一次 commit 到底做了什么"为例):
