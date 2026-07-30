@@ -10,8 +10,11 @@ services:
         # 与未启用 Turnstile 时行为一致(两者要么都配,要么都不配)。
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
     container_name: blog
-    mem_limit: 512m
-    cpus: 1.0
+    # 2 vCPU 主机同时承载 Tunnel、Nginx 与其他服务；给博客放宽到
+    # 1.5 vCPU / 896 MiB，保留系统与边缘进程的喘息空间，避免“无限制”
+    # 容器在突发流量时反过来拖垮整台机器。
+    mem_limit: 896m
+    cpus: 1.5
     ports:
       - "127.0.0.1:3001:3001"
     extra_hosts:
