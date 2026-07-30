@@ -101,7 +101,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="edition-bar">
             <span>豆豆课程组</span>
             <span>豆豆课程组 的技术学习与工程实践</span>
-            <span>Java · 系统 · AI</span>
+            <Link className="edition-status" href="/stats"><span aria-hidden="true">●</span> 站点观察中</Link>
           </div>
           <nav className="nav" aria-label="主导航">
             <Link className="brand" href="/">豆豆课程组</Link>
