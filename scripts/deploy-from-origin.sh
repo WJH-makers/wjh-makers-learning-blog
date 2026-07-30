@@ -16,7 +16,9 @@ if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
   exit 1
 fi
 
-git -c core.hooksPath=/dev/null fetch --quiet origin production
+# This server was cloned as a single-branch checkout. An explicit refspec is
+# required so production persists as origin/production instead of only FETCH_HEAD.
+git -c core.hooksPath=/dev/null fetch --quiet origin refs/heads/production:refs/remotes/origin/production
 readonly TARGET_COMMIT="$(git rev-parse "$DEPLOY_REF")"
 readonly CURRENT_COMMIT="$(git rev-parse HEAD)"
 readonly LAST_SUCCESSFUL_COMMIT="$(cat "$STATE_FILE" 2>/dev/null || true)"
