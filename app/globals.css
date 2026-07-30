@@ -514,7 +514,8 @@ a:focus-visible {
   position: relative;
   z-index: 1;
   max-width: 840px;
-  min-height: min(78vh, 1080px);
+  /* 78vh 会让速查/笔记这类短文后面拖一大片空纸,像装订错了;留下限即可,其余交给内容。 */
+  min-height: min(52vh, 720px);
   padding: clamp(28px, 5vw, 58px);
   color: var(--book-ink);
   background:
@@ -526,8 +527,11 @@ a:focus-visible {
   box-shadow: 0 2px 1px rgba(75, 53, 24, 0.08), 8px 14px 28px var(--book-shadow), 15px 20px 0 -13px #e8deca, 19px 24px 0 -15px #cbbd9f;
   transform-style: preserve-3d;
   transform-origin: left center;
-  will-change: transform, opacity;
 }
+/* will-change 常驻会让浏览器一直为整篇长文保留一层合成层(文章页 HTML 是 150 KB 量级)。
+   悬停时才提升,给合成器留出准备时间;翻完随 data-turn 一起撤掉。 */
+.book-reader:hover .article-shell,
+.book-reader[data-turn] .article-shell { will-change: transform, opacity; }
 .article-shell::before {
   content: "";
   position: absolute;
@@ -595,7 +599,21 @@ a:focus-visible {
 }
 .book-turn-previous { left: 0; justify-content: flex-start; cursor: w-resize; }
 .book-turn-next { right: 0; justify-content: flex-end; cursor: e-resize; }
-.book-turn span {
+/* 悬停时那一侧的纸像被指腹掀起:给「这里能翻」一个物理暗示,不参与命中。 */
+.book-turn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.book-turn-previous::before { background: linear-gradient(90deg, rgba(62, 42, 22, 0.16), transparent); }
+.book-turn-next::before { background: linear-gradient(270deg, rgba(62, 42, 22, 0.16), transparent); }
+.book-turn:hover::before,
+.book-turn:focus-visible::before { opacity: 1; }
+.book-turn-grip {
+  position: relative;
   width: 1.8rem;
   padding: 0.7rem 0.35rem;
   border: 1px solid color-mix(in srgb, var(--book-edge) 82%, transparent);
@@ -606,12 +624,48 @@ a:focus-visible {
   line-height: 1.45;
   text-align: center;
   writing-mode: vertical-rl;
+  transition: transform 200ms ease, box-shadow 200ms ease;
 }
-.book-turn-next span { border-radius: 5px 0 0 5px; }
-.book-turn-previous span { border-radius: 0 5px 5px 0; }
+.book-turn-next .book-turn-grip { border-radius: 5px 0 0 5px; }
+.book-turn-previous .book-turn-grip { border-radius: 0 5px 5px 0; }
+.book-turn-previous:hover .book-turn-grip { transform: translateX(3px); box-shadow: 0 6px 18px rgba(70, 54, 32, 0.2); }
+.book-turn-next:hover .book-turn-grip { transform: translateX(-3px); box-shadow: 0 6px 18px rgba(70, 54, 32, 0.2); }
+
+/* 翻去哪一话,以前只写在 title 属性里 —— 要干等一秒系统 tooltip 才看得到。 */
+.book-turn-peek {
+  position: absolute;
+  top: 50%;
+  max-width: min(44vw, 300px);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--book-edge);
+  background: color-mix(in srgb, var(--book-paper) 92%, white);
+  box-shadow: 0 6px 18px rgba(70, 54, 32, 0.16);
+  color: color-mix(in srgb, var(--book-ink) 78%, var(--book-paper));
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease, translate 200ms ease;
+}
+.book-turn-previous .book-turn-peek { left: calc(100% + 6px); translate: -6px -50%; }
+.book-turn-next .book-turn-peek { right: calc(100% + 6px); translate: 6px -50%; }
+.book-turn:hover .book-turn-peek,
+.book-turn:focus-visible .book-turn-peek { opacity: 1; translate: 0 -50%; }
+
 .book-reader:hover .book-turn,
 .book-turn:focus-visible { opacity: 1; }
 .book-turn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+/* 触屏没有 hover:把手继续只靠 :hover 点亮,在手机上等于永远看不见,
+   而手机恰恰是主要流量。指针不精确时常显把手,并给到 WCAG 要求的触摸尺寸。 */
+@media (hover: none) {
+  .book-turn { width: clamp(48px, 13vw, 72px); opacity: 0.7; }
+  .book-turn-grip { width: 2.2rem; padding: 0.95rem 0.5rem; }
+  .book-turn-peek { display: none; }
+}
 .book-turn-hint {
   margin: 16px auto 0;
   color: var(--neutral-500);
@@ -619,6 +673,12 @@ a:focus-visible {
   font-size: var(--label-xs);
   letter-spacing: 0.01em;
   text-align: center;
+}
+/* 提示按输入方式切换。用 CSS 而不是 JS 探测:后者会在 hydration 时和服务端渲染对不上。 */
+.book-turn-hint-touch { display: none; }
+@media (hover: none) {
+  .book-turn-hint-pointer { display: none; }
+  .book-turn-hint-touch { display: inline; }
 }
 .book-reader[data-turn="next"] .article-shell { animation: book-turn-next 360ms ease-in forwards; }
 .book-reader[data-turn="previous"] .article-shell { transform-origin: right center; animation: book-turn-previous 360ms ease-in forwards; }
@@ -632,7 +692,17 @@ a:focus-visible {
 }
 @media (prefers-reduced-motion: reduce) {
   .book-reader[data-turn] .article-shell { animation: none; }
-  .book-turn { transition: none; }
+  .book-turn,
+  .book-turn::before,
+  .book-turn-grip,
+  .book-turn-peek { transition: none; }
+  .book-turn-previous:hover .book-turn-grip,
+  .book-turn-next:hover .book-turn-grip { transform: none; }
+}
+/* 中文没有连字符,justify 在窄屏会拉出稀疏得晃眼的行距;窄屏交回左对齐更好读。 */
+@media (max-width: 640px) {
+  .article-header p,
+  .article-content p { text-align: left; }
 }
 .article-content .post-image {
   display: block;
@@ -1395,6 +1465,19 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   }
   .article-shell::before { background: linear-gradient(90deg, rgba(0, 0, 0, 0.38), rgba(255, 255, 255, 0.025) 52%, transparent); }
   .article-header p { color: color-mix(in srgb, var(--book-ink) 72%, var(--book-paper)); }
+  /* 暖色的掀纸阴影与「往白里调」的浮层在暗纸上都会发灰发亮,深色下一律往黑里调。 */
+  .book-turn-previous::before { background: linear-gradient(90deg, rgba(0, 0, 0, 0.4), transparent); }
+  .book-turn-next::before { background: linear-gradient(270deg, rgba(0, 0, 0, 0.4), transparent); }
+  .book-turn-grip {
+    background: color-mix(in srgb, var(--book-paper) 88%, black);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+  .book-turn-previous:hover .book-turn-grip,
+  .book-turn-next:hover .book-turn-grip { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55); }
+  .book-turn-peek {
+    background: color-mix(in srgb, var(--book-paper) 82%, black);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  }
   .episode-progress .progress-bar { background: color-mix(in srgb, var(--accent) 70%, black); }
 }
 
