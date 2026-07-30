@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, outboundDate, renderMarkdown, siteUrl } from "@/lib/posts";
@@ -12,6 +13,7 @@ import JavaLab from "./JavaLab";
 import Comments from "./Comments";
 import ShareBar from "./ShareBar";
 import CodeCopy from "./CodeCopy";
+import BookReader from "./BookReader";
 import { getComments } from "@/lib/comments";
 import { hasDatabaseConfig } from "@/lib/db";
 import { jsonLdSafe, personRef } from "@/lib/jsonld";
@@ -159,8 +161,7 @@ export default async function PostPage({ params }: Props) {
   ]);
   const tocItems = headings.filter((h) => h.level === 2);
 
-  // 非连载文章(速查/笔记)按时间线取上下篇,让它们也有前进/后退的路径。
-  // 连载话次已有专属的 series-pager,这里只服务其余文章。
+  // 非连载文章(速查/笔记)按时间线取相邻文章；连载则按话次翻页。
   let chronoPrev: (typeof allPosts)[number] | undefined;
   let chronoNext: (typeof allPosts)[number] | undefined;
   if (!info) {
@@ -172,10 +173,22 @@ export default async function PostPage({ params }: Props) {
     }
   }
 
+  const previous = info?.prev?.slug
+    ? { href: `/posts/${info.prev.slug}` as Route, title: info.prev.title }
+    : chronoPrev
+      ? { href: `/posts/${chronoPrev.slug}` as Route, title: chronoPrev.title }
+      : undefined;
+  const next = info?.next?.slug
+    ? { href: `/posts/${info.next.slug}` as Route, title: info.next.title }
+    : chronoNext
+      ? { href: `/posts/${chronoNext.slug}` as Route, title: chronoNext.title }
+      : undefined;
+
   return (
-    <article className="page-shell article-shell">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(articleJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(breadcrumbJsonLd) }} />
+    <BookReader previous={previous} next={next}>
+      <article className="page-shell article-shell">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(articleJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(breadcrumbJsonLd) }} />
       <Link className="back-link" href={info ? info.series.route : "/posts"}>
         ← {info ? `返回${info.series.title}` : "返回文章列表"}
       </Link>
@@ -259,28 +272,6 @@ export default async function PostPage({ params }: Props) {
             seasonSlugs={info.seasonSlugs}
             storageKey={info.series.storageKey}
           />
-          <nav className="series-pager" aria-label="连载导航">
-            {info.prev?.slug ? (
-              <Link className="series-pager-link prev" href={`/posts/${info.prev.slug}`}>
-                <span className="eyebrow">上一话</span>
-                <span>{info.prev.title}</span>
-              </Link>
-            ) : (
-              <span />
-            )}
-            <Link className="series-pager-link map" href={info.series.route}>
-              <span className="eyebrow">目录</span>
-              <span>全卷地图</span>
-            </Link>
-            {info.next?.slug ? (
-              <Link className="series-pager-link next" href={`/posts/${info.next.slug}`}>
-                <span className="eyebrow">下一话</span>
-                <span>{info.next.title}</span>
-              </Link>
-            ) : (
-              <span />
-            )}
-          </nav>
         </section>
       )}
 
@@ -295,27 +286,6 @@ export default async function PostPage({ params }: Props) {
       )}
 
       {javaLab && <JavaLab lab={javaLab} />}
-
-      {!info && (chronoPrev || chronoNext) && (
-        <nav className="chrono-pager" aria-label="上一篇下一篇">
-          {chronoPrev ? (
-            <Link className="series-pager-link prev" href={`/posts/${chronoPrev.slug}`}>
-              <span className="eyebrow">上一篇</span>
-              <span>{chronoPrev.title}</span>
-            </Link>
-          ) : (
-            <span />
-          )}
-          {chronoNext ? (
-            <Link className="series-pager-link next" href={`/posts/${chronoNext.slug}`}>
-              <span className="eyebrow">下一篇</span>
-              <span>{chronoNext.title}</span>
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
 
       {related.length > 0 && (
         <section className="related-posts">
@@ -347,7 +317,8 @@ export default async function PostPage({ params }: Props) {
         </div>
       </aside>
 
-      <Comments slug={post.slug} initial={comments} enabled={commentsEnabled} />
-    </article>
+        <Comments slug={post.slug} initial={comments} enabled={commentsEnabled} />
+      </article>
+    </BookReader>
   );
 }
