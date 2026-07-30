@@ -1,10 +1,10 @@
 import "./write.css";
 import type { Route } from "next";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { createDatabasePost, databaseProviderLabel, deleteDatabasePost, hasDatabaseConfig, updateDatabasePost } from "@/lib/db";
-import { getPublishedPost } from "@/lib/posts";
+import { getPublishedPost, PUBLIC_POSTS_CACHE_TAG } from "@/lib/posts";
 import WriteEditorClient from "./WriteEditorClient";
 import { safeCompare } from "@/lib/safe-compare";
 
@@ -37,6 +37,9 @@ function safeErrorForUrl(error: unknown): string {
 }
 
 function revalidateBlog(slug?: string) {
+  // 写作台是 Server Action；updateTag 提供 read-your-own-writes 语义，避免发布后
+  // 被五分钟的 MongoDB 读取缓存遮住。公开读者仍由 Nginx/Cloudflare 承接。
+  updateTag(PUBLIC_POSTS_CACHE_TAG);
   revalidatePath("/");
   revalidatePath("/posts");
   revalidatePath("/tags");

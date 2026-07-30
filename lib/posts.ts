@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { getDatabasePost, getDatabasePosts } from "@/lib/db";
 import { estimateReadingMinutes } from "@/lib/text";
@@ -93,13 +94,30 @@ export function getPost(slug: string): Post | undefined {
   return getAllPosts().find((post) => post.slug === slug);
 }
 
+// 公共文章会同时被首页、归档、标签、RSS、sitemap 和文章页读取。数据库内容只在
+// 发布/编辑时改变，不能让每一次 ISR 再生都重新扫 MongoDB。此标签在写作台保存后
+// 由 updateTag 立即失效，兼顾高并发阅读与“发布后马上可见”。
+export const PUBLIC_POSTS_CACHE_TAG = "public-posts-v1";
+
+const getCachedDatabasePosts = unstable_cache(
+  async (): Promise<Post[]> => getDatabasePosts(),
+  ["published-database-posts-v1"],
+  { revalidate: 300, tags: [PUBLIC_POSTS_CACHE_TAG] },
+);
+
+const getCachedDatabasePost = unstable_cache(
+  async (slug: string): Promise<Post | undefined> => getDatabasePost(slug),
+  ["published-database-post-by-slug-v1"],
+  { revalidate: 300, tags: [PUBLIC_POSTS_CACHE_TAG] },
+);
+
 // React cache():同一次请求/再生内去重(generateMetadata 与页面组件各查一次 → 只打一次 DB)。
 export const getAllPublishedPosts = cache(async (): Promise<Post[]> => {
   const markdownPosts = getAllPosts();
   let databasePosts: Post[] = [];
 
   try {
-    databasePosts = await getDatabasePosts();
+    databasePosts = await getCachedDatabasePosts();
   } catch (error) {
     console.warn("[learning-blog] database read failed, falling back to Markdown only:", error);
   }
@@ -115,7 +133,7 @@ export const getAllPublishedPosts = cache(async (): Promise<Post[]> => {
 
 export const getPublishedPost = cache(async (slug: string): Promise<Post | undefined> => {
   try {
-    const databasePost = await getDatabasePost(slug);
+    const databasePost = await getCachedDatabasePost(slug);
     if (databasePost) return isPublicPost(databasePost) ? databasePost : undefined;
   } catch (error) {
     console.warn("[learning-blog] database post read failed, falling back to Markdown:", error);
