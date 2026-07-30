@@ -50,10 +50,22 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
         run: |
+          set -euo pipefail
+          : "${SSH_KEY:?DEPLOY_KEY is required}"
+          : "${DEPLOY_HOST:?DEPLOY_HOST is required}"
+          : "${DEPLOY_PORT:?DEPLOY_PORT is required}"
           mkdir -p ~/.ssh
           printf '%s' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          for attempt in 1 2 3; do
+            if ssh-keyscan -T 15 -t ed25519,ecdsa,rsa -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" > ~/.ssh/known_hosts; then
+              exit 0
+            fi
+            echo "SSH host-key scan attempt ${attempt}/3 failed; retrying..." >&2
+            sleep 5
+          done
+          echo "Unable to reach the deployment SSH endpoint for host-key verification." >&2
+          exit 1
 
       - name: Deploy to Server
         run: |
