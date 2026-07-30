@@ -29,6 +29,32 @@ export type LearningEvidence = {
 
 export type LearningSettings = { anonymousSyncEnabled: boolean };
 
+/** The small public shape needed to turn a local lab record into a review cue. */
+export type ReviewableLab = {
+  id: string;
+  slug: string;
+  title: string;
+  knowledgePoints: readonly string[];
+  misconceptionTags: readonly string[];
+  projectIncrement: string;
+  reviewAfterDays: readonly number[];
+};
+
+export type LearningReview = {
+  lab: ReviewableLab;
+  dueAt: string;
+  afterDays: number;
+  status: "due" | "upcoming";
+};
+
+export type LearningDashboardSummary = {
+  recordedLabCount: number;
+  passedLabCount: number;
+  dueReviews: LearningReview[];
+  upcomingReviews: LearningReview[];
+  misconceptionTags: Array<{ tag: string; count: number }>;
+};
+
 function storage(): Storage | undefined {
   return typeof window === "undefined" ? undefined : window.localStorage;
 }
@@ -111,4 +137,69 @@ export function clearLocalLearningData(): void {
     storage()?.removeItem(LEARNING_SETTINGS_KEY);
     storage()?.removeItem("doudou-learning:anonymous-id");
   } catch { /* no-op */ }
+}
+
+function validRecordedAt(value: string): number | undefined {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : undefined;
+}
+
+/**
+ * Derives a private study dashboard from data already held in this browser.
+ * A later self-declared local run resets the review cycle for that lab; there
+ * is no server score, learner profile, source code, or telemetry involved.
+ */
+export function summarizeLearning(
+  labs: readonly ReviewableLab[],
+  events: readonly LearningEvidence[],
+  now = new Date(),
+): LearningDashboardSummary {
+  const labsById = new Map(labs.map((lab) => [lab.id, lab]));
+  const latestPassed = new Map<string, LearningEvidence>();
+  const recordedLabs = new Set<string>();
+  const misconceptionCounts = new Map<string, number>();
+
+  for (const event of events) {
+    if (!labsById.has(event.labId)) continue;
+    recordedLabs.add(event.labId);
+    for (const tag of event.misconceptionTags) {
+      misconceptionCounts.set(tag, (misconceptionCounts.get(tag) ?? 0) + 1);
+    }
+    if (event.result !== "passed") continue;
+    const previous = latestPassed.get(event.labId);
+    const eventTime = validRecordedAt(event.recordedAt);
+    const previousTime = previous ? validRecordedAt(previous.recordedAt) : undefined;
+    if (eventTime !== undefined && (previousTime === undefined || eventTime > previousTime)) {
+      latestPassed.set(event.labId, event);
+    }
+  }
+
+  const dueReviews: LearningReview[] = [];
+  const upcomingReviews: LearningReview[] = [];
+  for (const [labId, event] of latestPassed) {
+    const lab = labsById.get(labId);
+    const recordedAt = validRecordedAt(event.recordedAt);
+    if (!lab || recordedAt === undefined) continue;
+    for (const afterDays of lab.reviewAfterDays) {
+      const dueAt = new Date(recordedAt + afterDays * 86_400_000);
+      const review: LearningReview = {
+        lab,
+        dueAt: dueAt.toISOString(),
+        afterDays,
+        status: dueAt.getTime() <= now.getTime() ? "due" : "upcoming",
+      };
+      (review.status === "due" ? dueReviews : upcomingReviews).push(review);
+    }
+  }
+
+  const byDueAt = (left: LearningReview, right: LearningReview) => left.dueAt.localeCompare(right.dueAt);
+  return {
+    recordedLabCount: recordedLabs.size,
+    passedLabCount: latestPassed.size,
+    dueReviews: dueReviews.sort(byDueAt),
+    upcomingReviews: upcomingReviews.sort(byDueAt),
+    misconceptionTags: [...misconceptionCounts]
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((left, right) => right.count - left.count || left.tag.localeCompare(right.tag)),
+  };
 }

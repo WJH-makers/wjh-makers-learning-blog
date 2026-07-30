@@ -106,6 +106,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <nav className="nav" aria-label="主导航">
             <Link className="brand" href="/">豆豆课程组</Link>
             <div className="nav-links">
+              <Link href="/learning">学习档案</Link>
               <Link href="/series">连载</Link>
               <Link href="/cheatsheets">速查</Link>
               <Link href="/archive">归档</Link>
@@ -118,6 +119,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <footer className="footer">
           <div className="footer-col">
             <p className="footer-head">内容</p>
+            <Link href="/learning">学习档案与复习</Link>
             <Link href="/archive">全量归档</Link>
             <Link href="/posts">文章精选</Link>
             <Link href="/cheatsheets">速查手册</Link>

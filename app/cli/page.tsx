@@ -80,6 +80,17 @@ export default function CliSeriesPage() {
         </div>
       </section>
 
+      <section className="learning-route" aria-labelledby="cli-outcome-title">
+        <p className="eyebrow">Start here · 课程怎么产生价值</p>
+        <h2 id="cli-outcome-title">把终端操作变成可复现的工作流</h2>
+        <p>命令行系列用同一个终端大陆项目串起文件、进程与自动化，并把 Linux 与 PowerShell 的差异并列说明。每话读完可在本机复现，再用进度条继续下一步。</p>
+        <div className="learning-route-grid">
+          <div><span>01 · 读懂</span><p>先理解命令作用范围和输出，不把高风险命令当成口令。</p></div>
+          <div><span>02 · 复现</span><p>按自己的系统执行最小步骤；Linux 与 PowerShell 的差异会被显式标出。</p></div>
+          <div><span>03 · 迁移</span><p>把可重复的命令组织进日常工作流，而不是只记一行命令。</p></div>
+        </div>
+      </section>
+
       {progressSeasons.length > 0 && (
         <JavaProgress seasons={progressSeasons} storageKey={CLI_SERIES_META.storageKey} />
       )}

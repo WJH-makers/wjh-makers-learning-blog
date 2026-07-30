@@ -211,6 +211,18 @@ export default async function PostPage({ params }: Props) {
         </aside>
       )}
 
+      {info && episode && (
+        <aside className="learning-outcome" aria-label="本话学习产出">
+          <p className="eyebrow">本话学习产出 · 可复现，不是认证</p>
+          <div className="learning-outcome-grid">
+            <div><span>知识点</span><strong>{episode.technologies.join(" · ")}</strong></div>
+            <div><span>项目增量</span><strong>{episode.projectStage}</strong></div>
+            <div><span>完成动作</span><strong>{info.series.route === "/java" ? "本机 JDK 17 复现，再标记完成" : "在自己的终端复现，再标记完成"}</strong></div>
+          </div>
+          <p className="muted">完成标记和 Java 实验记录只保存在当前浏览器。<Link href="/learning">查看学习档案与复习提示 →</Link></p>
+        </aside>
+      )}
+
       {info?.series.route === "/java" && episode && episode.season < 3 && (
         <aside className="learning-prerequisite" aria-label="测试代码前置说明">
           <p className="eyebrow">课程约定 · 测试代码</p>

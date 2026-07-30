@@ -92,6 +92,17 @@ export default function JavaSeriesPage() {
         </div>
       </section>
 
+      <section className="learning-route" aria-labelledby="java-outcome-title">
+        <p className="eyebrow">Start here · 课程怎么产生价值</p>
+        <h2 id="java-outcome-title">不是看完概念，而是做出一台能解释的咖啡机</h2>
+        <p>每一话把一个 Java 知识点接进同一个控制台项目。你可以阅读、在本机 JDK 17 复现、标记完成，再回到学习档案按节奏复习。</p>
+        <div className="learning-route-grid">
+          <div><span>01 · 起步</span><p>从输出、变量和条件判断开始；第一话提供单文件 Java 17 本机实验。</p></div>
+          <div><span>02 · 产出</span><p>每话都有明确的咖啡站项目增量，而不是孤立语法清单。</p></div>
+          <div><span>03 · 留证</span><p>实验记录只在浏览器本机保存；它是自我复习提示，不是平台认证。</p></div>
+        </div>
+      </section>
+
       <section className="comic-intro" aria-labelledby="comic-cast-title">
         <div>
           <p className="eyebrow">Comic Cast · 漫画设定</p>
