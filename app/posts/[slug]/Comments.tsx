@@ -55,9 +55,9 @@ function renderBody(body: string): ReactNode[] {
 
 const PREVIEW = 5;
 
-export default function Comments({ slug, initial }: { slug: string; initial: Comment[] }) {
+export default function Comments({ slug, initial, enabled }: { slug: string; initial: Comment[]; enabled: boolean }) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-  const commentingEnabled = process.env.NEXT_PUBLIC_COMMENTS_ENABLED === "true" && Boolean(siteKey);
+  const commentingEnabled = enabled && Boolean(siteKey);
   const [state, action, pending] = useActionState<SubmitResult | null, FormData>(postComment, null);
   const [list, setList] = useState<Comment[]>(initial);
   const [len, setLen] = useState(0);

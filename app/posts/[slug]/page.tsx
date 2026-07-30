@@ -14,7 +14,7 @@ import ShareBar from "./ShareBar";
 import CodeCopy from "./CodeCopy";
 import BookReader from "./BookReader";
 import JavaLab from "./JavaLab";
-import { getComments } from "@/lib/comments";
+import { getComments, isCommentingEnabled } from "@/lib/comments";
 import { jsonLdSafe, publisherRef } from "@/lib/jsonld";
 
 type Props = {
@@ -81,6 +81,7 @@ export default async function PostPage({ params }: Props) {
   const javaLab = findJavaLab(post.slug);
   const episode = info?.episode;
   const season = info?.season;
+  const commentsEnabled = isCommentingEnabled();
 
   const url = `${siteUrl()}/posts/${post.slug}`;
   const isoDate = outboundDate(post.date).toISOString();
@@ -308,7 +309,7 @@ export default async function PostPage({ params }: Props) {
         </div>
       </aside>
 
-      <Comments slug={post.slug} initial={comments} />
+      <Comments slug={post.slug} initial={comments} enabled={commentsEnabled} />
     </article>
     </BookReader>
   );

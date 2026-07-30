@@ -3,7 +3,7 @@ import path from "node:path";
 import { cache } from "react";
 import { getDatabasePost, getDatabasePostIndex, getDatabasePosts } from "@/lib/db";
 import { estimateReadingMinutes } from "@/lib/text";
-import { isReleasedDate } from "@/lib/publication";
+import { isAlwaysPublicCurriculum, isReleasedDate } from "@/lib/publication";
 import { mergePublishedPostIndex, type PostIndexEntry } from "@/lib/post-index";
 
 export { mergePublishedPostIndex, type PostIndexEntry } from "@/lib/post-index";
@@ -22,8 +22,8 @@ export type Post = {
   content: string;
 };
 
-export function isPublicPost(post: Pick<Post, "date">): boolean {
-  return isReleasedDate(post.date);
+export function isPublicPost(post: Pick<Post, "date" | "slug">): boolean {
+  return isAlwaysPublicCurriculum(post.slug) || isReleasedDate(post.date);
 }
 
 const postsDirectory = path.join(process.cwd(), "content", "posts");

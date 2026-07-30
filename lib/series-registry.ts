@@ -30,7 +30,7 @@ import { BIGDATA_SEASONS, BIGDATA_SERIES_META } from "@/lib/series-bigdata";
 import { SEARCH_SEASONS, SEARCH_SERIES_META } from "@/lib/series-search";
 import { GITADV_SEASONS, GITADV_SERIES_META } from "@/lib/series-gitadv";
 import { CAREER_SEASONS, CAREER_SERIES_META } from "@/lib/series-career";
-import { isReleasedSlug } from "@/lib/publication";
+import { isPublicEpisode } from "@/lib/publication";
 
 export type SeriesRef = {
   title: string;
@@ -108,7 +108,7 @@ export function allEpisodesOf(series: SeriesRef): JavaEpisode[] {
 
 /** 一条线已开更的话次,按卷话顺序。 */
 export function publishedEpisodesOf(series: SeriesRef): JavaEpisode[] {
-  return allEpisodesOf(series).filter((e) => e.status === "published" && isReleasedSlug(e.slug));
+  return allEpisodesOf(series).filter((e) => e.status === "published" && isPublicEpisode(e.slug));
 }
 
 /** 一条线的连载进度(已发布 / 规划总数)。 */
@@ -156,7 +156,7 @@ export function findEpisodeInfo(slug: string): EpisodeInfo | undefined {
       if (!episode) continue;
       const published = series.seasons
         .flatMap((s) => s.episodes)
-        .filter((e) => e.status === "published" && isReleasedSlug(e.slug));
+        .filter((e) => e.status === "published" && isPublicEpisode(e.slug));
       const i = published.findIndex((e) => e.slug === slug);
       return {
         series,
@@ -164,7 +164,7 @@ export function findEpisodeInfo(slug: string): EpisodeInfo | undefined {
         episode,
         prev: i > 0 ? published[i - 1] : undefined,
         next: i >= 0 ? published[i + 1] : undefined,
-        seasonSlugs: season.episodes.filter((e) => e.status === "published" && isReleasedSlug(e.slug)).map((e) => e.slug as string),
+        seasonSlugs: season.episodes.filter((e) => e.status === "published" && isPublicEpisode(e.slug)).map((e) => e.slug as string),
       };
     }
   }

@@ -20,6 +20,8 @@ tags: [Java, Java漫画, Spring Security, 认证授权, BCrypt, 阿零与豆豆]
 
 ## 二、漫画 · 认证门与授权岗
 
+![《从零开始学 Java》38 · 注册登录与 Spring Security —— 阿零与豆豆分镜漫画](/comics/java/s04e06-security.png)
+
 > **〔1〕** 咖啡站门口立起两道岗:第一道 `认证`(你是谁?出示凭证),第二道 `授权`(你这身份,能进这个房间吗?)。
 > 豆豆:「Spring Security 就是这套门禁,它是一条**过滤器链**,请求进业务之前先过它这关。」
 

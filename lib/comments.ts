@@ -80,7 +80,8 @@ function hashIp(ip: string): string {
  * 不能在生产环境为了“先能用”而悄悄跳过验证码，否则机器人只需绕开前端即可写库。
  */
 export function isCommentingEnabled(): boolean {
-  return process.env.COMMENTS_ENABLED === "true"
+  return hasDatabaseConfig()
+    && process.env.COMMENTS_ENABLED === "true"
     && Boolean(process.env.TURNSTILE_SECRET_KEY?.trim())
     && Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
 }

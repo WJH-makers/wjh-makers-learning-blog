@@ -23,3 +23,16 @@ export function isReleasedDate(date: string, now = new Date()): boolean {
 export function isReleasedSlug(slug: string | undefined, now = new Date()): boolean {
   return Boolean(slug && isReleasedDate(slug.slice(0, 10), now));
 }
+
+/** Date-based publication check used by posts whose editorial date is authoritative. */
+export const isPublicOn = isReleasedDate;
+
+/** Java and CLI curricula were explicitly opened as complete learning paths. */
+export function isAlwaysPublicCurriculum(slug: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}-(?:java|cli)-s\d+e\d+-/.test(slug);
+}
+
+/** Series routes use the explicit curriculum policy before the scheduled slug date. */
+export function isPublicEpisode(slug: string | undefined, now = new Date()): boolean {
+  return Boolean(slug && (isAlwaysPublicCurriculum(slug) || isReleasedSlug(slug, now)));
+}
