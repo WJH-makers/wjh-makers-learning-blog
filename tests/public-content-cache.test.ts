@@ -6,6 +6,7 @@ import { test } from "node:test";
 const root = process.cwd();
 const postsSource = readFileSync(path.join(root, "lib", "posts.ts"), "utf8");
 const writeSource = readFileSync(path.join(root, "app", "write", "page.tsx"), "utf8");
+const proxySource = readFileSync(path.join(root, "proxy.ts"), "utf8");
 
 test("public database content has a bounded shared cache", () => {
   assert.match(postsSource, /PUBLIC_POSTS_CACHE_TAG\s*=\s*"public-posts-v1"/);
@@ -18,4 +19,11 @@ test("publishing invalidates the public-content cache before rerendering routes"
   assert.match(writeSource, /updateTag\(PUBLIC_POSTS_CACHE_TAG\);/);
   assert.match(writeSource, /revalidatePath\("\/"\);/);
   assert.match(writeSource, /revalidatePath\("\/rss\.xml"\);/);
+});
+
+test("Markdown uses explicit URLs instead of sharing an Accept-negotiated cache key with HTML", () => {
+  assert.match(proxySource, /\$\{pathname\}\/markdown/);
+  assert.match(proxySource, /rel="alternate"; type="text\/markdown"/);
+  assert.doesNotMatch(proxySource, /NextResponse\.rewrite/);
+  assert.doesNotMatch(proxySource, /Vary", "Accept/);
 });
