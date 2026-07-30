@@ -21,7 +21,7 @@ export async function GET() {
 
   const body = `# 豆豆课程组
 
-> 中文技术学习博客，记录 Java 全栈、工程实践与遥感 VQA / MoE 研究。
+> 中文技术学习博客，提供故事化编程课程、工程练习与速查手册。
 > 特色:把 Java 工程师需要的整个知识面写成同一个咖啡站宇宙下的漫画连载。
 
 ## 阅读入口
@@ -29,8 +29,7 @@ export async function GET() {
 - [连载总台](${base}/series):全部漫画连载
 - [全量归档](${base}/archive):按时间线的完整文章清单
 - [速查手册](${base}/cheatsheets):命令与语法速查
-- [标签索引](${base}/tags)
-- [项目集](${base}/projects) · [关于作者](${base}/about) · [现在在做](${base}/now)
+- [项目集](${base}/projects) · [现在在做](${base}/now)
 
 ## 连载
 
@@ -40,7 +39,7 @@ ${seriesList}
 
 - [站点地图](${base}/sitemap.xml)
 - [RSS](${base}/rss.xml)
-- 文章提供 Markdown 版本：在文章 URL 后加 /markdown，或向公开页面发送 Accept: text/markdown。
+- 文章提供 Markdown 版本：在文章 URL 后加 /markdown。
 
 ## 最新与全部文章
 

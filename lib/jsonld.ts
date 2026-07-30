@@ -25,7 +25,7 @@ export function personNode(base: string) {
     "@id": personId(base),
     name: "豆豆课程组",
     alternateName: "豆豆课程组",
-    url: `${base}/about`,
+    url: base,
   };
 }
 

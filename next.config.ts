@@ -20,6 +20,18 @@ const nextConfig: NextConfig = {
       destination: "/.well-known/security.txt",
       permanent: true,
     },
+    // 首页收回到课程入口后，旧的自我介绍/标签索引不再单独维护；保留永久跳转，
+    // 让既有搜索结果与读者书签落到仍然有用的内容页而非 404。
+    {
+      source: "/about",
+      destination: "/series",
+      permanent: true,
+    },
+    {
+      source: "/tags/:path*",
+      destination: "/archive",
+      permanent: true,
+    },
   ],
   headers: async () => [
     {

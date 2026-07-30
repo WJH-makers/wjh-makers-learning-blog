@@ -169,13 +169,12 @@ export default async function StatsPage() {
           <p className="eyebrow">Tags · 标签分布</p>
           <h2>{tags.length} 个标签,其中 {multiUseTags.length} 个用过两次以上</h2>
         </div>
-        <Link href="/tags">标签云 →</Link>
       </section>
       <div className="stat-tagcloud">
         {topTags.map(({ tag, count }) => (
-          <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>
+          <span key={tag}>
             {tag} <em>{count}</em>
-          </Link>
+          </span>
         ))}
       </div>
 

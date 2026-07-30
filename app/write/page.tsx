@@ -42,7 +42,6 @@ function revalidateBlog(slug?: string) {
   updateTag(PUBLIC_POSTS_CACHE_TAG);
   revalidatePath("/");
   revalidatePath("/posts");
-  revalidatePath("/tags");
   revalidatePath("/rss.xml");
   revalidatePath("/sitemap.xml");
   if (slug) revalidatePath(`/posts/${slug}`);

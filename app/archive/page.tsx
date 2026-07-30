@@ -56,8 +56,7 @@ export default async function ArchivePage() {
         <h1>{TITLE}</h1>
         <p>
           共 <strong>{posts.length}</strong> 篇,跨 {years.length} 个年份。
-          连载话次带系列徽标;想按主题找请去 <Link href="/tags">标签</Link>,想按连载找请去{" "}
-          <Link href="/series">连载总台</Link>。
+          连载话次带系列徽标;想按连载找请去 <Link href="/series">连载总台</Link>。
         </p>
       </div>
 

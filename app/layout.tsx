@@ -110,8 +110,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <Link href="/series">连载</Link>
               <Link href="/cheatsheets">速查</Link>
               <Link href="/archive">归档</Link>
-              <Link href="/tags">标签</Link>
-              <Link href="/about">关于</Link>
             </div>
           </nav>
         </header>
@@ -123,7 +121,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <Link href="/archive">全量归档</Link>
             <Link href="/posts">文章精选</Link>
             <Link href="/cheatsheets">速查手册</Link>
-            <Link href="/tags">标签云</Link>
           </div>
           <div className="footer-col">
             <p className="footer-head">连载</p>
@@ -133,8 +130,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             ))}
           </div>
           <div className="footer-col">
-            <p className="footer-head">关于与订阅</p>
-            <Link href="/about">关于课程</Link>
+            <p className="footer-head">更多与订阅</p>
             <Link href="/projects">项目集</Link>
             <Link href="/now">现在在做</Link>
             <Link href="/stats">站点数据</Link>

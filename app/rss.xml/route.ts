@@ -34,7 +34,7 @@ export async function GET() {
         <title>豆豆课程组 的技术学习与工程实践</title>
         <link>${base}</link>
         <atom:link href="${base}/rss.xml" rel="self" type="application/rss+xml"/>
-        <description>Java 全栈、系统实践、遥感 VQA 与 MoE 研究记录</description>
+        <description>故事化编程课程、工程练习与速查手册</description>
         <language>zh-CN</language>
         <lastBuildDate>${(posts.length > 0 ? outboundDate(posts[0].date) : new Date()).toUTCString()}</lastBuildDate>
         ${items}

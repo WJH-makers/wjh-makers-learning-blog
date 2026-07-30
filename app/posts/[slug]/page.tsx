@@ -196,7 +196,7 @@ export default async function PostPage({ params }: Props) {
         <h1>{post.title}</h1>
         <p>{post.summary}</p>
         <div className="tags">
-          {post.tags.map((tag) => <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>)}
+          {post.tags.map((tag) => <span key={tag}>{tag}</span>)}
         </div>
       </header>
 
@@ -334,7 +334,7 @@ export default async function PostPage({ params }: Props) {
       <nav className="article-actions" aria-label="文章操作">
         <AdminEditLink slug={post.slug} />
         <Link className="button" href="/posts">更多文章 →</Link>
-        <Link className="button ghost" href="/tags">按标签检索</Link>
+        <Link className="button ghost" href="/archive">查看全量归档</Link>
         {/* 零 JS 返回顶部:fragment "top" 无对应元素时按 HTML 规范滚到文档顶,吃全站 scroll-behavior: smooth */}
         <a className="button ghost" href="#top">↑ 回到顶部</a>
       </nav>

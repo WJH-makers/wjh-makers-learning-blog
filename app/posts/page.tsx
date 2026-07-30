@@ -30,7 +30,7 @@ function ListItem({ post }: { post: Post }) {
         <p>{post.summary}</p>
         <div className="tags">
           {post.tags.slice(0, 5).map((tag) => (
-            <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>
+            <span key={tag}>{tag}</span>
           ))}
         </div>
       </div>

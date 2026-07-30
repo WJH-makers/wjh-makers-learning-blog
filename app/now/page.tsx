@@ -90,8 +90,8 @@ export default function NowPage() {
         </ul>
       </section>
 
-      <p className="about-more">
-        课程索引见 <Link href="/projects">/projects</Link>,关于课程见 <Link href="/about">/about</Link>。
+      <p className="now-footer">
+        课程索引见 <Link href="/projects">/projects</Link>,完整课程见 <Link href="/series">/series</Link>。
       </p>
     </div>
   );
