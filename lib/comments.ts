@@ -75,10 +75,21 @@ function hashIp(ip: string): string {
   return createHash("sha256").update(salt + ip).digest("hex").slice(0, 16);
 }
 
-/** Cloudflare Turnstile 服务端校验。未配置 secret 时跳过(仍受蜜罐/限流/敏感词保护)。 */
-async function verifyTurnstile(token: string): Promise<boolean> {
+/**
+ * 评论属于写入能力，默认关闭；只有三个配置同时具备才开放。
+ * 不能在生产环境为了“先能用”而悄悄跳过验证码，否则机器人只需绕开前端即可写库。
+ */
+export function isCommentingEnabled(): boolean {
+  return hasDatabaseConfig()
+    && process.env.COMMENTS_ENABLED === "true"
+    && Boolean(process.env.TURNSTILE_SECRET_KEY?.trim())
+    && Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
+}
+
+/** Cloudflare Turnstile 服务端校验。未配置或无 token 一律拒绝。 */
+async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
-  if (!secret) return true;
+  if (!secret) return false;
   if (!token) {
     // secret 配了、site key 没配 = 典型的半截配置:前端压根不渲染 widget,于是每条评论
     // 都缺 token 被拒,而用户只看到「请重试」——重试一万次也没用。这里把根因写进日志,
@@ -95,8 +106,7 @@ async function verifyTurnstile(token: string): Promise<boolean> {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      // 浏览器已与人机验证服务完成挑战；不再额外转交访问者 IP。
-      body: new URLSearchParams({ secret, response: token }),
+      body: new URLSearchParams({ secret, response: token, remoteip: ip }),
       // 无超时的话,CF 一次慢响应就把整个评论 Server Action 挂住;
       // 1cpu/512m 上会放大成全站卡顿。超时按校验失败处理(fail-closed)。
       signal: AbortSignal.timeout(3000),
@@ -125,6 +135,7 @@ export type SubmitInput = {
 export type SubmitResult = { ok: true; comment: Comment } | { ok: false; error: string };
 
 export async function submitComment(input: SubmitInput): Promise<SubmitResult> {
+  if (!isCommentingEnabled()) return { ok: false, error: "评论功能暂未开放。" };
   if (!hasDatabaseConfig()) return { ok: false, error: "评论功能暂未启用。" };
   if (!input.slug || input.slug.length > 200) return { ok: false, error: "非法的文章标识。" };
 
@@ -146,7 +157,7 @@ export async function submitComment(input: SubmitInput): Promise<SubmitResult> {
   }
 
   // 3) 人机验证
-  if (!(await verifyTurnstile(input.turnstileToken))) {
+  if (!(await verifyTurnstile(input.turnstileToken, input.ip))) {
     return { ok: false, error: "人机验证未通过,请重试。" };
   }
 

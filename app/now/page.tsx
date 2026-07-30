@@ -1,8 +1,7 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { siteUrl } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 86400;
 export const runtime = "nodejs";
@@ -15,12 +14,12 @@ const NOW = {
   focus: [
     "把 Java 工程师需要的整个知识面,写成同一个咖啡站宇宙下的十几条漫画连载 —— 蓝图先行,逐话开更。",
     "《豆豆咖啡站》收尾:纯故事线,十年前那杯没做完的拿铁,要在大结局送到。",
-    "课程本身的持续打磨:渲染引擎、阅读体验与练习反馈。",
+    "博客本身的持续打磨:渲染引擎、可观测性、SEO 与阅读体验。",
   ],
   learning: [
     "虚拟线程与结构化并发在真实负载下的取舍",
-    "Java 并发与资源边界",
-    "命令行工具的安全使用",
+    "遥感多模态的小样本迁移",
+    "MoE 的路由稳定性与负载均衡",
   ],
   reading: [
     "JVM 与 GC 的一手材料(JEP 与官方博客,而不是二手八股)",
@@ -28,23 +27,19 @@ const NOW = {
   ],
 };
 
-export const metadata: Metadata = {
+export const metadata = staticPageMetadata({
   title: "现在",
-  description: `豆豆课程组 此刻在做什么、在学什么、在读什么 —— 更新于 ${UPDATED}。`,
-  alternates: { canonical: `${siteUrl()}/now` },
-  openGraph: {
-    ...OG_BASE,
-    title: "现在 | 豆豆课程组",
-    description: "此刻在做什么、在学什么、在读什么。",
-    url: `${siteUrl()}/now`,
-  },
-};
+  description: `咖啡站技术志此刻在更新什么、研究什么、阅读什么 —— 更新于 ${UPDATED}。`,
+  path: "/now",
+  socialTitle: "现在 | 咖啡站技术志",
+  socialDescription: "此刻在做什么、在学什么、在读什么。",
+});
 
 export default function NowPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "现在 · 豆豆课程组",
+    name: "现在 · 咖啡站技术志",
     url: `${siteUrl()}/now`,
     dateModified: UPDATED,
     inLanguage: "zh-CN",
@@ -90,9 +85,7 @@ export default function NowPage() {
         </ul>
       </section>
 
-      <p className="now-footer">
-        课程索引见 <Link href="/projects">/projects</Link>,完整课程见 <Link href="/series">/series</Link>。
-      </p>
+      <p className="now-more">项目全貌见 <Link href="/projects">/projects</Link>。</p>
     </div>
   );
 }

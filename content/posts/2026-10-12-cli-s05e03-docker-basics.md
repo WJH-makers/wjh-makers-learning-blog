@@ -271,34 +271,34 @@ db 的 `PORTS` 一栏只有 `27017/tcp`、没有箭头——**没临街**,正合
 ### 选择题(10 道)
 
 1. Docker 镜像(Image)和容器(Container)的关系,最恰当的类比是什么?
-- A) 文件与文件夹　B) 类(Class)与实例(Instance):镜像是只读模板,容器是镜像的运行实例　C) 压缩包与解压后的文件　D) 代码与编译器
+   - A) 文件与文件夹　B) 类(Class)与实例(Instance):镜像是只读模板,容器是镜像的运行实例　C) 压缩包与解压后的文件　D) 代码与编译器
 
 2. `docker run -d -p 8080:80 --name web nginx` 中 `-d`、`-p`、`--name` 分别代表什么?
-- A) daemon(后台运行)、port(端口映射 主机:容器)、name(容器名称)　B) delete、password、name　C) directory、process、namespace　D) detach、path、node
+   - A) daemon(后台运行)、port(端口映射 主机:容器)、name(容器名称)　B) delete、password、name　C) directory、process、namespace　D) detach、path、node
 
 3. `docker ps` 默认显示什么?
-- A) 所有容器(含已停止的)　B) 正在运行的容器列表　C) 所有镜像　D) 容器日志
+   - A) 所有容器(含已停止的)　B) 正在运行的容器列表　C) 所有镜像　D) 容器日志
 
 4. `docker logs -f web` 中 `-f` 的作用是?
-- A) 强制(force)　B) follow,持续跟踪输出(类似 tail -f),实时查看新日志　C) 过滤(filter)　D) 格式化(format)
+   - A) 强制(force)　B) follow,持续跟踪输出(类似 tail -f),实时查看新日志　C) 过滤(filter)　D) 格式化(format)
 
 5. `docker exec -it web bash` 的作用是什么?
-- A) 停止名为 web 的容器　B) 在正在运行的 `web` 容器内**打开一个交互式 bash shell**　C) 创建新容器并命名为 bash　D) 查看容器日志
+   - A) 停止名为 web 的容器　B) 在正在运行的 `web` 容器内**打开一个交互式 bash shell**　C) 创建新容器并命名为 bash　D) 查看容器日志
 
 6. `docker-compose up -d` 和 `docker-compose down` 是一对什么操作?
-- A) 无关联　B) `up -d` 以守护进程模式启动 compose 定义的所有服务,`down` 停止并移除相关容器和默认网络，**默认保留卷**　C) `up` 是部署,`down` 是下载镜像　D) 两者等价,只是语法不同
+   - A) 无关联　B) `up -d` 以守护进程模式启动 compose 定义的所有服务,`down` 停止并移除所有相关容器/网络/卷　C) `up` 是部署,`down` 是下载镜像　D) 两者等价,只是语法不同
 
 7. 容器停止后数据丢失,正确的数据持久化方式是什么?
-- A) 把数据写进镜像　B) 使用 Docker Volume(卷)或 bind mount(绑定挂载)将数据存储在主机的持久化目录中　C) 容器内的数据永远不会丢失　D) 定期 `docker commit` 保存容器状态
+   - A) 把数据写进镜像　B) 使用 Docker Volume(卷)或 bind mount(绑定挂载)将数据存储在主机的持久化目录中　C) 容器内的数据永远不会丢失　D) 定期 `docker commit` 保存容器状态
 
 8. `docker stop web` 和 `docker kill web` 的区别?
-- A) 完全相同　B) `stop` 发送 SIGTERM(给应用优雅清理的时间,超时后 SIGKILL),`kill` 立即发送 SIGKILL(强制终止)　C) `stop` 删除容器,`kill` 暂停容器　D) `kill` 是 `stop` 的别名
+   - A) 完全相同　B) `stop` 发送 SIGTERM(给应用优雅清理的时间,超时后 SIGKILL),`kill` 立即发送 SIGKILL(强制终止)　C) `stop` 删除容器,`kill` 暂停容器　D) `kill` 是 `stop` 的别名
 
 9. 关于 Docker 的"镜像分层"概念,以下说法**正确**的是?
-- A) 每个镜像只有一个层　B) 镜像由多个只读层堆叠而成,每个 Dockerfile 指令( RUN/COPY/ADD )创建一个新层,容器在顶部有一个可写层　C) 分层只是比喻,实际不存在　D) 分层会让镜像变得更大
+   - A) 每个镜像只有一个层　B) 镜像由多个只读层堆叠而成,每个 Dockerfile 指令( RUN/COPY/ADD )创建一个新层,容器在顶部有一个可写层　C) 分层只是比喻,实际不存在　D) 分层会让镜像变得更大
 
 10. Docker Compose 文件的 `depends_on` 指令作用是什么?
-- A) 复制文件到容器　B) 定义服务间的启动依赖顺序(如 db 先于 app 启动)　C) 安装依赖包　D) 指定挂载卷
+   - A) 复制文件到容器　B) 定义服务间的启动依赖顺序(如 db 先于 app 启动)　C) 安装依赖包　D) 指定挂载卷
 
 ### 解答题(5 道)
 
@@ -323,7 +323,7 @@ db 的 `PORTS` 一栏只有 `27017/tcp`、没有箭头——**没临街**,正合
 >
 > **5-B** `exec -it web bash` = execute interactive terminal:在名为 `web` 的容器内启动 bash 并给你一个交互终端。**举一反三:**`-i`=stdin 保持打开,`-t`=分配伪终端(TTY)。`docker exec web ls /app` 执行单个命令不进入交互。如果容器内没有 bash,用 `/bin/sh` 或 `ash`(Alpine)。
 >
-> **6-B** `up -d`=启动 compose 文件中定义的所有服务(后台);`down`=停止+删除容器和默认网络，**默认保留具名卷与匿名卷**。**举一反三:**`up`(不加 -d)=前台运行(适合调试,按 Ctrl+C 停止);`down -v` / `down --volumes` 才会删除项目卷，数据库数据会丢失;`restart` 重启服务;`ps` 查看 compose 项目中的容器状态。
+> **6-B** `up -d`=启动 compose 文件中定义的所有服务(后台);`down`=停止+删除所有相关资源(容器、默认网络、匿名卷)。**举一反三:**`up`(不加 -d)=前台运行(适合调试,按 Ctrl+C 停止);`down -v` 同时删除命名卷(清除数据);`restart` 重启服务;`ps` 查看 compose 项目中的容器状态。
 >
 > **7-B** 容器是无状态的(设计意图):每个新容器从镜像启动,有自己的可写层,容器被删除时可写层也消失。**持久化数据需要 Volume:**
 >①Docker Volume:`docker volume create data && docker run -v data:/app/data`(由 Docker 管理,路径在 `/var/lib/docker/volumes/`) ②Bind Mount:`-v /home/user/data:/app/data`(直接挂载主机目录)。**举一反三:**数据库容器务必挂载 volume!`docker-compose` 的 `volumes:` 段是生产必需;无 volume 的数据库容器删除后数据永久丢失。
@@ -389,3 +389,14 @@ networks:
     driver: bridge
 ```
 **开发/生产分离:**①共用基础 compose ②`docker-compose.override.yml`(开发:挂载源码、暴露调试端口、volumes 热加载) ③`docker-compose.prod.yml`(生产:不挂载源码、配置日志驱动、限制资源 limits、使用特定镜像 tag 而非 latest) ④启动:`docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`。**举一反三:**`.env` 文件存放密码等敏感变量,不提交到 Git;生产密码通过 Docker Swarm secrets 或外部密钥管理服务注入。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **进程边界**：先核对 PID、命令行和父进程（`ps -fp PID`）；优先 `kill -TERM PID`，仅在进程无法自行退出时才用 `kill -KILL PID`，并检查数据写入和服务健康状态。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **容器边界**：先执行 `docker context show`、`docker ps -a` 和 `docker system df`；清理命令只对确认无用的资源执行，带卷的删除额外确认持久化数据和备份。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

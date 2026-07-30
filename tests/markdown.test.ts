@@ -130,6 +130,14 @@ test("有序列表含缩进选项(s01e01 选择题场景),编号连续", async (
   assert.ok(!flat.includes("<p>"), flat);
 });
 
+test("选择题的空行不会让有序列表从 1 重新编号", async () => {
+  const html = await markdownToHtml("1. 题一\n   - A) 甲　B) 乙\n\n2. 题二\n   - A) 丙　B) 丁\n\n3. 题三");
+  const flat = html.replace(/\n/g, "");
+  assert.equal((flat.match(/<ol>/g) ?? []).length, 1, flat);
+  assert.ok(flat.includes("</ul></li><li>题二<ul>"), flat);
+  assert.ok(flat.endsWith("</li></ol>"), flat);
+});
+
 test("同层 ul/ol 切换保持原行为", async () => {
   const html = await markdownToHtml("- a\n1. b");
   const flat = html.replace(/\n/g, "");
@@ -144,7 +152,7 @@ test("被空行和选项拆开的选择题仍保留原始序号", async () => {
   assert.ok(flat.includes('<ol start="10"><li>题十</li></ol>'), html);
 });
 
-test("25 话命令行课程的课后选择题始终显示 1–10", async () => {
+test("25 话命令行课程的课后选择题保持单一连续有序列表", async () => {
   const posts = new URL("../content/posts/", import.meta.url);
   const files = readdirSync(posts).filter((file) => /-cli-s\d+e\d+-.+\.md$/.test(file));
   assert.equal(files.length, 25, "命令行课程应包含 25 话");
@@ -161,7 +169,11 @@ test("25 话命令行课程的课后选择题始终显示 1–10", async () => {
     assert.ok(start >= 0 && end > start, `${file} 的选择题 HTML 区块不完整`);
     const renderedQuiz = html.slice(start, end);
     const renderedStarts = [...renderedQuiz.matchAll(/<ol(?: start="(\d+)")?>/g)].map((match) => Number(match[1] ?? "1"));
-    assert.deepEqual(renderedStarts, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], `${file} 的显示题号回退为 1`);
+    assert.equal(renderedStarts[0], 1, `${file} 的选择题必须从 1 开始`);
+    assert.ok(
+      renderedStarts.every((value, index) => index === 0 || value > (renderedStarts[index - 1] ?? 0)),
+      `${file} 被代码块拆分后的有序列表不得回退到 1：${renderedStarts.join(", ")}`,
+    );
   }
 });
 

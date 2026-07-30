@@ -1,9 +1,8 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PROJECTS, STATUS_LABEL } from "@/lib/projects";
 import { siteUrl } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 86400;
 export const runtime = "nodejs";
@@ -11,18 +10,11 @@ export const runtime = "nodejs";
 const TITLE = "项目集";
 const DESC = "课程平台与漫画连载的公开内容索引。";
 
-export const metadata: Metadata = {
+export const metadata = staticPageMetadata({
   title: TITLE,
   description: DESC,
-  alternates: { canonical: `${siteUrl()}/projects` },
-  openGraph: {
-    ...OG_BASE,
-    title: TITLE,
-    description: DESC,
-    url: `${siteUrl()}/projects`,
-    type: "website",
-  },
-};
+  path: "/projects",
+});
 
 export default function ProjectsPage() {
   const jsonLd = {
@@ -42,8 +34,6 @@ export default function ProjectsPage() {
           "@type": "CreativeWork",
           name: project.name,
           description: project.lead,
-          ...(project.repo ? { codeRepository: project.repo } : {}),
-          ...(project.live ? { url: project.live } : {}),
         },
       })),
     },
@@ -86,20 +76,6 @@ export default function ProjectsPage() {
               ))}
             </div>
 
-            {(project.repo || project.live) && (
-              <div className="project-links">
-                {project.repo && (
-                  <a href={project.repo} target="_blank" rel="noreferrer">
-                    源码 ↗
-                  </a>
-                )}
-                {project.live && (
-                  <a href={project.live} target="_blank" rel="noreferrer">
-                    线上 ↗
-                  </a>
-                )}
-              </div>
-            )}
           </article>
         ))}
       </div>

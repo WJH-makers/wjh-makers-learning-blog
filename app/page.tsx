@@ -1,75 +1,123 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPublishedPosts, siteUrl } from "@/lib/posts";
+import { SERIES_META, publishedEpisodes } from "@/lib/series";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
 
+// title/description/OG 沿用 layout 默认;首页只需补 canonical 这一环。
 export const metadata: Metadata = {
   alternates: { canonical: siteUrl() },
 };
 
+type SkillMapTile = {
+  code: string;
+  title: string;
+  detail: string;
+  tone: string;
+  href?: "/java" | "/career";
+};
+
+const JAVA_SKILL_MAP: SkillMapTile[] = [
+  { code: "01", title: "语言地基", detail: "变量、分支、方法、对象与集合", tone: "foundation", href: "/java" },
+  { code: "02", title: "工程习惯", detail: "异常、文件、Maven、JUnit 与 Git", tone: "craft", href: "/java" },
+  { code: "03", title: "后端请求", detail: "HTTP、Spring、接口与数据校验", tone: "service" },
+  { code: "04", title: "数据与并发", detail: "MySQL、Redis、事务、线程与锁", tone: "runtime" },
+  { code: "05", title: "系统运行", detail: "JVM、容器、观测、部署与回滚", tone: "systems" },
+  { code: "06", title: "工程证据", detail: "项目叙事、复现记录与真实取舍", tone: "evidence", href: "/career" },
+];
+
 export default async function HomePage() {
-  const latestPosts = (await getAllPublishedPosts()).slice(0, 3);
+  const posts = await getAllPublishedPosts();
+
+  const latestPosts = posts.slice(0, 3);
+  const seriesDone = publishedEpisodes().length;
 
   return (
     <div className="page-shell">
-      <section className="hero home-hero">
-        <div>
-          <p className="eyebrow">Story-first technical learning</p>
-          <h1>豆豆课程组</h1>
-          <p className="hero-lede">从第一句 Java、第一条命令，到咖啡站里的真实系统问题。</p>
+      <section className="home-command-center">
+        <div className="home-command-copy">
+          <p className="eyebrow">Java Growth Atlas · 咖啡站技术志</p>
+          <h1>不是背知识点，<br />是点亮工程能力。</h1>
+          <p>一张给 Java 工程师的成长地图：从写下第一行代码，到让一个真实系统稳定运行。每一格都回到同一间咖啡站，成为能被验证的能力。</p>
           <div className="hero-actions">
-            <Link className="button primary" href="/series">选择一条课程</Link>
-            <Link className="button" href="/posts/2026-07-25-java-s01e01-hello">从最小实验开始</Link>
+            <Link className="button primary" href="/start">从第一格开始</Link>
+            <Link className="button" href="/universe">进入宇宙地图</Link>
+          </div>
+          <div className="home-signal" aria-label="当前公开内容状态">
+            <span>● 已发布内容</span>
+            <span>○ 后续能力域</span>
+            <span>只展示已经正式开更的章节</span>
+          </div>
+        </div>
+        <div className="java-skill-map" aria-label="Java 工程师成长能力地图">
+          <div className="java-skill-map-topline"><span>JAVA ENGINEER / GROWTH MAP</span><span>01—06</span></div>
+          <div className="java-skill-map-grid">
+            {JAVA_SKILL_MAP.map((item) => {
+              const content = <>
+                <span className="skill-map-code">{item.code}</span>
+                <h2>{item.title}</h2>
+                <p>{item.detail}</p>
+                <span className="skill-map-state">{item.href ? "已点亮 · 可进入" : "能力域 · 逐步点亮"}</span>
+              </>;
+              return item.href ? (
+                <Link href={item.href} key={item.code} className={`skill-map-tile is-${item.tone}`}>{content}</Link>
+              ) : (
+                <article key={item.code} className={`skill-map-tile is-${item.tone} is-horizon`}>{content}</article>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      <section className="home-start" aria-labelledby="start-here">
-        <div className="home-start-head">
-          <p className="eyebrow">Pick a path</p>
-          <h2 id="start-here">从一条主线开始</h2>
-          <p>首页只负责带路；课程地图和文章页再展开全部细节。</p>
+      <section className="section-head">
+        <div>
+          <p className="eyebrow">Flagship Series · Java 主线</p>
+          <h2>从零开始学 Java</h2>
         </div>
-        <div className="home-start-grid">
-          <Link href="/java" className="home-start-card home-start-java">
-            <span className="home-start-no">01 / Java</span>
-            <strong>从零开始学 Java</strong>
-            <span>用故事、代码和最小实验走完一条完整主线。</span>
-            <b>进入课程 →</b>
-          </Link>
-          <Link href="/cli" className="home-start-card home-start-cli">
-            <span className="home-start-no">02 / Command line</span>
-            <strong>从零开始玩命令行</strong>
-            <span>在自己的终端里建立可靠的操作习惯。</span>
-            <b>进入课程 →</b>
-          </Link>
-          <Link href="/cafe" className="home-start-card home-start-cafe">
-            <span className="home-start-no">03 / Story</span>
-            <strong>豆豆咖啡站</strong>
-            <span>从一间小店的故事，认识软件系统为何会出问题。</span>
-            <b>打开故事地图 →</b>
-          </Link>
-        </div>
+        <Link href="/java">查看全卷地图 →</Link>
       </section>
+      <Link href="/java" className="card series-hero-card">
+        <p className="series-hero-lead">{SERIES_META.tagline}</p>
+        <p className="muted">
+          已连载 {seriesDone} 话 · 跟着阿零和豆豆,把「豆豆咖啡站」从一行输出建成完整系统
+        </p>
+      </Link>
+
+      <section className="section-head">
+        <div>
+          <p className="eyebrow">Engineer Evidence · 现实主线</p>
+          <h2>把能力变成证据</h2>
+        </div>
+        <Link href="/career">进入工程师航线 →</Link>
+      </section>
+      <Link href="/career" className="card series-hero-card">
+        <p className="series-hero-lead">项目不是简历上一行名词，而是一份让陌生人能看懂、复现并追问的工程证据。</p>
+        <p className="muted">从项目证据包到秒杀系统与遥感 VQA：只记录真实做过、能被验证的工作。</p>
+      </Link>
 
       {latestPosts.length > 0 && (
         <>
           <section className="section-head">
             <div>
-              <p className="eyebrow">Recently added</p>
-              <h2>最近更新</h2>
+              <p className="eyebrow">Latest Dispatches</p>
+              <h2>最新博客</h2>
             </div>
-            <Link href="/archive">查看全部 →</Link>
+            <Link href="/posts">查看全部 →</Link>
           </section>
-          <div className="home-latest-list">
+          <div className="post-grid">
             {latestPosts.map((post) => (
-              <Link href={`/posts/${post.slug}`} className="home-latest-item" key={post.slug}>
+              <article className="card" key={post.slug}>
                 <p className="date">{post.date} · {post.readingMinutes} min</p>
-                <h3>{post.title}</h3>
-                <span>阅读文章 →</span>
-              </Link>
+                <h3><Link href={`/posts/${post.slug}`}>{post.title}</Link></h3>
+                <p>{post.summary}</p>
+                <div className="tags">
+                  {post.tags.map((tag) => (
+                    <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>
+                  ))}
+                </div>
+              </article>
             ))}
           </div>
         </>

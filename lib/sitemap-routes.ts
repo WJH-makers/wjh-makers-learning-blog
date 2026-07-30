@@ -1,0 +1,15 @@
+export const STATIC_SITEMAP_ROUTES = [
+  { path: "/", changeFrequency: "daily", priority: 1 },
+  { path: "/start", changeFrequency: "weekly", priority: 0.9 },
+  { path: "/universe", changeFrequency: "weekly", priority: 0.8 },
+  { path: "/characters", changeFrequency: "monthly", priority: 0.6 },
+  { path: "/coffee-station", changeFrequency: "weekly", priority: 0.8 },
+  { path: "/series", changeFrequency: "weekly", priority: 0.8 },
+  { path: "/archive", changeFrequency: "weekly", priority: 0.7 },
+  { path: "/cheatsheets", changeFrequency: "weekly", priority: 0.7 },
+  { path: "/posts", changeFrequency: "weekly", priority: 0.7 },
+  { path: "/tags", changeFrequency: "weekly", priority: 0.5 },
+  { path: "/projects", changeFrequency: "monthly", priority: 0.6 },
+  { path: "/now", changeFrequency: "monthly", priority: 0.5 },
+  { path: "/stats", changeFrequency: "weekly", priority: 0.4 },
+] as const;

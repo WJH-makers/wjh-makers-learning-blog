@@ -2,21 +2,20 @@ import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllPublishedPosts, getPublishedPost, getRelatedPosts, outboundDate, renderMarkdown, siteUrl } from "@/lib/posts";
+import { getPublishedPost, getPublishedPostIndex, getRelatedPosts, outboundDate, renderMarkdown, siteUrl } from "@/lib/posts";
 import { CHAPTER_TYPE_LABEL } from "@/lib/series";
 import { findEpisodeInfo } from "@/lib/series-registry";
 import { findJavaLab } from "@/lib/java-labs";
 import AdminEditLink from "./AdminEditLink";
 import EpisodeProgress from "./EpisodeProgress";
 import EpisodeExercises from "./EpisodeExercises";
-import JavaLab from "./JavaLab";
 import Comments from "./Comments";
 import ShareBar from "./ShareBar";
 import CodeCopy from "./CodeCopy";
 import BookReader from "./BookReader";
-import { getComments } from "@/lib/comments";
-import { hasDatabaseConfig } from "@/lib/db";
-import { jsonLdSafe, personRef } from "@/lib/jsonld";
+import JavaLab from "./JavaLab";
+import { getComments, isCommentingEnabled } from "@/lib/comments";
+import { jsonLdSafe, publisherRef } from "@/lib/jsonld";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -31,7 +30,7 @@ function countWords(content: string): number {
 }
 
 export async function generateStaticParams() {
-  const posts = await getAllPublishedPosts();
+  const posts = await getPublishedPostIndex();
   return posts.map((post) => ({ slug: post.slug }));
 }
 
@@ -54,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: { canonical: url },
     openGraph: {
       // Next 对 openGraph 是整体替换而非深合并:siteName/locale 需在页面级补齐,否则丢失
-      siteName: "豆豆课程组",
+      siteName: "咖啡站技术志",
       locale: "zh_CN",
       title: post.title,
       description: post.summary,
@@ -62,7 +61,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: isoDate,
       modifiedTime: isoDate,
-      authors: ["豆豆课程组"],
       tags: post.tags,
     },
     twitter: {
@@ -83,9 +81,7 @@ export default async function PostPage({ params }: Props) {
   const javaLab = findJavaLab(post.slug);
   const episode = info?.episode;
   const season = info?.season;
-  // Turnstile 是可选的反机器人增强；未配置时服务端仍会使用蜜罐与限流。
-  // 因此不能把它作为渲染评论表单的前置条件，否则现有 MongoDB 部署会被误下线。
-  const commentsEnabled = hasDatabaseConfig();
+  const commentsEnabled = isCommentingEnabled();
 
   const url = `${siteUrl()}/posts/${post.slug}`;
   const isoDate = outboundDate(post.date).toISOString();
@@ -126,8 +122,8 @@ export default async function PostPage({ params }: Props) {
     wordCount: countWords(post.content),
     datePublished: isoDate,
     dateModified: isoDate,
-    author: personRef(siteUrl()),
-    publisher: personRef(siteUrl()),
+    author: publisherRef(siteUrl()),
+    publisher: publisherRef(siteUrl()),
     keywords: post.tags.join(", "),
     inLanguage: "zh-CN",
     isAccessibleForFree: true,
@@ -157,11 +153,12 @@ export default async function PostPage({ params }: Props) {
     renderMarkdown(contentLines.join("\n").replace(/^\s+/, "")),
     getRelatedPosts(post.slug, post.tags),
     getComments(post.slug),
-    getAllPublishedPosts(),
+    getPublishedPostIndex(),
   ]);
   const tocItems = headings.filter((h) => h.level === 2);
 
-  // 非连载文章(速查/笔记)按时间线取相邻文章；连载则按话次翻页。
+  // 非连载文章(速查/笔记)按时间线取上下篇,让它们也有前进/后退的路径。
+  // 连载话次已有专属的 series-pager,这里只服务其余文章。
   let chronoPrev: (typeof allPosts)[number] | undefined;
   let chronoNext: (typeof allPosts)[number] | undefined;
   if (!info) {
@@ -186,9 +183,9 @@ export default async function PostPage({ params }: Props) {
 
   return (
     <BookReader previous={previous} next={next}>
-      <article className="page-shell article-shell">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(articleJsonLd) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(breadcrumbJsonLd) }} />
+    <article className="page-shell article-shell">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(articleJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(breadcrumbJsonLd) }} />
       <Link className="back-link" href={info ? info.series.route : "/posts"}>
         ← {info ? `返回${info.series.title}` : "返回文章列表"}
       </Link>
@@ -209,7 +206,7 @@ export default async function PostPage({ params }: Props) {
         <h1>{post.title}</h1>
         <p>{post.summary}</p>
         <div className="tags">
-          {post.tags.map((tag) => <span key={tag}>{tag}</span>)}
+          {post.tags.map((tag) => <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>{tag}</Link>)}
         </div>
       </header>
 
@@ -221,18 +218,6 @@ export default async function PostPage({ params }: Props) {
           <p>
             第 {episode.episode} 话 · {CHAPTER_TYPE_LABEL[episode.chapterType]} · 项目阶段:{episode.projectStage}
           </p>
-        </aside>
-      )}
-
-      {info && episode && (
-        <aside className="learning-outcome" aria-label="本话学习产出">
-          <p className="eyebrow">本话学习产出 · 可复现，不是认证</p>
-          <div className="learning-outcome-grid">
-            <div><span>知识点</span><strong>{episode.technologies.join(" · ")}</strong></div>
-            <div><span>项目增量</span><strong>{episode.projectStage}</strong></div>
-            <div><span>完成动作</span><strong>{info.series.route === "/java" ? "本机 JDK 17 复现，再标记完成" : "在自己的终端复现，再标记完成"}</strong></div>
-          </div>
-          <p className="muted">完成标记和 Java 实验记录只保存在当前浏览器。<Link href="/learning">查看学习档案与复习提示 →</Link></p>
         </aside>
       )}
 
@@ -262,6 +247,11 @@ export default async function PostPage({ params }: Props) {
       <div className="article-content" dangerouslySetInnerHTML={{ __html: fullHtml }} />
       <CodeCopy />
 
+      <aside className="article-rights" aria-label="版权与转载说明">
+        <p className="eyebrow">Original Work · 版权说明</p>
+        <p>本文为原创技术内容。欢迎引用标题、链接与必要短摘录；禁止批量抓取、镜像全文、去署名转载或未经授权的商业使用。</p>
+      </aside>
+
       <ShareBar url={url} title={post.title} />
 
       {info && season && (
@@ -272,6 +262,7 @@ export default async function PostPage({ params }: Props) {
             seasonSlugs={info.seasonSlugs}
             storageKey={info.series.storageKey}
           />
+          <Link className="button" href={info.series.route}>返回全卷地图</Link>
         </section>
       )}
 
@@ -304,21 +295,22 @@ export default async function PostPage({ params }: Props) {
       <nav className="article-actions" aria-label="文章操作">
         <AdminEditLink slug={post.slug} />
         <Link className="button" href="/posts">更多文章 →</Link>
-        <Link className="button ghost" href="/archive">查看全量归档</Link>
-        {/* 零 JS 返回顶部:fragment "top" 无对应元素时按 HTML 规范滚到文档顶,吃全站 scroll-behavior: smooth */}
+        <Link className="button ghost" href="/tags">按标签检索</Link>
+        {/* 零 JS 返回顶部:RootLayout 在 body 上提供稳定的 top 锚点。 */}
         <a className="button ghost" href="#top">↑ 回到顶部</a>
       </nav>
 
       <aside className="follow-card">
         <p className="eyebrow">觉得有用?</p>
-        <p className="follow-text">关注更新，或用 RSS 订阅{info ? `《${info.series.title}》` : "本站"}。</p>
+        <p className="follow-text">用 RSS 订阅本站更新，或从下一话继续点亮你的学习地图。</p>
         <div className="follow-links">
+          <Link href="/start" className="button">继续阅读</Link>
           <a href="/rss.xml" className="button ghost">RSS 订阅</a>
         </div>
       </aside>
 
-        <Comments slug={post.slug} initial={comments} enabled={commentsEnabled} />
-      </article>
+      <Comments slug={post.slug} initial={comments} enabled={commentsEnabled} />
+    </article>
     </BookReader>
   );
 }

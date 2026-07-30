@@ -1,5 +1,8 @@
+import { attachDatabasePool } from "@vercel/functions";
 import { MongoClient, ServerApiVersion, type Collection, type MongoClientOptions, type WithId } from "mongodb";
+import { resolveMongoUri } from "@/lib/database-config";
 import type { Post } from "@/lib/posts";
+import type { PostIndexEntry } from "@/lib/post-index";
 import { estimateReadingMinutes } from "@/lib/text";
 
 type NewDatabasePost = {
@@ -32,7 +35,7 @@ let clientPromise: Promise<MongoClient> | undefined;
 let indexesReady = false;
 
 function mongoUri(): string {
-  return process.env.MONGODB_URI?.trim() || process.env.DATABASE_URL?.trim() || "";
+  return resolveMongoUri(process.env.MONGODB_URI, process.env.DATABASE_URL);
 }
 
 export function hasDatabaseConfig(): boolean {
@@ -67,7 +70,7 @@ function getClient(): Promise<MongoClient> {
 
   if (!clientPromise) {
     const options: MongoClientOptions = {
-      appName: "doudou-learning-blog",
+      appName: "coffee-station-blog",
       maxPoolSize: 10,
       // 自有长驻服务器(非 serverless):留热连接,免得稀疏查询每次都重做 Atlas TLS 握手
       minPoolSize: 1,
@@ -80,6 +83,7 @@ function getClient(): Promise<MongoClient> {
       },
     };
     const client = new MongoClient(uri, options);
+    attachDatabasePool(client);
     // 首连失败必须把 promise 丢掉:否则这个 rejected promise 会被缓存到容器生命周期结束,
     // Atlas 一次抖动 = 评论/写作台/DB 文章在本次进程里永久静默失效。
     clientPromise = client.connect().catch((error) => {
@@ -140,6 +144,16 @@ function docToPost(doc: WithId<MongoPostDocument>): Post {
   };
 }
 
+function docToPostIndex(doc: Pick<MongoPostDocument, "slug" | "title" | "summary" | "tags" | "publishedAt">): PostIndexEntry {
+  return {
+    slug: doc.slug,
+    title: doc.title,
+    date: doc.publishedAt,
+    summary: doc.summary,
+    tags: doc.tags,
+  };
+}
+
 export async function getDatabasePosts(limit?: number): Promise<Post[]> {
   if (!hasDatabaseConfig()) return [];
   await ensureSchema();
@@ -150,6 +164,16 @@ export async function getDatabasePosts(limit?: number): Promise<Post[]> {
   if (limit && limit > 0) cursor = cursor.limit(limit);
   const docs = await cursor.toArray();
   return docs.map(docToPost);
+}
+
+export async function getDatabasePostIndex(): Promise<PostIndexEntry[]> {
+  if (!hasDatabaseConfig()) return [];
+  await ensureSchema();
+  const collection = await postsCollection();
+  const docs = await collection.find({}, {
+    projection: { slug: 1, title: 1, summary: 1, tags: 1, publishedAt: 1 },
+  }).sort({ publishedAt: -1, createdAt: -1 }).toArray();
+  return docs.map(docToPostIndex);
 }
 
 export async function getDatabasePost(slug: string): Promise<Post | undefined> {

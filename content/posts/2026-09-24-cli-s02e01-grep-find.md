@@ -219,34 +219,34 @@ grep 有个和别的命令不同的脾气:**命中 `$?`=0,没命中=1,出错=2**
 ### 选择题(10 道)
 
 1. `grep` 命令的核心功能是什么?
-- A) 查找文件　B) 在文本中搜索匹配指定模式的行　C) 替换文本内容　D) 统计文件行数
+   - A) 查找文件　B) 在文本中搜索匹配指定模式的行　C) 替换文本内容　D) 统计文件行数
 
 2. `find` 命令的路径参数应该放在什么位置?
-- A) 命令的最后　B) 命令的最前面(紧接 find 之后)　C) 放在 -name 参数之后　D) 任意位置
+   - A) 命令的最后　B) 命令的最前面(紧接 find 之后)　C) 放在 -name 参数之后　D) 任意位置
 
 3. `grep -i "error" log.txt` 中的 `-i` 代表什么?
-- A) 忽略大小写(insensitive)　B) 反向匹配(invert)　C) 显示行号(index)　D) 交互模式(interactive)
+   - A) 忽略大小写(insensitive)　B) 反向匹配(invert)　C) 显示行号(index)　D) 交互模式(interactive)
 
 4. `grep -r "TODO" src/` 与 `grep "TODO" src/*` 的关键区别是?
-- A) 完全一样　B) `-r` 递归搜索所有子目录,`*` 只搜索当前层文件　C) `-r` 更快　D) `*` 搜索隐藏文件,`-r` 不搜索
+   - A) 完全一样　B) `-r` 递归搜索所有子目录,`*` 只搜索当前层文件　C) `-r` 更快　D) `*` 搜索隐藏文件,`-r` 不搜索
 
 5. `find /var/log -name "*.log" -type f` 中 `-type f` 的作用是?
-- A) 只匹配普通文件(regular file)　B) 只匹配目录　C) 匹配任意类型　D) 按文件大小过滤
+   - A) 只匹配普通文件(regular file)　B) 只匹配目录　C) 匹配任意类型　D) 按文件大小过滤
 
 6. 关于正则表达式元字符,以下哪个是 `grep` 默认模式下的"任意单个字符"?
-- A) `*`　B) `?`　C) `.`　D) `+`
+   - A) `*`　B) `?`　C) `.`　D) `+`
 
 7. `grep -c "404" access.log` 的输出是什么?
-- A) 所有包含 404 的行　B) 第一个包含 404 的行　C) 包含 404 的总行数(计数值)　D) 不包含 404 的行
+   - A) 所有包含 404 的行　B) 第一个包含 404 的行　C) 包含 404 的总行数(计数值)　D) 不包含 404 的行
 
 8. 以下 `find` 命令哪个能找出 `/home` 下 7 天内修改过的所有 `.java` 文件?
-- A) `find /home -name "*.java" -mtime -7`　B) `find /home -mtime -7 -name "*.java"`　C) `find /home -name "*.java" -mtime +7`　D) 以上 A 和 B 都对
+   - A) `find /home -name "*.java" -mtime -7`　B) `find /home -mtime -7 -name "*.java"`　C) `find /home -name "*.java" -mtime +7`　D) 以上 A 和 B 都对
 
 9. `grep -F "a.txt" file_list.txt` 中的 `-F` 是什么意思?
-- A) 强制搜索(force)　B) 固定字符串匹配(不解释正则元字符)　C) 只显示文件名　D) 全文搜索(full-text)
+   - A) 强制搜索(force)　B) 固定字符串匹配(不解释正则元字符)　C) 只显示文件名　D) 全文搜索(full-text)
 
 10. 以下哪条命令最准确地查找包含 IP 地址 `192.168.1.1` 的行(不匹配 `192.168.1.10`)?
-- A) `grep "192.168.1.1" file`　B) `grep "192\.168\.1\.1\b" file`　C) `grep -w "192.168.1.1" file`　D) 以上 B 和 C 都可以
+   - A) `grep "192.168.1.1" file`　B) `grep "192\.168\.1\.1\b" file`　C) `grep -w "192.168.1.1" file`　D) 以上 B 和 C 都可以
 
 ### 解答题(5 道)
 
@@ -290,3 +290,10 @@ grep 有个和别的命令不同的脾气:**命中 `$?`=0,没命中=1,出错=2**
 > **Q4** 卡住原因:①`/` 是整个文件系统,文件数量巨大,`find` 需要遍历所有挂载点 ②可能遍历到远程文件系统(NFS)或 `/proc` `/sys` 等虚拟文件系统,速度极慢。**优化方案:**①缩小范围:先猜测配置文件可能在 `/etc/`,用 `find /etc -name "nginx.conf"` ②限制深度:`find / -maxdepth 3 -name "nginx.conf"` ③排除虚拟文件系统:`find / -path /proc -prune -o -path /sys -prune -o -name "nginx.conf" -print` ④用 `locate nginx.conf`(如果已建立索引)。**举一反三:**永远不要在生产服务器上裸跑 `find /`,轻则让硬盘满负载,重则触发 IO timeout 告警。
 >
 > **Q5** 搜索策略:①`grep -rn --include="*.{java,py,js}" -E "FIXME|TODO" ~/project/ --exclude-dir={node_modules,__pycache__}` 一步完成前两步 ②统计:`grep -rn --include="*.java" "TODO\|FIXME" ~/project/ | wc -l` 单类型统计 ③完整脚本:用 `for ext in java py js; do count=$(grep -rn --include="*.$ext" -E "FIXME|TODO" ~/project/ --exclude-dir={node_modules,__pycache__} | wc -l); echo "$ext: $count"; done`。**举一反三:**`-E` 开启扩展正则,支持 `|`(或)操作符;`--exclude-dir` 接受花括号展开,可同时排除多个目录。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

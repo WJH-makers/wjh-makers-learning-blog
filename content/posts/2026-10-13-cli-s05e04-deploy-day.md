@@ -265,34 +265,34 @@ deploy@coffee:~$ █
 ### 选择题(10 道)
 
 1. "完整上线链"一般包含哪些步骤?
-- A) 只写代码　B) clone 代码→安装依赖→配置环境→启动服务→配置反向代理→测试　C) 只有启动服务　D) 上传文件即可
+   - A) 只写代码　B) clone 代码→安装依赖→配置环境→启动服务→配置反向代理→测试　C) 只有启动服务　D) 上传文件即可
 
 2. 502 Bad Gateway 错误,在 nginx 反向代理架构中最可能的原因是什么?
-- A) 客户端网络故障　B) nginx 本身崩溃　C) nginx 可以工作,但**后端应用服务**(proxy_pass 的目标)没有运行或无法响应　D) DNS 解析失败
+   - A) 客户端网络故障　B) nginx 本身崩溃　C) nginx 可以工作,但**后端应用服务**(proxy_pass 的目标)没有运行或无法响应　D) DNS 解析失败
 
 3. "上线烟测四关"通常指什么?
-- A) 功能测试、性能测试、安全测试、兼容性测试　B) 端口监听(`ss`)、HTTP 可达(`curl`)、状态码正确、内容验证　C) 单元测试、集成测试、E2E 测试、压力测试　D) 代码审查、自动化测试、手动测试、上线审批
+   - A) 功能测试、性能测试、安全测试、兼容性测试　B) 端口监听(`ss`)、HTTP 可达(`curl`)、状态码正确、内容验证　C) 单元测试、集成测试、E2E 测试、压力测试　D) 代码审查、自动化测试、手动测试、上线审批
 
 4. 502 排查的"三板斧"是什么?
-- A) 重启 nginx、重启服务器、重装系统　B) ①`systemctl status <app>`检查后端服务状态 ②`docker ps`/`ss -tlnp`检查端口监听 ③`journalctl -u <app> -f`查看后端日志　C) `ping`、`traceroute`、`nslookup`　D) 清除浏览器缓存、重启路由器、换电脑
+   - A) 重启 nginx、重启服务器、重装系统　B) ①`systemctl status <app>`检查后端服务状态 ②`docker ps`/`ss -tlnp`检查端口监听 ③`journalctl -u <app> -f`查看后端日志　C) `ping`、`traceroute`、`nslookup`　D) 清除浏览器缓存、重启路由器、换电脑
 
 5. `docker-compose ps` 在部署中的作用是什么?
-- A) 列出所有 Docker 镜像　B) 快速查看 compose 项目中各容器的状态(Up/Exited/端口映射)　C) 列出所有进程　D) 查看 compose 文件语法
+   - A) 列出所有 Docker 镜像　B) 快速查看 compose 项目中各容器的状态(Up/Exited/端口映射)　C) 列出所有进程　D) 查看 compose 文件语法
 
 6. `git clone`→`cd project`→`docker compose up -d`→`ss -tlnp`→`nginx -t && systemctl reload nginx`→`curl -I localhost` 这段操作序列体现了什么思想?
-- A) 随机操作　B) 完整的上线链:代码获取→服务启动→端口确认→反向代理配置→HTTP 验证　C) 只有 Docker 操作　D) 只适合开发环境
+   - A) 随机操作　B) 完整的上线链:代码获取→服务启动→端口确认→反向代理配置→HTTP 验证　C) 只有 Docker 操作　D) 只适合开发环境
 
 7. 部署后通过 `curl` 测试时,返回 404(Not Found)而非 502,这说明什么?
-- A) 后端服务没运行　B) 后端服务**正在运行**,但请求的 URL 路径/路由不对(nginx 正确转发了请求,但后端没有该路径的处理逻辑)　C) nginx 没有安装　D) 防火墙阻挡
+   - A) 后端服务没运行　B) 后端服务**正在运行**,但请求的 URL 路径/路由不对(nginx 正确转发了请求,但后端没有该路径的处理逻辑)　C) nginx 没有安装　D) 防火墙阻挡
 
 8. 关于"上线烟测",以下哪项是**不必要**的?
-- A) 确认端口在监听　B) 确认 HTTP 返回状态码 200　C) 确认页面内容包含预期关键字　D) 在服务器上打开浏览器用鼠标点击所有链接
+   - A) 确认端口在监听　B) 确认 HTTP 返回状态码 200　C) 确认页面内容包含预期关键字　D) 在服务器上打开浏览器用鼠标点击所有链接
 
 9. `docker-compose up -d` 后执行 `docker-compose logs -f app`,看到堆栈信息 `Connection refused: postgres:5432`,最可能的原因是什么?
-- A) PostgreSQL 容器还没启动完成(启动顺序问题,app 需要等待 postgres 就绪)　B) Docker 网络故障　C) Java 版本不兼容　D) nginx 配置错误
+   - A) PostgreSQL 容器还没启动完成(启动顺序问题,app 需要等待 postgres 就绪)　B) Docker 网络故障　C) Java 版本不兼容　D) nginx 配置错误
 
 10. 关于生产部署后的回滚策略,以下哪种做法**最有效**?
-- A) 每次部署前手动备份文件　B) 使用 Git tag+commit hash 标记版本,部署脚本保留最近 3 个版本的可运行包,回滚时切换到旧版本并重启服务　C) 依赖 Docker 镜像的 `latest` 标签自动回滚　D) 部署后立即删除旧版本代码
+   - A) 每次部署前手动备份文件　B) 使用 Git tag+commit hash 标记版本,部署脚本保留最近 3 个版本的可运行包,回滚时切换到旧版本并重启服务　C) 依赖 Docker 镜像的 `latest` 标签自动回滚　D) 部署后立即删除旧版本代码
 
 ### 解答题(5 道)
 
@@ -336,3 +336,13 @@ deploy@coffee:~$ █
 > **Q4** ERR_CONNECTION_REFUSED 分层排查:①**网络层:**`ping coffee.com`(能解析到正确 IP 吗?能 ping 通吗?) 如果不是,检查 DNS 解析和服务器网络 ②**防火墙:**`sudo ufw status`(防火墙是否阻挡 80/443?) + 云安全组检查 ③**端口监听:**`sudo ss -tlnp | grep -E ":80|:443"`(nginx 在监听吗?) ④**nginx 状态:**`sudo systemctl status nginx`(nginx 在运行吗?)→如果没运行,`sudo systemctl start nginx` ⑤**SSL 证书:**如果是 HTTPS 且 nginx 运行,检查 SSL 配置(`listen 443 ssl;` + 证书路径是否正确) ⑥**域名 DNS:**`dig coffee.com`(DNS 记录指向正确的服务器 IP 吗?) ⑦如果是刚部署就拒绝连接,等 1-2 分钟(DNS 传播延迟)。**解决矩阵:**nginx 没装→安装;firewall 没放行→ufw allow;服务没监听→start;DNS 指错→更新 DNS 记录;SSL 证书过期→certbot renew。
 >
 > **Q5** "零恐惧部署"方案框架:①**版本管理:**每次部署前打 tag:`git tag v$(date +%Y%m%d-%H%M%S) && git push --tags`;docker 镜像用 commit hash+timestamp 做标签:`docker build -t coffee-app:$(git rev-parse --short HEAD) .`。②**部署脚本:**`deploy.sh` 包含:备份当前版本→拉取新代码→构建镜像→启动新容器→烟测→如果烟测通过,清理旧版本;如果烟测失败,自动回滚。③**健康检查:**函数 `smoke_test() { curl -f -s -o /dev/null http://localhost:8080/health || return 1; }`;部署后调用该函数判断。④**5 分钟监控:**`./deploy.sh && sleep 300 && ./smoke_test.sh`(如果 5 分钟后健康检查失败,发告警);或者用 systemd timer 每分钟运行健康检查脚本。⑤**回滚:**保留最近 3 个版本的可运行包(镜像 tag);回滚脚本:`docker compose down && git checkout $PREV_TAG && docker compose up -d`。⑥**部署日志:**每次部署写入 JSON 格式日志:`{"time":"...","version":"...","result":"success|fail","duration":"...","who":"..."}` → 便于后续统计部署成功率。**举一反三:**当你走完这 25 话,掌握了部署链上每个环节的工具,你就建立了一个"命令自信":你知道每一步做什么、如何验证、错了怎么回滚。这就是"零恐惧"——不是不出错,而是每步可验证、每错可回滚。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **容器边界**：先执行 `docker context show`、`docker ps -a` 和 `docker system df`；清理命令只对确认无用的资源执行，带卷的删除额外确认持久化数据和备份。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

@@ -152,7 +152,7 @@ git reset --hard a1b2c3d        # 或更稳：git checkout -b rescue a1b2c3d
 
 ---
 
-# Docker 命令速查
+## Docker 命令速查
 
 ## Docker · S 极高频
 
@@ -371,7 +371,7 @@ Docker 的镜像层、停止的容器、悬空镜像（dangling，`<none>:<none>
 
 ---
 
-# SSH / SCP 远程连接
+## SSH / SCP 远程连接
 
 ## SSH / SCP · S 极高频
 
@@ -417,4 +417,3 @@ Host prod-api
   User app
   ProxyJump jump
 ```
-

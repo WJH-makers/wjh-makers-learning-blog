@@ -230,34 +230,34 @@ $ tail -n 1 memo.txt               # 刚学的 tail 立刻上岗:只验最后一
 ### 选择题(10 道)
 
 1. 要查看一个长文本文件的全部内容,用哪个命令最合适(支持上下翻页)?
-- A) `cat`　B) `more`　C) `less`　D) `head`
+   - A) `cat`　B) `more`　C) `less`　D) `head`
 
 2. 创建一个多层嵌套目录 `a/b/c/d`,用一条命令完成,正确的是?
-- A) `touch a/b/c/d`　B) `mkdir a/b/c/d`　C) `mkdir -p a/b/c/d`　D) `mkdir --recursive a/b/c/d`
+   - A) `touch a/b/c/d`　B) `mkdir a/b/c/d`　C) `mkdir -p a/b/c/d`　D) `mkdir --recursive a/b/c/d`
 
 3. `echo "hello" > file.txt` 执行两次后,`file.txt` 的内容是什么?
-- A) `hello\nhello`(两行)　B) `hello`(一行)　C) `hellohello`(同一行)　D) 第二次执行报错
+   - A) `hello\nhello`(两行)　B) `hello`(一行)　C) `hellohello`(同一行)　D) 第二次执行报错
 
 4. `cat` 与 `less` 的核心区别是什么?
-- A) `cat` 更快,`less` 更慢　B) `cat` 一次输出全部,`less` 支持分页浏览/搜索/回退　C) `cat` 只能看文本,`less` 能看二进制　D) 没有区别,只是不同时代的产物
+   - A) `cat` 更快,`less` 更慢　B) `cat` 一次输出全部,`less` 支持分页浏览/搜索/回退　C) `cat` 只能看文本,`less` 能看二进制　D) 没有区别,只是不同时代的产物
 
 5. 用 `tail -f /var/log/app.log` 查看日志时,以下说法正确的是?
-- A) 显示文件最后 10 行然后退出　B) 显示文件全部内容　C) 持续追踪文件末尾新增内容,实时显示　D) 只显示文件第一行
+   - A) 显示文件最后 10 行然后退出　B) 显示文件全部内容　C) 持续追踪文件末尾新增内容,实时显示　D) 只显示文件第一行
 
 6. 已有文件 `a.txt` 内容为 "old",执行 `echo "new" > a.txt`,以下说法**错误**的是?
-- A) `a.txt` 内容变为 "new"　B) 原有内容 "old" 被覆盖　C) 如果文件不存在会创建新文件　D) "new" 被追加到 "old" 后面
+   - A) `a.txt` 内容变为 "new"　B) 原有内容 "old" 被覆盖　C) 如果文件不存在会创建新文件　D) "new" 被追加到 "old" 后面
 
 7. 在 `less` 中,按哪个键可以搜索关键字?
-- A) 按 `q` 然后输入关键字　B) 按 `/` 然后输入关键字　C) 按 `s` 然后输入关键字　D) `less` 不支持搜索
+   - A) 按 `q` 然后输入关键字　B) 按 `/` 然后输入关键字　C) 按 `s` 然后输入关键字　D) `less` 不支持搜索
 
 8. `head -n 5 file.txt` 和 `tail -n 5 file.txt` 分别输出什么?
-- A) 都是文件的前 5 行　B) 分别是文件的前 5 行和后 5 行　C) 分别是文件的后 5 行和前 5 行　D) 都是文件的后 5 行
+   - A) 都是文件的前 5 行　B) 分别是文件的前 5 行和后 5 行　C) 分别是文件的后 5 行和前 5 行　D) 都是文件的后 5 行
 
 9. 以下哪个命令会**清空**已有文件 `log.txt` 的内容?
-- A) `cat log.txt`　B) `echo "" >> log.txt`　C) `> log.txt`　D) `tail log.txt`
+   - A) `cat log.txt`　B) `echo "" >> log.txt`　C) `> log.txt`　D) `tail log.txt`
 
 10. 当前目录存在 `notes/`,执行 `touch notes` 会怎样?
-- A) 创建一个名为 `notes` 的空文件,覆盖目录　B) 更新 `notes/` 目录的时间戳,不破坏目录　C) 报错:与已有目录名冲突　D) 删除目录并创建同名空文件
+   - A) 创建一个名为 `notes` 的空文件,覆盖目录　B) 更新 `notes/` 目录的时间戳,不破坏目录　C) 报错:与已有目录名冲突　D) 删除目录并创建同名空文件
 
 ### 解答题(5 道)
 
@@ -301,3 +301,12 @@ $ tail -n 1 memo.txt               # 刚学的 tail 立刻上岗:只验最后一
 > **Q4** 方案一:`less /var/log/nginx/access.log` 分页浏览,可按 `/` 搜索、`g` 跳到开头。方案二:`tail -n 100 /var/log/nginx/access.log` 只看最近 100 行。方案三:`head -n 50 /var/log/nginx/access.log` 只看前 50 行。**举一反三:**也可以 `cat file | grep ERROR` 过滤错误行、`wc -l file` 先看总行数再决定策略、`split` 将大文件切分后逐步分析。
 >
 > **Q5** 完整命令:`mkdir -p ~/backups/2026/09` → `date > ~/backups/2026/09/date.txt` → `tail -n 20 /var/log/app.log >> ~/backups/2026/09/recent.log`。**举一反三:**生产脚本应加错误检查:`mkdir -p ... && date > ... && tail ... >> ...` 用 `&&` 串联确保前一步成功才执行下一步;也可以用 `set -e` 让脚本遇错即停。🪟 PowerShell 中 `date` 会输出日期对象而非文本,建议用 `Get-Date -Format 'yyyy-MM-dd'`。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。
+- **定时任务边界**：cron 环境最小且非交互。先用绝对路径、显式环境变量和可写日志路径；手动执行同一命令并检查日志后再安装任务。

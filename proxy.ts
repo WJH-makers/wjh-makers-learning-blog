@@ -31,18 +31,12 @@ export function proxy(request: NextRequest) {
 
   const response = NextResponse.next();
   if (isContentPage) {
-    // 公共 HTML 只按 URL 缓存。Markdown 使用固定的 /markdown 路由并由 Link
-    // 明确发现，避免 Cloudflare/Nginx 将同一 URL 的 Accept 变体互相串用。
     // 反向代理会把内部地址作为 request.url 传入；发现链接必须始终使用公网规范域名。
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online";
     const links = [
-      `<${origin}/llms.txt>; rel="alternate"; type="text/plain"`,
       `<${origin}/sitemap.xml>; rel="sitemap"; type="application/xml"`,
       `<${origin}/rss.xml>; rel="alternate"; type="application/rss+xml"`,
     ];
-    if (/^\/posts\/[^/]+$/.test(pathname)) {
-      links.push(`<${origin}${pathname}/markdown>; rel="alternate"; type="text/markdown"`);
-    }
     response.headers.set("Link", links.join(", "));
   }
   return response;

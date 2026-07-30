@@ -1,9 +1,8 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPublishedPosts, siteUrl, type Post } from "@/lib/posts";
 import { findEpisodeInfo } from "@/lib/series-registry";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -11,18 +10,11 @@ export const runtime = "nodejs";
 const TITLE = "全量归档";
 const DESC = "站内每一篇文章的完整时间线 —— 连载话次、速查手册、学习笔记,按年月倒序,一页看尽。";
 
-export const metadata: Metadata = {
+export const metadata = staticPageMetadata({
   title: TITLE,
   description: DESC,
-  alternates: { canonical: `${siteUrl()}/archive` },
-  openGraph: {
-    ...OG_BASE,
-    title: TITLE,
-    description: DESC,
-    url: `${siteUrl()}/archive`,
-    type: "website",
-  },
-};
+  path: "/archive",
+});
 
 type Group = { key: string; year: string; month: string; posts: Post[] };
 

@@ -31,6 +31,7 @@ export type LabManifest = {
   title: string;
   environment: typeof JAVA_LAB_CONTRACT;
   files: ReadonlyArray<{ path: "Main.java"; content: string }>;
+  starter: string;
   stdin: string;
   limits: { compileMs: number; runMs: number; maxOutputChars: number };
   assertions: ReadonlyArray<LabAssertion>;
@@ -41,57 +42,69 @@ export type LabManifest = {
   reviewAfterDays: readonly number[];
 };
 
-export type Java17Preflight = {
-  passed: boolean;
-  checks: ReadonlyArray<{ id: string; label: string; passed: boolean; detail: string }>;
+export type JavaDiagnostic = {
+  severity: "error" | "warning";
+  message: string;
+  line?: number;
+  column?: number;
 };
+
+export type JavaPreflight = {
+  passed: boolean;
+  diagnostics: readonly JavaDiagnostic[];
+};
+
+function lineAndColumn(source: string, index: number): Pick<JavaDiagnostic, "line" | "column"> {
+  const before = source.slice(0, Math.max(0, index));
+  const lines = before.split("\n");
+  return { line: lines.length, column: (lines.at(-1)?.length ?? 0) + 1 };
+}
 
 /**
  * A deliberately small, client-safe boundary check. It is not a compiler and
  * must never be presented as one: the browser runtime remains unavailable
  * until a real Java 17 runtime is independently verified.
  */
-export function preflightJava17SingleFile(source: string): Java17Preflight {
-  const checks = [
-    {
-      id: "source",
-      label: "有可检查的源码",
-      passed: source.trim().length > 0,
-      detail: source.trim().length > 0 ? "已读取当前编辑器内容。" : "先写入 Java 源码。",
-    },
-    {
-      id: "package",
-      label: "单文件默认包",
-      passed: !/^\s*package\s+/m.test(source),
-      detail: /^\s*package\s+/m.test(source) ? "浏览器实验只接受默认包中的 Main.java。" : "未声明 package。",
-    },
-    {
-      id: "main-class",
-      label: "Main.java 入口类",
-      passed: /\b(?:public\s+)?class\s+Main\b/.test(source),
-      detail: /\b(?:public\s+)?class\s+Main\b/.test(source) ? "找到 Main 类。" : "请使用 class Main（或 public class Main）。",
-    },
-    {
-      id: "main-method",
-      label: "传统 Java 17 main 入口",
-      passed: /\bpublic\s+static\s+void\s+main\s*\(\s*String(?:\[\s*\]|\.\.\.)\s*\w+\s*\)/.test(source),
-      detail: /\bpublic\s+static\s+void\s+main\s*\(\s*String(?:\[\s*\]|\.\.\.)\s*\w+\s*\)/.test(source)
-        ? "找到 public static void main(String[] args)。"
-        : "请使用 Java 17 的 public static void main(String[] args) 入口。",
-    },
-    {
-      id: "java25",
-      label: "未使用 Java 25 紧凑源文件",
-      passed: !/^\s*void\s+main\s*\(/m.test(source) && !/\bIO\.println\s*\(/.test(source),
-      detail: /^\s*void\s+main\s*\(/m.test(source) || /\bIO\.println\s*\(/.test(source)
-        ? "检测到 Java 25 入门语法；浏览器实验只覆盖 Java 17。"
-        : "未检测到 Java 25 专用入门语法。",
-    },
-  ];
-  return { passed: checks.every((check) => check.passed), checks };
+export function preflightJava17SingleFile(source: string): JavaPreflight {
+  const diagnostics: JavaDiagnostic[] = [];
+  if (!source.trim()) {
+    diagnostics.push({ severity: "error", message: "Main.java 不能为空。", line: 1, column: 1 });
+    return { passed: false, diagnostics };
+  }
+
+  const packageMatch = /^\s*package\s+/m.exec(source);
+  if (packageMatch) {
+    diagnostics.push({
+      severity: "error",
+      message: "在线实验只支持默认包中的单文件 Main.java。",
+      ...lineAndColumn(source, packageMatch.index),
+    });
+  }
+  if (!/\b(?:public\s+)?class\s+Main\b/.test(source)) {
+    diagnostics.push({ severity: "error", message: "没有找到 Main 类。", line: 1, column: 1 });
+  }
+  if (!/\bpublic\s+static\s+void\s+main\s*\(\s*String(?:\[\s*\]|\.\.\.)\s*\w+\s*\)/.test(source)) {
+    diagnostics.push({
+      severity: "error",
+      message: "需要 Java 17 入口：public static void main(String[] args)。",
+      line: 1,
+      column: 1,
+    });
+  }
+
+  const compactMain = /^\s*void\s+main\s*\(/m.exec(source) ?? /\bIO\.println\s*\(/.exec(source);
+  if (compactMain) {
+    diagnostics.push({
+      severity: "error",
+      message: "检测到 Java 25 紧凑源文件语法；本实验固定为 Java 17。",
+      ...lineAndColumn(source, compactMain.index),
+    });
+  }
+
+  return { passed: diagnostics.length === 0, diagnostics };
 }
 
-type Starter = Omit<LabManifest, "id" | "version" | "contentId" | "slug" | "locale" | "terminologyVersion" | "technicalVersion" | "environment" | "limits"> & {
+type Starter = Omit<LabManifest, "id" | "version" | "contentId" | "slug" | "locale" | "terminologyVersion" | "technicalVersion" | "environment" | "limits" | "starter"> & {
   number: number;
   slug: string;
 };
@@ -132,6 +145,7 @@ const STARTERS: readonly Starter[] = [
 
 export const JAVA_LABS: readonly LabManifest[] = STARTERS.map((starter) => ({
   ...starter,
+  starter: starter.files[0]?.content ?? "",
   id: `java-s01e${String(starter.number).padStart(2, "0")}`,
   version: 1,
   contentId: `java.s01.e${String(starter.number).padStart(2, "0")}`,

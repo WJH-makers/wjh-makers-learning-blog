@@ -189,3 +189,10 @@ tags: [命令速查, GitHub, Git]
 7. **`--json` + `--jq` 是 gh 的管道口**:脚本化前先跑一次 `--json` 不带参数看有哪些字段。
 8. **gh 没封装的,`gh api` 一定有**:记住反直觉的 `-f` 传字符串、`-F` 才带类型。
 9. **删库前先想归档**:`gh repo archive` 保留一切且可撤销;`gh repo delete` 一去不回。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。

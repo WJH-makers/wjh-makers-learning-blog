@@ -232,34 +232,34 @@ $ uptime                     # 负载缓缓落地
 ### 选择题(10 道)
 
 1. `ps aux` 和 `ps -ef` 的关系是什么?
-- A) 完全不同的命令　B) 两者都列出系统中所有正在运行的进程,只是格式和选项风格不同(BSD vs Unix)　C) `ps aux` 只显示当前用户的进程　D) `ps -ef` 是 Windows 命令
+   - A) 完全不同的命令　B) 两者都列出系统中所有正在运行的进程,只是格式和选项风格不同(BSD vs Unix)　C) `ps aux` 只显示当前用户的进程　D) `ps -ef` 是 Windows 命令
 
 2. `top` 命令中,按哪个键按 CPU 使用率排序?
-- A) `c`　B) `P`(大写)　C) `m`　D) `s`
+   - A) `c`　B) `P`(大写)　C) `m`　D) `s`
 
 3. `kill -9 PID` 中的 `-9` 代表什么信号?
-- A) SIGTERM(终止)　B) SIGKILL(强制杀死,不可被进程捕获)　C) SIGINT(中断)　D) SIGHUP(挂断)
+   - A) SIGTERM(终止)　B) SIGKILL(强制杀死,不可被进程捕获)　C) SIGINT(中断)　D) SIGHUP(挂断)
 
 4. SIGTERM(15) 和 SIGKILL(9) 的关键区别是什么?
-- A) 效果一样,只是编号不同　B) SIGTERM 给进程清理和保存数据的机会(可被捕获),SIGKILL 由内核立即终止进程(不可被捕获/忽略)　C) SIGKILL 更温和　D) SIGTERM 是 Windows 信号
+   - A) 效果一样,只是编号不同　B) SIGTERM 给进程清理和保存数据的机会(可被捕获),SIGKILL 由内核立即终止进程(不可被捕获/忽略)　C) SIGKILL 更温和　D) SIGTERM 是 Windows 信号
 
 5. `top` 输出第一行的 `load average: 0.05, 0.10, 0.15` 中,三个数字分别代表什么?
-- A) 当前 CPU 温度、内存使用率、磁盘使用率　B) 过去 1 分钟、5 分钟、15 分钟的平均负载(等待 CPU 的进程数)　C) 系统启动时间、运行进程数、空内存　D) 网络流量、磁盘 IO、CPU 空闲率
+   - A) 当前 CPU 温度、内存使用率、磁盘使用率　B) 过去 1 分钟、5 分钟、15 分钟的平均负载(等待 CPU 的进程数)　C) 系统启动时间、运行进程数、空内存　D) 网络流量、磁盘 IO、CPU 空闲率
 
 6. `ps aux` 输出的 `VSZ` 和 `RSS` 列分别代表什么?
-- A) VSZ=虚拟内存大小(含共享库),RSS=物理内存实际占用　B) VSZ=CPU 使用率,RSS=内存使用率　C) VSZ=进程 ID,RSS=父进程 ID　D) VSZ=启动时间,RSS=运行时间
+   - A) VSZ=虚拟内存大小(含共享库),RSS=物理内存实际占用　B) VSZ=CPU 使用率,RSS=内存使用率　C) VSZ=进程 ID,RSS=父进程 ID　D) VSZ=启动时间,RSS=运行时间
 
 7. 一个服务进程占满 CPU(100%),应该用什么信号终止它?
-- A) `kill -1 PID`　B) `kill -15 PID`(先尝试优雅终止),无效再用 `kill -9 PID`　C) 只能重启系统　D) `kill -STOP PID`
+   - A) `kill -1 PID`　B) `kill -15 PID`(先尝试优雅终止),无效再用 `kill -9 PID`　C) 只能重启系统　D) `kill -STOP PID`
 
 8. 在 `top` 界面中,按哪个键可以**杀死**选中的进程?
-- A) `q`　B) `k`(然后输入 PID 和信号编号)　C) `x`　D) `d`
+   - A) `q`　B) `k`(然后输入 PID 和信号编号)　C) `x`　D) `d`
 
 9. `kill -0 PID` 的作用是什么?
-- A) 发送信号 0(无实际信号),用于**检测进程是否存在**(不终止进程)　B) 强制杀死进程　C) 暂停进程　D) 恢复进程
+   - A) 发送信号 0(无实际信号),用于**检测进程是否存在**(不终止进程)　B) 强制杀死进程　C) 暂停进程　D) 恢复进程
 
 10. 关于 `ps aux | grep nginx`,为什么输出中总是出现 `grep --color=auto nginx` 这一行?
-- A) 这是 bug　B) 因为 `grep nginx` 这个命令本身也在进程列表中,它的命令行包含 "nginx" 所以被自己匹配到　C) nginx 真的包含了 grep 进程　D) grep 命令自动重新运行
+   - A) 这是 bug　B) 因为 `grep nginx` 这个命令本身也在进程列表中,它的命令行包含 "nginx" 所以被自己匹配到　C) nginx 真的包含了 grep 进程　D) grep 命令自动重新运行
 
 ### 解答题(5 道)
 
@@ -303,3 +303,14 @@ $ uptime                     # 负载缓缓落地
 > **Q4** nginx 收到 SIGKILL 是瞬间死亡:①访问日志缓冲区未写入磁盘→最后几秒的访问日志丢失 ②正在处理的 HTTP 请求被粗暴断开,客户端收到连接重置 ③worker 进程的共享内存未释放→可能损坏。**正确操作:**`nginx -s quit`(优雅关闭:完成当前请求后退出)或 `systemctl stop nginx`(使用 nginx 的 systemd 单元,默认发送 SIGQUIT 优雅退出)。如果必须 kill:用 `kill -QUIT PID`(信号 3,nginx 推荐的优雅退出信号),而非 `-9`。
 >
 > **Q5** 监控方案:①定期采集:`while true; do ps aux | grep -E "nginx|java|postgres" >> /tmp/process_health.log; sleep 60; done`(每分钟快照) ②CPU/内存告警:`ps -p PID -o %cpu,%mem | tail -1 | awk '{if($1>80||$2>2) print "ALERT"}'` ③异常排查:先 `top` 宏观看→`ps -fp PID` 看进程详情→`lsof -p PID` 看打开的文件/连接→`strace -p PID` 跟踪系统调用 ④终止规范:服务进程优先 `systemctl stop`,应用进程先 SIGTERM→10 秒超时→SIGKILL,数据库进程**绝不用 SIGKILL**(用数据库自身的 shutdown 命令) ⑤数据保护:终止前确认是否有未完成的事务或写入(`/proc/PID/io` 查看 IO 状态),配置适当的超时时间和优雅关闭脚本。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **进程边界**：先核对 PID、命令行和父进程（`ps -fp PID`）；优先 `kill -TERM PID`，仅在进程无法自行退出时才用 `kill -KILL PID`，并检查数据写入和服务健康状态。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

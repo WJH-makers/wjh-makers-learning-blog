@@ -204,34 +204,34 @@ $ pwd               # 我在哪(任何时候迷路,先敲它)
 ### 选择题(10 道)
 
 1. 以下哪一项是 SSH 远程登录服务器的命令格式?
-- A) `ssh user@host`　B) `ssh host@user`　C) `ssh -u user host`　D) `ftp user@host`
+   - A) `ssh user@host`　B) `ssh host@user`　C) `ssh -u user host`　D) `ftp user@host`
 
 2. 提示符 `ubuntu@coffee-server:~$` 中,`~` 代表什么?
-- A) 系统根目录　B) 当前用户的 home 目录　C) 临时目录　D) 最后一个访问的目录
+   - A) 系统根目录　B) 当前用户的 home 目录　C) 临时目录　D) 最后一个访问的目录
 
 3. 执行 `pwd` 命令的作用是?
-- A) 修改当前工作目录　B) 列出当前目录下的文件　C) 打印当前工作目录的绝对路径　D) 切换到上级目录
+   - A) 修改当前工作目录　B) 列出当前目录下的文件　C) 打印当前工作目录的绝对路径　D) 切换到上级目录
 
 4. 用户位于 `/home/ubuntu/projects`,执行 `cd ..` 后,`pwd` 输出是什么?
-- A) `/home/ubuntu`　B) `/home`　C) `/home/ubuntu/projects/..`　D) `/`
+   - A) `/home/ubuntu`　B) `/home`　C) `/home/ubuntu/projects/..`　D) `/`
 
 5. 在 Linux 中,以下哪两个文件名会被视为**同一个文件**?
-- A) `Readme.md` 和 `readme.md`　B) `Readme.md` 和 `README.md`　C) `readme.md` 和 `README.md`　D) 以上都不是,Linux 大小写敏感
+   - A) `Readme.md` 和 `readme.md`　B) `Readme.md` 和 `README.md`　C) `readme.md` 和 `README.md`　D) 以上都不是,Linux 大小写敏感
 
 6. 报错 `No such file or directory` 的第一排查步骤是什么?
-- A) 重新安装系统　B) `ls` 列出当前目录确认文件名拼写和大小写　C) 重启终端　D) 用 `sudo` 再执行一次
+   - A) 重新安装系统　B) `ls` 列出当前目录确认文件名拼写和大小写　C) 重启终端　D) 用 `sudo` 再执行一次
 
 7. 以下路径中,哪个是**绝对路径**?
-- A) `../var/log`　B) `./config/app.conf`　C) `/etc/nginx/nginx.conf`　D) `~/.ssh/id_rsa`
+   - A) `../var/log`　B) `./config/app.conf`　C) `/etc/nginx/nginx.conf`　D) `~/.ssh/id_rsa`
 
 8. 执行 `cd /var/log && cd ../../home/ubuntu` 后,最终所在目录是什么?
-- A) `/var/log/home/ubuntu`　B) `/home/ubuntu`　C) `/var/home/ubuntu`　D) `/var/../home/ubuntu`
+   - A) `/var/log/home/ubuntu`　B) `/home/ubuntu`　C) `/var/home/ubuntu`　D) `/var/../home/ubuntu`
 
 9. 关于 Linux 文件系统树,以下说法**错误**的是?
-- A) 所有文件和目录都挂在唯一的根 `/` 下　B) `.` 代表当前目录,`..` 代表父目录　C) `~` 永远等于 `/root`　D) `/` 是文件系统树的根节点
+   - A) 所有文件和目录都挂在唯一的根 `/` 下　B) `.` 代表当前目录,`..` 代表父目录　C) `~` 永远等于 `/root`　D) `/` 是文件系统树的根节点
 
 10. 在 `~/projects/coffee` 目录下执行 `cd /etc` 然后执行 `cd -`,最终在哪个目录?
-- A) `/etc`　B) `/home`　C) `~/projects/coffee`　D) `/root`
+   - A) `/etc`　B) `/home`　C) `~/projects/coffee`　D) `/root`
 
 ### 解答题(5 道)
 
@@ -275,5 +275,15 @@ $ pwd               # 我在哪(任何时候迷路,先敲它)
 > **Q4** 错误原因:`Downloads` 首字母大写,`downloads` 全小写不匹配。方案一:`cd Downloads`(纠正大小写);方案二:先 `ls` 确认准确名称再 `cd`。**举一反三:**养成习惯——不盲敲路径,先 `ls` 后 `cd`;可用 Tab 键自动补全避免拼写错误。
 >
 > **Q5** 导航策略:①`ssh user@server` 登录 ②`pwd` 确认在 home ③`cd /home/deploy/app` 或逐层 `cd /home`→`cd deploy`→`cd app` ④`pwd` 确认 ⑤`cd src/main/java/com/coffee` 到达目标 ⑥`ls -la` 查看项目文件。全程每步用 `pwd`+`ls` 确认位置。**举一反三:**实际工作中可以用 `tree -L 3` 可视化目录树,或直接 `cd /home/deploy/app/src/main/java/com/coffee` 一步到位。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。
+
 
 *本话属于连载《从零开始玩命令行》。全卷地图见 [/cli](/cli);前作《从零开始学 Java》见 [/java](/java)。*

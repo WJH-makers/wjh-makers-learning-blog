@@ -104,7 +104,7 @@ mvn install:install-file \
 
 ---
 
-# 十、Vim 编辑器（难度 × 频次）
+## 十、Vim 编辑器（难度 × 频次）
 
 ## Vim · S 极高频
 
@@ -157,11 +157,11 @@ mvn install:install-file \
 
 ---
 
-# 十一、SSH / SCP 远程连接（难度 × 频次）
+## 十一、SSH / SCP 远程连接（难度 × 频次）
 
 ---
 
-# 十二、systemctl 服务管理（难度 × 频次）
+## 十二、systemctl 服务管理（难度 × 频次）
 
 ## S 极高频（运行时）
 
@@ -227,7 +227,7 @@ sudo systemctl enable --now myapp
 
 ---
 
-# 十三、JDK / JVM 命令行工具（难度 × 频次）
+## 十三、JDK / JVM 命令行工具（难度 × 频次）
 
 ## JDK · S 极高频
 
@@ -295,7 +295,7 @@ sudo systemctl enable --now myapp
 
 ---
 
-# 十四、线上排查经典套路（必背）
+## 十四、线上排查经典套路（必背）
 
 ## CPU 飙高 100% 排查五步法
 
@@ -347,7 +347,7 @@ jstat -gcutil <PID> 1000
 
 ---
 
-# 十五、跨平台对照速查
+## 十五、跨平台对照速查
 
 | 操作 | Linux | Windows CMD |
 |------|-------|-------------|
@@ -390,7 +390,7 @@ jstat -gcutil <PID> 1000
 
 ---
 
-# 十六、一页纸总口诀
+## 十六、一页纸总口诀
 
 ```text
 【Linux S】ls cd pwd  mkdir rm cp mv  cat grep tail  chmod ps kill ss curl
@@ -414,7 +414,13 @@ jstat -gcutil <PID> 1000
 
 ---
 
-# 十七、核心洞察与校招入职赋能指南
+## 十七、核心洞察与校招入职赋能指南
 
 > 指令是手段，建立**系统可观测性**的思维才是目的。
 
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。

@@ -7,10 +7,9 @@ import { findEpisodeInfo } from "@/lib/series-registry";
 // 文章级社交分享图:报纸风 + 卷话信息 + 中文标题。
 // 中文字体用本地思源黑体子集(satori 不支持 woff2,故用子集 ttf)。
 // 系列信息走多连载注册表:Java / CLI / Cafe 三条线统一取系列名+卷次。
-export const alt = "豆豆课程组 · 连载与笔记";
+export const alt = "咖啡站技术志 · 连载与笔记";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-const SITE_HOST = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online").host;
 
 // 模块加载时读一次(build 预生成时复用)
 const fontData = readFileSync(join(process.cwd(), "public", "fonts", "noto-sc-bold-subset.ttf"));
@@ -18,13 +17,13 @@ const fontData = readFileSync(join(process.cwd(), "public", "fonts", "noto-sc-bo
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPublishedPost(slug);
-  const rawTitle = post?.title ?? "豆豆课程组";
+  const rawTitle = post?.title ?? "咖啡站技术志";
   // 去掉《系列名》NN · 前缀,只留话名
   const title = rawTitle.replace(/^《[^》]+》\s*\d+\s*·\s*/, "");
   const info = findEpisodeInfo(slug);
   const eyebrow = info
     ? `${info.series.title} · 第${info.season.season}卷 ${info.season.title}`
-    : "豆豆课程组 · 技术笔记";
+    : "咖啡站技术志 · 技术笔记";
 
   return new ImageResponse(
     (
@@ -48,8 +47,8 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           {title}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 28, color: "#555555" }}>
-          <div style={{ display: "flex" }}>{SITE_HOST}</div>
-          <div style={{ display: "flex" }}>@豆豆课程组</div>
+          <div style={{ display: "flex" }}>咖啡站技术志</div>
+          <div style={{ display: "flex" }}>技术故事 · 可验证实践</div>
         </div>
       </div>
     ),

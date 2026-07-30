@@ -280,3 +280,10 @@ JUnit 质检员盖章:「证据呢?——喏,负数进,12 出。」
 > **8-B**　取模会保留符号。**举一反三**:所以自己写哈希分桶时,别忘了 `Math.abs` 或改用位与 —— 负下标是隐蔽的越界源。
 > **9-B**　扰动让高位参与定位。**举一反三**:注意 JDK 用的正是 `>>>` —— 又一次印证了第 3 题的区别在真实源码里有多重要。
 > **10-C**　EnumSet 把位图藏进了类型安全的壳里。**举一反三**:但跟数据库、缓存、外部协议对话时,int 位图仍是通用货币 —— 内功还是要练。
+
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。

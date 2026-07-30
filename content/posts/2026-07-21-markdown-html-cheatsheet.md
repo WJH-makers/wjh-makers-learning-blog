@@ -286,7 +286,7 @@ tags: [HTML, Markdown, 前端, 命令速查]
       <ul>
         <li><a href="/">首页</a></li>
         <li><a href="/products">产品</a></li>
-        <li><a href="/about">关于</a></li>
+        <li><a href="/start">开始阅读</a></li>
       </ul>
     </nav>
     <search>
@@ -1310,5 +1310,4 @@ selectedcontent img {
 | `0` | 加入 Tab 导航顺序 |
 | `-1` | 可被 JS 程序化聚焦，但 Tab 跳过 |
 | `1+` | **不推荐**（自定义顺序破坏体验） |
-
 

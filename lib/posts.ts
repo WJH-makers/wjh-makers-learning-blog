@@ -2,9 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { getDatabasePost, getDatabasePosts } from "@/lib/db";
+import { getDatabasePost, getDatabasePostIndex, getDatabasePosts } from "@/lib/db";
 import { estimateReadingMinutes } from "@/lib/text";
-import { isAlwaysPublicCurriculum, isPublicOn } from "@/lib/publication";
+import { isAlwaysPublicCurriculum, isReleasedDate } from "@/lib/publication";
+import { mergePublishedPostIndex, type PostIndexEntry } from "@/lib/post-index";
+
+export { mergePublishedPostIndex, type PostIndexEntry } from "@/lib/post-index";
+
+export const PUBLIC_POSTS_CACHE_TAG = "public-posts-v1";
 
 // 渲染引擎已拆到 lib/markdown.ts(纯函数、可单测);此处 re-export 保持既有 import 路径不变。
 export { markdownToHtml, renderMarkdown } from "@/lib/markdown";
@@ -20,8 +25,8 @@ export type Post = {
   content: string;
 };
 
-export function isPublicPost(post: Pick<Post, "date" | "slug">, now = new Date()): boolean {
-  return isAlwaysPublicCurriculum(post.slug) || isPublicOn(post.date, now);
+export function isPublicPost(post: Pick<Post, "date" | "slug">): boolean {
+  return isAlwaysPublicCurriculum(post.slug) || isReleasedDate(post.date);
 }
 
 const postsDirectory = path.join(process.cwd(), "content", "posts");
@@ -94,14 +99,15 @@ export function getPost(slug: string): Post | undefined {
   return getAllPosts().find((post) => post.slug === slug);
 }
 
-// 公共文章会同时被首页、归档、标签、RSS、sitemap 和文章页读取。数据库内容只在
-// 发布/编辑时改变，不能让每一次 ISR 再生都重新扫 MongoDB。此标签在写作台保存后
-// 由 updateTag 立即失效，兼顾高并发阅读与“发布后马上可见”。
-export const PUBLIC_POSTS_CACHE_TAG = "public-posts-v1";
-
 const getCachedDatabasePosts = unstable_cache(
   async (): Promise<Post[]> => getDatabasePosts(),
   ["published-database-posts-v1"],
+  { revalidate: 300, tags: [PUBLIC_POSTS_CACHE_TAG] },
+);
+
+const getCachedDatabasePostIndex = unstable_cache(
+  async (): Promise<PostIndexEntry[]> => getDatabasePostIndex(),
+  ["published-database-post-index-v1"],
   { revalidate: 300, tags: [PUBLIC_POSTS_CACHE_TAG] },
 );
 
@@ -127,8 +133,20 @@ export const getAllPublishedPosts = cache(async (): Promise<Post[]> => {
   for (const post of databasePosts) merged.set(post.slug, post);
 
   return [...merged.values()]
-    .filter((post) => isPublicPost(post))
+    .filter(isPublicPost)
     .sort((a, b) => b.date.localeCompare(a.date));
+});
+
+/** Content-free index for navigation, sitemap, tags and recommendations. */
+export const getPublishedPostIndex = cache(async (): Promise<PostIndexEntry[]> => {
+  const markdownIndex = getAllPosts().map(({ slug, title, date, summary, tags }) => ({ slug, title, date, summary, tags }));
+  let databaseIndex: PostIndexEntry[] = [];
+  try {
+    databaseIndex = await getCachedDatabasePostIndex();
+  } catch (error) {
+    console.warn("[learning-blog] database index read failed, falling back to Markdown only:", error);
+  }
+  return mergePublishedPostIndex(markdownIndex, databaseIndex);
 });
 
 export const getPublishedPost = cache(async (slug: string): Promise<Post | undefined> => {
@@ -138,13 +156,13 @@ export const getPublishedPost = cache(async (slug: string): Promise<Post | undef
   } catch (error) {
     console.warn("[learning-blog] database post read failed, falling back to Markdown:", error);
   }
-  const post = getPost(slug);
-  return post && isPublicPost(post) ? post : undefined;
+  const markdownPost = getPost(slug);
+  return markdownPost && isPublicPost(markdownPost) ? markdownPost : undefined;
 });
 
 export function getAllTags(): { tag: string; count: number }[] {
   const counts = new Map<string, number>();
-  for (const post of getAllPosts().filter((post) => isPublicPost(post))) {
+  for (const post of getAllPosts()) {
     for (const tag of post.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   }
   return [...counts.entries()]
@@ -154,7 +172,7 @@ export function getAllTags(): { tag: string; count: number }[] {
 
 export async function getAllPublishedTags(): Promise<{ tag: string; count: number }[]> {
   const counts = new Map<string, number>();
-  for (const post of await getAllPublishedPosts()) {
+  for (const post of await getPublishedPostIndex()) {
     for (const tag of post.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   }
   return [...counts.entries()]
@@ -164,7 +182,7 @@ export async function getAllPublishedTags(): Promise<{ tag: string; count: numbe
 
 export function getPostsByTag(tag: string): Post[] {
   const decoded = decodeURIComponent(tag);
-  return getAllPosts().filter((post) => isPublicPost(post) && post.tags.includes(decoded));
+  return getAllPosts().filter((post) => post.tags.includes(decoded));
 }
 
 export async function getPublishedPostsByTag(tag: string): Promise<Post[]> {
@@ -175,10 +193,10 @@ export async function getPublishedPostsByTag(tag: string): Promise<Post[]> {
 /** 按共享的「具体主题标签」推荐相关文章(忽略 Java/Java漫画 等泛标签,避免连载话彼此刷屏)。 */
 const RELATED_STOP_TAGS = new Set(["Java", "Java漫画", "阿零与豆豆", "命令速查", "豆豆咖啡站", "治愈", "编程漫画"]);
 
-export async function getRelatedPosts(slug: string, tags: string[], limit = 4): Promise<Post[]> {
+export async function getRelatedPosts(slug: string, tags: string[], limit = 4): Promise<PostIndexEntry[]> {
   const topical = tags.filter((t) => !RELATED_STOP_TAGS.has(t));
   if (topical.length === 0) return [];
-  const all = await getAllPublishedPosts();
+  const all = await getPublishedPostIndex();
   return all
     .filter((p) => p.slug !== slug)
     .map((p) => ({ post: p, score: p.tags.filter((t) => topical.includes(t)).length }))

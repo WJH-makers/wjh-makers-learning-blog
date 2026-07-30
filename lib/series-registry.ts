@@ -101,14 +101,29 @@ export const SERIES_LIST: SeriesRef[] = [
   defineSeries(CAREER_SERIES_META, "/career", CAREER_SEASONS),
 ];
 
-/** 一条线的连载进度(已发布 / 规划总数)。 */
-export function seriesProgress(series: SeriesRef): { done: number; total: number } {
-  const all = series.seasons.flatMap((s) => s.episodes);
-  return { done: all.filter((e) => e.status === "published" && isPublicEpisode(e.slug)).length, total: all.length };
+/** 一条线的全部话次(含未开更的蓝图)。 */
+export function allEpisodesOf(series: SeriesRef): JavaEpisode[] {
+  return series.seasons.flatMap((s) => s.episodes);
 }
 
-export function publicEpisodes(series: SeriesRef): JavaEpisode[] {
-  return series.seasons.flatMap((s) => s.episodes).filter((e) => e.status === "published" && isPublicEpisode(e.slug));
+/** 一条线已开更的话次,按卷话顺序。 */
+export function publishedEpisodesOf(series: SeriesRef): JavaEpisode[] {
+  return allEpisodesOf(series).filter((e) => e.status === "published" && isPublicEpisode(e.slug));
+}
+
+/** 一条线的连载进度(已发布 / 规划总数)。 */
+export function seriesProgress(series: SeriesRef): { done: number; total: number } {
+  return { done: publishedEpisodesOf(series).length, total: allEpisodesOf(series).length };
+}
+
+/**
+ * 按路由取一条线。各线 page.tsx 用它拿数据,写错路由在构建期就炸,
+ * 不会静默渲染出一个空页面。
+ */
+export function seriesByRoute(route: Route): SeriesRef {
+  const found = SERIES_LIST.find((s) => s.route === route);
+  if (!found) throw new Error(`[series-registry] 未注册的连载路由:${route}`);
+  return found;
 }
 
 /** 全站连载总量,首页/关于页/统计页共用一个口径。 */
@@ -139,7 +154,9 @@ export function findEpisodeInfo(slug: string): EpisodeInfo | undefined {
     for (const season of series.seasons) {
       const episode = season.episodes.find((e) => e.slug === slug);
       if (!episode) continue;
-      const published = publicEpisodes(series);
+      const published = series.seasons
+        .flatMap((s) => s.episodes)
+        .filter((e) => e.status === "published" && isPublicEpisode(e.slug));
       const i = published.findIndex((e) => e.slug === slug);
       return {
         series,

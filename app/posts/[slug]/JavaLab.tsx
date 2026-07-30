@@ -1,165 +1,267 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { preflightJava17SingleFile, type LabManifest } from "@/lib/java-labs";
-import {
-  bandAttempt,
-  bandDuration,
-  clearLocalLearningData,
-  exportLearningEvidence,
-  recordLearningEvidence,
-} from "@/lib/learning-record";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { preflightJava17SingleFile, type JavaDiagnostic, type LabManifest } from "@/lib/java-labs";
+import type { JavaRunResult } from "@/lib/java-runner";
 
 type Props = { lab: LabManifest };
+type RunnerState = "checking" | "available" | "unavailable";
+type RunState = "idle" | "validating" | "compiling" | "running" | "success" | "failed" | "cancelled";
+type ResultTab = "console" | "problems" | "expected";
 
-type OpfsFile = {
-  createWritable(): Promise<{ write(data: string): Promise<void>; close(): Promise<void> }>;
-  getFile(): Promise<{ text(): Promise<string> }>;
-};
-
-type OpfsRoot = {
-  getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<OpfsRoot>;
-  getFileHandle(name: string, options?: { create?: boolean }): Promise<OpfsFile>;
-  removeEntry?(name: string, options?: { recursive?: boolean }): Promise<void>;
-};
-
-function download(name: string, content: string, type = "text/plain;charset=utf-8"): void {
-  const url = URL.createObjectURL(new Blob([content], { type }));
+function downloadSource(source: string): void {
+  const url = URL.createObjectURL(new Blob([source], { type: "text/x-java-source;charset=utf-8" }));
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = name;
+  anchor.download = "Main.java";
   anchor.click();
   URL.revokeObjectURL(url);
 }
 
-async function opfsLabFile(labId: string): Promise<OpfsFile | undefined> {
-  const storage = navigator.storage as StorageManager & { getDirectory?: () => Promise<OpfsRoot> };
-  if (!storage.getDirectory) return undefined;
-  const root = await storage.getDirectory();
-  const labs = await root.getDirectoryHandle("doudou-java-labs", { create: true });
-  const lab = await labs.getDirectoryHandle(labId, { create: true });
-  return lab.getFileHandle("Main.java", { create: true });
+function normalizedOutput(value: string): string {
+  return value.replaceAll("\r\n", "\n").trimEnd();
 }
 
-function LearningDataControls() {
-  return (
-    <aside className="lab-privacy" aria-label="学习数据说明">
-      <span className="lab-privacy-badge">本机记录</span>
-      <span>学习证据只保存在当前浏览器，不上传。</span>
-      <details>
-        <summary>数据说明与管理</summary>
-        <p>只保存实验版本、知识点、结果与时间区间；不保存源码、输入、控制台内容、本地路径或身份信息。</p>
-        <div className="lab-actions lab-actions-compact">
-          <button type="button" className="button ghost" onClick={() => download("doudou-learning-record.json", exportLearningEvidence(), "application/json")}>导出学习记录</button>
-          <button type="button" className="button ghost" onClick={() => clearLocalLearningData()}>清除学习记录</button>
-        </div>
-      </details>
-    </aside>
-  );
+function statusCopy(state: RunState, runner: RunnerState): string {
+  if (runner === "checking") return "正在连接 Java 17 沙箱";
+  if (runner === "unavailable") return "执行服务待配置";
+  switch (state) {
+    case "validating": return "正在检查单文件边界";
+    case "compiling": return "javac 正在编译 Main.java";
+    case "running": return "JVM 正在运行";
+    case "success": return "运行完成";
+    case "failed": return "需要修复";
+    case "cancelled": return "已停止";
+    default: return "Java 17 沙箱就绪";
+  }
 }
 
 export default function JavaLab({ lab }: Props) {
-  const [source, setSource] = useState(lab.files[0].content);
-  const [status, setStatus] = useState("运行时按需加载：尚未下载任何 Java 运行时。");
-  const [hintOpen, setHintOpen] = useState(false);
-  const [startedAt] = useState(() => Date.now());
-  const [opfsSupported, setOpfsSupported] = useState(false);
-  const readme = useMemo(() => `# ${lab.title}\n\nJava 17+ 本地运行：\n\n\`javac Main.java\`\n\`java Main\`\n`, [lab.title]);
-  const pom = useMemo(() => `<project xmlns="http://maven.apache.org/POM/4.0.0">\n  <modelVersion>4.0.0</modelVersion>\n  <groupId>dev.doudou</groupId>\n  <artifactId>${lab.id}</artifactId>\n  <version>0.1.0</version>\n  <properties><maven.compiler.release>17</maven.compiler.release></properties>\n</project>\n`, [lab.id]);
-  const preflight = useMemo(() => preflightJava17SingleFile(source), [source]);
+  const draftKey = `java-lab:${lab.id}:source`;
+  const [source, setSource] = useState(lab.starter);
+  const [stdin, setStdin] = useState(lab.stdin);
+  const [runner, setRunner] = useState<RunnerState>("checking");
+  const [runState, setRunState] = useState<RunState>("idle");
+  const [result, setResult] = useState<JavaRunResult>();
+  const [localDiagnostics, setLocalDiagnostics] = useState<JavaDiagnostic[]>([]);
+  const [activeTab, setActiveTab] = useState<ResultTab>("console");
+  const [saved, setSaved] = useState(true);
+  const abortRef = useRef<AbortController | undefined>(undefined);
+  const gutterRef = useRef<HTMLDivElement>(null);
+  const lines = useMemo(() => source.split("\n"), [source]);
+  const diagnostics = result?.diagnostics.length ? result.diagnostics : localDiagnostics;
+  const expected = lab.assertions[0]?.expectedOutput ?? "";
+  const passed = result?.status === "success" && normalizedOutput(result.stdout) === normalizedOutput(expected);
+  const busy = runState === "validating" || runState === "compiling" || runState === "running";
 
   useEffect(() => {
-    const supported = Boolean((navigator.storage as StorageManager & { getDirectory?: unknown }).getDirectory);
-    setOpfsSupported(supported);
-    if (!supported) return;
-    void opfsLabFile(lab.id).then(async (handle) => {
-      if (!handle) return;
-      const file = await handle.getFile();
-      const saved = await file.text();
-      if (saved) setSource(saved);
-    }).catch(() => setStatus("浏览器无法读取本地实验文件；仍可下载代码。"));
-  }, [lab.id]);
+    const savedDraft = window.localStorage.getItem(draftKey);
+    if (savedDraft) setSource(savedDraft);
 
-  async function saveLocal() {
+    const controller = new AbortController();
+    void fetch("/api/java/run", { signal: controller.signal })
+      .then(async (response) => {
+        const data = await response.json() as { available?: boolean };
+        setRunner(data.available ? "available" : "unavailable");
+      })
+      .catch(() => setRunner("unavailable"));
+    return () => controller.abort();
+  }, [draftKey]);
+
+  function saveDraft(): void {
     try {
-      const handle = await opfsLabFile(lab.id);
-      if (!handle) {
-        setStatus("此浏览器不支持 OPFS；请下载 Main.java 或复制到 IDE。");
-        return;
-      }
-      const writable = await handle.createWritable();
-      await writable.write(source);
-      await writable.close();
-      setStatus("已只在本机 OPFS 保存 Main.java。");
+      window.localStorage.setItem(draftKey, source);
+      setSaved(true);
     } catch {
-      setStatus("本地保存失败（可能是配额或隐私模式限制）；可下载代码作为备份。");
+      setSaved(false);
     }
   }
 
-  function recordLocalVerification() {
-    recordLearningEvidence({
-      labId: lab.id,
-      labVersion: lab.version,
-      knowledgePointIds: [...lab.knowledgePoints],
-      attemptBand: bandAttempt(1),
-      durationBand: bandDuration(Date.now() - startedAt),
-      result: "passed",
-      misconceptionTags: [...lab.misconceptionTags],
-      usedHint: hintOpen,
-    });
-    setStatus("已记录“我已在本地运行”的自我声明；只保存知识点、结果与时间区间，不保存代码或输出。");
+  function resetDraft(): void {
+    setSource(lab.starter);
+    setStdin(lab.stdin);
+    setResult(undefined);
+    setLocalDiagnostics([]);
+    setRunState("idle");
+    setActiveTab("console");
+    setSaved(false);
   }
 
-  function checkBrowserBoundary() {
-    if (preflight.passed) {
-      setStatus("Java 17 单文件边界检查通过。浏览器 Java 运行时尚未通过独立验证，因此不会上传或执行你的代码；可下载到本机 JDK 17 运行。");
+  function stopRun(): void {
+    abortRef.current?.abort();
+    setRunState("cancelled");
+  }
+
+  async function runCode(): Promise<void> {
+    if (busy || runner !== "available") return;
+    setRunState("validating");
+    setResult(undefined);
+    const preflight = preflightJava17SingleFile(source);
+    setLocalDiagnostics([...preflight.diagnostics]);
+    if (!preflight.passed) {
+      setRunState("failed");
+      setActiveTab("problems");
       return;
     }
-    const firstFailure = preflight.checks.find((check) => !check.passed);
-    setStatus(`尚不能进入浏览器实验候选范围：${firstFailure?.detail ?? "请检查源码。"} 代码始终只留在当前浏览器。`);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setRunState("compiling");
+    setActiveTab("console");
+    const runningTimer = window.setTimeout(() => setRunState("running"), 450);
+    try {
+      const response = await fetch("/api/java/run", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ source, stdin, labId: lab.id }),
+        signal: controller.signal,
+      });
+      const data = await response.json() as JavaRunResult | { error?: string };
+      if (!response.ok || !("status" in data)) {
+        throw new Error("error" in data ? data.error : "Java 沙箱暂时不可用。");
+      }
+      setResult(data);
+      setLocalDiagnostics([]);
+      setRunState(data.status === "success" ? "success" : "failed");
+      setActiveTab(data.status === "compile_error" ? "problems" : "console");
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setResult({
+        status: "internal_error",
+        statusLabel: "执行服务异常",
+        stdout: "",
+        stderr: error instanceof Error ? error.message : "Java 沙箱暂时不可用。",
+        diagnostics: [],
+        truncated: false,
+      });
+      setRunState("failed");
+      setActiveTab("console");
+    } finally {
+      window.clearTimeout(runningTimer);
+      abortRef.current = undefined;
+    }
   }
+
+  function editorKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
+      void runCode();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    event.preventDefault();
+    const target = event.currentTarget;
+    const next = `${source.slice(0, target.selectionStart)}  ${source.slice(target.selectionEnd)}`;
+    const cursor = target.selectionStart + 2;
+    setSource(next);
+    setSaved(false);
+    requestAnimationFrame(() => target.setSelectionRange(cursor, cursor));
+  }
+
+  const consoleText = result
+    ? [result.stdout, result.stderr].filter(Boolean).join(result.stdout && result.stderr ? "\n" : "")
+    : "运行后，标准输出和异常信息会显示在这里。";
 
   return (
     <section className="java-lab" aria-labelledby={`lab-${lab.id}`}>
-      <p className="eyebrow">Browser Lab · 浏览器实验模式</p>
-      <h2 id={`lab-${lab.id}`}>最小实验：{lab.title}</h2>
-      <p>{lab.environment.promise} 本实验不承诺 Java 25、Maven、JUnit 或多文件项目的浏览器运行。</p>
-      <p className="muted">{lab.environment.privacy}</p>
-      <div className="lab-contract">
-        <span>Lab {lab.id} v{lab.version}</span><span>Java {lab.environment.javaVersion}</span><span>运行上限 {lab.limits.runMs / 1000}s</span><span>{opfsSupported ? "OPFS 本地保存可用" : "OPFS 不可用：可下载"}</span>
-      </div>
-      <textarea
-        className="lab-editor"
-        aria-label="Java 源码编辑器"
-        value={source}
-        onChange={(event) => setSource(event.target.value)}
-        spellCheck={false}
-      />
-      <section className={`lab-preflight ${preflight.passed ? "is-ready" : "is-blocked"}`} aria-label="Java 17 浏览器实验预检">
-        <div>
-          <p className="eyebrow">运行前检查</p>
-          <strong>{preflight.passed ? "源码符合 Java 17 单文件实验边界" : "先修复边界问题，再等待运行时验证"}</strong>
-          <p>这不是编译结果。只有 Java 17 兼容运行时通过独立验证后，才会显示“在浏览器运行”。</p>
+      <header className="lab-header">
+        <div className="lab-title">
+          <p className="eyebrow">Java Playground</p>
+          <h2 id={`lab-${lab.id}`}>{lab.title}</h2>
         </div>
-        <button type="button" className="button primary" onClick={checkBrowserBoundary}>检查可运行性</button>
-      </section>
-      <ul className="lab-checks" aria-label="Java 17 兼容性检查结果">
-        {preflight.checks.map((check) => <li key={check.id} className={check.passed ? "is-passed" : "is-failed"}><span aria-hidden="true">{check.passed ? "✓" : "!"}</span><span><strong>{check.label}</strong>{check.detail}</span></li>)}
-      </ul>
-      <div className="lab-actions">
-        <button type="button" className="button" onClick={() => void saveLocal()}>仅本机保存</button>
-        <button type="button" className="button ghost" onClick={() => download("Main.java", source, "text/x-java-source")}>下载 .java</button>
-        <button type="button" className="button ghost" onClick={() => { download("Main.java", source, "text/x-java-source"); download("pom.xml", pom, "application/xml"); download("README.md", readme); }}>下载本地 IDE / Maven 骨架</button>
-        <button type="button" className="button ghost" onClick={recordLocalVerification}>我已在本地运行</button>
+        <div className="lab-toolbar">
+          <span className={`lab-runtime is-${runner}`}><i aria-hidden="true" />Java 17</span>
+          {busy ? (
+            <button type="button" className="lab-run is-stop" onClick={stopRun}>停止</button>
+          ) : (
+            <button type="button" className="lab-run" disabled={runner !== "available"} onClick={() => void runCode()}>
+              运行代码
+            </button>
+          )}
+          <details className="lab-more">
+            <summary aria-label="更多操作" title="更多操作">•••</summary>
+            <div>
+              <button type="button" onClick={saveDraft}>保存到浏览器</button>
+              <button type="button" onClick={() => downloadSource(source)}>下载 Main.java</button>
+              <button type="button" onClick={resetDraft}>恢复初始代码</button>
+            </div>
+          </details>
+        </div>
+      </header>
+
+      <div className="lab-workspace">
+        <section className="lab-source" aria-label="源码编辑器">
+          <div className="lab-pane-bar">
+            <span className="is-active"><i aria-hidden="true" />Main.java{saved ? "" : " *"}</span>
+            <small>{lines.length} 行</small>
+          </div>
+          <div className="lab-code-editor">
+            <div className="lab-gutter" aria-hidden="true" ref={gutterRef}>
+              {lines.map((_, index) => (
+                <span key={index} className={diagnostics.some((item) => item.line === index + 1) ? "has-error" : ""}>
+                  {index + 1}
+                </span>
+              ))}
+            </div>
+            <textarea
+              aria-label="Main.java 源码"
+              value={source}
+              onChange={(event) => { setSource(event.target.value); setSaved(false); }}
+              onKeyDown={editorKeyDown}
+              onScroll={(event) => { if (gutterRef.current) gutterRef.current.scrollTop = event.currentTarget.scrollTop; }}
+              spellCheck={false}
+            />
+          </div>
+        </section>
+
+        <aside className="lab-io" aria-label="输入与运行结果">
+          <section className="lab-stdin">
+            <div className="lab-pane-bar"><span>标准输入</span><small>stdin</small></div>
+            <textarea
+              aria-label="标准输入"
+              value={stdin}
+              onChange={(event) => setStdin(event.target.value)}
+              placeholder="程序不需要输入"
+              spellCheck={false}
+            />
+          </section>
+          <section className="lab-result">
+            <div className="lab-result-tabs" role="tablist" aria-label="运行结果">
+              {(["console", "problems", "expected"] as const).map((tab) => {
+                const labels = { console: "控制台", problems: `问题${diagnostics.length ? ` ${diagnostics.length}` : ""}`, expected: "预期" };
+                return <button key={tab} type="button" role="tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)}>{labels[tab]}</button>;
+              })}
+            </div>
+            <div className="lab-result-body" role="tabpanel">
+              {activeTab === "console" && <pre className={result?.stderr && !result.stdout ? "is-error" : ""}>{consoleText}</pre>}
+              {activeTab === "problems" && (
+                diagnostics.length ? <ol className="lab-problems">
+                  {diagnostics.map((item, index) => <li key={`${item.line}-${index}`}>
+                    <strong>{item.line ? `第 ${item.line} 行${item.column ? `:${item.column}` : ""}` : "编译问题"}</strong>
+                    <span>{item.message}</span>
+                  </li>)}
+                </ol> : <p className="lab-empty">当前没有编译问题。</p>
+              )}
+              {activeTab === "expected" && (
+                <div className="lab-expected">
+                  <p>{lab.assertions[0]?.description}</p>
+                  <pre>{expected}</pre>
+                  {result?.status === "success" && <strong className={passed ? "is-passed" : "is-mismatch"}>{passed ? "输出一致" : "输出与预期不一致"}</strong>}
+                </div>
+              )}
+            </div>
+          </section>
+        </aside>
       </div>
-      <p className="lab-status" role="status">{status}</p>
-      <details open={hintOpen} onToggle={(event) => setHintOpen((event.target as HTMLDetailsElement).open)}>
-        <summary>错因提示（不分析或上传你的代码）</summary>
-        <p>先检查：{lab.misconceptionTags.join(" · ")}。修复后用本实验的预期输出重新验证。</p>
-        <ul>{lab.assertions.map((assertion) => <li key={assertion.id}>{assertion.description}：<code>{assertion.expectedOutput ?? "见题目"}</code></li>)}</ul>
-      </details>
-      <p className="muted">知识点：{lab.knowledgePoints.join(" · ")}。项目增量：{lab.projectIncrement}。建议复习：第 {lab.reviewAfterDays.join(" / ")} 天。</p>
-      <LearningDataControls />
+
+      <footer className="lab-statusbar" aria-live="polite">
+        <span className={`is-${runState}`}><i aria-hidden="true" />{statusCopy(runState, runner)}</span>
+        <span>单文件 · {lab.limits.runMs / 1_000}s · 128 MB</span>
+        {result?.timeMs !== undefined && <span>{result.timeMs} ms</span>}
+      </footer>
+      {runner === "unavailable" && (
+        <p className="lab-unavailable">当前页面已具备完整编译器交互，但安全执行服务尚未接通；配置独立 Java 沙箱后才会开放运行按钮。</p>
+      )}
     </section>
   );
 }

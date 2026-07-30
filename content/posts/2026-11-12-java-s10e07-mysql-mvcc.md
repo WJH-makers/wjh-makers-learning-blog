@@ -137,12 +137,12 @@ INSERT INTO member (phone, name) VALUES ('13812345678', '阿零');
 ERROR 1062 (23000): Duplicate entry '13812345678' for key 'member.uk_phone'
 ```
 
-阿零回头再 SELECT——**还是查不到**（RR 的第一次一致性读建立 ReadView，之后的快照读复用它，B 的提交对他隐身），可 INSERT 是当前读，一头撞上 B 刚写进唯一索引的记录。Java 侧 JDBC 抛 `SQLIntegrityConstraintViolationException`,消息一模一样。
+阿零回头再 SELECT——**还是查不到**（RR 的第一次一致性读建立 ReadView,之后的快照读复用它,B 的提交对他隐身）,可 INSERT 是当前读,一头撞上 B 刚写进唯一索引的记录。Java 侧 JDBC 抛 `SQLIntegrityConstraintViolationException`,消息一模一样。
 
 为什么「查了再插」防不住?数据库版 **check-then-act 竞态**(回看第 79 话):SELECT 到 INSERT 之间没人替你冻结世界——隔离级别只保证「读得一致」,不保证「读完别人不动」。守门员只有**唯一约束**。
 
 > **🎯 面试直击**:InnoDB 的 RR 怎么防幻读?
-> 两条腿:**快照读靠 MVCC**——RR 中通常由**第一次一致性读**建立并复用 ReadView，后来者插入的行不可见；`START TRANSACTION WITH CONSISTENT SNAPSHOT` 可在事务开始时显式建立快照。**当前读靠临键锁(Next-Key Lock=行锁+间隙锁)**——记录连同「缝隙」一起锁,不许往范围里插。追问点:先快照读再 `FOR UPDATE`,结果可能不同——非 RR 破功,两种读本就看不同的世界。
+> 两条腿:**快照读靠 MVCC**——RR 中通常由**第一次一致性读**建立并复用 ReadView,后来者插入的行不可见;`START TRANSACTION WITH CONSISTENT SNAPSHOT` 可在事务开始时显式建立快照。**当前读靠临键锁(Next-Key Lock=行锁+间隙锁)**——记录连同「缝隙」一起锁,不许往范围里插。追问点:先快照读再 `FOR UPDATE`,结果可能不同——非 RR 破功,两种读本就看不同的世界。
 
 ---
 
@@ -228,64 +228,64 @@ class MemberServiceTest {
 ### 选择题(10 道)
 
 1. MVCC 中,undo 版本链的「糖葫芦」结构依赖哪两个隐藏列?
-- A) row_id 和 db_ver
-- B) trx_id 和 roll_pointer
-- C) create_time 和 update_time
-- D) lock_bit 和 version_num
+   - A) row_id 和 db_ver
+   - B) trx_id 和 roll_pointer
+   - C) create_time 和 update_time
+   - D) lock_bit 和 version_num
 
 2. InnoDB 默认的隔离级别是?
-- A) READ UNCOMMITTED
-- B) READ COMMITTED(RC)
-- C) REPEATABLE READ(RR)
-- D) SERIALIZABLE
+   - A) READ UNCOMMITTED
+   - B) READ COMMITTED(RC)
+   - C) REPEATABLE READ(RR)
+   - D) SERIALIZABLE
 
 3. 「快照读」和「当前读」的区别是?
-- A) 快照读是 `SELECT`,当前读是 `UPDATE`/`DELETE`
-- B) 快照读读的是 ReadView 裁定的版本(不加锁),当前读读最新版本并加锁
-- C) 快照读在读已提交级别生效,当前读在可重复读级别生效
-- D) 快照读性能更好,当前读结果更准确(两个永远不同)
+   - A) 快照读是 `SELECT`,当前读是 `UPDATE`/`DELETE`
+   - B) 快照读读的是 ReadView 裁定的版本(不加锁),当前读读最新版本并加锁
+   - C) 快照读在读已提交级别生效,当前读在可重复读级别生效
+   - D) 快照读性能更好,当前读结果更准确(两个永远不同)
 
 4. ACID 中,持久性(D)由什么保证?
-- A) undo log
-- B) 锁 + MVCC
-- C) redo log + binlog(两阶段提交绑定)
-- D) 外键约束
+   - A) undo log
+   - B) 锁 + MVCC
+   - C) redo log + binlog(两阶段提交绑定)
+   - D) 外键约束
 
 5. RR 隔离级别下,ReadView 的生成时机是?
-- A) 每条 SELECT 语句执行时新生成一个
-- B) 整个事务开始时生成,之后所有 SELECT 共用同一份
-- C) 每次 UPDATE 时生成
-- D) 由用户手动指定
+   - A) 每条 SELECT 语句执行时新生成一个
+   - B) 整个事务开始时生成,之后所有 SELECT 共用同一份
+   - C) 每次 UPDATE 时生成
+   - D) 由用户手动指定
 
 6. 「查了再插」在 RR 隔离级别下也会出现 Duplicate,原因是?
-- A) SELECT 是快照读,看到的是「开始时的世界」;中间别人提交了,SLEECT 看不见但 INSERT 的当前读撞到了
-- B) MySQL 不支持唯一约束
-- C) 索引失效导致的
-- D) 事务未提交
+   - A) SELECT 是快照读,看到的是「开始时的世界」;中间别人提交了,SLEECT 看不见但 INSERT 的当前读撞到了
+   - B) MySQL 不支持唯一约束
+   - C) 索引失效导致的
+   - D) 事务未提交
 
 7. 以下关于 InnoDB 行锁的描述,正确的是?
-- A) 行锁直接锁在数据行上
-- B) 行锁加在**索引记录**上;若 WHERE 条件无索引,退化为锁全表
-- C) 行锁只在主键索引上加
-- D) 行锁不会产生死锁
+   - A) 行锁直接锁在数据行上
+   - B) 行锁加在**索引记录**上;若 WHERE 条件无索引,退化为锁全表
+   - C) 行锁只在主键索引上加
+   - D) 行锁不会产生死锁
 
 8. 死锁的两个必要条件是?
-- A) 两个事务同时修改同一行
-- B) 两个事务以不同顺序获取同一组资源,形成循环等待
-- C) 两个事务都使用 `SELECT FOR UPDATE`
-- D) 隔离级别是 SERIALIZABLE
+   - A) 两个事务同时修改同一行
+   - B) 两个事务以不同顺序获取同一组资源,形成循环等待
+   - C) 两个事务都使用 `SELECT FOR UPDATE`
+   - D) 隔离级别是 SERIALIZABLE
 
 9. 以下关于「幂等注册」的描述,**错误**的是?
-- A) 直接 INSERT,捕获 Duplicate 异常后转查询已存在的 id
-- B) 可替代「先 SELECT 再 INSERT」的并发不安全写法
-- C) 必须依赖唯一约束(uk_phone)作为守门员
-- D) 幂等注册可以不用唯一约束,仅靠 SELECT 防重
+   - A) 直接 INSERT,捕获 Duplicate 异常后转查询已存在的 id
+   - B) 可替代「先 SELECT 再 INSERT」的并发不安全写法
+   - C) 必须依赖唯一约束(uk_phone)作为守门员
+   - D) 幂等注册可以不用唯一约束,仅靠 SELECT 防重
 
 10. RR 隔离级别防幻读靠的是?
-- A) 只靠 MVCC 快照读
-- B) 快照读靠 MVCC(全事务一张 ReadView,新插入行不可见) + 当前读靠临键锁(记录锁 + 间隙锁,不许往范围里插)
-- C) 只靠间隙锁
-- D) InnoDB 的 RR 级别无法防幻读
+   - A) 只靠 MVCC 快照读
+   - B) 快照读靠 MVCC(全事务一张 ReadView,新插入行不可见) + 当前读靠临键锁(记录锁 + 间隙锁,不许往范围里插)
+   - C) 只靠间隙锁
+   - D) InnoDB 的 RR 级别无法防幻读
 
 ### 解答题(5 道)
 
@@ -309,9 +309,9 @@ class MemberServiceTest {
 >
 > 4-C。redo log(物理日志,崩溃恢复) + binlog(逻辑日志,主从复制),两阶段提交使二者一致。★举一反三:A 靠 undo,C 靠上面三位联合保障,I 靠锁+MVCC。
 >
-> 5-B。RR 下通常由第一次一致性读生成一张 ReadView，之后的快照读共用；`START TRANSACTION WITH CONSISTENT SNAPSHOT` 可提前生成。RC 下每条一致性读都新建 ReadView。★举一反三:因为 RR 一张到底,所以「可重复读」;因为 RC 每 SELECT 都刷新,所以能看到别人提交的更新(不可重复读)。
+> 5-B。RR 下通常由第一次一致性读生成一张 ReadView,之后的快照读共用;`START TRANSACTION WITH CONSISTENT SNAPSHOT` 可提前生成。RC 下每条一致性读都新建 ReadView。★举一反三:因为 RR 一张到底,所以「可重复读」;因为 RC 每 SELECT 都刷新,所以能看到别人提交的更新(不可重复读)。
 >
-> 6-A。RR 的第一次一致性读生成 ReadView，中途别人提交的数据对后续快照读不可见，但 INSERT 是当前读,要写数据,发现唯一索引已有记录→Duplicate。★举一反三:隔离性只保证「读得一致」,不保证「读后别人不动」。唯一约束才是防重写入的守门员。
+> 6-A。RR 的第一次一致性读生成 ReadView,中途别人提交的数据对后续快照读不可见,但 INSERT 是当前读,要写数据,发现唯一索引已有记录→Duplicate。★举一反三:隔离性只保证「读得一致」,不保证「读后别人不动」。唯一约束才是防重写入的守门员。
 >
 > 7-B。锁加在索引记录上。`UPDATE … WHERE name='阿零'` 若 name 无索引,无法定位到某一行,只能全表每行的索引记录逐条上锁≈锁全表。★举一反三:这解释了为什么 WHERE 条件列必须有索引——不仅为查询快,也为锁粒度合理。
 >
@@ -351,4 +351,10 @@ class MemberServiceTest {
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

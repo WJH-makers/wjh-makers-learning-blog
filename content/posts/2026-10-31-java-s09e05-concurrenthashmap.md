@@ -273,13 +273,13 @@ JUnit 质检员:「证据呢?——十万单一单不少,这才叫证据。」
 ### 选择题(10 道)
 
 1. 两个线程并发向 `HashMap` put 不同键值对,最可能发生的故障是?
-- A) 抛出 `ConcurrentModificationException`　　B) 数据丢失——put 过程中链表/红黑树被并发破坏,导致某些条目不可达被「丢掉」　　C) 死锁　　D) 内存溢出
+   - A) 抛出 `ConcurrentModificationException`　　B) 数据丢失——put 过程中链表/红黑树被并发破坏,导致某些条目不可达被「丢掉」　　C) 死锁　　D) 内存溢出
 
 2. `ConcurrentHashMap` 在 JDK 7 和 JDK 8 中的实现机制,以下哪个说法正确?
-- A) JDK 7 用 `synchronized` + 分段锁(16 个 Segment),JDK 8 用 CAS + 桶头 `synchronized`　　B) JDK 7 用分段锁(Segment extends ReentrantLock),JDK 8 用 CAS 放桶头 + 桶头元素 `synchronized`　　C) JDK 7 和 JDK 8 都用分段锁,没变化　　D) JDK 8 完全无锁,纯 CAS 实现
+   - A) JDK 7 用 `synchronized` + 分段锁(16 个 Segment),JDK 8 用 CAS + 桶头 `synchronized`　　B) JDK 7 用分段锁(Segment extends ReentrantLock),JDK 8 用 CAS 放桶头 + 桶头元素 `synchronized`　　C) JDK 7 和 JDK 8 都用分段锁,没变化　　D) JDK 8 完全无锁,纯 CAS 实现
 
 3. `ConcurrentHashMap` 为什么不允许 null 键和 null 值?
-- A) `HashMap` 也不允许,是 Map 接口的通用约定　　B) 并发环境下 null 有二义性——`get(key)` 返回 null,到底是 key 不存在还是 value 是 null?如果允许 null,`containsKey` 的判断就不可靠了;且在并发下 put 和 get 交替,这个二义性会放大　　C) 因为 CAS 操作不能处理 null　　D) 为了和 `Hashtable` 保持一致
+   - A) `HashMap` 也不允许,是 Map 接口的通用约定　　B) 并发环境下 null 有二义性——`get(key)` 返回 null,到底是 key 不存在还是 value 是 null?如果允许 null,`containsKey` 的判断就不可靠了;且在并发下 put 和 get 交替,这个二义性会放大　　C) 因为 CAS 操作不能处理 null　　D) 为了和 `Hashtable` 保持一致
 
 4. 以下哪个操作是原子的(不需要额外同步)?
 
@@ -290,13 +290,13 @@ ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
 - A) `map.get("key")`　　B) `if (map.get("key") == null) { map.put("key", 1); }`　　C) `map.replace("key", map.get("key") + 1)`　　D) 以上所有操作都是原子的
 
 5. `computeIfAbsent` 和 `putIfAbsent` 的核心区别是什么?
-- A) 没有区别,只是方法名不同　　B) `putIfAbsent` 传的是具体值,`computeIfAbsent` 传的是 Function——只有当 key 不存在时才会调用 Function 计算值,可以避免「先算出值→发现 key 已存在→值浪费」的问题　　C) `computeIfAbsent` 比 `putIfAbsent` 快　　D) `putIfAbsent` 是原子的,`computeIfAbsent` 不是
+   - A) 没有区别,只是方法名不同　　B) `putIfAbsent` 传的是具体值,`computeIfAbsent` 传的是 Function——只有当 key 不存在时才会调用 Function 计算值,可以避免「先算出值→发现 key 已存在→值浪费」的问题　　C) `computeIfAbsent` 比 `putIfAbsent` 快　　D) `putIfAbsent` 是原子的,`computeIfAbsent` 不是
 
 6. `ConcurrentHashMap` 迭代器的「弱一致性」指的是?
-- A) 迭代过程中会抛出 `ConcurrentModificationException`　　B) 迭代器遍历的是创建迭代器那一刻或某一时刻的快照,遍历期间其他线程的修改可能不会被反映到迭代结果中,但不会抛异常　　C) 迭代器每次 `next()` 都会重新读取最新值　　D) 迭代器的结果总是精确反映当前 map 的状态
+   - A) 迭代过程中会抛出 `ConcurrentModificationException`　　B) 迭代器遍历的是创建迭代器那一刻或某一时刻的快照,遍历期间其他线程的修改可能不会被反映到迭代结果中,但不会抛异常　　C) 迭代器每次 `next()` 都会重新读取最新值　　D) 迭代器的结果总是精确反映当前 map 的状态
 
 7. `CopyOnWriteArrayList` 适合哪种场景?
-- A) 读多写多、需要实时一致性的场景　　B) 读多写极少(如监听器列表、路由表)——写时复制整个数组,读写不互斥,适合「遍历远多于修改」的场景　　C) 所有并发 List 场景,是 `ArrayList` 的万能替代　　D) 需要频繁在列表中间插入删除的场景
+   - A) 读多写多、需要实时一致性的场景　　B) 读多写极少(如监听器列表、路由表)——写时复制整个数组,读写不互斥,适合「遍历远多于修改」的场景　　C) 所有并发 List 场景,是 `ArrayList` 的万能替代　　D) 需要频繁在列表中间插入删除的场景
 
 8. 以下代码在多线程下同时执行,`compute` 方法是原子的吗?
 
@@ -307,10 +307,10 @@ map.compute("counter", (k, v) -> v == null ? 1 : v + 1);
 - A) 是原子的——`compute` 内部锁住整个桶,Function 在桶锁的保护下执行,整个计算替换过程原子　　B) 不是原子的,Function 的执行不在锁保护范围内　　C) 是原子的但需要配合 `synchronized`　　D) 原子性取决于 key 的 hashCode 分布
 
 9. 关于 `synchronized` 的适用场景,以下哪项是正确的?
-- A) 全部替换为 `BlockingQueue`　　B) 多次写比较少,每次写复制整个底层数组——适合「读多写极少」,不适合「读多写多」　　C) `CopyOnWriteArrayList` 的写操作是 O(1)　　D) `CopyOnWriteArrayList` 的迭代器是 fail-fast 的
+   - A) 全部替换为 `BlockingQueue`　　B) 多次写比较少,每次写复制整个底层数组——适合「读多写极少」,不适合「读多写多」　　C) `CopyOnWriteArrayList` 的写操作是 O(1)　　D) `CopyOnWriteArrayList` 的迭代器是 fail-fast 的
 
 10. 假设你用一个 `ConcurrentHashMap<String, Integer>` 实现商品库存,以下哪种写法能**原子地**实现「扣减:仅当 key 存在且 value > 0 时减 1」?
-- A) `if (map.get("A") > 0) { map.put("A", map.get("A") - 1); }`　　B) `map.computeIfPresent("A", (k, v) -> v > 0 ? v - 1 : v);`　　C) `map.replace("A", map.get("A"), map.get("A") - 1);`　　D) `synchronized (map) { map.get("A"); map.put(...); }`
+   - A) `if (map.get("A") > 0) { map.put("A", map.get("A") - 1); }`　　B) `map.computeIfPresent("A", (k, v) -> v > 0 ? v - 1 : v);`　　C) `map.replace("A", map.get("A"), map.get("A") - 1);`　　D) `synchronized (map) { map.get("A"); map.put(...); }`
 
 ### 解答题(5 道)
 
@@ -385,4 +385,10 @@ counters.put("qps", counters.get("qps") + 1);
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

@@ -57,6 +57,7 @@ const PREVIEW = 5;
 
 export default function Comments({ slug, initial, enabled }: { slug: string; initial: Comment[]; enabled: boolean }) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const commentingEnabled = enabled && Boolean(siteKey);
   const [state, action, pending] = useActionState<SubmitResult | null, FormData>(postComment, null);
   const [list, setList] = useState<Comment[]>(initial);
   const [len, setLen] = useState(0);
@@ -67,7 +68,7 @@ export default function Comments({ slug, initial, enabled }: { slug: string; ini
   // 多数读者不滚到页尾,每篇文章省一个第三方脚本与 iframe。
   const [tsReady, setTsReady] = useState(false);
   useEffect(() => {
-    if (!siteKey || tsReady) return;
+    if (!commentingEnabled || tsReady) return;
     const el = sectionRef.current;
     if (!el || typeof IntersectionObserver === "undefined") {
       setTsReady(true);
@@ -81,7 +82,7 @@ export default function Comments({ slug, initial, enabled }: { slug: string; ini
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [siteKey, tsReady]);
+  }, [commentingEnabled, tsReady]);
 
   useEffect(() => {
     if (state?.ok && state.comment.body) {
@@ -131,7 +132,7 @@ export default function Comments({ slug, initial, enabled }: { slug: string; ini
         </button>
       )}
 
-      {enabled ? <form ref={formRef} action={action} className="comment-form">
+      {commentingEnabled ? <form ref={formRef} action={action} className="comment-form">
         <input type="hidden" name="slug" value={slug} />
         <input type="text" name="website" tabIndex={-1} autoComplete="off" className="comment-honeypot" aria-hidden="true" />
         <input name="name" aria-label="昵称" placeholder="昵称(免登录,不收集邮箱)" maxLength={24} required className="comment-input" />
@@ -162,11 +163,9 @@ export default function Comments({ slug, initial, enabled }: { slug: string; ini
           </span>
           <span className="comment-privacy">🔒 匿名发言 · 不存邮箱 · IP 仅加密用于反刷</span>
         </div>
-      </form> : (
-        <p className="comment-empty">评论功能正在建设；发现勘误请留意后续站内反馈入口。</p>
-      )}
+      </form> : <p className="comment-empty">评论默认关闭。开放时将要求通过人机验证，且所有提交均受频率与内容限制。</p>}
 
-      {siteKey && tsReady && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />}
+      {commentingEnabled && siteKey && tsReady && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />}
     </section>
   );
 }

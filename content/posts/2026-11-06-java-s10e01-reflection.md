@@ -217,22 +217,22 @@ class ReflectionTest {
 ### 选择题(10 道)
 
 1. 获取 `Class` 对象有三种方式,以下哪种**不会**触发类的初始化?
-- A) `Class.forName("OrderService")`
-- B) `OrderService.class`
-- C) `new OrderService().getClass()`
-- D) `ClassLoader.loadClass("OrderService")`
+   - A) `Class.forName("OrderService")`
+   - B) `OrderService.class`
+   - C) `new OrderService().getClass()`
+   - D) `ClassLoader.loadClass("OrderService")`
 
 2. `getMethods()` 和 `getDeclaredMethods()` 的区别,描述正确的是?
-- A) `getMethods()` 返回本类的全部方法(含 private)
-- B) `getDeclaredMethods()` 返回 public 方法及其从父类继承的方法
-- C) `getMethods()` 返回 public 方法(含继承),`getDeclaredMethods()` 返回本类全部方法(含 private、不含继承)
-- D) 两者返回的结果完全相同,仅命名不同
+   - A) `getMethods()` 返回本类的全部方法(含 private)
+   - B) `getDeclaredMethods()` 返回 public 方法及其从父类继承的方法
+   - C) `getMethods()` 返回 public 方法(含继承),`getDeclaredMethods()` 返回本类全部方法(含 private、不含继承)
+   - D) 两者返回的结果完全相同,仅命名不同
 
 3. `setAccessible(true)` 的作用是?
-- A) 将 private 字段永久改为 public
-- B) 跳过**该处**的访问检查,允许反射调用私有成员
-- C) 修改字节码,消除 final 修饰符
-- D) 关闭整个 JVM 的安全管理器
+   - A) 将 private 字段永久改为 public
+   - B) 跳过**该处**的访问检查,允许反射调用私有成员
+   - C) 修改字节码,消除 final 修饰符
+   - D) 关闭整个 JVM 的安全管理器
 
 4. 以下代码中,`m.invoke(svc, new BigDecimal("18.00"))` 返回的结果最接近?
 ```java
@@ -247,40 +247,40 @@ var svc = OrderService.class.getDeclaredConstructor().newInstance();
 - D) 抛出 `NoSuchMethodException`
 
 5. 用反射调用方法时,参数需封装到 `Object[]` 中。对于 `int` 类型的参数,会发生什么?
-- A) 直接传入,无额外开销
-- B) 自动装箱为 `Integer`,再放进 `Object[]`
-- C) 编译错误,反射不支持基本类型
-- D) JIT 自动内联,消除装箱开销
+   - A) 直接传入,无额外开销
+   - B) 自动装箱为 `Integer`,再放进 `Object[]`
+   - C) 编译错误,反射不支持基本类型
+   - D) JIT 自动内联,消除装箱开销
 
 6. 以下关于反射性能慢的描述,**哪个是错误**的?
-- A) 每次调用需校验访问权限与参数匹配
-- B) 基本类型参数需装箱,产生对象分配
-- C) 反射调用对 JIT 是黑盒,无法内联
-- D) 反射调用比直接调用慢,但每次都慢 1000 倍以上
+   - A) 每次调用需校验访问权限与参数匹配
+   - B) 基本类型参数需装箱,产生对象分配
+   - C) 反射调用对 JIT 是黑盒,无法内联
+   - D) 反射调用比直接调用慢,但每次都慢 1000 倍以上
 
 7. 某框架需要在模块化应用中通过反射访问一个未 `opens` 的模块中的私有方法,运行时会抛出?
-- A) `ClassNotFoundException`
-- B) `NoSuchMethodException`
-- C) `InaccessibleObjectException`
-- D) `IllegalArgumentException`
+   - A) `ClassNotFoundException`
+   - B) `NoSuchMethodException`
+   - C) `InaccessibleObjectException`
+   - D) `IllegalArgumentException`
 
 8. 阿零用反射获取了 `OrderService.class` 的 `memberRate` 字段,然后执行 `f.set(svc, new BigDecimal("0.50"))`。第二次获取同一个 Class 对象上的同一个 Field 再 `get(svc)`,结果是?
-- A) 0.88(原始值,反射修改不持久)
-- B) 0.50(被修改后的值)
-- C) null(反射修改仅在当前方法有效)
-- D) 抛出 `IllegalAccessException`
+   - A) 0.88(原始值,反射修改不持久)
+   - B) 0.50(被修改后的值)
+   - C) null(反射修改仅在当前方法有效)
+   - D) 抛出 `IllegalAccessException`
 
 9. 以下场景中,**不适合**使用反射的是?
-- A) JUnit 在启动时扫描带 `@Test` 的方法
-- B) Jackson 将 JSON 字段映射到 POJO 属性
-- C) 电商下单服务在每次请求时用反射调用扣库存方法
-- D) Spring 在容器启动时根据 `@Component` 扫描并实例化 Bean
+   - A) JUnit 在启动时扫描带 `@Test` 的方法
+   - B) Jackson 将 JSON 字段映射到 POJO 属性
+   - C) 电商下单服务在每次请求时用反射调用扣库存方法
+   - D) Spring 在容器启动时根据 `@Component` 扫描并实例化 Bean
 
 10. 已知框架在启动时用反射扫描注解并缓存 `Method` 对象。以下关于这种设计模式的描述,最准确的是?
-- A) 因为缓存了 `Method`,反射零开销,后续调用与直接调用一致
-- B) 缓存避免了每次重新查找,但 `invoke` 本身的校验/装箱/不可内联开销仍在
-- C) 缓存后 JIT 可以跨反射调用做内联
-- D) 缓存 `Method` 等价于把反射转成了 `MethodHandle`,性能完全一致
+   - A) 因为缓存了 `Method`,反射零开销,后续调用与直接调用一致
+   - B) 缓存避免了每次重新查找,但 `invoke` 本身的校验/装箱/不可内联开销仍在
+   - C) 缓存后 JIT 可以跨反射调用做内联
+   - D) 缓存 `Method` 等价于把反射转成了 `MethodHandle`,性能完全一致
 
 ### 解答题(5 道)
 
@@ -332,4 +332,10 @@ var svc = OrderService.class.getDeclaredConstructor().newInstance();
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

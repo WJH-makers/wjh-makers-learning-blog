@@ -195,7 +195,7 @@ void parses_valid_choice() {
 
 ## 十一、下一话悬念
 
-现在顾客的名字和备注都只是「一整行字符串」，可要在小票上写「张三 的 美式(少冰)」，还想把好几行拼成一张完整小票——阿零随手用 `==` 比了两个名字,结果字明明一样却判成「不是同一个人」。
+现在顾客的名字和备注都只是「一整行字符串」,可要在小票上写「张三 的 美式(少冰)」,还想把好几行拼成一张完整小票——阿零随手用 `==` 比了两个名字,结果字明明一样却判成「不是同一个人」。
 
 > 下一话《名称与备注:String》:String 为什么**不可变**、`==` 和 `equals` 到底比什么、`+` 拼接在现代 JDK 到底慢不慢、什么时候才真该用 `StringBuilder`。
 
@@ -242,4 +242,10 @@ void parses_valid_choice() {
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图见 `/java`。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

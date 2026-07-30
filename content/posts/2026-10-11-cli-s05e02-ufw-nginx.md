@@ -262,34 +262,34 @@ $ curl -s -o /dev/null -w "%{http_code}\n" http://203.0.113.10
 ### 选择题(10 道)
 
 1. `ufw` 是什么工具的简称?
-- A) Universal Firewall　B) Uncomplicated Firewall(简化防火墙,iptables 的前端)　C) User File Watcher　D) Unix Forward Web
+   - A) Universal Firewall　B) Uncomplicated Firewall(简化防火墙,iptables 的前端)　C) User File Watcher　D) Unix Forward Web
 
 2. 第一次启用 `ufw` 前,**必须**先执行什么操作?
-- A) 重启服务器　B) 允许 SSH 端口(`ufw allow ssh` 或 `ufw allow 22`),否则启用后 SSH 会被断开　C) 安装 iptables　D) 关闭所有应用
+   - A) 重启服务器　B) 允许 SSH 端口(`ufw allow ssh` 或 `ufw allow 22`),否则启用后 SSH 会被断开　C) 安装 iptables　D) 关闭所有应用
 
 3. nginx 配置中 `server { listen 80; server_name coffee.com; ... }` 的 `server_name` 作用是什么?
-- A) 设置服务器的操作系统主机名　B) 基于域名的虚拟主机匹配(HTTP Host 头匹配)　C) 设置监听 IP　D) 命名 nginx 进程
+   - A) 设置服务器的操作系统主机名　B) 基于域名的虚拟主机匹配(HTTP Host 头匹配)　C) 设置监听 IP　D) 命名 nginx 进程
 
 4. `nginx -t` 命令的作用是什么?
-- A) 启动 nginx　B) 测试配置文件语法是否正确(不实际启动)　C) 显示 nginx 版本　D) 停止 nginx
+   - A) 启动 nginx　B) 测试配置文件语法是否正确(不实际启动)　C) 显示 nginx 版本　D) 停止 nginx
 
 5. `systemctl reload nginx` 和 `systemctl restart nginx` 的关键区别是什么?
-- A) 完全相同　B) `reload` 重载配置文件**不中断现有连接**(优雅重载),`restart` 停止并重新启动(瞬间中断所有连接)　C) `reload` 更快　D) `restart` 不会检查配置文件
+   - A) 完全相同　B) `reload` 重载配置文件**不中断现有连接**(优雅重载),`restart` 停止并重新启动(瞬间中断所有连接)　C) `reload` 更快　D) `restart` 不会检查配置文件
 
 6. nginx 的 `proxy_pass` 指令作用是什么?
-- A) 设置 nginx 的密码　B) 将请求转发(反向代理)到后端应用服务器(如 `http://localhost:3000`)　C) 直接提供静态文件　D) 设置代理服务器地址
+   - A) 设置 nginx 的密码　B) 将请求转发(反向代理)到后端应用服务器(如 `http://localhost:3000`)　C) 直接提供静态文件　D) 设置代理服务器地址
 
 7. 配置了 `ufw allow 80` 后再 `ufw enable`,以下说法**正确**的是?
-- A) 只有 80 端口对外可访问,所有其他端口(包括 22)都被拒绝　B) 所有端口都开放　C) 只有 80 和 22 开放　D) 除了 80,之前配置的其他 allow 规则也生效(如已有的 SSH 规则)
+   - A) 只有 80 端口对外可访问,所有其他端口(包括 22)都被拒绝　B) 所有端口都开放　C) 只有 80 和 22 开放　D) 除了 80,之前配置的其他 allow 规则也生效(如已有的 SSH 规则)
 
 8. nginx 配置文件中缺少一个分号 `;`,nginx 能正常运行吗?
-- A) 能,分号不重要　B) nginx 会使用默认分号位置自动修正　C) `nginx -t` 会报告语法错误并指出具体行号,`reload`/`restart` 会失败　D) nginx 会崩溃且无法启动
+   - A) 能,分号不重要　B) nginx 会使用默认分号位置自动修正　C) `nginx -t` 会报告语法错误并指出具体行号,`reload`/`restart` 会失败　D) nginx 会崩溃且无法启动
 
 9. 为什么生产环境中推荐使用 `reload` 而非 `restart`?
-- A) reload 更快　B) reload 实现零停机(zero-downtime):旧 worker 处理完现有请求后退出,新 worker 加载新配置接收新请求,期间服务不中断　C) restart 会丢失日志　D) reload 是新的命令,restart 已废弃
+   - A) reload 更快　B) reload 实现零停机(zero-downtime):旧 worker 处理完现有请求后退出,新 worker 加载新配置接收新请求,期间服务不中断　C) restart 会丢失日志　D) reload 是新的命令,restart 已废弃
 
 10. 以下关于 ufw 默认策略的说法,**合理**的是?
-- A) 默认允许所有入站和出站连接　B) 默认拒绝所有入站(deny incoming),允许所有出站(allow outgoing)　C) 默认拒绝所有出站和入站　D) ufw 没有默认策略
+   - A) 默认允许所有入站和出站连接　B) 默认拒绝所有入站(deny incoming),允许所有出站(allow outgoing)　C) 默认拒绝所有出站和入站　D) ufw 没有默认策略
 
 ### 解答题(5 道)
 
@@ -333,3 +333,14 @@ $ curl -s -o /dev/null -w "%{http_code}\n" http://203.0.113.10
 > **Q4** 安全工作流:①修改配置前:`sudo cp /etc/nginx/sites-enabled/coffee /tmp/coffee.backup`(备份) ②修改后**不直接 restart** ③`sudo nginx -t`(先测试) ④如果通过:`sudo systemctl reload nginx`(优雅重载) ⑤如果 `-t` 失败:根据错误提示修正,再次 `-t`,直到通过 ⑥**严禁在生产环境下跳过 `-t` 直接 restart/reload** ⑦如果 reload 后发现问题:快速回滚 `sudo cp /tmp/coffee.backup /etc/nginx/sites-enabled/coffee && sudo nginx -t && sudo systemctl reload nginx`。**举一反三:**自动化部署脚本中务必包含 `nginx -t` 检查,失败则回滚+告警。nginx 的 `-T` 大写选项可以输出完整的合并后配置,方便调试 include/继承问题。
 >
 > **Q5** 架构:①防火墙:`ufw default deny incoming && ufw allow 22 && ufw allow 80 && ufw allow 443 && ufw --force enable`。②HTTP→HTTPS:`server { listen 80; server_name coffee.com; return 301 https://$host$request_uri; }`(301 永久重定向)。③HTTPS 反向代理:同一 server 块:`listen 443 ssl; ssl_certificate /etc/letsencrypt/live/coffee.com/fullchain.pem; ssl_certificate_key /etc/letsencrypt/live/coffee.com/privkey.pem;` →location 规则:`location /api/orders/ { proxy_pass http://localhost:8081/; }`, `location /api/payments/ { proxy_pass http://localhost:8082/; }`, `location / { proxy_pass http://localhost:3000/; }`。④SSL 证书:`sudo apt install certbot python3-certbot-nginx && sudo certbot --nginx -d coffee.com`(自动配置 SSL 并设自动续期) ⑤零停机部署流程:改配置→`nginx -t`→`systemctl reload nginx`→`curl -I https://coffee.com/ | grep "200 OK"`(烟测)。**举一反三:**注意 `proxy_pass` URL 尾部的 `/` 行为:`location /api/ { proxy_pass http://backend/; }` 中的 `/` 会去除 `/api` 前缀;不加 `/` 会保留前缀传给后端。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **容器边界**：先执行 `docker context show`、`docker ps -a` 和 `docker system df`；清理命令只对确认无用的资源执行，带卷的删除额外确认持久化数据和备份。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

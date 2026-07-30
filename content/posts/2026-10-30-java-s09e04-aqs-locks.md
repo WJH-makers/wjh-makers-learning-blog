@@ -280,22 +280,22 @@ JUnit 质检员:「证据呢?——每条退出路径都走一遍、锁都能回
 ### 选择题(10 道)
 
 1. AQS(AbstractQueuedSynchronizer)的核心三零件是什么?
-- A) Thread、Runnable、Callable　　B) state 状态变量、CLH 变体队列、park/unpark 线程阻塞唤醒　　C) Lock、Condition、ReadWriteLock　　D) volatile、CAS、synchronized
+   - A) Thread、Runnable、Callable　　B) state 状态变量、CLH 变体队列、park/unpark 线程阻塞唤醒　　C) Lock、Condition、ReadWriteLock　　D) volatile、CAS、synchronized
 
 2. `ReentrantLock.lock()` 和 `synchronized` 在「可重入性」上的关系是?
-- A) 只有 `ReentrantLock` 支持可重入,`synchronized` 不支持　　B) 两者都支持可重入——同一线程可多次获取同一把锁,state 递增,释放时递减　　C) 只有 `synchronized` 支持可重入　　D) 两者都不支持可重入,都需要显式释放
+   - A) 只有 `ReentrantLock` 支持可重入,`synchronized` 不支持　　B) 两者都支持可重入——同一线程可多次获取同一把锁,state 递增,释放时递减　　C) 只有 `synchronized` 支持可重入　　D) 两者都不支持可重入,都需要显式释放
 
 3. `ReentrantLock` 的公平锁和非公平锁,在 AQS 的 `tryAcquire` 实现中的关键区别是什么?
-- A) 公平锁会先检查队列中有没有等待更久的线程,有则让出;非公平锁直接抢,不管队列　　B) 公平锁用 `synchronized` 实现,非公平锁用 CAS　　C) 公平锁要求调用者提供线程优先级　　D) 非公平锁不支持可重入
+   - A) 公平锁会先检查队列中有没有等待更久的线程,有则让出;非公平锁直接抢,不管队列　　B) 公平锁用 `synchronized` 实现,非公平锁用 CAS　　C) 公平锁要求调用者提供线程优先级　　D) 非公平锁不支持可重入
 
 4. `lockInterruptibly()` 相比 `lock()` 的核心优势是什么?
-- A) 可以设置超时时间　　B) 在等待锁的过程中可以响应线程中断(`Thread.interrupt()`),让等待中的线程有机会优雅退出,而不是死等　　C) 自动释放锁　　D) 支持公平模式
+   - A) 可以设置超时时间　　B) 在等待锁的过程中可以响应线程中断(`Thread.interrupt()`),让等待中的线程有机会优雅退出,而不是死等　　C) 自动释放锁　　D) 支持公平模式
 
 5. `ReentrantReadWriteLock` 的规则是?
-- A) 读读共享(多个读线程同时持有),写写互斥,读写互斥——读锁被持有时写锁必须等待　　B) 读读共享,写写也共享　　C) 所有操作都互斥(和普通锁一样)　　D) 读读共享,但写操作可以抢占读锁
+   - A) 读读共享(多个读线程同时持有),写写互斥,读写互斥——读锁被持有时写锁必须等待　　B) 读读共享,写写也共享　　C) 所有操作都互斥(和普通锁一样)　　D) 读读共享,但写操作可以抢占读锁
 
 6. Condition 相比 `wait/notify` 的核心优势是什么?
-- A) Condition 不需要 `synchronized` 块　　B) 一个 Lock 可以创建多个 Condition,每个 Condition 对应一个等待队列,可以实现精确唤醒——而不是像 `notifyAll()` 那样「全叫起来,各自检查条件」　　C) Condition 的 `await()` 不需要释放锁　　D) Condition 自动处理虚假唤醒
+   - A) Condition 不需要 `synchronized` 块　　B) 一个 Lock 可以创建多个 Condition,每个 Condition 对应一个等待队列,可以实现精确唤醒——而不是像 `notifyAll()` 那样「全叫起来,各自检查条件」　　C) Condition 的 `await()` 不需要释放锁　　D) Condition 自动处理虚假唤醒
 
 7. 以下代码中,`lock.unlock()` 没放在 finally 块里,最可能的后果是什么?
 
@@ -309,13 +309,13 @@ lock.unlock();   // ❌ 没放 finally
 - A) 锁会自动在异常时释放,没有问题　　B) 如果 `doRiskyWork()` 抛异常,`unlock()` 永远不会被调用——锁永远不被释放,其他线程永久阻塞(死锁)　　C) JVM 会检测到异常并自动调用 `unlock()`　　D) 锁会被 GC 回收后自动释放
 
 8. `StampedLock` 的「乐观读」模式相比 `ReentrantReadWriteLock` 的读锁,核心优势是什么?
-- A) 乐观读不需要获取读锁,直接读取后通过 `validate(stamp)` 检查读取期间是否有写操作——没有写的话读操作完全无锁,性能远高于读写锁的读锁(CAS 开销)　　B) 乐观读支持写操作的并发　　C) 乐观读是公平的　　D) 乐观读可以升级为写锁
+   - A) 乐观读不需要获取读锁,直接读取后通过 `validate(stamp)` 检查读取期间是否有写操作——没有写的话读操作完全无锁,性能远高于读写锁的读锁(CAS 开销)　　B) 乐观读支持写操作的并发　　C) 乐观读是公平的　　D) 乐观读可以升级为写锁
 
 9. `tryLock(long timeout, TimeUnit unit)` 返回 false 意味着什么?
-- A) 锁已经被其他线程持有,当前线程选择放弃等待　　B) 当前线程已经持有该锁(可重入)　　C) 锁对象已被 GC 回收　　D) 超时时间内锁未被释放,当前线程在获取锁上等待的总时间超过了 timeout
+   - A) 锁已经被其他线程持有,当前线程选择放弃等待　　B) 当前线程已经持有该锁(可重入)　　C) 锁对象已被 GC 回收　　D) 超时时间内锁未被释放,当前线程在获取锁上等待的总时间超过了 timeout
 
 10. 以下关于 AQS 中 `park` 和 `unpark` 的描述,哪项是正确的?
-- A) `park` 和 `unpark` 是 Java 层面实现的,不涉及操作系统　　B) `unpark` 可以在 `park` 之前调用——如果先 `unpark`,后续的 `park` 会直接返回而不阻塞　　C) `park` 必须和 `synchronized` 配合使用　　D) `park` 会让线程进入 `BLOCKED` 状态
+   - A) `park` 和 `unpark` 是 Java 层面实现的,不涉及操作系统　　B) `unpark` 可以在 `park` 之前调用——如果先 `unpark`,后续的 `park` 会直接返回而不阻塞　　C) `park` 必须和 `synchronized` 配合使用　　D) `park` 会让线程进入 `BLOCKED` 状态
 
 ### 解答题(5 道)
 
@@ -405,4 +405,10 @@ lock.unlock();   // ❌ 没放 finally
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

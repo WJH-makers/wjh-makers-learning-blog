@@ -11,22 +11,26 @@ RUN npm config set fetch-timeout 60000 && npm ci
 
 FROM docker.m.daocloud.io/library/node:22-alpine AS builder
 ARG NEXT_PUBLIC_SITE_URL
+ARG APP_GIT_SHA=unknown
 # NEXT_PUBLIC_* 由 next build 内联进前端 bundle,只能在构建期传入;
 # 放到 runner 的 env_file 里前端读不到(那时 JS 早已生成)。
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
-    NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY} \
+    APP_GIT_SHA=${APP_GIT_SHA}
 WORKDIR /app
 COPY --from=build-deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build && rm -rf .next/cache
 
 FROM docker.m.daocloud.io/library/node:22-alpine AS runner
+ARG APP_GIT_SHA=unknown
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001 -G nodejs
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    APP_GIT_SHA=${APP_GIT_SHA}
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/content ./content

@@ -1,10 +1,8 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPublishedPosts, getAllPublishedTags, siteUrl, type Post } from "@/lib/posts";
 import { SERIES_LIST, seriesProgress, allSeriesProgress, findEpisodeInfo } from "@/lib/series-registry";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
-import { PUBLIC_SIGNAL_TERMS, publicSiteSignal } from "@/lib/site-signal";
+import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -12,18 +10,11 @@ export const runtime = "nodejs";
 const TITLE = "站点数据";
 const DESC = "这个博客的公开数据面:文章总数与总字数、各连载进度、按月更新节奏、标签分布与长短篇极值 —— 全部实时从内容算出来,不接任何统计脚本。";
 
-export const metadata: Metadata = {
+export const metadata = staticPageMetadata({
   title: TITLE,
   description: DESC,
-  alternates: { canonical: `${siteUrl()}/stats` },
-  openGraph: {
-    ...OG_BASE,
-    title: TITLE,
-    description: DESC,
-    url: `${siteUrl()}/stats`,
-    type: "website",
-  },
-};
+  path: "/stats",
+});
 
 function charCount(post: Post): number {
   return post.content.length;
@@ -37,7 +28,6 @@ export default async function StatsPage() {
   const totalChars = posts.reduce((sum, p) => sum + charCount(p), 0);
   const totalMinutes = posts.reduce((sum, p) => sum + p.readingMinutes, 0);
   const episodeCount = posts.filter((p) => findEpisodeInfo(p.slug)).length;
-  const signal = publicSiteSignal(posts.length, episodeCount);
 
   // 按月统计更新量,用于热力条
   const byMonth = new Map<string, number>();
@@ -75,26 +65,6 @@ export default async function StatsPage() {
           <code>/monitor</code>,这里只放内容侧。
         </p>
       </div>
-
-      <section className={`public-signal signal-${signal.state}`} aria-labelledby="public-signal-title">
-        <div className="public-signal-head">
-          <div>
-            <p className="eyebrow">Trust signal · 公开状态</p>
-            <h2 id="public-signal-title"><span className="signal-dot" aria-hidden="true" />站点{signal.label}</h2>
-          </div>
-          <span className="public-signal-window">公开口径</span>
-        </div>
-        <p className="public-signal-summary">{signal.summary}</p>
-        <div className="public-signal-grid">
-          <div><strong>运行</strong><span>{signal.availability}</span></div>
-          <div><strong>体验</strong><span>{signal.experience}</span></div>
-          <div><strong>内容</strong><span>{signal.content}</span></div>
-          <div><strong>访问</strong><span>{signal.audience}</span></div>
-        </div>
-        <p className="public-signal-note">
-          将来如公开流量数据，统一使用“{PUBLIC_SIGNAL_TERMS.pageView}”和“{PUBLIC_SIGNAL_TERMS.visitor}”；{PUBLIC_SIGNAL_TERMS.notPerson}，也{PUBLIC_SIGNAL_TERMS.notCompletion}。
-        </p>
-      </section>
 
       <div className="stat-tiles">
         <div className="stat-tile">
@@ -153,7 +123,7 @@ export default async function StatsPage() {
           <p className="eyebrow">Cadence · 更新节奏</p>
           <h2>按月发布量</h2>
         </div>
-        <span className="muted">仅统计当前已公开内容；排期稿不会进入本页</span>
+        <span className="muted">含按剧情时间线排期的连载话次</span>
       </section>
       <div className="stat-months">
         {months.map(([month, n]) => (
@@ -169,12 +139,13 @@ export default async function StatsPage() {
           <p className="eyebrow">Tags · 标签分布</p>
           <h2>{tags.length} 个标签,其中 {multiUseTags.length} 个用过两次以上</h2>
         </div>
+        <Link href="/tags">标签云 →</Link>
       </section>
       <div className="stat-tagcloud">
         {topTags.map(({ tag, count }) => (
-          <span key={tag}>
+          <Link key={tag} href={`/tags/${encodeURIComponent(tag)}`}>
             {tag} <em>{count}</em>
-          </span>
+          </Link>
         ))}
       </div>
 

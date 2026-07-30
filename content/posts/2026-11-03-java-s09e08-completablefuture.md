@@ -267,19 +267,19 @@ class BarTest {
 ### 选择题(10 道)
 
 1. `Future` 接口的「两宗罪」指的是什么?
-- A) 不支持异步和不能取消　　B) `get()` 阻塞调用线程直到结果就绪,且无法对多个 Future 的结果做组合(一个等完才能处理下一个)　　C) 内存泄漏和线程泄漏　　D) 不支持超时和不支持中断
+   - A) 不支持异步和不能取消　　B) `get()` 阻塞调用线程直到结果就绪,且无法对多个 Future 的结果做组合(一个等完才能处理下一个)　　C) 内存泄漏和线程泄漏　　D) 不支持超时和不支持中断
 
 2. `thenApply` 和 `thenCompose` 的核心区别是什么?
-- A) 没有区别,只是方法名不同　　B) `thenApply` 的 Function 返回一个值,`thenCompose` 的 Function 返回一个 `CompletionStage`(通常是另一个 `CompletableFuture`)——`thenCompose` 用于扁平化,避免 `CompletableFuture<CompletableFuture<T>>` 这种嵌套　　C) `thenApply` 是异步的,`thenCompose` 是同步的　　D) `thenCompose` 只在异常时调用
+   - A) 没有区别,只是方法名不同　　B) `thenApply` 的 Function 返回一个值,`thenCompose` 的 Function 返回一个 `CompletionStage`(通常是另一个 `CompletableFuture`)——`thenCompose` 用于扁平化,避免 `CompletableFuture<CompletableFuture<T>>` 这种嵌套　　C) `thenApply` 是异步的,`thenCompose` 是同步的　　D) `thenCompose` 只在异常时调用
 
 3. `CompletableFuture.allOf(cf1, cf2, cf3)` 返回什么?
-- A) 三个 Future 结果的 List　　B) `CompletableFuture<Void>`——当所有 cf 都完成时,这个 Void Future 也完成;如果需要取各 cf 的结果,需要在 allOf 后分别 join/get 各 cf　　C) 第一个完成的 Future 的结果　　D) 所有结果的聚合对象
+   - A) 三个 Future 结果的 List　　B) `CompletableFuture<Void>`——当所有 cf 都完成时,这个 Void Future 也完成;如果需要取各 cf 的结果,需要在 allOf 后分别 join/get 各 cf　　C) 第一个完成的 Future 的结果　　D) 所有结果的聚合对象
 
 4. 处理 `CompletableFuture` 异常的三种方法:① `exceptionally`(只处理异常,返回默认值)② `handle`(无论正常还是异常都调用,接收 (result, throwable)) ③ `whenComplete`(类似 handle 但不改变返回值) — 以下哪个场景必须用 `handle` 而不能用 `exceptionally`?
-- A) 只在意异常,需要返回 fallback 值　　B) 需要同时处理正常结果和异常——如:正常时 log 结果,异常时 log 异常,且**延续正常的返回值给下游**　　C) 只需要在完成时执行清理操作　　D) 需要将异常转换为不同的异常类型
+   - A) 只在意异常,需要返回 fallback 值　　B) 需要同时处理正常结果和异常——如:正常时 log 结果,异常时 log 异常,且**延续正常的返回值给下游**　　C) 只需要在完成时执行清理操作　　D) 需要将异常转换为不同的异常类型
 
 5. `CompletableFuture` 默认使用哪个线程池执行异步任务?
-- A) 一个专门的 `CompletableFuture` 线程池　　B) `ForkJoinPool.commonPool()`——JDK 的公共 ForkJoinPool,并行度为 CPU 核数 - 1　　C) `Executors.newCachedThreadPool()`　　D) 主线程
+   - A) 一个专门的 `CompletableFuture` 线程池　　B) `ForkJoinPool.commonPool()`——JDK 的公共 ForkJoinPool,并行度为 CPU 核数 - 1　　C) `Executors.newCachedThreadPool()`　　D) 主线程
 
 6. 以下代码中,`blockingIO()` 是阻塞 IO 操作。这段代码有什么问题?
 
@@ -291,16 +291,16 @@ CompletableFuture.supplyAsync(() -> blockingIO())
 - A) 没有问题,CompletableFuture 会自动处理阻塞 IO　　B) `supplyAsync` 默认使用公共 ForkJoinPool——阻塞 IO 会占用 ForkJoinPool 的有限工作线程(核数 - 1 个),导致所有使用公共池的异步任务都被卡住(线程饥饿),应改用 `supplyAsync(() -> blockingIO(), customExecutor)` 传入自定义线程池　　C) `thenAccept` 不能处理阻塞 IO 的结果　　D) 阻塞 IO 不能放在 `supplyAsync` 中
 
 7. `thenCombine(cf1, cf2, (r1, r2) -> merge(r1, r2))` 的执行时机是?
-- A) cf1 或 cf2 任一完成时　　B) cf1 和 cf2 都完成后,merge 函数被调用,接收两个结果并返回组合结果　　C) cf1 完成后立即调用 merge,不管 cf2 的状态　　D) 在调用 `thenCombine` 时立即执行
+   - A) cf1 或 cf2 任一完成时　　B) cf1 和 cf2 都完成后,merge 函数被调用,接收两个结果并返回组合结果　　C) cf1 完成后立即调用 merge,不管 cf2 的状态　　D) 在调用 `thenCombine` 时立即执行
 
 8. 以下哪个 `CompletableFuture` 方法用来实现「两个异步任务中,谁先返回就用谁的结果,另一个结果丢弃」?
-- A) `allOf(cf1, cf2)`　　B) `anyOf(cf1, cf2)`　　C) `thenCombine(cf1, cf2, merger)`　　D) `runAfterBoth(cf1, cf2, action)`
+   - A) `allOf(cf1, cf2)`　　B) `anyOf(cf1, cf2)`　　C) `thenCombine(cf1, cf2, merger)`　　D) `runAfterBoth(cf1, cf2, action)`
 
 9. `thenApply`、`thenApplyAsync`、`thenApplyAsync(Function, Executor)` 三个变体,线程选择规则是什么?
-- A) `thenApply`:在完成当前 Future 的同一个线程中执行;`thenApplyAsync()`:在公共 ForkJoinPool 中执行;`thenApplyAsync(fn, executor)`:在指定的 executor 中执行　　B) 三者没有区别,由 JVM 随机选择　　C) `thenApply` 永远在主线程执行　　D) `thenApplyAsync` 永远创建新线程
+   - A) `thenApply`:在完成当前 Future 的同一个线程中执行;`thenApplyAsync()`:在公共 ForkJoinPool 中执行;`thenApplyAsync(fn, executor)`:在指定的 executor 中执行　　B) 三者没有区别,由 JVM 随机选择　　C) `thenApply` 永远在主线程执行　　D) `thenApplyAsync` 永远创建新线程
 
 10. 关于 `CompletableFuture` 与虚拟线程(Virtual Threads)的配合,以下哪个说法最准确?
-- A) `CompletableFuture` 和虚拟线程不能一起使用　　B) 虚拟线程的出现,让 `CompletableFuture` 在某些场景下变得不必要——如果每个异步任务用一个虚拟线程执行(阻塞 IO 时自动 mount/unmount),代码风格可以保持同步式,不需要 thenApply/thenCompose 的链式回调;但 CPU 密集型的异步编排仍然需要 `CompletableFuture` 的结构化并发能力　　C) 虚拟线程替代了 `CompletableFuture`　　D) `CompletableFuture` 只能在虚拟线程上运行
+   - A) `CompletableFuture` 和虚拟线程不能一起使用　　B) 虚拟线程的出现,让 `CompletableFuture` 在某些场景下变得不必要——如果每个异步任务用一个虚拟线程执行(阻塞 IO 时自动 mount/unmount),代码风格可以保持同步式,不需要 thenApply/thenCompose 的链式回调;但 CPU 密集型的异步编排仍然需要 `CompletableFuture` 的结构化并发能力　　C) 虚拟线程替代了 `CompletableFuture`　　D) `CompletableFuture` 只能在虚拟线程上运行
 
 ### 解答题(5 道)
 
@@ -458,4 +458,10 @@ CompletableFuture.supplyAsync(() -> blockingIO())
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

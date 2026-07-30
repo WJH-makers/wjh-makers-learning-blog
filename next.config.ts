@@ -20,16 +20,10 @@ const nextConfig: NextConfig = {
       destination: "/.well-known/security.txt",
       permanent: true,
     },
-    // 首页收回到课程入口后，旧的自我介绍/标签索引不再单独维护；保留永久跳转，
-    // 让既有搜索结果与读者书签落到仍然有用的内容页而非 404。
+    // 自我介绍页已退役；保留永久跳转，让既有搜索结果与书签落到连载入口。
     {
       source: "/about",
       destination: "/series",
-      permanent: true,
-    },
-    {
-      source: "/tags/:path*",
-      destination: "/archive",
       permanent: true,
     },
   ],
@@ -41,11 +35,11 @@ const nextConfig: NextConfig = {
           key: "Content-Security-Policy",
           value: [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+            "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.clarity.ms",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "font-src 'self' data:",
-            "connect-src 'self' https://challenges.cloudflare.com",
+            "connect-src 'self' https://challenges.cloudflare.com https://*.clarity.ms https://*.clarity.microsoft.com",
             "frame-src https://challenges.cloudflare.com",
             "object-src 'none'",
             "base-uri 'none'",
@@ -57,6 +51,8 @@ const nextConfig: NextConfig = {
           ].join("; "),
         },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        // 不要求搜索引擎保留可直接访问的历史快照；不影响正常索引，但不是反爬安全边界。
+        { key: "X-Robots-Tag", value: "noarchive" },
         // 全站生效(原先只挂在 /api 下,HTML 与静态资源反而没保护)。
         { key: "X-Content-Type-Options", value: "nosniff" },
         // 站点没有任何需要这些硬件/API 的功能,一律关掉,缩小第三方脚本的可乘之机。

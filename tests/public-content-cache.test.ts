@@ -21,9 +21,7 @@ test("publishing invalidates the public-content cache before rerendering routes"
   assert.match(writeSource, /revalidatePath\("\/rss\.xml"\);/);
 });
 
-test("Markdown uses explicit URLs instead of sharing an Accept-negotiated cache key with HTML", () => {
-  assert.match(proxySource, /\$\{pathname\}\/markdown/);
-  assert.match(proxySource, /rel="alternate"; type="text\/markdown"/);
+test("public pages do not expose Markdown content negotiation or export routes", () => {
   assert.doesNotMatch(proxySource, /NextResponse\.rewrite/);
-  assert.doesNotMatch(proxySource, /Vary", "Accept/);
+  assert.doesNotMatch(proxySource, /request\.headers\.get\("accept"\)|Vary", "Accept|text\/markdown|\/markdown/i);
 });

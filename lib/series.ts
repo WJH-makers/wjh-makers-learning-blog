@@ -9,6 +9,8 @@
  * 其余生态做成支线,不强迫零基础一次学完。改这里不影响任何已发布文章。
  */
 
+import { isPublicEpisode, publicFacingEpisodes } from "@/lib/publication";
+
 export type ChapterType =
   | "comic" // 漫画:讲心智模型、冲突、错误
   | "lab" // 实验手册:命令/SQL/配置,可复制
@@ -348,4 +350,3 @@ export const STATUS_LABEL: Record<EpisodeStatus, string> = {
 export function seasonPublishedSlugs(season: JavaSeason): string[] {
   return season.episodes.flatMap((e) => (e.status === "published" && e.slug && isPublicEpisode(e.slug) ? [e.slug] : []));
 }
-import { isPublicEpisode, publicFacingEpisodes } from "@/lib/publication";

@@ -241,34 +241,34 @@ Git 时间守卫收起沙漏,咖啡站的代码史从此清清爽爽。可就在
 ### 选择题(10 道)
 
 1. `git stash` 的作用是什么?
-- A) 删除未提交的修改　B) 临时保存当前工作目录和暂存区的修改,让工作区变干净　C) 提交修改但不 push　D) 回退到上一次提交
+   - A) 删除未提交的修改　B) 临时保存当前工作目录和暂存区的修改,让工作区变干净　C) 提交修改但不 push　D) 回退到上一次提交
 
 2. `git stash pop` 和 `git stash apply` 的区别是什么?
-- A) 完全相同　B) `pop` 恢复最近一次 stash 并从 stash 列表中移除;`apply` 恢复但不移除,可以反复应用到不同分支　C) `pop` 可以恢复多个 stash,`apply` 只能恢复一个　D) `apply` 是 `pop` 的别名
+   - A) 完全相同　B) `pop` 恢复最近一次 stash 并从 stash 列表中移除;`apply` 恢复但不移除,可以反复应用到不同分支　C) `pop` 可以恢复多个 stash,`apply` 只能恢复一个　D) `apply` 是 `pop` 的别名
 
 3. `git cherry-pick` 的主要用途是什么?
-- A) 复制整个分支　B) 将某个特定的提交(commit)"摘取"并应用到当前分支　C) 删除某个提交　D) 合并两个分支
+   - A) 复制整个分支　B) 将某个特定的提交(commit)"摘取"并应用到当前分支　C) 删除某个提交　D) 合并两个分支
 
 4. `git stash list` 显示什么信息?
-- A) 最近一次 commit 的 diff　B) 所有被 stash 保存的临时修改的列表(带索引和描述)　C) 暂存区文件列表　D) 已删除的文件列表
+   - A) 最近一次 commit 的 diff　B) 所有被 stash 保存的临时修改的列表(带索引和描述)　C) 暂存区文件列表　D) 已删除的文件列表
 
 5. 在 `feature` 分支上工作到一半,突然需要紧急切换到 main 修 bug,最快最安全的做法是?
-- A) 立即 `git switch main`(丢弃 feature 上的修改)　B) `git stash`(保存当前修改)→`git switch main`→修 bug→`git switch feature`→`git stash pop`(恢复工作)　C) `git commit`(随便 commit 一下)→`git switch main`　D) 同时打开两个终端分别工作
+   - A) 立即 `git switch main`(丢弃 feature 上的修改)　B) `git stash`(保存当前修改)→`git switch main`→修 bug→`git switch feature`→`git stash pop`(恢复工作)　C) `git commit`(随便 commit 一下)→`git switch main`　D) 同时打开两个终端分别工作
 
 6. `git cherry-pick abc123` 执行后,新提交的哈希值是?
-- A) 与 `abc123` 相同　B) 一个新的、不同的哈希值(因为父提交、时间戳、作者上下文都不同)　C) 以 `abc123` 开头但后面不同　D) 随机生成
+   - A) 与 `abc123` 相同　B) 一个新的、不同的哈希值(因为父提交、时间戳、作者上下文都不同)　C) 以 `abc123` 开头但后面不同　D) 随机生成
 
 7. `git stash drop stash@{2}` 的作用是什么?
-- A) 删除 stash 列表中的第 3 个条目(索引从 0 开始)　B) 丢弃文件修改　C) 恢复到第 2 个 stash　D) 查看第 2 个 stash 的内容
+   - A) 删除 stash 列表中的第 3 个条目(索引从 0 开始)　B) 丢弃文件修改　C) 恢复到第 2 个 stash　D) 查看第 2 个 stash 的内容
 
 8. cherry-pick 时发生冲突,以下处理流程**正确**的是?
-- A) 放弃 cherry-pick,用 merge 替代　B) 解决冲突→`git add`→`git cherry-pick --continue`　C) `git stash` 保存冲突→重新 cherry-pick　D) 直接 force push
+   - A) 放弃 cherry-pick,用 merge 替代　B) 解决冲突→`git add`→`git cherry-pick --continue`　C) `git stash` 保存冲突→重新 cherry-pick　D) 直接 force push
 
 9. 关于 Git Flow 分支模型,`hotfix` 分支应该基于哪个分支创建,又合并回哪些分支?
-- A) 基于 feature 创建,合并回 feature　B) 基于 main 创建,同时合并回 main 和 develop　C) 基于 develop 创建,只合并回 develop　D) 基于任意分支,合并回任意分支
+   - A) 基于 feature 创建,合并回 feature　B) 基于 main 创建,同时合并回 main 和 develop　C) 基于 develop 创建,只合并回 develop　D) 基于任意分支,合并回任意分支
 
 10. 以下哪种场景**不适合**使用 `cherry-pick`?
-- A) 把 bug fix 从 release 分支同步到 develop　B) 从功能分支上摘取一个通用的工具函数提交到 main　C) 将整个 feature 分支上所有提交搬到 main(应使用 merge)　D) 将一个提交从一个分支复制到另一个分支
+   - A) 把 bug fix 从 release 分支同步到 develop　B) 从功能分支上摘取一个通用的工具函数提交到 main　C) 将整个 feature 分支上所有提交搬到 main(应使用 merge)　D) 将一个提交从一个分支复制到另一个分支
 
 ### 解答题(5 道)
 
@@ -312,3 +312,11 @@ Git 时间守卫收起沙漏,咖啡站的代码史从此清清爽爽。可就在
 > **Q4** 如果 `pop` 遇到冲突,stash 条目**没有被自动删除**(pop 失败时 Git 会保留 stash)。如果不想解决冲突:①先 `git reset --hard HEAD`(丢弃当前混乱状态) ②`git stash pop` 又回来了(如果第一次 pop 失败但 stash 还在的话)。如果 stash 已经不在(`git stash list` 看不到),虽然 pop 出冲突但条目已删,此时可以用 `git reset --merge HEAD` 回到 pop 前的状态。**核心:**pop 冲突时 Git 不会删除 stash,但一旦 stash 条目被手动 drop 且没有 reflog(不像 commit),就无法通过 Git 本身恢复了。安全流程:不确定时先 `apply` 看看。
 >
 > **Q5** 完整 hotfix 流程:①`git switch main && git pull origin main` ②`git switch -c hotfix/order-crash`(基于 main 创建) ③修 bug→commit→`git push -u origin hotfix/order-crash` ④创建 PR 合并到 main(生产环境) ⑤main 上创建 tag:`git tag v1.2.1 && git push --tags` ⑥**必须同步回 develop:**`git switch develop && git pull origin develop` ⑦`git merge hotfix/order-crash`(或 `git cherry-pick <修复提交>`) ⑧如果 develop 上已有相关修改,这里可能出现冲突——解决冲突时注意:develop 的另一份修改和 hotfix 的目的可能不同(一个是对原功能的优化,一个是紧急修复),保留两者的有效部分 ⑨测试通过→`git push origin develop` ⑩清理:`git branch -d hotfix/order-crash`。**举一反三:**Git Flow 的标签是发布管理的关键——`v1.2.1` 标记了 hotfix 后的生产版本,随时可以从这个 tag 回滚或部署。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **Git 回滚边界**：`reset --hard`、rebase 和强推会改写本地或共享历史。先保存 `git status`/`git log --oneline`，共享分支优先 `git revert`；必须强推时使用 `--force-with-lease` 并与协作者确认。

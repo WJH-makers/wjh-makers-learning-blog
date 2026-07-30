@@ -47,7 +47,11 @@ export async function POST(request: Request) {
   }
 
   // 恒定时间比较,避免计时侧信道;两项都算完再判,不短路。
-  const ok = safeCompare(username, MONITOR_USER) && safeCompare(password, MONITOR_PASS);
+  // 写成两个先行求值的常量,而不是 `a() && b()` —— `&&` 会短路,用户名错时
+  // 密码比较根本不执行,响应时间就泄漏了「用户名是否命中」。
+  const userOk = safeCompare(username, MONITOR_USER);
+  const passOk = safeCompare(password, MONITOR_PASS);
+  const ok = userOk && passOk;
   if (!ok) {
     return NextResponse.json({ ok: false, message: "用户名或密码错误" }, { status: 401 });
   }

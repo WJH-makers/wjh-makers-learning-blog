@@ -3,20 +3,18 @@ services:
     build:
       context: .
       args:
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://wwjjhh.online}
+        NEXT_PUBLIC_SITE_URL: https://wwjjhh.online
+        APP_GIT_SHA: ${APP_GIT_SHA:-unknown}
         # Turnstile 的 site key 是 NEXT_PUBLIC_*,由 next build 内联进前端 bundle,
         # 必须在**构建期**给到;env_file 只作用于运行时,配在那里前端拿不到。
         # 值从同目录 .env 读;未配置时为空字符串 —— 前端不渲染 widget、后端跳过校验,
         # 与未启用 Turnstile 时行为一致(两者要么都配,要么都不配)。
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
     container_name: blog
-    # 2 vCPU 主机同时承载 Tunnel、Nginx 与其他服务；给博客放宽到
-    # 1.5 vCPU / 896 MiB，保留系统与边缘进程的喘息空间，避免“无限制”
-    # 容器在突发流量时反过来拖垮整台机器。
-    mem_limit: 896m
-    cpus: 1.5
+    mem_limit: 512m
+    cpus: 1.0
     ports:
-      - "127.0.0.1:3001:3001"
+      - "3001:3001"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:

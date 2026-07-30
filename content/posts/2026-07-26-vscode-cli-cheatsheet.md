@@ -218,3 +218,10 @@ Get-Content extensions.txt | % { code --install-extension $_ }    # 新机还原
 - 要干净复现：`--transient`（新版）或 `--user-data-dir`+`--extensions-dir` 指临时目录，别动主配置。
 - 配置可移植：`--list-extensions > list.txt` 导出、循环 `--install-extension` 还原；Profile 导 `.code-profile`；Portable 只认压缩包版。
 - 不信任的仓库开在 Restricted Mode，信任前 tasks/调试/部分扩展都不跑。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。

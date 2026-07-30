@@ -266,64 +266,64 @@ class DiscountConfigTest {
 ### 选择题(10 道)
 
 1. 类加载五阶段中,给静态变量分配内存并赋**零值**的是哪个阶段?
-- A) 加载
-- B) 验证
-- C) 准备
-- D) 初始化
+   - A) 加载
+   - B) 验证
+   - C) 准备
+   - D) 初始化
 
 2. JDK 9+ 的三层类加载器从上到下依次是?
-- A) Application → Platform → Bootstrap
-- B) Bootstrap → Platform → Application
-- C) Bootstrap → Extension → Application
-- D) Platform → Bootstrap → Application
+   - A) Application → Platform → Bootstrap
+   - B) Bootstrap → Platform → Application
+   - C) Bootstrap → Extension → Application
+   - D) Platform → Bootstrap → Application
 
 3. `String.class.getClassLoader()` 返回 null,原因是?
-- A) String 类尚未加载
-- B) String 类由 Bootstrap ClassLoader 加载,它在 JVM 内部用 C/C++ 实现,没有对应的 Java 对象
-- C) String 是抽象类,不需要类加载器
-- D) getClassLoader() 对 JDK 核心类永远返回 null
+   - A) String 类尚未加载
+   - B) String 类由 Bootstrap ClassLoader 加载,它在 JVM 内部用 C/C++ 实现,没有对应的 Java 对象
+   - C) String 是抽象类,不需要类加载器
+   - D) getClassLoader() 对 JDK 核心类永远返回 null
 
 4. 双亲委派机制中,一个类加载请求的传递路径是?
-- A) 当前加载器先自己加载,失败再向上请求
-- B) 直接交给 Bootstrap,不再返回
-- C) 先向上级委派,一路到 Bootstrap;上级都不加载,才自己加载
-- D) 同时交给所有加载器,谁先完成谁返回
+   - A) 当前加载器先自己加载,失败再向上请求
+   - B) 直接交给 Bootstrap,不再返回
+   - C) 先向上级委派,一路到 Bootstrap;上级都不加载,才自己加载
+   - D) 同时交给所有加载器,谁先完成谁返回
 
 5. `static int x = 8` 在**准备阶段**的值是?
-- A) 8
-- B) 0
-- C) null
-- D) 未定义
+   - A) 8
+   - B) 0
+   - C) null
+   - D) 未定义
 
 6. 以下哪个场景**不会**触发类的初始化?
-- A) `new OrderService()`
-- B) `Class.forName("OrderService")`
-- C) 访问类的 `static final String BRAND = "豆豆咖啡站"`(编译期常量)
-- D) 调用类的静态方法
+   - A) `new OrderService()`
+   - B) `Class.forName("OrderService")`
+   - C) 访问类的 `static final String BRAND = "豆豆咖啡站"`(编译期常量)
+   - D) 调用类的静态方法
 
 7. `ClassNotFoundException` 与 `NoClassDefFoundError` 的关键区别是?
-- A) 没区别,只是版本不同
-- B) CNFE 是「名单上没这个人」(找不到字节码);NCDFE 是「人来过,初始化挂了」(类存在但加载失败)
-- C) CNFE 只在编译期出现,NCDFE 在运行期
-- D) CNFE 是 Error,NCDFE 是 Exception
+   - A) 没区别,只是版本不同
+   - B) CNFE 是「名单上没这个人」(找不到字节码);NCDFE 是「人来过,初始化挂了」(类存在但加载失败)
+   - C) CNFE 只在编译期出现,NCDFE 在运行期
+   - D) CNFE 是 Error,NCDFE 是 Exception
 
 8. Tomcat 打破双亲委派的正确方式是?
-- A) 所有 webapp 共享一个类加载器
-- B) 每个 webapp 一个独立加载器,加载顺序是**先自己后父**(核心类除外)
-- C) 把所有 webapp 的类都交给 Bootstrap 加载
-- D) 完全不用双亲委派,随机加载
+   - A) 所有 webapp 共享一个类加载器
+   - B) 每个 webapp 一个独立加载器,加载顺序是**先自己后父**(核心类除外)
+   - C) 把所有 webapp 的类都交给 Bootstrap 加载
+   - D) 完全不用双亲委派,随机加载
 
 9. 阿零的 `DiscountConfig` 静态块读文件失败后,第二次使用该类时直接抛 `NoClassDefFoundError`。此时类的状态是?
-- A) 类已正常加载,只是方法调用出错
-- B) 类被标记为**报废(Erroneous)**,JVM 不会再尝试初始化它
-- C) 类被卸载,需要重新加载
-- D) 类加载器会自动重试初始化
+   - A) 类已正常加载,只是方法调用出错
+   - B) 类被标记为**报废(Erroneous)**,JVM 不会再尝试初始化它
+   - C) 类被卸载,需要重新加载
+   - D) 类加载器会自动重试初始化
 
 10. 两个不同的类加载器各加载一份同名的 `User` 类(`com.example.User`)。用加载器 A 加载的 `User` 实例,通过加载器 B 的代码做 `instanceof User` 检查,结果是?
-- A) true
-- B) false
-- C) 编译错误
-- D) 抛出 `ClassCastException`
+   - A) true
+   - B) false
+   - C) 编译错误
+   - D) 抛出 `ClassCastException`
 
 ### 解答题(5 道)
 
@@ -376,10 +376,16 @@ class Roaster {
 >
 > **Q4** `Roaster.BRAND` 不触发初始化:它是 `static final String` 且值是编译期常量,在编译阶段就内联到调用方字节码中(`ldc "豆豆咖啡站"`),不经过 `Roaster` 类。`Roaster.slogan` 触发初始化:它是 `static` 变量但不是编译期常量,访问它属于「主动引用」,先执行 `<clinit>`(打印"Roaster 初始化了"),再返回 `slogan` 的值。★举一反三:这个区别是面试中「类初始化时机」的经典追问——`static final` 的对象引用(如 `new Object()`)也不是编译期常量,会触发初始化!
 >
-> **Q5** 插件热加载框架设计:①定义 `Plugin` 接口(`void start()`/`void stop()`)；②`PluginClassLoader` 继承 `URLClassLoader`,每个插件一个实例;③扫描目录下 `.jar`,用独立的 `PluginClassLoader` 加载其中的 `Plugin` 实现类;④插件间隔离:不同插件用不同 ClassLoader,同名类互不冲突;⑤卸载:关闭对 ClassLoader 及其加载的类的所有引用,让 GC 回收——关键是不能有任何「根引用」指向已卸载插件的类/对象。⑥插件通信:通过 `Plugin` 接口或共享的「宿主 API」交互,避免直接传递插件内部的类(会引发 ClassCastException)。★举一反三:OSGi、Eclipse 的插件体系、Tomcat 的 webapp 隔离,都是这个思路的不同成熟度实现。
+> **Q5** 插件热加载框架设计:①定义 `Plugin` 接口(`void start()`/`void stop()`);②`PluginClassLoader` 继承 `URLClassLoader`,每个插件一个实例;③扫描目录下 `.jar`,用独立的 `PluginClassLoader` 加载其中的 `Plugin` 实现类;④插件间隔离:不同插件用不同 ClassLoader,同名类互不冲突;⑤卸载:关闭对 ClassLoader 及其加载的类的所有引用,让 GC 回收——关键是不能有任何「根引用」指向已卸载插件的类/对象。⑥插件通信:通过 `Plugin` 接口或共享的「宿主 API」交互,避免直接传递插件内部的类(会引发 ClassCastException)。★举一反三:OSGi、Eclipse 的插件体系、Tomcat 的 webapp 隔离,都是这个思路的不同成熟度实现。
 >
 > ---
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

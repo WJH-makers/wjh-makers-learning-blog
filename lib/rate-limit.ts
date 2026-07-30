@@ -33,7 +33,8 @@ export function checkRateLimit(ip: string, scope?: string): { allowed: boolean }
     return { allowed: true };
   }
 
-  if (entry.count >= (scope === "login" ? 10 : 5)) {
+  const limit = scope === "login" ? 10 : scope === "java-run" ? 12 : 5;
+  if (entry.count >= limit) {
     return { allowed: false };
   }
 

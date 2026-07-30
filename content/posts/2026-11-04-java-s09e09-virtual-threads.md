@@ -130,6 +130,8 @@ public class MillionCustomers {
 2. **留意超老版本的钉住(pinning)。** JDK 21–23 上,虚拟线程在 synchronized 块里阻塞,会把 carrier 一起「钉」在工位上卸不下来;JEP 491(JDK 24)已根治。基线 Java 25 无此忧,接手老系统要多看一眼。
 3. **ThreadLocal 换 Scoped Values。** 百万虚拟线程 = 百万份 ThreadLocalMap(回看第 75 话的托盘),内存压力陡增还容易忘 remove。Scoped Values(JEP 506,JDK 25 转正)不可变、随作用域自动失效:
 
+> **版本与实现边界**:JEP 444 的收益来自 JVM 支持的阻塞操作可在等待时卸载 carrier,并不是「任何阻塞都会卸载」的承诺。JDK 21–23 在 `synchronized` 内阻塞会 pin;JEP 491 在 JDK 24 修复这一种 monitor 场景,但 native / foreign-function 调用等仍可能 pin,Java 25 也不能据此承诺「绝不会 pin」。「不池化」是默认的资源复用建议;有界执行器或信号量可以作为**明确的准入控制**,阈值须按下游连接数、文件描述符、内存与 P95/P99 压测决定。文中耗时是教学推演,不是可迁移的性能基准。
+
 ```java
 static final ScopedValue<String> MEMBER_ID = ScopedValue.newInstance();
 
@@ -255,34 +257,34 @@ class MillionCustomersTest {
 ### 选择题(10 道)
 
 1. 平台线程(Platform Thread)和 OS 线程的关系是?
-- A) 多个平台线程映射到一个 OS 线程(N:1)　　B) 一个平台线程映射到一个 OS 线程(1:1)——Java 的平台线程就是对 OS 线程的包装,每个 `Thread` 对象底面对应一个内核线程　　C) 平台线程完全在用户态,与 OS 线程无关　　D) 平台线程和 OS 线程的关系取决于 JVM 版本
+   - A) 多个平台线程映射到一个 OS 线程(N:1)　　B) 一个平台线程映射到一个 OS 线程(1:1)——Java 的平台线程就是对 OS 线程的包装,每个 `Thread` 对象底面对应一个内核线程　　C) 平台线程完全在用户态,与 OS 线程无关　　D) 平台线程和 OS 线程的关系取决于 JVM 版本
 
 2. 虚拟线程(Virtual Thread)的栈内存大小是多少?
-- A) 默认 1MB,和平台线程一样　　B) 默认几十到几百 KB,且由 JVM 动态管理——栈以「堆栈块(continuation frames)」形式存储在堆上,按需分配和缩小,不需要预留 1MB　　C) 不使用栈,使用堆上的 ArrayList 模拟　　D) 固定 256KB
+   - A) 默认 1MB,和平台线程一样　　B) 默认几十到几百 KB,且由 JVM 动态管理——栈以「堆栈块(continuation frames)」形式存储在堆上,按需分配和缩小,不需要预留 1MB　　C) 不使用栈,使用堆上的 ArrayList 模拟　　D) 固定 256KB
 
 3. 虚拟线程最受益的场景是?
-- A) 纯 CPU 计算密集型(如加密解密、图像处理)　　B) IO 密集型(如数据库查询、HTTP 调用、文件读写)——阻塞时虚拟线程在 JVM 内 mount/unmount 到平台线程,不阻塞 OS 线程,使平台线程能服务其他虚拟线程,大幅提升并发吞吐　　C) 所有场景都受益　　D) 只是语法糖,没有性能提升
+   - A) 纯 CPU 计算密集型(如加密解密、图像处理)　　B) IO 密集型(如数据库查询、HTTP 调用、文件读写)——阻塞时虚拟线程在 JVM 内 mount/unmount 到平台线程,不阻塞 OS 线程,使平台线程能服务其他虚拟线程,大幅提升并发吞吐　　C) 所有场景都受益　　D) 只是语法糖,没有性能提升
 
 4. 虚拟线程的「pin(钉住)」问题指的是什么?
-- A) 虚拟线程被固定在某个 CPU 核上　　B) 当虚拟线程执行 `synchronized` 块或 native 方法时,不能被 unmount(不能从平台线程上卸下)——导致阻塞期间独占该平台线程,其他虚拟线程无法使用它,削弱了虚拟线程的并发优势　　C) 虚拟线程被 GC 标记为不可移动的对象　　D) 虚拟线程和平台线程的绑定关系不可改变
+   - A) 虚拟线程被固定在某个 CPU 核上　　B) 当虚拟线程执行 `synchronized` 块或 native 方法时,不能被 unmount(不能从平台线程上卸下)——导致阻塞期间独占该平台线程,其他虚拟线程无法使用它,削弱了虚拟线程的并发优势　　C) 虚拟线程被 GC 标记为不可移动的对象　　D) 虚拟线程和平台线程的绑定关系不可改变
 
 5. 以下关于虚拟线程的创建方式,正确的是?
-- A) `new Thread(() -> {}).start()`——和创建平台线程一样　　B) `Thread.ofVirtual().start(() -> {})`——JDK 19+ 的虚拟线程工厂方法,创建的 Thread 默认以虚拟线程身份运行　　C) `Executors.newVirtualThreadPerTaskExecutor()`——提交的任务在每个虚拟线程中执行,不需池化管理　　D) B 和 C 都正确
+   - A) `new Thread(() -> {}).start()`——和创建平台线程一样　　B) `Thread.ofVirtual().start(() -> {})`——JDK 19+ 的虚拟线程工厂方法,创建的 Thread 默认以虚拟线程身份运行　　C) `Executors.newVirtualThreadPerTaskExecutor()`——提交的任务在每个虚拟线程中执行,不需池化管理　　D) B 和 C 都正确
 
 6. 虚拟线程和线程池的关系,以下哪个说法正确?
-- A) 应该创建一个固定大小的虚拟线程池来复用虚拟线程　　**B) 虚拟线程不应池化——它们是廉价的(几乎不消耗系统资源),应该「一任务一线程」直接创建;池化反而违背了虚拟线程的设计初衷(每个任务隔离,无状态污染)**　　C) 虚拟线程也必须池化,否则会内存溢出　　D) 虚拟线程不需要管理,也不能显式创建
+   - A) 应该创建一个固定大小的虚拟线程池来复用虚拟线程　　**B) 虚拟线程不应池化——它们是廉价的(几乎不消耗系统资源),应该「一任务一线程」直接创建;池化反而违背了虚拟线程的设计初衷(每个任务隔离,无状态污染)**　　C) 虚拟线程也必须池化,否则会内存溢出　　D) 虚拟线程不需要管理,也不能显式创建
 
 7. 虚拟线程的 `ThreadLocal` 使用需要注意什么?
-- A) 完全不能用　　**B) 能用,但要严守 `remove` 纪律——虚拟线程虽然库存百万条,但每条仍携带 `ThreadLocal` 的 value 强引用,不 remove 仍会泄漏;且 JDK 21+ 推荐将不可变上下文迁移到 `ScopedValue`,既无泄漏风险又自动在 mount/unmount 时传播**　　C) 虚拟线程的 ThreadLocal 值会被 GC 自动回收　　D) 虚拟线程创建 ThreadLocal 时会自动设置过期时间
+   - A) 完全不能用　　**B) 能用,但要严守 `remove` 纪律——虚拟线程虽然库存百万条,但每条仍携带 `ThreadLocal` 的 value 强引用,不 remove 仍会泄漏;且 JDK 21+ 推荐将不可变上下文迁移到 `ScopedValue`,既无泄漏风险又自动在 mount/unmount 时传播**　　C) 虚拟线程的 ThreadLocal 值会被 GC 自动回收　　D) 虚拟线程创建 ThreadLocal 时会自动设置过期时间
 
-8. 在 JDK 21–23 中，以下哪种代码模式会导致虚拟线程被「pin」?
-- A) `Thread.sleep(1000)`　　**B) `synchronized(obj) { blockingIO(); }`——旧实现中在 `synchronized` 块内阻塞会占住 carrier**　　C) `lock.lockInterruptibly()`　　D) `CompletableFuture.supplyAsync(() -> work())`；JDK 24+ 的 JEP 491 已消除这一主要来源。
+8. 以下哪种代码模式会导致虚拟线程被「pin」?
+   - A) `Thread.sleep(1000)`　　**B) `synchronized(obj) { blockingIO(); }`——在 `synchronized` 块内执行阻塞操作,虚拟线程无法 unmount,期间绑定的平台线程被独占**　　C) `lock.lockInterruptibly()`　　D) `CompletableFuture.supplyAsync(() -> work())`
 
 9. 虚拟线程的数量级通常在什么范围?
-- A) 几百到几千,和平台线程一样　　**B) 可达数十万甚至百万——虚拟线程只占堆内存(每个几百字节到几 KB 栈),不消耗 OS 线程资源,理论上受限于 JVM 堆内存大小而非 OS 线程限制**　　C) 受限于 CPU 核数 × 2　　D) 虚拟线程有硬上限 65535
+   - A) 几百到几千,和平台线程一样　　**B) 可达数十万甚至百万——虚拟线程只占堆内存(每个几百字节到几 KB 栈),不消耗 OS 线程资源,理论上受限于 JVM 堆内存大小而非 OS 线程限制**　　C) 受限于 CPU 核数 × 2　　D) 虚拟线程有硬上限 65535
 
 10. JDK 21 的结构化并发 `StructuredTaskScope` 与虚拟线程的关系是?
-- A) 两者没有关系,是完全独立的两个 API　　**B) `StructuredTaskScope` 是虚拟线程的「组织者」——它在一段代码中 fork 出多个子虚拟线程,并在所有子线程结束时自动 join,提供清晰的父子关系和作用域管理;两者配合解决「虚拟线程泄漏」(fork 出去的线程不知何时结束)的问题**　　C) `StructuredTaskScope` 只支持平台线程　　D) `StructuredTaskScope` 是虚拟线程的另一种写法
+   - A) 两者没有关系,是完全独立的两个 API　　**B) `StructuredTaskScope` 是虚拟线程的「组织者」——它在一段代码中 fork 出多个子虚拟线程,并在所有子线程结束时自动 join,提供清晰的父子关系和作用域管理;两者配合解决「虚拟线程泄漏」(fork 出去的线程不知何时结束)的问题**　　C) `StructuredTaskScope` 只支持平台线程　　D) `StructuredTaskScope` 是虚拟线程的另一种写法
 
 ### 解答题(5 道)
 
@@ -306,8 +308,8 @@ class MillionCustomersTest {
 > **1-3** B(IO 密集是虚拟线程的最高价值场景——阻塞 IO 时虚拟线程卸载平台线程,让 OS 线程去服务别的虚拟线程。传统线程在阻塞时 OS 线程被浪费,虚拟线程把这段「浪费」转化为吞吐。CPU 密集任务没有这个收益——因为不会阻塞,不需要卸载)  
 > **举一反三**:虚拟线程的提升公式:收益 ≈ 阻塞时间 / 总任务时间。纯 CPU 计算(阻塞时间 ≈ 0)≈ 0% 提升;微服务调用(阻塞时间 90%+)≈ 10x 提升。
 >
-> **1-4** B（**仅 JDK 21–23**：虚拟线程在 `synchronized` 块内发生阻塞 I/O 时可能 pin 住 carrier；JNI / Foreign Function 等仍要按所用 JDK 的文档评估。）JDK 24+ 的 JEP 491 已让 `synchronized` 不再是这一 pin 来源。
-> **举一反三**:不要为了虚拟线程机械地把所有 `synchronized` 换成 `ReentrantLock`。先缩短锁内 I/O、测量并确认运行版本；升级到 JDK 24+ 后，monitor 锁不再因这类阻塞独占 carrier。
+> **1-4** B(pin 的本质——虚拟线程在 `synchronized` 块或 JNI native 方法中不能卸载。如果此时发生阻塞 IO,虚拟线程被 pin 在平台线程上,该平台线程被独占,无法服务其他虚拟线程)
+> **举一反三**:pin 是虚拟线程设计上的一个已知限制——monitor 锁（`synchronized`）与虚拟线程的挂载/卸载机制之间存在冲突,因为 monitor 持有者必须是 OS 线程。解决方法:把 `synchronized` 替换成 `ReentrantLock`（显式锁不 pin）,或者把阻塞操作移出 synchronized 块。
 >
 > **1-5** D(B 和 C 都对——`Thread.ofVirtual().start(r)` 创建单个虚拟线程;`Executors.newVirtualThreadPerTaskExecutor()` 返回一个每任务创建新虚拟线程的执行器,不用池化)  
 > **举一反三**:`Thread.ofPlatform()` 创建平台线程,`Thread.ofVirtual()` 创建虚拟线程。两者 API 对称,意图却相反——平台线程需要池化复用,虚拟线程用后即弃。
@@ -318,8 +320,8 @@ class MillionCustomersTest {
 > **1-7** B(能用但要 remove,且推荐迁移到 ScopedValue——虚拟线程的 Thread 对象仍然有 ThreadLocalMap,不 remove 仍然泄漏。区别在于泄漏速度:平台线程 200 个,每个泄漏 1MB,总计 200MB;虚拟线程可能 10 万个,每个泄漏 1KB,总计 100MB——仍然不可接受。ScopedValue 是官方推荐的替代)  
 > **举一反三**:虚拟线程让 ThreadLocal 的泄漏从"慢性病"变成"急性病"——虽然单个虚拟线程的 ThreadLocal 泄漏量小,但虚拟线程数量大,泄漏总量可能比平台线程更大且更难定位。所以迁移到 ScopedValue 不是可选项,而是必选项。
 >
-> **1-8** B（**JDK 21–23**：`synchronized` 块内阻塞 I/O 可能 pin；JDK 24+ 的 JEP 491 已修复这条来源。）
-> **举一反三**:诊断旧 JDK 可用 `-Djdk.tracePinnedThreads=full`；无论版本，仍应缩短锁持有时间、不要把慢 I/O 包在临界区，并按 JNI / Foreign Function 的实际调用链排查。
+> **1-8** B(synchronized 块内阻塞 IO → pin 住。虚拟线程在 `synchronized` 持有 monitor 时不能被 unmount,阻塞期间独占平台线程)
+> **举一反三**:pin 的检测:用 `-Djdk.tracePinnedThreads=full` JVM 参数,当虚拟线程被 pin 时 JVM 打印栈信息。常见的 pin 陷阱:`synchronized(this) { socket.read(); }`——把 I/O 放在 synchronized 块里,十个虚拟线程就能 pin 住十个平台线程,所有并发优势全毁。
 >
 > **1-9** B(数量由堆内存决定,不受 OS 线程限制——一个虚拟线程的对象本体加初始栈约占几百字节到 1KB,1GB 堆内存理论上可承载百万级别虚拟线程。实际瓶颈是:① 每个虚拟线程的局部变量总量 ② 异步操作数(连接数、FD 数) ③ 业务逻辑复杂度)  
 > **举一反三**:"百万并发"的硬件要求不像想象中那么高——瓶颈不再在线程,而在网络连接数(需要 OS 参数优化)、数据库连接池(不能用 1 请求 1 DB 连接)、以及下游服务的承载能力。虚拟线程解决了"并发等待"的瓶颈,但下游系统成为新的瓶颈。
@@ -388,7 +390,7 @@ class MillionCustomersTest {
 > ② 防钉住——错误:
 > ```java
 > synchronized(dataLock) {
->     String result = httpClient.send(request); // JDK 21–23 中会 pin；JDK 24+ 已由 JEP 491 修复
+>     String result = httpClient.send(request); // 阻塞 IO 在 synchronized 内,pin!
 > }
 > ```
 > 正确:
@@ -397,7 +399,7 @@ class MillionCustomersTest {
 > synchronized(dataLock) {
 >     updateData(result); // 只有快速操作在锁内
 > }
-> // 不要为此机械改锁；先缩短临界区并确认 JDK 版本
+> // 或改用 ReentrantLock(不 pin 虚拟线程)
 > ```
 > ③ ThreadLocal→ScopedValue——错误:
 > ```java
@@ -418,4 +420,10 @@ class MillionCustomersTest {
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

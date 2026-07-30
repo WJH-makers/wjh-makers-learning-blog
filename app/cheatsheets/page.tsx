@@ -1,8 +1,7 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPublishedPosts, renderMarkdown, siteUrl, type Post } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -10,18 +9,11 @@ export const runtime = "nodejs";
 const TITLE = "速查手册";
 const DESC = "命令与语法速查总台 —— CMD / PowerShell / Git / Docker / Node / Python / Java 构建 / WSL / Neovim / VS Code / Vue / AI CLI,按「全生命周期」编排,查得到、抄得走。";
 
-export const metadata: Metadata = {
+export const metadata = staticPageMetadata({
   title: TITLE,
   description: DESC,
-  alternates: { canonical: `${siteUrl()}/cheatsheets` },
-  openGraph: {
-    ...OG_BASE,
-    title: TITLE,
-    description: DESC,
-    url: `${siteUrl()}/cheatsheets`,
-    type: "website",
-  },
-};
+  path: "/cheatsheets",
+});
 
 /** 与 /posts 保持同一判定口径:slug 含 cheatsheet 或带速查标签。 */
 function isCheatsheet(post: Post): boolean {

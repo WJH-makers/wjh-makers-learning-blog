@@ -253,34 +253,34 @@ $ git show --stat HEAD           # 最后一次提交到底动了哪些文件
 ### 选择题(10 道)
 
 1. Git 的"三区模型"是指哪三个区?
-- A) 本地区、远程区、缓存区　B) 工作目录、暂存区、本地仓库(.git)　C) 代码区、文档区、测试区　D) master 区、branch 区、tag 区
+   - A) 本地区、远程区、缓存区　B) 工作目录、暂存区、本地仓库(.git)　C) 代码区、文档区、测试区　D) master 区、branch 区、tag 区
 
 2. `git add` 的作用是什么?
-- A) 创建新文件　B) 将修改从工作目录添加到暂存区(索引)　C) 将修改从暂存区提交到仓库　D) 将修改推送到远程仓库
+   - A) 创建新文件　B) 将修改从工作目录添加到暂存区(索引)　C) 将修改从暂存区提交到仓库　D) 将修改推送到远程仓库
 
 3. `git commit` 提交的是哪个区的内容?
-- A) 工作目录中的所有修改　B) 暂存区(索引)中的内容　C) 远程仓库中的内容　D) 所有未跟踪的文件
+   - A) 工作目录中的所有修改　B) 暂存区(索引)中的内容　C) 远程仓库中的内容　D) 所有未跟踪的文件
 
 4. "add 快照陷阱"指的是什么?
-- A) `git add` 很快所以叫快照　B) `git add` 时复制了文件的**当前状态**,之后修改工作目录中的文件不会自动反映到暂存区　C) `git add` 创建的是系统快照,可以随时恢复　D) 不存在"add 快照陷阱"这个概念
+   - A) `git add` 很快所以叫快照　B) `git add` 时复制了文件的**当前状态**,之后修改工作目录中的文件不会自动反映到暂存区　C) `git add` 创建的是系统快照,可以随时恢复　D) 不存在"add 快照陷阱"这个概念
 
 5. `git log --oneline` 的输出是什么格式?
-- A) 完整的提交信息含 diff　B) 每个提交一行(简短哈希 + 提交信息)　C) 只显示最近一个提交　D) 图形化分支图
+   - A) 完整的提交信息含 diff　B) 每个提交一行(简短哈希 + 提交信息)　C) 只显示最近一个提交　D) 图形化分支图
 
 6. `git status` 会显示哪些关键信息?
-- A) 只显示当前分支名　B) 当前分支名、工作区与暂存区的状态(已修改/已暂存/未跟踪)　C) 只显示未提交的文件列表　D) 完整的提交历史
+   - A) 只显示当前分支名　B) 当前分支名、工作区与暂存区的状态(已修改/已暂存/未跟踪)　C) 只显示未提交的文件列表　D) 完整的提交历史
 
 7. `git diff` 和 `git diff --staged` 的区别是什么?
-- A) 完全相同　B) `git diff` 比较工作目录与暂存区(未暂存的修改),`git diff --staged` 比较暂存区与最近一次提交(已暂存的修改)　C) `git diff` 比较两次提交,`git diff --staged` 比较分支　D) `git diff` 是简写,`--staged` 是完整形式,结果一样
+   - A) 完全相同　B) `git diff` 比较工作目录与暂存区(未暂存的修改),`git diff --staged` 比较暂存区与最近一次提交(已暂存的修改)　C) `git diff` 比较两次提交,`git diff --staged` 比较分支　D) `git diff` 是简写,`--staged` 是完整形式,结果一样
 
 8. 修改了 `a.txt`,执行 `git add a.txt`,然后又修改了 `a.txt`,此时 `git commit` 会提交哪个版本?
-- A) 第一次修改的版本(执行 add 时的快照)　B) 第二次修改的版本(最新版本)　C) 两次修改的合并版本　D) 报错,要求重新 add
+   - A) 第一次修改的版本(执行 add 时的快照)　B) 第二次修改的版本(最新版本)　C) 两次修改的合并版本　D) 报错,要求重新 add
 
 9. `git commit -m "message"` 执行后,以下哪个说法**错误**?
-- A) 暂存区的内容被保存为一个新的提交　B) 工作目录中的文件被清空　C) 提交记录可以通过 `git log` 查看　D) 提交包含作者、时间戳、提交信息等元数据
+   - A) 暂存区的内容被保存为一个新的提交　B) 工作目录中的文件被清空　C) 提交记录可以通过 `git log` 查看　D) 提交包含作者、时间戳、提交信息等元数据
 
 10. 以下操作序列会产生什么结果:修改 `a.txt`→`git add a.txt`→修改 `a.txt`→`git commit`→`git status`?
-- A) working tree clean(干净)　B) `a.txt` 显示为已修改(modified)　C) 报错,提交失败　D) 文件被还原到 add 时的状态
+   - A) working tree clean(干净)　B) `a.txt` 显示为已修改(modified)　C) 报错,提交失败　D) 文件被还原到 add 时的状态
 
 ### 解答题(5 道)
 
@@ -324,3 +324,10 @@ $ git show --stat HEAD           # 最后一次提交到底动了哪些文件
 > **Q4** 正确操作:`git add a.txt b.txt`(只 add 需要提交的两个文件,`c.txt` 保持 untracked 或 modified 但不 add)→`git commit -m "bugfix: a.txt; feat: add b.txt"`。**举一反三:**`c.txt` 不会被提交是因为它不在暂存区。用 `git stash push c.txt` 可以临时保存 `c.txt` 的修改(如果已 tracked),稍后用 `git stash pop` 恢复。
 >
 > **Q5** 操作:①`git init order-service && cd order-service` ②`echo "*.log\nnode_modules/" > .gitignore && git add .gitignore` ③`git commit -m "初始化 order-service 仓库"` ④日常开发循环:`git status`(看状态)→`git diff`(看未暂存的修改内容)→`git add <files>`(选要提交的文件)→`git diff --staged`(确认即将提交的内容)→`git commit -m "描述本次修改"`→`git log --oneline -3`(确认提交成功)。**举一反三:**用 `git commit -v` 打开编辑器并显示 diff,可以在写提交信息时参照修改内容;`git commit --amend` 修正最近一次提交(改信息或补充文件)。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。

@@ -188,7 +188,7 @@ tags: [Linux, Windows, 命令速查]
 
 ---
 
-# 二、Windows 命令（难度 × 频次）
+## 二、Windows 命令（难度 × 频次）
 
 ## Windows · S 极高频
 
@@ -236,4 +236,3 @@ tags: [Linux, Windows, 命令速查]
 | ★★★ | `.ps1` 脚本执行策略 | 现代自动化 |
 
 **CMD vs PowerShell**：CMD 传文本；PowerShell 传 .NET 对象（`动词-名词` cmdlet）。
-

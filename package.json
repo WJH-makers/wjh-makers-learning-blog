@@ -1,8 +1,9 @@
 {
-  "name": "doudou-learning-blog",
+  "name": "coffee-station-tech-journal",
   "version": "0.1.0",
   "private": true,
-  "description": "隐私优先的技术学习课程网站。",
+  "type": "module",
+  "description": "原创技术漫画与工程学习站。",
   "engines": {
     "node": ">=22.18"
   },
@@ -12,7 +13,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"tests/**/*.test.ts\"",
-    "test:java": "node --test tests/java-runtime.test.ts",
+    "audit:layout": "node scripts/audit-browser-layout.mjs",
+    "audit:reader": "node scripts/audit-book-reader.mjs",
+    "content:audit": "node --test tests/content-audit.test.ts",
     "deploy:doctor": "node scripts/doctor-deploy.mjs",
     "post:new": "node scripts/new-post.mjs"
   },
@@ -20,6 +23,9 @@
     "@blocknote/core": "0.52.1",
     "@blocknote/mantine": "0.52.1",
     "@blocknote/react": "0.52.1",
+    "@monaco-editor/react": "4.7.0",
+    "@vercel/functions": "3.7.6",
+    "monaco-editor": "0.56.0",
     "mongodb": "7.5.0",
     "next": "16.2.12",
     "react": "19.2.8",

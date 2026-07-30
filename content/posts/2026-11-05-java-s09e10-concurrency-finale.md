@@ -254,34 +254,34 @@ class StockService {
 ### 选择题(10 道)
 
 1. 超卖事故的「三层病根」是什么?
-- A) 死锁、活锁、饥饿　　B) 可见性缺失(普通字段)、原子性缺失(check-then-act 非原子)、锁粒度不足(synchronized 只罩半步)　　C) CPU 缓存、指令重排、内存屏障　　D) 线程池耗尽、连接池耗尽、内存溢出
+   - A) 死锁、活锁、饥饿　　B) 可见性缺失(普通字段)、原子性缺失(check-then-act 非原子)、锁粒度不足(synchronized 只罩半步)　　C) CPU 缓存、指令重排、内存屏障　　D) 线程池耗尽、连接池耗尽、内存溢出
 
 2. 在 #79 的「五步排障法」中,第四步「改一个变量」的目的是什么?
-- A) 修好 Bug　　B) 验证第三步的假设——通过放大竞态窗口(如加 sleep)观察超卖是否加剧,从而确认「这就是根因」　　C) 优化性能　　D) 简化代码结构
+   - A) 修好 Bug　　B) 验证第三步的假设——通过放大竞态窗口(如加 sleep)观察超卖是否加剧,从而确认「这就是根因」　　C) 优化性能　　D) 简化代码结构
 
 3. 为什么 `volatile` 没能修好超卖?
-- A) volatile 有 bug,不能用在库存场景　　B) volatile 只保证可见性(修改后其他线程立即可见),不保证原子性——`if (stock > 0)` 和 `stock--` 是两步操作,volatile 不能阻止两个线程同时读到一个「新鲜 1」然后各自减一次　　C) volatile 需要配合synchronized 使用　　D) volatile 只在单线程环境工作
+   - A) volatile 有 bug,不能用在库存场景　　B) volatile 只保证可见性(修改后其他线程立即可见),不保证原子性——`if (stock > 0)` 和 `stock--` 是两步操作,volatile 不能阻止两个线程同时读到一个「新鲜 1」然后各自减一次　　C) volatile 需要配合synchronized 使用　　D) volatile 只在单线程环境工作
 
 4. #79 的齐射测试中,`CountDownLatch` 作为「发令枪」的作用是?
-- A) 限制并发数　　B) 让 200 个线程在同一时间点同时出发——`ready.await()` 等全员就位,`go.countDown()` 发令,最大化竞态窗口,让 Bug 稳定复现　　C) 统计成功数　　D) 防止线程泄漏
+   - A) 限制并发数　　B) 让 200 个线程在同一时间点同时出发——`ready.await()` 等全员就位,`go.countDown()` 发令,最大化竞态窗口,让 Bug 稳定复现　　C) 统计成功数　　D) 防止线程泄漏
 
 5. 修复超卖的正确方案——「synchronized 罩住整个复合操作」解决了第几层病根?
-- A) 只解决第 1 层(可见性)　　B) 同时解决第 2 层(原子性)和第 3 层(锁粒度不足)——`synchronized boolean tryDeduct()` 把查和扣放在同一把锁下,且锁的 happens-before 保证了可见性(第 1 层也间接解决)　　C) 只解决第 3 层　　D) 只解决第 2 层
+   - A) 只解决第 1 层(可见性)　　B) 同时解决第 2 层(原子性)和第 3 层(锁粒度不足)——`synchronized boolean tryDeduct()` 把查和扣放在同一把锁下,且锁的 happens-before 保证了可见性(第 1 层也间接解决)　　C) 只解决第 3 层　　D) 只解决第 2 层
 
 6. 以下哪种修复方案能解决超卖,但性能在高竞争下最差?
-- A) `AtomicInteger.decrementAndGet()` + 检查值是否≥0　　B) `synchronized` 方法罩住整个复合操作　　C) `map.computeIfPresent(key, (k, v) -> v > 0 ? v - 1 : v)`　　D) CAS 自旋:循环 `while (true) { int cur = stock.get(); if (cur <= 0) return false; if (stock.compareAndSet(cur, cur-1)) return true; }`
+   - A) `AtomicInteger.decrementAndGet()` + 检查值是否≥0　　B) `synchronized` 方法罩住整个复合操作　　C) `map.computeIfPresent(key, (k, v) -> v > 0 ? v - 1 : v)`　　D) CAS 自旋:循环 `while (true) { int cur = stock.get(); if (cur <= 0) return false; if (stock.compareAndSet(cur, cur-1)) return true; }`
 
 7. `volatile` 在 #79 中「修错」了,但它对下面哪个场景是正确的选择?
-- A) 库存扣减(需要原子复合操作)　　B) 停止标志位——`volatile boolean running = true; while (running) { doWork(); }` 在多线程环境下,其他线程 `running = false` 后工作线程能立即看到　　C) 计数器增 1　　D) 多个字段组成的不变式
+   - A) 库存扣减(需要原子复合操作)　　B) 停止标志位——`volatile boolean running = true; while (running) { doWork(); }` 在多线程环境下,其他线程 `running = false` 后工作线程能立即看到　　C) 计数器增 1　　D) 多个字段组成的不变式
 
 8. 分层防超卖方案中,为什么「分布式锁」是「单机锁出不了本 JVM」的补救?
-- A) 分布式锁比单机锁快　　B) 单机 `synchronized` 或 `ReentrantLock` 只能保护一个 JVM 内的线程互斥——如果服务部署了 3 个副本(3 个 JVM),每个副本的锁独立的,互不感知,无法阻止跨副本的并发扣减。分布式锁(如 Redis `RLock`/数据库乐观锁)在所有 JVM 之间协调互斥　　C) 分布式锁不需要网络通信　　D) 单机锁有 bug,分布式锁没有
+   - A) 分布式锁比单机锁快　　B) 单机 `synchronized` 或 `ReentrantLock` 只能保护一个 JVM 内的线程互斥——如果服务部署了 3 个副本(3 个 JVM),每个副本的锁独立的,互不感知,无法阻止跨副本的并发扣减。分布式锁(如 Redis `RLock`/数据库乐观锁)在所有 JVM 之间协调互斥　　C) 分布式锁不需要网络通信　　D) 单机锁有 bug,分布式锁没有
 
 9. #79 的 `assertEquals(0, svc.stock())` 断言在 `synchronized` 修复后能通过,但有一个前提是 `stock()` 也必须加锁——为什么?
-- A) 为了代码对齐风格统一　　B) 如果不加锁,`stock()` 读到的值可能不是最新的(synchronized 加的锁是互斥锁,解锁时将修改刷回主内存;读不加锁没有 happens-before,可能读到过期的缓存值)　　C) `stock()` 加锁后更快　　D) 编译器要求 getter 必须与 setter 的同步级别一致
+   - A) 为了代码对齐风格统一　　B) 如果不加锁,`stock()` 读到的值可能不是最新的(synchronized 加的锁是互斥锁,解锁时将修改刷回主内存;读不加锁没有 happens-before,可能读到过期的缓存值)　　C) `stock()` 加锁后更快　　D) 编译器要求 getter 必须与 setter 的同步级别一致
 
 10. 200 人齐射测试中,用 `AtomicInteger sold` 记录成功卖出数——如果 `sold` 是普通 `int`,`assertEquals(100, sold)` 可能失败,为什么?
-- A) 普通 int 在多线程自增时会出现 「丢失更新」——线程 A 读到 sold=0,线程 B 也读到 sold=0,两者都写回 1,两次自增只加了 1　　B) 普通 int 自增是原子的　　C) 普通 int 会变负数　　D) 这是 JUnit 的 bug
+   - A) 普通 int 在多线程自增时会出现 「丢失更新」——线程 A 读到 sold=0,线程 B 也读到 sold=0,两者都写回 1,两次自增只加了 1　　B) 普通 int 自增是原子的　　C) 普通 int 会变负数　　D) 这是 JUnit 的 bug
 
 ### 解答题(5 道)
 
@@ -396,4 +396,10 @@ boolean tryBuy() {
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

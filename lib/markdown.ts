@@ -460,14 +460,27 @@ async function renderLines(lines: string[], ctx: RenderCtx, depth: number): Prom
       continue;
     }
 
-    // 列表:聚合连续列表行(含缩进),整块交给嵌套栈渲染
+    // 列表:聚合连续列表行(含缩进)。题目与选项之间常有空行；若空行后仍是同层
+    // 列表项，不能提前关掉 <ol>，否则浏览器会把后续题目重新从 1 编号。
     if (parseListItem(line)) {
       const items: ListItem[] = [];
       while (i < lines.length) {
         const it = parseListItem(lines[i]);
-        if (!it) break;
-        items.push(it);
-        i++;
+        if (it) {
+          items.push(it);
+          i++;
+          continue;
+        }
+
+        if (lines[i].trim() === "") {
+          let next = i + 1;
+          while (next < lines.length && lines[next].trim() === "") next++;
+          if (next < lines.length && parseListItem(lines[next])) {
+            i = next;
+            continue;
+          }
+        }
+        break;
       }
       i--;
       html.push(renderListBlock(items));

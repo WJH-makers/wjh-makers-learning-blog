@@ -274,22 +274,22 @@ class OpeningCeremonyTest {
 ### 选择题(10 道)
 
 1. `CountDownLatch` 的计数器到零后,是否可以重置复用?
-- A) 可以,调用 `reset()` 方法重置计数器　　B) 不可以——它是「一次性门闩」,count 到零后 latch 的 state 不能恢复,需要重新 new 一个　　C) 可以,调用 `countDown()` 传入负数恢复　　D) 可以通过反射重置
+   - A) 可以,调用 `reset()` 方法重置计数器　　B) 不可以——它是「一次性门闩」,count 到零后 latch 的 state 不能恢复,需要重新 new 一个　　C) 可以,调用 `countDown()` 传入负数恢复　　D) 可以通过反射重置
 
 2. `CyclicBarrier` 的 `await()` 调用后,当最后一个线程到达时,barrier 的动作是什么?
-- A) 随机唤醒一个等待线程　　B) 先执行构造时传入的 barrierAction(如果有的话),然后所有等待线程被同时释放,barrier 的计数恢复到初始值,进入下一轮——所以叫「Cyclic」　　C) 只释放最后一个线程,前面的继续等待　　D) 所有线程按到达顺序依次释放
+   - A) 随机唤醒一个等待线程　　B) 先执行构造时传入的 barrierAction(如果有的话),然后所有等待线程被同时释放,barrier 的计数恢复到初始值,进入下一轮——所以叫「Cyclic」　　C) 只释放最后一个线程,前面的继续等待　　D) 所有线程按到达顺序依次释放
 
 3. `Semaphore` 的 `acquire()` 和 `release()` 与锁的最关键区别是什么?
-- A) Semaphore 没有区别,就是另一种锁　　B) `release()` 不需要由获取许可的线程调用——任何线程都可以 release 许可,且 release 的次数可以超过 acquire 的次数(增加总许可数)　　C) Semaphore 自动处理死锁　　D) Semaphore 是基于 CAS 的无锁结构
+   - A) Semaphore 没有区别,就是另一种锁　　B) `release()` 不需要由获取许可的线程调用——任何线程都可以 release 许可,且 release 的次数可以超过 acquire 的次数(增加总许可数)　　C) Semaphore 自动处理死锁　　D) Semaphore 是基于 CAS 的无锁结构
 
 4. `CountDownLatch` 和 `CyclicBarrier` 的核心区别是什么?
-- A) 没有区别,只是 API 不同　　B) CountDownLatch 是「等待其他线程完成」——主线程等 N 个子线程 countDown;CyclicBarrier 是「线程相互等待」——N 个线程各自 await,最后一个到达时全体释放　　C) CountDownLatch 可以重用,CyclicBarrier 不能　　D) CountDownLatch 基于 AQS,CyclicBarrier 不是
+   - A) 没有区别,只是 API 不同　　B) CountDownLatch 是「等待其他线程完成」——主线程等 N 个子线程 countDown;CyclicBarrier 是「线程相互等待」——N 个线程各自 await,最后一个到达时全体释放　　C) CountDownLatch 可以重用,CyclicBarrier 不能　　D) CountDownLatch 基于 AQS,CyclicBarrier 不是
 
 5. 从 AQS 的视角看,`CountDownLatch` 的 `tryAcquireShared` 返回什么表示「门闩已开」?
-- A) state == 0 时返回正数表示成功,state > 0 时返回负数表示仍需等待　　B) 始终返回 true　　C) 只检查队列是否为空　　D) 返回 state 的原始值
+   - A) state == 0 时返回正数表示成功,state > 0 时返回负数表示仍需等待　　B) 始终返回 true　　C) 只检查队列是否为空　　D) 返回 state 的原始值
 
 6. `Semaphore` 用 AQS 实现时,`tryAcquireShared` 的逻辑是?
-- A) 检查 state 是否 > 0,是则 CAS 减 state 返回剩余许可数;否则返回负数　　B) 检查 state 是否等于 0　　C) 检查是否有排队的线程　　D) 直接加 state
+   - A) 检查 state 是否 > 0,是则 CAS 减 state 返回剩余许可数;否则返回负数　　B) 检查 state 是否等于 0　　C) 检查是否有排队的线程　　D) 直接加 state
 
 7. 以下代码中,`countDown()` 没有放在 finally 中的隐患是什么?
 
@@ -307,13 +307,13 @@ latch.await(); // 主线程永久等
 - A) latch 会自动检测异常并 countDown　　B) 如果 `doWork()` 抛异常,`countDown()` 不执行,latch 永远不会到零,主线程永久阻塞　　C) 编译器会警告,阻止编译　　D) `await()` 有内置超时,不会永久阻塞
 
 8. `CyclicBarrier` 内部使用什么锁机制?
-- A) CAS 自旋　　B) `ReentrantLock` + Condition(CyclicBarrier 内部有 `lock = new ReentrantLock()` 和 `trip = lock.newCondition()`)　　C) `synchronized`　　D) `StampedLock`
+   - A) CAS 自旋　　B) `ReentrantLock` + Condition(CyclicBarrier 内部有 `lock = new ReentrantLock()` 和 `trip = lock.newCondition()`)　　C) `synchronized`　　D) `StampedLock`
 
 9. 以下关于 `Semaphore(1)` 和 `ReentrantLock` 的对比,哪项不正确?
-- A) Semaphore(1) 可以实现互斥效果,类似于 lock　　B) Semaphore 的 release 可以由非获取线程执行(如线程 A acquire,线程 B release),而 lock 的 unlock 只能由持有锁的线程执行　　C) Semaphore(1) 是可重入的　　D) Semaphore 不支持 Condition
+   - A) Semaphore(1) 可以实现互斥效果,类似于 lock　　B) Semaphore 的 release 可以由非获取线程执行(如线程 A acquire,线程 B release),而 lock 的 unlock 只能由持有锁的线程执行　　C) Semaphore(1) 是可重入的　　D) Semaphore 不支持 Condition
 
 10. `await(long timeout, TimeUnit unit)` 在三个工具中的表现——哪个工具的超时后需要特别处理「部分线程超时导致计数器混乱」?
-- A) CountDownLatch——超时后 latch 仍可能被其他线程 countDown 到零,但 await 已返回 false,不会影响计数　　B) CyclicBarrier——如果某个线程 await 超时抛出 TimeoutException,barrier 被标记为 broken,其他等待中的线程收到 BrokenBarrierException;如果不处理,barrier 处于损坏状态需重置　　C) Semaphore——超时后许可被永久扣减　　D) 三者都没有超时后的副作用
+   - A) CountDownLatch——超时后 latch 仍可能被其他线程 countDown 到零,但 await 已返回 false,不会影响计数　　B) CyclicBarrier——如果某个线程 await 超时抛出 TimeoutException,barrier 被标记为 broken,其他等待中的线程收到 BrokenBarrierException;如果不处理,barrier 处于损坏状态需重置　　C) Semaphore——超时后许可被永久扣减　　D) 三者都没有超时后的副作用
 
 ### 解答题(5 道)
 
@@ -394,4 +394,10 @@ latch.await(); // 主线程永久等
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

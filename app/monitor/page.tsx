@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 
 export const metadata = {
   title: "站点监控",
-  description: "豆豆课程组 站点运行状态与流量监控。",
+  description: "站点运行状态与流量监控。",
   robots: { index: false, follow: false },
 } satisfies Metadata;
 
@@ -83,6 +83,10 @@ export default async function MonitorPage() {
               <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "1.7rem", fontWeight: 700, margin: "2px 0 0", lineHeight: 1.15, letterSpacing: "-.02em" }}>
                 瞭望塔
               </h1>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <a href="https://monitor.wwjjhh.online" target="_blank" rel="noreferrer" className="button" style={{ fontSize: ".7rem", padding: "3px 10px", minHeight: 32 }}>Netdata</a>
+              <a href="https://status.wwjjhh.online" target="_blank" rel="noreferrer" className="button" style={{ fontSize: ".7rem", padding: "3px 10px", minHeight: 32 }}>Kuma</a>
             </div>
           </div>
           {srv && (

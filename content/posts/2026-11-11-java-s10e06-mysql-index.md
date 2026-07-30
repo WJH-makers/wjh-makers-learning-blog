@@ -281,66 +281,66 @@ class PhoneNoTest {
 ### 选择题(10 道)
 
 1. InnoDB 选用 B+ 树而非红黑树作为索引结构,最关键的原因是?
-- A) B+ 树实现更简单
-- B) B+ 树「矮胖」(扇出大、层数少),同等数据量下磁盘 IO 次数远少于红黑树
-- C) B+ 树支持范围查询,红黑树不支持
-- D) B+ 树内存占用更小
+   - A) B+ 树实现更简单
+   - B) B+ 树「矮胖」(扇出大、层数少),同等数据量下磁盘 IO 次数远少于红黑树
+   - C) B+ 树支持范围查询,红黑树不支持
+   - D) B+ 树内存占用更小
 
 2. InnoDB 聚簇索引的叶子节点存放的是?
-- A) 主键值 + 指向数据页的指针
-- B) 整行数据
-- C) 索引列 + 主键值
-- D) 仅主键值
+   - A) 主键值 + 指向数据页的指针
+   - B) 整行数据
+   - C) 索引列 + 主键值
+   - D) 仅主键值
 
 3. 「回表」指的是?
-- A) 从二级索引回到聚簇索引查询完整行数据
-- B) 从聚簇索引回到二级索引
-- C) 删除索引后重新建表
-- D) 查询优化器切换索引
+   - A) 从二级索引回到聚簇索引查询完整行数据
+   - B) 从聚簇索引回到二级索引
+   - C) 删除索引后重新建表
+   - D) 查询优化器切换索引
 
 4. `EXPLAIN` 输出的 `type` 列,从好到差的排序是?
-- A) ALL > index > range > ref > const
-- B) const > ref > range > index > ALL
-- C) const > eq_ref > ref > range > index > ALL
-- D) ALL > range > ref > eq_ref > const
+   - A) ALL > index > range > ref > const
+   - B) const > ref > range > index > ALL
+   - C) const > eq_ref > ref > range > index > ALL
+   - D) ALL > range > ref > eq_ref > const
 
 5. 联合索引 `(a, b, c)` 中,`WHERE a=1 AND c=3` 能用到索引的几段?
-- A) 全部三段(a, b, c)
-- B) 只有 a
-- C) a 和 c
-- D) 一段也用不上
+   - A) 全部三段(a, b, c)
+   - B) 只有 a
+   - C) a 和 c
+   - D) 一段也用不上
 
 6. `WHERE phone = 13812345678`(phone 列是 VARCHAR)导致全表扫描,因为?
-- A) phone 列没有索引
-- B) 数字字面量与字符串列比较,MySQL 将整列 `CAST` 为数字,索引顺序作废
-- C) MySQL 不支持字符串索引
-- D) 索引已损坏
+   - A) phone 列没有索引
+   - B) 数字字面量与字符串列比较,MySQL 将整列 `CAST` 为数字,索引顺序作废
+   - C) MySQL 不支持字符串索引
+   - D) 索引已损坏
 
 7. 以下哪种写法**不会**导致索引失效?
-- A) `WHERE YEAR(created_at) = 2026`
-- B) `WHERE phone LIKE '138%'`
-- C) `WHERE phone LIKE '%5678'`
-- D) `WHERE id + 1 = 10`
+   - A) `WHERE YEAR(created_at) = 2026`
+   - B) `WHERE phone LIKE '138%'`
+   - C) `WHERE phone LIKE '%5678'`
+   - D) `WHERE id + 1 = 10`
 
 8. 「覆盖索引」的判断依据是 EXPLAIN 的 Extra 列显示?
-- A) `Using where`
-- B) `Using index`
-- C) `Using filesort`
-- D) `Using temporary`
+   - A) `Using where`
+   - B) `Using index`
+   - C) `Using filesort`
+   - D) `Using temporary`
 
 9. 阿零执行 `SELECT * FROM member WHERE level=3 AND name LIKE '张%'`,索引是 `(level, name)`。关于索引使用,描述正确的是?
-- A) 只能用到 level,因为 LIKE 是范围查询
-- B) level 和 name 都用到了(level 等值 + name 前缀 LIKE 可走 range 后的匹配)
-- C) 完全用不到索引
-- D) 需要回表才能拿到 name
+   - A) 只能用到 level,因为 LIKE 是范围查询
+   - B) level 和 name 都用到了(level 等值 + name 前缀 LIKE 可走 range 后的匹配)
+   - C) 完全用不到索引
+   - D) 需要回表才能拿到 name
 
 精判:最左前缀匹配下,`level=3`(等值)命中第一段;`name LIKE '张%'`(前缀 LIKE)在范围条件内,优化器可能将其视为等值范围,因此**两段都可能用到**。但严谨地说:等值后跟范围,范围列之后的列停用;如果 `name` 是范围,则只用 level 和 name(name 为范围扫描)。实际 EXPLAIN 的 key_len 才能确证。
 
 10. 关于主键设计,建议使用自增 ID 而非 UUID 的主要原因是?
-- A) UUID 占用空间更大
-- B) 自增 ID 新行永远追加在最右叶子页,UUID 随机插入触发页分裂和碎片
-- C) 自增 ID 查询更快
-- D) UUID 不支持 B+ 树索引
+   - A) UUID 占用空间更大
+   - B) 自增 ID 新行永远追加在最右叶子页,UUID 随机插入触发页分裂和碎片
+   - C) 自增 ID 查询更快
+   - D) UUID 不支持 B+ 树索引
 
 ### 解答题(5 道)
 
@@ -392,4 +392,10 @@ class PhoneNoTest {
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

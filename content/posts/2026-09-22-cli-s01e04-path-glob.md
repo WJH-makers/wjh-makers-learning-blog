@@ -234,34 +234,34 @@ $ ls backup
 ### 选择题(10 道)
 
 1. 相对路径的参照起点是什么?
-- A) 根目录 `/`　B) 当前工作目录(pwd)　C) 用户的 home 目录　D) `/usr/local`
+   - A) 根目录 `/`　B) 当前工作目录(pwd)　C) 用户的 home 目录　D) `/usr/local`
 
 2. `cd -` 的作用是?
-- A) 切换到 home 目录　B) 切换到根目录　C) 切换到上一次所在的工作目录　D) 切换到父目录
+   - A) 切换到 home 目录　B) 切换到根目录　C) 切换到上一次所在的工作目录　D) 切换到父目录
 
 3. Tab 键在命令行中的主要功能是?
-- A) 执行命令　B) 显示帮助　C) 自动补全文件名/命令名/路径　D) 清空当前行
+   - A) 执行命令　B) 显示帮助　C) 自动补全文件名/命令名/路径　D) 清空当前行
 
 4. 当前目录有两个文件 `app.log`、`error.log`,执行 `ls *.log` 时,shell 实际执行的是?
-- A) `ls "*.log"`　B) `ls app.log error.log`　C) `ls`　D) `ls '*。log'`
+   - A) `ls "*.log"`　B) `ls app.log error.log`　C) `ls`　D) `ls '*。log'`
 
 5. 绝对路径和相对路径各有优劣,以下哪条适合在 **shell 脚本**中使用?
-- A) 相对路径,因为更短　B) 绝对路径,因为不依赖当前工作目录　C) 两者没区别　D) 混合使用,看心情
+   - A) 相对路径,因为更短　B) 绝对路径,因为不依赖当前工作目录　C) 两者没区别　D) 混合使用,看心情
 
 6. Ctrl+R 快捷键的功能是什么?
-- A) 重启终端　B) 反向搜索命令历史(reverse-i-search)　C) 清屏　D) 撤销上一条命令
+   - A) 重启终端　B) 反向搜索命令历史(reverse-i-search)　C) 清屏　D) 撤销上一条命令
 
 7. 在 `/home/user/docs` 下执行 `cd ../../var/log`,等价于?
-- A) `cd /var/log`　B) `cd /home/var/log`　C) `cd /home/user/var/log`　D) `cd /home/user/docs/var/log`
+   - A) `cd /var/log`　B) `cd /home/var/log`　C) `cd /home/user/var/log`　D) `cd /home/user/docs/var/log`
 
 8. 关于 glob 通配符,以下哪种写法可以匹配 `file1.txt`、`file2.txt`、`file10.txt`,但**不能**匹配 `file.txt`?
-- A) `file*.txt`　B) `file?.txt`　C) `file[0-9]*.txt`　D) `file+([0-9]).txt`
+   - A) `file*.txt`　B) `file?.txt`　C) `file[0-9]*.txt`　D) `file+([0-9]).txt`
 
 9. 用户在 `/tmp/a/b/c` 目录,想用一条命令直接回到 home 目录并列出所有文件,正确的是?
-- A) `cd && ls`　B) `cd ~ && ls`　C) `cd; ls`　D) 以上都可以
+   - A) `cd && ls`　B) `cd ~ && ls`　C) `cd; ls`　D) 以上都可以
 
 10. 以下关于路径的说法,**全部正确**的是?
-- A) `~` 永远是 `/home/用户名`　B) `.` 代表父目录,`..` 代表当前目录　C) `cd /` 回到 home 目录　D) 以上都不全对
+   - A) `~` 永远是 `/home/用户名`　B) `.` 代表父目录,`..` 代表当前目录　C) `cd /` 回到 home 目录　D) 以上都不全对
 
 ### 解答题(5 道)
 
@@ -305,3 +305,11 @@ $ ls backup
 > **Q4** 排查思路:①`ls /etc/ | grep -i nginx` 确认目录下的实际文件名 ②注意到了拼写:`ngnix` 应该是 `nginx` ③用 Tab 补全:`ls /etc/ng`然后按 Tab,让 shell 自动补全 ④用 `find /etc -maxdepth 1 -iname "*nginx*"` 模糊搜索(不区分大小写)。**举一反三:**`-iname` 不区分大小写,适合不确定大小写格式时使用。
 >
 > **Q5** 搜索策略:①`find /var/log -type f -name "*access*202609*"` 按文件名模糊搜索 ②如果 find 太慢,先用 `ls /var/log/**/*access*202609*`(需开启 globstar) ③用 Ctrl+R 搜索之前查看过该文件的命令 ④如果完全不确定路径,`find / -type f -name "*access*202609*" 2>/dev/null` 全局搜索 ⑤用 `locate access202609`(如果系统有 mlocate 索引)。**举一反三:**搜索优先级:已知目录用 glob+Tab → 子目录用 find → 全局用 locate → 都不行用 grep 搜内容。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

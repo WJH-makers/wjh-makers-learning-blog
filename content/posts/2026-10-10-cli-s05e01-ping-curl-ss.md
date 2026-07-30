@@ -247,34 +247,34 @@ LISTEN  0  511  0.0.0.0:3000  0.0.0.0:*  users:(("node",pid=21501,fd=18))
 ### 选择题(10 道)
 
 1. `ping` 命令使用什么网络协议?
-- A) TCP　B) UDP　C) ICMP　D) HTTP
+   - A) TCP　B) UDP　C) ICMP　D) HTTP
 
 2. `curl -I https://example.com` 中 `-I` 的作用是什么?
-- A) 忽略 SSL 证书校验　B) 只获取 HTTP 响应头(HEAD 请求)　C) 交互模式　D) 显示请求头
+   - A) 忽略 SSL 证书校验　B) 只获取 HTTP 响应头(HEAD 请求)　C) 交互模式　D) 显示请求头
 
 3. `ss -tlnp` 中 `-t`、`-l`、`-n`、`-p` 分别代表什么?
-- A) tcp、listening(监听)、numeric(数字端口号)、process(显示进程)　B) test、local、name、port　C) timeout、log、new、path　D) tl、nl 等协议选项
+   - A) tcp、listening(监听)、numeric(数字端口号)、process(显示进程)　B) test、local、name、port　C) timeout、log、new、path　D) tl、nl 等协议选项
 
 4. 服务监听在 `0.0.0.0:8080` 和 `127.0.0.1:8080` 有什么区别?
-- A) 完全相同　B) `0.0.0.0` 监听所有网络接口(外部可访问),`127.0.0.1` 只监听本地回环(只本机可访问)　C) `0.0.0.0` 更快　D) `127.0.0.1` 是最新版写法
+   - A) 完全相同　B) `0.0.0.0` 监听所有网络接口(外部可访问),`127.0.0.1` 只监听本地回环(只本机可访问)　C) `0.0.0.0` 更快　D) `127.0.0.1` 是最新版写法
 
 5. `curl -v https://example.com` 中 `-v` 的用途是什么?
-- A) 验证(verify)SSL 证书　B) verbose(详细模式),显示请求和响应的完整 HTTP 头部和握手过程　C) 版本(version)信息　D) 虚拟(virtual)主机
+   - A) 验证(verify)SSL 证书　B) verbose(详细模式),显示请求和响应的完整 HTTP 头部和握手过程　C) 版本(version)信息　D) 虚拟(virtual)主机
 
 6. 浏览器访问 `http://server:3000` 提示 "Connection refused",而 `ping server` 正常,这说明了什么?
-- A) 服务器宕机了　B) 端口 3000 上没有服务在监听(或被防火墙阻止)　C) DNS 解析失败　D) 浏览器坏了
+   - A) 服务器宕机了　B) 端口 3000 上没有服务在监听(或被防火墙阻止)　C) DNS 解析失败　D) 浏览器坏了
 
 7. `Connection refused` 和 `Connection timeout` 的关键区别是什么?
-- A) 没有区别,都是网络不通　B) refused=目标主机**明确拒绝**了连接(端口没开或无服务),timeout=请求发出去了但**没有收到任何响应**(防火墙丢包或主机不可达)　C) refused 是本地问题,timeout 是远程问题　D) timeout 一定是网络断了
+   - A) 没有区别,都是网络不通　B) refused=目标主机**明确拒绝**了连接(端口没开或无服务),timeout=请求发出去了但**没有收到任何响应**(防火墙丢包或主机不可达)　C) refused 是本地问题,timeout 是远程问题　D) timeout 一定是网络断了
 
 8. 网络分层排查的正确顺序(自底向上)是什么?
-- A) 应用层→传输层→网络层→链路层　B) 链路层(ping)→网络层(ping)→传输层(ss/telnet)→应用层(curl)　C) 应用层→链路层→网络层→传输层　D) 没有标准顺序
+   - A) 应用层→传输层→网络层→链路层　B) 链路层(ping)→网络层(ping)→传输层(ss/telnet)→应用层(curl)　C) 应用层→链路层→网络层→传输层　D) 没有标准顺序
 
 9. `ss -tlnp | grep :80` 没有输出,但 nginx 在运行。最可能的原因是什么?
-- A) nginx 没有运行,`ss` 命令故障　B) nginx 可能只监听 IPv4 或只监听 IPv6(需要分别用 `ss -tlnp4` 和 `ss -tlnp6` 检查),或者监听了其他端口　C) `ss` 不能看 nginx 的状态　D) nginx 使用了其他协议
+   - A) nginx 没有运行,`ss` 命令故障　B) nginx 可能只监听 IPv4 或只监听 IPv6(需要分别用 `ss -tlnp4` 和 `ss -tlnp6` 检查),或者监听了其他端口　C) `ss` 不能看 nginx 的状态　D) nginx 使用了其他协议
 
 10. `curl` 返回 `curl: (7) Failed to connect to example.com port 443: Connection refused`,诊断的正确流程是什么?
-- A) 重新安装 curl　B) 先 ping 确认网络→用 `ss -tlnp` 确认端口是否有服务监听→检查防火墙是否阻挡→检查服务是否绑定到正确地址　C) 直接重启服务器　D) 换浏览器试
+   - A) 重新安装 curl　B) 先 ping 确认网络→用 `ss -tlnp` 确认端口是否有服务监听→检查防火墙是否阻挡→检查服务是否绑定到正确地址　C) 直接重启服务器　D) 换浏览器试
 
 ### 解答题(5 道)
 
@@ -318,3 +318,12 @@ LISTEN  0  511  0.0.0.0:3000  0.0.0.0:*  users:(("node",pid=21501,fd=18))
 > **Q4** 分层排查:①**网络层:**`ping coffee-server`(确认 IP 可达,得到 IP 地址如 10.0.0.5) ②**传输层:**`telnet 10.0.0.5 8080`(如果能连通,说明端口可达;如果 Connection refused,检查 ssh 到服务器后用 `sudo ss -tlnp | grep 8080` 查看服务是否监听在 0.0.0.0 还是 127.0.0.1) ③**防火墙:**`sudo ufw status`(检查是否有 8080 的 allow 规则);如果是云服务,检查安全组(Security Group)是否放行 8080 入站端口 ④**服务层:**在服务器上 `curl localhost:8080` 正常 → 说明服务本身没问题,问题在"外部访问路径"上 ⑤**诊断结果:**服务可能绑定在 `127.0.0.1:8080` 而非 `0.0.0.0:8080` → 改为 `0.0.0.0:8080` 并重启服务;或者 ufw/安全组没有放行 8080 端口。**举一反三:**这是生产环境最常见的"内网能访问外网不行"问题——99% 是绑定地址或防火墙问题。
 >
 > **Q5** 脚本框架:`#!/bin/bash; set -e`。`HOST=coffee-server; WEB_PORT=80; DB_PORT=5432`。步骤:①`ping -c 2 -W 3 $HOST > /dev/null 2>&1 && echo "[OK] Ping $HOST" || echo "[FAIL] Ping $HOST - 网络不通或主机不可达"` ②`timeout 3 bash -c "echo > /dev/tcp/$HOST/$WEB_PORT" 2>/dev/null && echo "[OK] Port $WEB_PORT" || echo "[FAIL] Port $WEB_PORT - 服务未监听或防火墙阻挡"` ③`timeout 3 bash -c "echo > /dev/tcp/$HOST/$DB_PORT" 2>/dev/null && echo "[OK] Port $DB_PORT" || echo "[FAIL] Port $DB_PORT - 数据库未监听"` ④`STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$HOST/); [ "$STATUS" = "200" ] && echo "[OK] HTTP $STATUS" || echo "[FAIL] HTTP $STATUS - 期望 200"` ⑤如果 FAIL,输出可能原因:`echo "排查建议: 1. ssh $HOST 进入服务器 2. sudo ss -tlnp 确认端口 3. sudo ufw status 查看防火墙 4. systemctl status <service> 查看服务状态"`。**举一反三:**生产健康检查建议用专门的监控工具(Nagios/Zabbix/Prometheus+Blackbox Exporter/Uptime Kuma),它们提供告警、趋势图、历史记录。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。
