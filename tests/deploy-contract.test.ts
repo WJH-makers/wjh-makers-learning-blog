@@ -31,3 +31,15 @@ test("successful deploys bound old build cache without touching active images or
   assert.doesNotMatch(deploy, /docker (?:system|volume) prune/);
   assert.doesNotMatch(deploy, /docker image prune[^\n]*--all/);
 });
+
+test("production ref fetches cannot hold the deploy lock indefinitely", () => {
+  const workflow = read(".github/workflows/ci.yml");
+  const deploy = read("scripts/deploy-from-origin.sh");
+
+  assert.match(deploy, /DEPLOY_FETCH_URL=https:\/\/github\.com\//);
+  assert.match(deploy, /timeout --signal=TERM --kill-after=10s "\$FETCH_TIMEOUT"/);
+  assert.match(deploy, /FETCH_ATTEMPTS=2/);
+  assert.match(deploy, /refs\/heads\/production:refs\/remotes\/origin\/production/);
+  assert.match(workflow, /for attempt in \$\(seq 1 96\)/);
+  assert.match(workflow, /within 16 minutes/);
+});
