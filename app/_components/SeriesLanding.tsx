@@ -15,37 +15,34 @@ import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/se
 import { publishedEpisodesOf, allEpisodesOf, type SeriesRef } from "@/lib/series-registry";
 import { siteUrl } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { staticPageMetadata } from "@/lib/og-base";
 import JavaProgress from "../java/JavaProgress";
 import SeriesMap from "../java/SeriesMap";
 
 /** 各线 page.tsx 的 `export const metadata` 一律由这里生成,标题/canonical/OG 口径统一。 */
 export function seriesLandingMetadata(series: SeriesRef): Metadata {
   const title = series.alias ? `${series.title} · ${series.alias}` : series.title;
-  const url = `${siteUrl()}${series.route}`;
-  return {
+  return staticPageMetadata({
     title,
     description: series.tagline,
-    alternates: { canonical: url },
+    path: series.route,
     // 未开更的蓝图页对搜索引擎是薄内容;开更后自动恢复索引。
     robots: publishedEpisodesOf(series).length === 0 ? { index: false, follow: true } : undefined,
-    openGraph: {
-      ...OG_BASE,
-      title,
-      description: series.tagline,
-      url,
-      type: "website",
-    },
-  };
+  });
 }
 
 export default function SeriesLanding({ series }: { series: SeriesRef }) {
   const published = publishedEpisodesOf(series);
-  const total = allEpisodesOf(series).length;
   const done = published.length;
   const progressSeasons = series.seasons
     .map((s) => ({ code: s.code, title: s.title, slugs: seasonPublishedSlugs(s) }))
     .filter((s) => s.slugs.length > 0);
+  const visibleSeasons = series.seasons
+    .map((season) => ({
+      ...season,
+      episodes: season.episodes.filter((episode) => episode.status === "published" && published.some((item) => item.slug === episode.slug)),
+    }))
+    .filter((season) => season.episodes.length > 0);
 
   // 系列主实体:与文章页 isPartOf 里的 CreativeWorkSeries 引用(name/url)严格一致,形成双向闭环。
   const seriesJsonLd = {
@@ -57,9 +54,8 @@ export default function SeriesLanding({ series }: { series: SeriesRef }) {
     inLanguage: "zh-CN",
     author: {
       "@type": "Person",
-      name: "WJH-makers",
-      alternateName: "WJH-makers",
-      url: "https://github.com/WJH-makers",
+      name: "咖啡站技术志",
+      url: siteUrl(),
     },
     hasPart: published.map((ep, i) => ({
       "@type": "BlogPosting",
@@ -89,7 +85,7 @@ export default function SeriesLanding({ series }: { series: SeriesRef }) {
         <div className="hero-panel">
           <p className="eyebrow">连载进度</p>
           <p>
-            已连载 <strong>{done}</strong> / 规划 {total} 话 · 蓝图先行,逐话开更
+            已连载 <strong>{done}</strong> 话
           </p>
           <p className="muted">
             长期项目:{series.project}
@@ -101,16 +97,23 @@ export default function SeriesLanding({ series }: { series: SeriesRef }) {
         <JavaProgress seasons={progressSeasons} storageKey={series.storageKey} />
       )}
 
-      <section className="section-head" style={{ marginTop: "2.5rem" }}>
-        <div>
-          <p className="eyebrow">Knowledge Map · 知识地图</p>
-          <h2>脉络版图</h2>
-        </div>
-        <span className="muted">点节点直达 · 读过的自动打勾</span>
-      </section>
-      <SeriesMap seasons={series.seasons} storageKey={series.storageKey} />
+      {done > 0 ? <>
+        <section className="section-head" style={{ marginTop: "2.5rem" }}>
+          <div>
+            <p className="eyebrow">Knowledge Map · 知识地图</p>
+            <h2>已经点亮的脉络</h2>
+          </div>
+          <span className="muted">点节点直达 · 读过的自动打勾</span>
+        </section>
+        <SeriesMap seasons={visibleSeasons} storageKey={series.storageKey} />
+      </> : (
+        <section className="universe-intro">
+          <p className="eyebrow">创作中</p>
+          <p>这条路线尚未正式开更。章节设计、排期与技术承诺只在创作后台维护；第一篇经过验证并发布后，才会在这里出现。</p>
+        </section>
+      )}
 
-      {series.seasons.map((season) => (
+      {visibleSeasons.map((season) => (
         <section key={season.season} style={{ marginTop: "2.5rem" }}>
           <div className="section-head">
             <div>
@@ -139,18 +142,14 @@ export default function SeriesLanding({ series }: { series: SeriesRef }) {
               </thead>
               <tbody>
                 {season.episodes.map((ep) => (
-                  <tr key={ep.episode} className={ep.status === "published" ? undefined : "row-planned"}>
+                  <tr key={ep.episode}>
                     <td>{String(ep.episode).padStart(2, "0")}</td>
                     <td>
-                      {ep.status === "published" && ep.slug ? (
-                        <Link href={`/posts/${ep.slug}`}>{ep.title}</Link>
-                      ) : (
-                        ep.title
-                      )}
+                      <Link href={`/posts/${ep.slug}`}>{ep.title}</Link>
                     </td>
                     <td>{CHAPTER_TYPE_LABEL[ep.chapterType]}</td>
                     <td>{ep.projectStage}</td>
-                    <td>{STATUS_LABEL[ep.status] ?? ep.status}</td>
+                    <td>{STATUS_LABEL.published}</td>
                   </tr>
                 ))}
               </tbody>

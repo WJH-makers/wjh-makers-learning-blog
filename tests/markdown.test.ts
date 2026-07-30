@@ -129,6 +129,14 @@ test("有序列表含缩进选项(s01e01 选择题场景),编号连续", async (
   assert.ok(!flat.includes("<p>"), flat);
 });
 
+test("选择题的空行不会让有序列表从 1 重新编号", async () => {
+  const html = await markdownToHtml("1. 题一\n   - A) 甲　B) 乙\n\n2. 题二\n   - A) 丙　B) 丁\n\n3. 题三");
+  const flat = html.replace(/\n/g, "");
+  assert.equal((flat.match(/<ol>/g) ?? []).length, 1, flat);
+  assert.ok(flat.includes("</ul></li><li>题二<ul>"), flat);
+  assert.ok(flat.endsWith("</li></ol>"), flat);
+});
+
 test("同层 ul/ol 切换保持原行为", async () => {
   const html = await markdownToHtml("- a\n1. b");
   const flat = html.replace(/\n/g, "");

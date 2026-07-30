@@ -1,16 +1,16 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllPublishedPosts, siteUrl, type Post } from "@/lib/posts";
+import { getAllPublishedPosts, type Post } from "@/lib/posts";
+import { staticPageMetadata } from "@/lib/og-base";
 import { SERIES_LIST, findEpisodeInfo, seriesProgress } from "@/lib/series-registry";
 
 export const revalidate = 604800;
 export const runtime = "nodejs";
 
-export const metadata: Metadata = {
+export const metadata = staticPageMetadata({
   title: "文章精选 · 速查与笔记",
   description: "速查手册与学习笔记的精选列表;连载话次在各系列地图里,全量清单见 /archive。",
-  alternates: { canonical: `${siteUrl()}/posts` },
-};
+  path: "/posts",
+});
 
 // 连载话次单独有系列地图,不塞进列表;速查与笔记分区展示。
 // 走注册表判定而非 slug 正则 —— 新开一条线不改这里也能正确归类。

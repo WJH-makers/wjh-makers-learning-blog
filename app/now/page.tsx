@@ -1,8 +1,7 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { siteUrl } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 86400;
 export const runtime = "nodejs";
@@ -28,23 +27,19 @@ const NOW = {
   ],
 };
 
-export const metadata: Metadata = {
+export const metadata = staticPageMetadata({
   title: "现在",
-  description: `WJH-makers 此刻在做什么、在学什么、在读什么 —— 更新于 ${UPDATED}。`,
-  alternates: { canonical: `${siteUrl()}/now` },
-  openGraph: {
-    ...OG_BASE,
-    title: "现在 | WJH-makers",
-    description: "此刻在做什么、在学什么、在读什么。",
-    url: `${siteUrl()}/now`,
-  },
-};
+  description: `咖啡站技术志此刻在更新什么、研究什么、阅读什么 —— 更新于 ${UPDATED}。`,
+  path: "/now",
+  socialTitle: "现在 | 咖啡站技术志",
+  socialDescription: "此刻在做什么、在学什么、在读什么。",
+});
 
 export default function NowPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "现在 · WJH-makers",
+    name: "现在 · 咖啡站技术志",
     url: `${siteUrl()}/now`,
     dateModified: UPDATED,
     inLanguage: "zh-CN",
@@ -90,9 +85,7 @@ export default function NowPage() {
         </ul>
       </section>
 
-      <p className="about-more">
-        项目全貌见 <Link href="/projects">/projects</Link>,关于我见 <Link href="/about">/about</Link>。
-      </p>
+      <p className="now-more">项目全貌见 <Link href="/projects">/projects</Link>。</p>
     </div>
   );
 }

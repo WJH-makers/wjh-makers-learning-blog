@@ -9,6 +9,8 @@
  * 其余生态做成支线,不强迫零基础一次学完。改这里不影响任何已发布文章。
  */
 
+import { isReleasedSlug } from "@/lib/publication";
+
 export type ChapterType =
   | "comic" // 漫画:讲心智模型、冲突、错误
   | "lab" // 实验手册:命令/SQL/配置,可复制
@@ -299,7 +301,7 @@ export function allEpisodes(): JavaEpisode[] {
 }
 
 export function publishedEpisodes(): JavaEpisode[] {
-  return allEpisodes().filter((e) => e.status === "published" && e.slug);
+  return allEpisodes().filter((e) => e.status === "published" && isReleasedSlug(e.slug));
 }
 
 export function totalEpisodeCount(): number {
@@ -334,5 +336,5 @@ export const STATUS_LABEL: Record<EpisodeStatus, string> = {
 
 /** 一卷内已发布话的 slug 列表(flatMap 窄化,免去 as string 断言)。 */
 export function seasonPublishedSlugs(season: JavaSeason): string[] {
-  return season.episodes.flatMap((e) => (e.status === "published" && e.slug ? [e.slug] : []));
+  return season.episodes.flatMap((e) => (e.status === "published" && e.slug && isReleasedSlug(e.slug) ? [e.slug] : []));
 }

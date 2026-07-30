@@ -16,8 +16,6 @@ export type Project = {
   status: ProjectStatus;
   /** 可量化的关键结果,没有就留空数组 */
   highlights?: string[];
-  repo?: string;
-  live?: string;
   /** 站内相关文章 slug,把项目与写作串起来 */
   posts?: { title: string; slug: string }[];
 };
@@ -31,8 +29,8 @@ export const STATUS_LABEL: Record<ProjectStatus, string> = {
 
 export const PROJECTS: Project[] = [
   {
-    name: "wjh-makers-learning-blog",
-    lead: "你正在读的这个站:一个把技术教程写成漫画连载的单体博客。",
+    name: "咖啡站技术志",
+    lead: "一个把技术教程写成漫画连载的学习站。",
     detail:
       "Next.js App Router 单体,没有独立后端 —— 写入直接走 Server Action 打 MongoDB Atlas,内容由本地 Markdown 与数据库按 slug 合并(数据库优先,连不上就降级读 md,所以断网也能构建)。Markdown 渲染器是自己写的纯函数模块,零第三方依赖:代码高亮走 Shiki 构建期完成,客户端不背任何高亮 JS。全站手写 CSS,没有 Tailwind 也没有 UI 库。",
     stack: ["Next.js 16", "React 19", "TypeScript 6", "MongoDB Atlas", "Shiki", "Docker", "Nginx", "Cloudflare"],
@@ -42,8 +40,6 @@ export const PROJECTS: Project[] = [
       "构建期语法高亮,文章页不下发高亮 JS",
       "CDN → Nginx 缓存 → Node 三级链路,HTML 边缘缓存",
     ],
-    repo: "https://github.com/WJH-makers/wjh-makers-learning-blog",
-    live: "https://wwjjhh.online",
   },
   {
     name: "咖啡站宇宙 · 多线漫画连载",

@@ -15,27 +15,7 @@ function safeCompare(a: string, b: string): boolean {
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  const accept = request.headers.get("accept")?.toLowerCase() ?? "";
-  const acceptsMarkdown = accept.split(",").some((item) => {
-    const mediaType = item.trim();
-    return mediaType.startsWith("text/markdown") && !/;\s*q=0(?:\.0+)?(?:;|$)/.test(mediaType);
-  });
-
-  // 仅为公开的内容页协商 Markdown；写作台、接口和任何未公开路由保持原行为。
   const isContentPage = pathname === "/" || pathname === "/posts" || /^\/posts\/[^/]+$/.test(pathname);
-  if (request.method === "GET" && acceptsMarkdown && isContentPage) {
-    // 文章直接复用其固定的 Markdown 路由；不要依赖内部 rewrite 的查询参数传递。
-    const target = pathname === "/" || pathname === "/posts"
-      ? new URL("/agent/markdown", request.url)
-      : new URL(`${pathname}/markdown`, request.url);
-    const rewritten = NextResponse.rewrite(target);
-    // 同一 URL 会按 Accept 返回 HTML 或 Markdown 两种内容:不声明 Vary,
-    // CF/nginx 只按 URL 缓存 —— agent 抓一次就可能让后续浏览器读者拿到裸 Markdown。
-    rewritten.headers.append("Vary", "Accept");
-    // 这份变体只服务内容协商,不进共享缓存,避免上游代理把它当作该 URL 的规范表示。
-    rewritten.headers.set("Cache-Control", "private, no-store");
-    return rewritten;
-  }
 
   if (request.nextUrl.pathname === "/write" && request.method === "POST") {
     const expected = process.env.BLOG_ADMIN_TOKEN?.trim();
@@ -51,18 +31,12 @@ export function proxy(request: NextRequest) {
 
   const response = NextResponse.next();
   if (isContentPage) {
-    // HTML 与 Markdown 共用同一 URL,必须声明按 Accept 分表示,否则共享缓存会串味。
-    response.headers.append("Vary", "Accept");
     // 反向代理会把内部地址作为 request.url 传入；发现链接必须始终使用公网规范域名。
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online";
     const links = [
-      `<${origin}/llms.txt>; rel="alternate"; type="text/plain"`,
       `<${origin}/sitemap.xml>; rel="sitemap"; type="application/xml"`,
       `<${origin}/rss.xml>; rel="alternate"; type="application/rss+xml"`,
     ];
-    if (/^\/posts\/[^/]+$/.test(pathname)) {
-      links.push(`<${origin}${pathname}/markdown>; rel="alternate"; type="text/markdown"`);
-    }
     response.headers.set("Link", links.join(", "));
   }
   return response;

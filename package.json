@@ -1,8 +1,9 @@
 {
-  "name": "wjh-makers-learning-blog",
+  "name": "coffee-station-tech-journal",
   "version": "0.1.0",
   "private": true,
-  "description": "WJH-makers 的个人学习成果博客，部署到 Vercel。",
+  "type": "module",
+  "description": "原创技术漫画与工程学习站。",
   "engines": {
     "node": ">=22.18"
   },
@@ -12,6 +13,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"tests/**/*.test.ts\"",
+    "audit:layout": "node scripts/audit-browser-layout.mjs",
+    "audit:reader": "node scripts/audit-book-reader.mjs",
+    "content:audit": "node --test tests/content-audit.test.ts",
     "deploy:doctor": "node scripts/doctor-deploy.mjs",
     "post:new": "node scripts/new-post.mjs"
   },

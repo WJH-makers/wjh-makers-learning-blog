@@ -1,9 +1,8 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPublishedPosts, getAllPublishedTags, siteUrl, type Post } from "@/lib/posts";
 import { SERIES_LIST, seriesProgress, allSeriesProgress, findEpisodeInfo } from "@/lib/series-registry";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -11,18 +10,11 @@ export const runtime = "nodejs";
 const TITLE = "站点数据";
 const DESC = "这个博客的公开数据面:文章总数与总字数、各连载进度、按月更新节奏、标签分布与长短篇极值 —— 全部实时从内容算出来,不接任何统计脚本。";
 
-export const metadata: Metadata = {
+export const metadata = staticPageMetadata({
   title: TITLE,
   description: DESC,
-  alternates: { canonical: `${siteUrl()}/stats` },
-  openGraph: {
-    ...OG_BASE,
-    title: TITLE,
-    description: DESC,
-    url: `${siteUrl()}/stats`,
-    type: "website",
-  },
-};
+  path: "/stats",
+});
 
 function charCount(post: Post): number {
   return post.content.length;

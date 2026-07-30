@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllPublishedTags, siteUrl } from "@/lib/posts";
+import { getAllPublishedTags } from "@/lib/posts";
+import { staticPageMetadata } from "@/lib/og-base";
 
-export const metadata = {
+export const metadata = staticPageMetadata({
   title: "标签",
   description: "按主题浏览学习记录。",
-  alternates: { canonical: `${siteUrl()}/tags` },
-} satisfies Metadata;
+  path: "/tags",
+});
 
 export const runtime = "nodejs";
 export const revalidate = 3600;

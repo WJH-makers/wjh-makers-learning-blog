@@ -40,6 +40,8 @@ const nextConfig: NextConfig = {
           ].join("; "),
         },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        // 不要求搜索引擎保留可直接访问的历史快照；不影响正常索引，但不是反爬安全边界。
+        { key: "X-Robots-Tag", value: "noarchive" },
         // 全站生效(原先只挂在 /api 下,HTML 与静态资源反而没保护)。
         { key: "X-Content-Type-Options", value: "nosniff" },
         // 站点没有任何需要这些硬件/API 的功能,一律关掉,缩小第三方脚本的可乘之机。

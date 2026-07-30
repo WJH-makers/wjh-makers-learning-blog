@@ -1,7 +1,9 @@
 import type { MetadataRoute } from "next";
-import { getAllPublishedPosts, getAllPublishedTags, outboundDate, siteUrl } from "@/lib/posts";
+import { getAllPublishedTags, getPublishedPostIndex, outboundDate, siteUrl } from "@/lib/posts";
 import { SERIES_LIST } from "@/lib/series-registry";
 import type { JavaEpisode } from "@/lib/series";
+import { isReleasedSlug } from "@/lib/publication";
+import { STATIC_SITEMAP_ROUTES } from "@/lib/sitemap-routes";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -14,7 +16,7 @@ function latestEpisodeDate(episodes: JavaEpisode[], fallback: Date): Date {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteUrl();
-  const posts = await getAllPublishedPosts();
+  const posts = await getPublishedPostIndex();
   const tags = await getAllPublishedTags();
 
   // 首页与列表页的 lastModified 取最新文章日期(钳到当下,不对外声明未来时间)
@@ -32,7 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 连载页遍历注册表:新开一条线不改这里也会自动进 sitemap。
   // 只收录已开更的线 —— 全 planned 的蓝图页对搜索引擎是薄内容。
   const seriesEntries: MetadataRoute.Sitemap = SERIES_LIST.flatMap((series) => {
-    const published = series.seasons.flatMap((s) => s.episodes).filter((e) => e.status === "published" && e.slug);
+    const published = series.seasons.flatMap((s) => s.episodes).filter((e) => e.status === "published" && isReleasedSlug(e.slug));
     if (published.length === 0) return [];
     return [{
       url: `${base}${series.route}`,
@@ -43,16 +45,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   const entries: MetadataRoute.Sitemap = [
-    { url: base, lastModified: latestDate, changeFrequency: "daily", priority: 1 },
-    { url: `${base}/series`, lastModified: latestDate, changeFrequency: "weekly", priority: 0.8 },
+    ...STATIC_SITEMAP_ROUTES.map((entry) => ({
+      url: entry.path === "/" ? base : `${base}${entry.path}`,
+      lastModified: latestDate,
+      changeFrequency: entry.changeFrequency,
+      priority: entry.priority,
+    })),
     ...seriesEntries,
-    { url: `${base}/archive`, lastModified: latestDate, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${base}/cheatsheets`, lastModified: latestDate, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${base}/posts`, lastModified: latestDate, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${base}/tags`, lastModified: latestDate, changeFrequency: "weekly", priority: 0.5 },
-    { url: `${base}/projects`, lastModified: latestDate, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${base}/stats`, lastModified: latestDate, changeFrequency: "weekly", priority: 0.4 },
-    { url: `${base}/about`, lastModified: latestDate, changeFrequency: "monthly", priority: 0.3 },
     ...posts.map((post) => ({
       url: `${base}/posts/${post.slug}`,
       lastModified: outboundDate(post.date),

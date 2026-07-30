@@ -1,39 +1,46 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
-import { CLI_SEASONS, CLI_SERIES_META, cliAllEpisodes, cliPublishedEpisodes } from "@/lib/series-cli";
+import { CLI_SEASONS, CLI_SERIES_META, cliPublishedEpisodes } from "@/lib/series-cli";
 import { siteUrl } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { staticPageMetadata } from "@/lib/og-base";
 import JavaProgress from "../java/JavaProgress";
 import SeriesMap from "../java/SeriesMap";
+import { isReleasedSlug } from "@/lib/publication";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
 
-export const metadata: Metadata = {
+export const metadata = staticPageMetadata({
   title: "从零开始玩命令行 · 阿零与特米终端大陆",
   description: CLI_SERIES_META.tagline,
-  alternates: { canonical: `${siteUrl()}/cli` },
+  path: "/cli",
   // 未开更的蓝图页对搜索引擎是薄内容;开更后自动恢复索引。
   robots: cliPublishedEpisodes().length === 0 ? { index: false, follow: true } : undefined,
-  openGraph: {
-    ...OG_BASE,
-    title: "从零开始玩命令行 · 阿零与特米终端大陆",
-    description: CLI_SERIES_META.tagline,
-    url: `${siteUrl()}/cli`,
-    type: "website",
-  },
-};
+});
 
 export default function CliSeriesPage() {
-  const total = cliAllEpisodes().length;
   const done = cliPublishedEpisodes().length;
   const progressSeasons = CLI_SEASONS.map((s) => ({
     code: s.code,
     title: s.title,
     slugs: seasonPublishedSlugs(s),
   })).filter((s) => s.slugs.length > 0);
+
+  if (done === 0) {
+    return (
+      <div className="page-shell">
+        <section className="hero">
+          <div>
+            <p className="eyebrow">Terminal Continent · 创作中</p>
+            <h1>{CLI_SERIES_META.title}</h1>
+            <p className="hero-text">这条路线尚未正式开更。章节表、排期和技术承诺留在创作后台，首篇通过校验后才会在这里点亮。</p>
+            <div className="hero-actions"><Link className="button primary" href="/start">返回阅读起点</Link></div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   // 系列主实体:与文章页 isPartOf 里的 CreativeWorkSeries 引用(name/url)严格一致,形成双向闭环。
   const seriesJsonLd = {
@@ -45,9 +52,8 @@ export default function CliSeriesPage() {
     inLanguage: "zh-CN",
     author: {
       "@type": "Person",
-      name: "WJH-makers",
-      alternateName: "WJH-makers",
-      url: "https://github.com/WJH-makers",
+      name: "咖啡站技术志",
+      url: siteUrl(),
     },
     hasPart: cliPublishedEpisodes().map((ep, i) => ({
       "@type": "BlogPosting",
@@ -77,7 +83,7 @@ export default function CliSeriesPage() {
         <div className="hero-panel">
           <p className="eyebrow">连载进度</p>
           <p>
-            已连载 <strong>{done}</strong> / 规划 {total} 话 · 周更中
+            已连载 <strong>{done}</strong> 话
           </p>
           <p className="muted">
             长期项目:{CLI_SERIES_META.project} · 每话附 🪟 双系统对照(Linux ↔ PowerShell)
@@ -98,7 +104,7 @@ export default function CliSeriesPage() {
       </section>
       <SeriesMap seasons={CLI_SEASONS} storageKey={CLI_SERIES_META.storageKey} />
 
-      {CLI_SEASONS.map((season) => (
+      {CLI_SEASONS.map((season) => ({ ...season, episodes: season.episodes.filter((episode) => episode.status === "published" && isReleasedSlug(episode.slug)) })).filter((season) => season.episodes.length > 0).map((season) => (
         <section key={season.season} style={{ marginTop: "2.5rem" }}>
           <div className="section-head">
             <div>
@@ -127,18 +133,14 @@ export default function CliSeriesPage() {
               </thead>
               <tbody>
                 {season.episodes.map((ep) => (
-                  <tr key={ep.episode} className={ep.status === "published" ? undefined : "row-planned"}>
+                  <tr key={ep.episode}>
                     <td>{String(ep.episode).padStart(2, "0")}</td>
                     <td>
-                      {ep.status === "published" && ep.slug ? (
-                        <Link href={`/posts/${ep.slug}`}>{ep.title}</Link>
-                      ) : (
-                        ep.title
-                      )}
+                      <Link href={`/posts/${ep.slug}`}>{ep.title}</Link>
                     </td>
                     <td>{CHAPTER_TYPE_LABEL[ep.chapterType]}</td>
                     <td>{ep.projectStage}</td>
-                    <td>{STATUS_LABEL[ep.status] ?? ep.status}</td>
+                    <td>{STATUS_LABEL.published}</td>
                   </tr>
                 ))}
               </tbody>

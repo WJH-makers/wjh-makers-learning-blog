@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { readCompleted } from "@/lib/progress-client";
+import { isReleasedSlug } from "@/lib/publication";
 
 type Ep = {
   season: number;
@@ -40,21 +41,32 @@ export default function SeriesMap({
     setDone(readCompleted(storageKey));
   }, [storageKey]);
 
+  const visibleSeasons = seasons
+    .map((season) => ({
+      ...season,
+      episodes: season.episodes.filter((episode) => episode.status === "published" && isReleasedSlug(episode.slug)),
+    }))
+    .filter((season) => season.episodes.length > 0);
+  const visibleSeasonNumbers = new Set(visibleSeasons.map((season) => season.season));
+  const visibleStages = stages?.filter((stage) => visibleSeasonNumbers.has(stage.season));
+
+  if (visibleSeasons.length === 0) return null;
+
   return (
     <div className="series-map">
-      {stages && stages.length > 0 && (
+      {visibleStages && visibleStages.length > 0 && (
         <div className="map-highway" aria-hidden="true">
-          {stages.map((s, i) => (
+          {visibleStages.map((s, i) => (
             <div key={s.season} className="map-milestone">
               <span className="map-dot" />
               <span className="map-stage">{s.stage}</span>
-              {i < stages.length - 1 && <span className="map-road" />}
+              {i < visibleStages.length - 1 && <span className="map-road" />}
             </div>
           ))}
         </div>
       )}
 
-      {seasons.map((season) => {
+      {visibleSeasons.map((season) => {
         const readCount = season.episodes.filter((e) => e.slug && done.has(e.slug)).length;
         return (
           <section key={season.season} className="map-continent">
@@ -68,7 +80,7 @@ export default function SeriesMap({
             <div className="map-nodes">
               {season.episodes.map((ep) => {
                 const isRead = ep.slug ? done.has(ep.slug) : false;
-                const clickable = ep.status === "published" && ep.slug;
+                const clickable = true;
                 const mark = TYPE_MARK[ep.chapterType] ?? { label: ep.chapterType, cls: "" };
                 const inner = (
                   <>
@@ -97,12 +109,7 @@ export default function SeriesMap({
                   >
                     {inner}
                   </Link>
-                ) : (
-                  <div key={ep.episode} className="map-node planned" title={ep.summary} aria-disabled="true">
-                    {inner}
-                    <span className="sr-only">(规划中,未发布)</span>
-                  </div>
-                );
+                ) : null;
               })}
             </div>
           </section>

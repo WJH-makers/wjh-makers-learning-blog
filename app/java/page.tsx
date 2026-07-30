@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   SERIES_META,
@@ -6,41 +5,35 @@ import {
   PROJECT_STAGES,
   SIDE_QUESTS,
   CHAPTER_TYPE_LABEL,
-  STATUS_LABEL,
-  allEpisodes,
   publishedEpisodes,
   seasonPublishedSlugs,
 } from "@/lib/series";
 import { siteUrl } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { staticPageMetadata } from "@/lib/og-base";
 import JavaProgress from "./JavaProgress";
 import SeriesMap from "./SeriesMap";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
 
-export const metadata: Metadata = {
+export const metadata = staticPageMetadata({
   title: "从零开始学 Java · 阿零与豆豆生态学院",
   description: SERIES_META.tagline,
-  alternates: { canonical: `${siteUrl()}/java` },
-  openGraph: {
-    ...OG_BASE,
-    title: "从零开始学 Java · 阿零与豆豆生态学院",
-    description: SERIES_META.tagline,
-    url: `${siteUrl()}/java`,
-    type: "website",
-  },
-};
+  path: "/java",
+});
 
 export default function JavaSeriesPage() {
-  const total = allEpisodes().length;
   const done = publishedEpisodes().length;
   const progressSeasons = SEASONS.map((s) => ({
     code: s.code,
     title: s.title,
     slugs: seasonPublishedSlugs(s),
   })).filter((s) => s.slugs.length > 0);
+  const visibleSeasons = SEASONS.map((season) => ({
+    ...season,
+    episodes: season.episodes.filter((episode) => publishedEpisodes().some((item) => item.slug === episode.slug)),
+  })).filter((season) => season.episodes.length > 0);
 
   // 系列主实体:与文章页 isPartOf 里的 CreativeWorkSeries 引用(name/url)严格一致,形成双向闭环。
   const seriesJsonLd = {
@@ -52,9 +45,8 @@ export default function JavaSeriesPage() {
     inLanguage: "zh-CN",
     author: {
       "@type": "Person",
-      name: "WJH-makers",
-      alternateName: "WJH-makers",
-      url: "https://github.com/WJH-makers",
+      name: "咖啡站技术志",
+      url: siteUrl(),
     },
     hasPart: publishedEpisodes().map((ep, i) => ({
       "@type": "BlogPosting",
@@ -86,7 +78,7 @@ export default function JavaSeriesPage() {
         <div className="hero-panel">
           <p className="eyebrow">连载进度</p>
           <p>
-            已连载 <strong>{done}</strong> / 规划 {total} 话
+            已连载 <strong>{done}</strong> 话
           </p>
           <p className="muted">
             长期项目:{SERIES_META.project} · 基线 Java {SERIES_META.javaVersion} · 双版本验证{" "}
@@ -137,7 +129,7 @@ export default function JavaSeriesPage() {
             </tr>
           </thead>
           <tbody>
-            {PROJECT_STAGES.map((s) => (
+            {PROJECT_STAGES.filter((stage) => visibleSeasons.some((season) => season.season === stage.season)).map((s) => (
               <tr key={s.stage}>
                 <td>S{s.season}</td>
                 <td>{s.stage}</td>
@@ -155,9 +147,9 @@ export default function JavaSeriesPage() {
         </div>
         <span className="muted">点节点直达 · 读过的自动打勾</span>
       </section>
-      <SeriesMap seasons={SEASONS} storageKey="java-academy:completed" stages={PROJECT_STAGES.map((s) => ({ season: s.season, stage: s.stage }))} />
+      <SeriesMap seasons={visibleSeasons} storageKey="java-academy:completed" stages={PROJECT_STAGES.map((s) => ({ season: s.season, stage: s.stage }))} />
 
-      {SEASONS.map((season) => (
+      {visibleSeasons.map((season) => (
         <section key={season.season} style={{ marginTop: "2.5rem" }}>
           <div className="section-head">
             <div>
@@ -186,18 +178,14 @@ export default function JavaSeriesPage() {
               </thead>
               <tbody>
                 {season.episodes.map((ep) => (
-                  <tr key={ep.episode} className={ep.status === "published" ? undefined : "row-planned"}>
+                  <tr key={ep.episode}>
                     <td>{String(ep.episode).padStart(2, "0")}</td>
                     <td>
-                      {ep.status === "published" && ep.slug ? (
-                        <Link href={`/posts/${ep.slug}`}>{ep.title}</Link>
-                      ) : (
-                        ep.title
-                      )}
+                      <Link href={`/posts/${ep.slug}`}>{ep.title}</Link>
                     </td>
                     <td>{CHAPTER_TYPE_LABEL[ep.chapterType]}</td>
                     <td>{ep.projectStage}</td>
-                    <td>{STATUS_LABEL[ep.status] ?? ep.status}</td>
+                    <td>已发布</td>
                   </tr>
                 ))}
               </tbody>

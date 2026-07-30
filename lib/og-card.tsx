@@ -36,8 +36,8 @@ export function ogCard({ eyebrow, title }: { eyebrow: string; title: string }) {
         {title}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 28, color: "#555555" }}>
-        <div style={{ display: "flex" }}>wwjjhh.online</div>
-        <div style={{ display: "flex" }}>@WJH-makers</div>
+        <div style={{ display: "flex" }}>咖啡站技术志</div>
+        <div style={{ display: "flex" }}>技术故事 · 可验证实践</div>
       </div>
     </div>
   );

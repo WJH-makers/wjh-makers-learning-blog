@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllPublishedTags, getPublishedPostsByTag, siteUrl } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { staticPageMetadata } from "@/lib/og-base";
 
 type Props = {
   params: Promise<{ tag: string }>;
@@ -20,18 +20,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tag } = await params;
   const decoded = decodeURIComponent(tag);
   const posts = await getPublishedPostsByTag(decoded);
-  return {
+  return staticPageMetadata({
     title: `标签：${decoded}`,
     description: `${decoded} 主题，共 ${posts.length} 篇文章。`,
+    path: `/tags/${encodeURIComponent(decoded)}`,
     robots: posts.length < 2 ? { index: false, follow: true } : undefined,
-    // 与 sitemap 生成的 URL 严格一致,归一大小写/编码变体
-    alternates: { canonical: `${siteUrl()}/tags/${encodeURIComponent(decoded)}` },
-    openGraph: {
-      ...OG_BASE,
-      title: `标签：${decoded} | WJH-makers`,
-      description: `${decoded} 主题下的学习记录集合`,
-    },
-  };
+    socialTitle: `标签：${decoded} | 咖啡站技术志`,
+    socialDescription: `${decoded} 主题下的学习记录集合`,
+  });
 }
 
 export default async function TagPage({ params }: Props) {

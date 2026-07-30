@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 
 export const metadata = {
   title: "站点监控",
-  description: "WJH-makers 站点运行状态与流量监控。",
+  description: "站点运行状态与流量监控。",
   robots: { index: false, follow: false },
 } satisfies Metadata;
 

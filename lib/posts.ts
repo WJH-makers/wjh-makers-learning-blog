@@ -1,8 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { cache } from "react";
-import { getDatabasePost, getDatabasePosts } from "@/lib/db";
+import { getDatabasePost, getDatabasePostIndex, getDatabasePosts } from "@/lib/db";
 import { estimateReadingMinutes } from "@/lib/text";
+import { isReleasedDate } from "@/lib/publication";
+import { mergePublishedPostIndex, type PostIndexEntry } from "@/lib/post-index";
+
+export { mergePublishedPostIndex, type PostIndexEntry } from "@/lib/post-index";
 
 // 渲染引擎已拆到 lib/markdown.ts(纯函数、可单测);此处 re-export 保持既有 import 路径不变。
 export { markdownToHtml, renderMarkdown } from "@/lib/markdown";
@@ -17,6 +21,10 @@ export type Post = {
   readingMinutes: number;
   content: string;
 };
+
+export function isPublicPost(post: Pick<Post, "date">): boolean {
+  return isReleasedDate(post.date);
+}
 
 const postsDirectory = path.join(process.cwd(), "content", "posts");
 
@@ -103,17 +111,32 @@ export const getAllPublishedPosts = cache(async (): Promise<Post[]> => {
   for (const post of markdownPosts) merged.set(post.slug, post);
   for (const post of databasePosts) merged.set(post.slug, post);
 
-  return [...merged.values()].sort((a, b) => b.date.localeCompare(a.date));
+  return [...merged.values()]
+    .filter(isPublicPost)
+    .sort((a, b) => b.date.localeCompare(a.date));
+});
+
+/** Content-free index for navigation, sitemap, tags and recommendations. */
+export const getPublishedPostIndex = cache(async (): Promise<PostIndexEntry[]> => {
+  const markdownIndex = getAllPosts().map(({ slug, title, date, summary, tags }) => ({ slug, title, date, summary, tags }));
+  let databaseIndex: PostIndexEntry[] = [];
+  try {
+    databaseIndex = await getDatabasePostIndex();
+  } catch (error) {
+    console.warn("[learning-blog] database index read failed, falling back to Markdown only:", error);
+  }
+  return mergePublishedPostIndex(markdownIndex, databaseIndex);
 });
 
 export const getPublishedPost = cache(async (slug: string): Promise<Post | undefined> => {
   try {
     const databasePost = await getDatabasePost(slug);
-    if (databasePost) return databasePost;
+    if (databasePost) return isPublicPost(databasePost) ? databasePost : undefined;
   } catch (error) {
     console.warn("[learning-blog] database post read failed, falling back to Markdown:", error);
   }
-  return getPost(slug);
+  const markdownPost = getPost(slug);
+  return markdownPost && isPublicPost(markdownPost) ? markdownPost : undefined;
 });
 
 export function getAllTags(): { tag: string; count: number }[] {
@@ -128,7 +151,7 @@ export function getAllTags(): { tag: string; count: number }[] {
 
 export async function getAllPublishedTags(): Promise<{ tag: string; count: number }[]> {
   const counts = new Map<string, number>();
-  for (const post of await getAllPublishedPosts()) {
+  for (const post of await getPublishedPostIndex()) {
     for (const tag of post.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
   }
   return [...counts.entries()]
@@ -149,10 +172,10 @@ export async function getPublishedPostsByTag(tag: string): Promise<Post[]> {
 /** 按共享的「具体主题标签」推荐相关文章(忽略 Java/Java漫画 等泛标签,避免连载话彼此刷屏)。 */
 const RELATED_STOP_TAGS = new Set(["Java", "Java漫画", "阿零与豆豆", "命令速查", "豆豆咖啡站", "治愈", "编程漫画"]);
 
-export async function getRelatedPosts(slug: string, tags: string[], limit = 4): Promise<Post[]> {
+export async function getRelatedPosts(slug: string, tags: string[], limit = 4): Promise<PostIndexEntry[]> {
   const topical = tags.filter((t) => !RELATED_STOP_TAGS.has(t));
   if (topical.length === 0) return [];
-  const all = await getAllPublishedPosts();
+  const all = await getPublishedPostIndex();
   return all
     .filter((p) => p.slug !== slug)
     .map((p) => ({ post: p, score: p.tags.filter((t) => topical.includes(t)).length }))

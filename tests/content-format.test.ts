@@ -47,6 +47,19 @@ test("选择题选项必须缩进 —— 顶格会劈断 <ol>,题号重置成「
   );
 });
 
+test("文章正文只允许开头标题使用 H1", () => {
+  const offenders = postFiles().flatMap((file) => {
+    const headings = scan(file, (_no, line) => /^#\s+\S/.test(line));
+    return headings.slice(1);
+  });
+
+  assert.deepEqual(
+    offenders,
+    [],
+    `文章模板已经提供页面 H1，正文除开头标题外必须从 H2 开始:\n${offenders.join("\n")}`,
+  );
+});
+
 /**
  * 站内中文标点基线:直角引号「」、半角逗号/分号/冒号(全站比例约 2942:4、12207:32)。
  * 外部工具生成的段落常带全角「,;:()」和弯引号 —— 混进正文后同一行里两种标点并存,
