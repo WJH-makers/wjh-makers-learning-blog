@@ -75,6 +75,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -88,7 +89,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/register").permitAll()               // 注册公开
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")          // 后台限店长
                 .anyRequest().authenticated())                              // 其余需登录
-            .httpBasic(org.springframework.security.config.Customizer.withDefaults());
+            // 保留默认 CSRF 防护：会话/浏览器写请求必须带 Token。
+            .csrf(withDefaults())
+            // 若有跨域浏览器前端，必须让 Security 链启用 CORS。
+            .cors(withDefaults())
+            .httpBasic(withDefaults());
         return http.build();
     }
 
@@ -98,6 +103,10 @@ public class SecurityConfig {
     }
 }
 ```
+
+> **先分清架构再动 CSRF。** Spring Security 默认保护 POST、PUT、PATCH、DELETE 等不安全方法；没有 CSRF Token 的浏览器写请求会得到 403。Session/表单站点应保留它；只有在确认 API 采用无 Cookie 的 Bearer Token 等无状态认证时，才能为明确的 API 边界禁用或忽略 CSRF，不能为“让 Postman 跑通”全局关闭。`MockMvc` 写请求也要显式 `.with(csrf())`。
+>
+> **CORS 不是 Controller 单独配置就结束。** 预检 OPTIONS 没有会话 Cookie，必须在 Spring Security 之前得到处理；上面的 `.cors(withDefaults())` 让 Security 接入 MVC 的 CORS 配置。若不是 MVC 配置，提供 `CorsConfigurationSource`，只允许实际前端 Origin、方法和请求头，绝不使用 `*` 与凭证组合。
 
 注册时**加密**存储:
 
@@ -168,9 +177,12 @@ public void register(String username, String rawPassword) {
 ## 八、用测试证明:未登录下单被拦
 
 ```java
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+
 @Test
 void order_without_login_is_401() throws Exception {
     mvc.perform(post("/api/orders")
+            .with(csrf())
             .contentType("application/json")
             .content("{\"name\":\"美式\",\"qty\":1}"))
        .andExpect(status().isUnauthorized());   // 401:先证明你是谁

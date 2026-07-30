@@ -62,9 +62,9 @@ tags: [Linux, 命令行, 终端漫画, ssh, rsync, 阿零与特米]
  ~/.ssh/id_ed25519                          ~/.ssh/authorized_keys
  私钥 = 身份(600,永不外传)               公钥 = 装在门上的锁(可到处贴)
       │ ① 请求登录 ────────────────────────→ │
-      │ ② 服务器用公钥出一道随机题 ←──────── │
+      │ ② 服务器发出签名挑战 ←────────────── │
       │ ③ 私钥对题目签名作答 ──────────────→ │ ④ 公钥验签 → 开门
- 密码登录:秘密要"发过去",可被钓;密钥登录:秘密永远不离开你的电脑。
+ 密码登录:密码在 SSH 加密传输层内提交，但仍可能被钓鱼或在服务端泄露；密钥登录:私钥不离开你的电脑。
 
  scp / rsync 的方向,看冒号在哪边(冒号 = 远端):
    scp coffee:/srv/backup/a.tar.gz .        远 → 本(下载)
@@ -158,7 +158,8 @@ azero@203.0.113.10: Permission denied (publickey).
 
 ```bash
 $ chmod 700 ~/.ssh
-$ chmod 600 ~/.ssh/id_ed25519         # 服务器侧的 authorized_keys 同样保持 600
+$ chmod 600 ~/.ssh/id_ed25519         # 客户端私钥必须不让组/其他用户读取
+$ chmod 600 ~/.ssh/authorized_keys    # 常用安全权限；关键是它及父目录不能被其他用户写入
 ```
 
 **坑二**,rsync 套娃。上传完检查:
@@ -296,7 +297,7 @@ Host coffee
 >
 > **4-B** scp 的路径语法:`[user@]host:path`。冒号是"远程分隔符":冒号前=主机,冒号后=远程路径。**举一反三:**`scp file1 file2 user@server:/tmp/` 可以一次上传多个文件;`scp -r dir/ user@server:/tmp/` 递归上传目录。方向:源中有冒号=下载,目标中有冒号=上传。
 >
-> **5-B** `authorized_keys` 存储"授权登录的公钥"。拥有对应私钥的用户可以免密登录。**举一反三:**权限必须严格:`chmod 700 ~/.ssh`、`chmod 600 ~/.ssh/authorized_keys`。如果权限太宽松(如 644),SSH 会拒绝使用(安全策略)。`ssh-copy-id user@server` 是分发公钥的标准工具。
+> **5-B** `authorized_keys` 存储"授权登录的公钥"。拥有对应私钥的用户可以免密登录。**举一反三:**常用安全权限是 `chmod 700 ~/.ssh`、`chmod 600 ~/.ssh/authorized_keys`；OpenSSH 真正防的是文件或父目录被其他用户写入，不能把“0644 必然拒绝”当成跨平台规则。客户端私钥则必须严格限制为仅自己可读。`ssh-copy-id user@server` 是分发公钥的标准工具。
 >
 > **6-B** rsync 的增量传输算法:首次传输全量,后续只传输**变化的块**(文件变更的部分),极大节省时间和带宽。`scp` 每次都全量复制。rsync 还支持:`--partial` 断点续传、`--exclude` 排除、`--delete` 同步删除。**举一反三:**大文件/频繁同步用 rsync;临时搬一个小文件用 scp 更快(无需计算差异)。
 >

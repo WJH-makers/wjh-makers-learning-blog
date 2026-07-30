@@ -306,11 +306,7 @@ export function allEpisodes(): JavaEpisode[] {
 export function publicFacingSeasons(seasons: JavaSeason[]): JavaSeason[] {
   return seasons.map((season) => ({
     ...season,
-    episodes: season.episodes.map((episode) => (
-      episode.status === "published" && !isPublicEpisode(episode.slug)
-        ? { ...episode, status: "planned" }
-        : episode
-    )),
+    episodes: publicFacingEpisodes(season.episodes),
   }));
 }
 
@@ -352,4 +348,4 @@ export const STATUS_LABEL: Record<EpisodeStatus, string> = {
 export function seasonPublishedSlugs(season: JavaSeason): string[] {
   return season.episodes.flatMap((e) => (e.status === "published" && e.slug && isPublicEpisode(e.slug) ? [e.slug] : []));
 }
-import { isPublicEpisode } from "@/lib/publication";
+import { isPublicEpisode, publicFacingEpisodes } from "@/lib/publication";

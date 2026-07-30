@@ -59,8 +59,8 @@ Integer a = 128;   →   Integer a = Integer.valueOf(128);   // 装箱
 int x = a;         →   int x = a.intValue();               // 拆箱
 
 Integer.valueOf(n):
-  n ∈ [-128, 127]  → 返回 IntegerCache 里同一个共享对象
-  其他             → 每次装箱都造新对象
+  常量 n ∈ [-128, 127] → 规范保证得到可用 `==` 识别的同一对象
+  其他                 → **不保证**对象身份；实现可能新建，也可能缓存
 
 ==      比引用(门牌号)—— 是不是同一个对象
 equals  比数值          —— 值相等,且要求类型相同
@@ -71,7 +71,7 @@ equals  比数值          —— 值相等,且要求类型相同
 | byte / short / int / long | Byte / Short / Integer / Long | -128~127(Integer 上界可调) |
 | char | Character | 0~127 |
 | boolean | Boolean | TRUE / FALSE 两个常量 |
-| float / double | Float / Double | 无缓存,装箱必是新对象 |
+| float / double | Float / Double | 规范不保证缓存；不要依赖对象身份 |
 
 > **豆豆锐评**:IntegerCache 的上界确实能用 `-XX:AutoBoxCacheMax=256` 调大,调完 128 的 `==` 真会变 true——但那是 JVM 调优参数,不是让你赌运气的。换台机器、换个启动脚本,结果就反转。结论一次背死:**包装类比较永远 `equals`(或 `Objects.equals`),`==` 只留给基本类型。**
 
@@ -129,7 +129,7 @@ false
 true
 ```
 
-没有异常,没有警告,**静悄悄地给错**——比崩溃更阴险。128 出了缓存,两次装箱是两个对象,`==` 必然 false;127 命中货架上同一个住户,才「碰巧」true。
+没有异常,没有警告,**静悄悄地给错**——比崩溃更阴险。128 超出规范保证范围，当前运行时通常给出两个对象；127 命中规范保证的共享对象。结论不变：包装类数值比较永远用 `equals`/`Objects.equals`，别依赖 `==`。
 
 阿零顺着排查积分表,又踩响第二颗雷——不存在的会员直接取积分当 int 用(Map 取值回看第 22 话):
 

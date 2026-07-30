@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
+import { CHAPTER_TYPE_LABEL, STATUS_LABEL, publicFacingSeasons, seasonPublishedSlugs } from "@/lib/series";
 import { CAFE_SEASONS, CAFE_SERIES_META, CAFE_STAGES, cafeAllEpisodes, cafePublishedEpisodes } from "@/lib/series-cafe";
 import { siteUrl } from "@/lib/posts";
 import { jsonLdSafe, personRef } from "@/lib/jsonld";
@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 };
 
 export default function CafeSeriesPage() {
+  const visibleSeasons = publicFacingSeasons(CAFE_SEASONS);
   const total = cafeAllEpisodes().length;
   const done = cafePublishedEpisodes().length;
   const progressSeasons = CAFE_SEASONS.map((s) => ({
@@ -93,12 +94,12 @@ export default function CafeSeriesPage() {
         <span className="muted">点节点直达 · 读过的自动打勾</span>
       </section>
       <SeriesMap
-        seasons={CAFE_SEASONS}
+        seasons={visibleSeasons}
         storageKey={CAFE_SERIES_META.storageKey}
         stages={CAFE_STAGES.map((s) => ({ season: s.season, stage: s.stage }))}
       />
 
-      {CAFE_SEASONS.map((season) => (
+      {visibleSeasons.map((season) => (
         <section key={season.season} style={{ marginTop: "2.5rem" }}>
           <div className="section-head">
             <div>

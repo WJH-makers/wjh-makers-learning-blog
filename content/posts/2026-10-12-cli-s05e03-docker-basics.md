@@ -286,7 +286,7 @@ db 的 `PORTS` 一栏只有 `27017/tcp`、没有箭头——**没临街**,正合
 - A) 停止名为 web 的容器　B) 在正在运行的 `web` 容器内**打开一个交互式 bash shell**　C) 创建新容器并命名为 bash　D) 查看容器日志
 
 6. `docker-compose up -d` 和 `docker-compose down` 是一对什么操作?
-- A) 无关联　B) `up -d` 以守护进程模式启动 compose 定义的所有服务,`down` 停止并移除所有相关容器/网络/卷　C) `up` 是部署,`down` 是下载镜像　D) 两者等价,只是语法不同
+- A) 无关联　B) `up -d` 以守护进程模式启动 compose 定义的所有服务,`down` 停止并移除相关容器和默认网络，**默认保留卷**　C) `up` 是部署,`down` 是下载镜像　D) 两者等价,只是语法不同
 
 7. 容器停止后数据丢失,正确的数据持久化方式是什么?
 - A) 把数据写进镜像　B) 使用 Docker Volume(卷)或 bind mount(绑定挂载)将数据存储在主机的持久化目录中　C) 容器内的数据永远不会丢失　D) 定期 `docker commit` 保存容器状态
@@ -323,7 +323,7 @@ db 的 `PORTS` 一栏只有 `27017/tcp`、没有箭头——**没临街**,正合
 >
 > **5-B** `exec -it web bash` = execute interactive terminal:在名为 `web` 的容器内启动 bash 并给你一个交互终端。**举一反三:**`-i`=stdin 保持打开,`-t`=分配伪终端(TTY)。`docker exec web ls /app` 执行单个命令不进入交互。如果容器内没有 bash,用 `/bin/sh` 或 `ash`(Alpine)。
 >
-> **6-B** `up -d`=启动 compose 文件中定义的所有服务(后台);`down`=停止+删除所有相关资源(容器、默认网络、匿名卷)。**举一反三:**`up`(不加 -d)=前台运行(适合调试,按 Ctrl+C 停止);`down -v` 同时删除命名卷(清除数据);`restart` 重启服务;`ps` 查看 compose 项目中的容器状态。
+> **6-B** `up -d`=启动 compose 文件中定义的所有服务(后台);`down`=停止+删除容器和默认网络，**默认保留具名卷与匿名卷**。**举一反三:**`up`(不加 -d)=前台运行(适合调试,按 Ctrl+C 停止);`down -v` / `down --volumes` 才会删除项目卷，数据库数据会丢失;`restart` 重启服务;`ps` 查看 compose 项目中的容器状态。
 >
 > **7-B** 容器是无状态的(设计意图):每个新容器从镜像启动,有自己的可写层,容器被删除时可写层也消失。**持久化数据需要 Volume:**
 >①Docker Volume:`docker volume create data && docker run -v data:/app/data`(由 Docker 管理,路径在 `/var/lib/docker/volumes/`) ②Bind Mount:`-v /home/user/data:/app/data`(直接挂载主机目录)。**举一反三:**数据库容器务必挂载 volume!`docker-compose` 的 `volumes:` 段是生产必需;无 volume 的数据库容器删除后数据永久丢失。

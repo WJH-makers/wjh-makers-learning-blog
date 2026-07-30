@@ -137,12 +137,12 @@ INSERT INTO member (phone, name) VALUES ('13812345678', '阿零');
 ERROR 1062 (23000): Duplicate entry '13812345678' for key 'member.uk_phone'
 ```
 
-阿零回头再 SELECT——**还是查不到**(RR 全程一张 ReadView,B 的提交对他隐身),可 INSERT 是当前读,一头撞上 B 刚写进唯一索引的记录。Java 侧 JDBC 抛 `SQLIntegrityConstraintViolationException`,消息一模一样。
+阿零回头再 SELECT——**还是查不到**（RR 的第一次一致性读建立 ReadView，之后的快照读复用它，B 的提交对他隐身），可 INSERT 是当前读，一头撞上 B 刚写进唯一索引的记录。Java 侧 JDBC 抛 `SQLIntegrityConstraintViolationException`,消息一模一样。
 
 为什么「查了再插」防不住?数据库版 **check-then-act 竞态**(回看第 79 话):SELECT 到 INSERT 之间没人替你冻结世界——隔离级别只保证「读得一致」,不保证「读完别人不动」。守门员只有**唯一约束**。
 
 > **🎯 面试直击**:InnoDB 的 RR 怎么防幻读?
-> 两条腿:**快照读靠 MVCC**——全事务一张 ReadView,后来者插入的行不可见;**当前读靠临键锁(Next-Key Lock=行锁+间隙锁)**——记录连同「缝隙」一起锁,不许往范围里插。追问点:先快照读再 `FOR UPDATE`,结果可能不同——非 RR 破功,两种读本就看不同的世界。
+> 两条腿:**快照读靠 MVCC**——RR 中通常由**第一次一致性读**建立并复用 ReadView，后来者插入的行不可见；`START TRANSACTION WITH CONSISTENT SNAPSHOT` 可在事务开始时显式建立快照。**当前读靠临键锁(Next-Key Lock=行锁+间隙锁)**——记录连同「缝隙」一起锁,不许往范围里插。追问点:先快照读再 `FOR UPDATE`,结果可能不同——非 RR 破功,两种读本就看不同的世界。
 
 ---
 
@@ -309,9 +309,9 @@ class MemberServiceTest {
 >
 > 4-C。redo log(物理日志,崩溃恢复) + binlog(逻辑日志,主从复制),两阶段提交使二者一致。★举一反三:A 靠 undo,C 靠上面三位联合保障,I 靠锁+MVCC。
 >
-> 5-B。RR 下,事务启动时拍一张 ReadView,之后所有 SELECT 共用;RC 下每条 SELECT 都新拍一张。★举一反三:因为 RR 一张到底,所以「可重复读」;因为 RC 每 SELECT 都刷新,所以能看到别人提交的更新(不可重复读)。
+> 5-B。RR 下通常由第一次一致性读生成一张 ReadView，之后的快照读共用；`START TRANSACTION WITH CONSISTENT SNAPSHOT` 可提前生成。RC 下每条一致性读都新建 ReadView。★举一反三:因为 RR 一张到底,所以「可重复读」;因为 RC 每 SELECT 都刷新,所以能看到别人提交的更新(不可重复读)。
 >
-> 6-A。RR 的 ReadView 在事务开始时生成,中途别人提交的数据对该事务不可见(SELECT 看不到),但 INSERT 是当前读,要写数据,发现唯一索引已有记录→Duplicate。★举一反三:隔离性只保证「读得一致」,不保证「读后别人不动」。唯一约束才是防重写入的守门员。
+> 6-A。RR 的第一次一致性读生成 ReadView，中途别人提交的数据对后续快照读不可见，但 INSERT 是当前读,要写数据,发现唯一索引已有记录→Duplicate。★举一反三:隔离性只保证「读得一致」,不保证「读后别人不动」。唯一约束才是防重写入的守门员。
 >
 > 7-B。锁加在索引记录上。`UPDATE … WHERE name='阿零'` 若 name 无索引,无法定位到某一行,只能全表每行的索引记录逐条上锁≈锁全表。★举一反三:这解释了为什么 WHERE 条件列必须有索引——不仅为查询快,也为锁粒度合理。
 >

@@ -275,8 +275,8 @@ class MillionCustomersTest {
 7. 虚拟线程的 `ThreadLocal` 使用需要注意什么?
 - A) 完全不能用　　**B) 能用,但要严守 `remove` 纪律——虚拟线程虽然库存百万条,但每条仍携带 `ThreadLocal` 的 value 强引用,不 remove 仍会泄漏;且 JDK 21+ 推荐将不可变上下文迁移到 `ScopedValue`,既无泄漏风险又自动在 mount/unmount 时传播**　　C) 虚拟线程的 ThreadLocal 值会被 GC 自动回收　　D) 虚拟线程创建 ThreadLocal 时会自动设置过期时间
 
-8. 以下哪种代码模式会导致虚拟线程被「pin」?
-- A) `Thread.sleep(1000)`　　**B) `synchronized(obj) { blockingIO(); }`——在 `synchronized` 块内执行阻塞操作,虚拟线程无法 unmount,期间绑定的平台线程被独占**　　C) `lock.lockInterruptibly()`　　D) `CompletableFuture.supplyAsync(() -> work())`
+8. 在 JDK 21–23 中，以下哪种代码模式会导致虚拟线程被「pin」?
+- A) `Thread.sleep(1000)`　　**B) `synchronized(obj) { blockingIO(); }`——旧实现中在 `synchronized` 块内阻塞会占住 carrier**　　C) `lock.lockInterruptibly()`　　D) `CompletableFuture.supplyAsync(() -> work())`；JDK 24+ 的 JEP 491 已消除这一主要来源。
 
 9. 虚拟线程的数量级通常在什么范围?
 - A) 几百到几千,和平台线程一样　　**B) 可达数十万甚至百万——虚拟线程只占堆内存(每个几百字节到几 KB 栈),不消耗 OS 线程资源,理论上受限于 JVM 堆内存大小而非 OS 线程限制**　　C) 受限于 CPU 核数 × 2　　D) 虚拟线程有硬上限 65535
@@ -306,8 +306,8 @@ class MillionCustomersTest {
 > **1-3** B(IO 密集是虚拟线程的最高价值场景——阻塞 IO 时虚拟线程卸载平台线程,让 OS 线程去服务别的虚拟线程。传统线程在阻塞时 OS 线程被浪费,虚拟线程把这段「浪费」转化为吞吐。CPU 密集任务没有这个收益——因为不会阻塞,不需要卸载)  
 > **举一反三**:虚拟线程的提升公式:收益 ≈ 阻塞时间 / 总任务时间。纯 CPU 计算(阻塞时间 ≈ 0)≈ 0% 提升;微服务调用(阻塞时间 90%+)≈ 10x 提升。
 >
-> **1-4** B(pin 的本质——虚拟线程在 `synchronized` 块或 JNI native 方法中不能卸载。如果此时发生阻塞 IO,虚拟线程被 pin 在平台线程上,该平台线程被独占,无法服务其他虚拟线程)  
-> **举一反三**:pin 是虚拟线程设计上的一个已知限制——monitor 锁（`synchronized`）与虚拟线程的挂载/卸载机制之间存在冲突,因为 monitor 持有者必须是 OS 线程。解决方法:把 `synchronized` 替换成 `ReentrantLock`（显式锁不 pin）,或者把阻塞操作移出 synchronized 块。
+> **1-4** B（**仅 JDK 21–23**：虚拟线程在 `synchronized` 块内发生阻塞 I/O 时可能 pin 住 carrier；JNI / Foreign Function 等仍要按所用 JDK 的文档评估。）JDK 24+ 的 JEP 491 已让 `synchronized` 不再是这一 pin 来源。
+> **举一反三**:不要为了虚拟线程机械地把所有 `synchronized` 换成 `ReentrantLock`。先缩短锁内 I/O、测量并确认运行版本；升级到 JDK 24+ 后，monitor 锁不再因这类阻塞独占 carrier。
 >
 > **1-5** D(B 和 C 都对——`Thread.ofVirtual().start(r)` 创建单个虚拟线程;`Executors.newVirtualThreadPerTaskExecutor()` 返回一个每任务创建新虚拟线程的执行器,不用池化)  
 > **举一反三**:`Thread.ofPlatform()` 创建平台线程,`Thread.ofVirtual()` 创建虚拟线程。两者 API 对称,意图却相反——平台线程需要池化复用,虚拟线程用后即弃。
@@ -318,8 +318,8 @@ class MillionCustomersTest {
 > **1-7** B(能用但要 remove,且推荐迁移到 ScopedValue——虚拟线程的 Thread 对象仍然有 ThreadLocalMap,不 remove 仍然泄漏。区别在于泄漏速度:平台线程 200 个,每个泄漏 1MB,总计 200MB;虚拟线程可能 10 万个,每个泄漏 1KB,总计 100MB——仍然不可接受。ScopedValue 是官方推荐的替代)  
 > **举一反三**:虚拟线程让 ThreadLocal 的泄漏从"慢性病"变成"急性病"——虽然单个虚拟线程的 ThreadLocal 泄漏量小,但虚拟线程数量大,泄漏总量可能比平台线程更大且更难定位。所以迁移到 ScopedValue 不是可选项,而是必选项。
 >
-> **1-8** B(synchronized 块内阻塞 IO → pin 住。虚拟线程在 `synchronized` 持有 monitor 时不能被 unmount,阻塞期间独占平台线程)  
-> **举一反三**:pin 的检测:用 `-Djdk.tracePinnedThreads=full` JVM 参数,当虚拟线程被 pin 时 JVM 打印栈信息。常见的 pin 陷阱:`synchronized(this) { socket.read(); }`——把 I/O 放在 synchronized 块里,十个虚拟线程就能 pin 住十个平台线程,所有并发优势全毁。
+> **1-8** B（**JDK 21–23**：`synchronized` 块内阻塞 I/O 可能 pin；JDK 24+ 的 JEP 491 已修复这条来源。）
+> **举一反三**:诊断旧 JDK 可用 `-Djdk.tracePinnedThreads=full`；无论版本，仍应缩短锁持有时间、不要把慢 I/O 包在临界区，并按 JNI / Foreign Function 的实际调用链排查。
 >
 > **1-9** B(数量由堆内存决定,不受 OS 线程限制——一个虚拟线程的对象本体加初始栈约占几百字节到 1KB,1GB 堆内存理论上可承载百万级别虚拟线程。实际瓶颈是:① 每个虚拟线程的局部变量总量 ② 异步操作数(连接数、FD 数) ③ 业务逻辑复杂度)  
 > **举一反三**:"百万并发"的硬件要求不像想象中那么高——瓶颈不再在线程,而在网络连接数(需要 OS 参数优化)、数据库连接池(不能用 1 请求 1 DB 连接)、以及下游服务的承载能力。虚拟线程解决了"并发等待"的瓶颈,但下游系统成为新的瓶颈。
@@ -388,7 +388,7 @@ class MillionCustomersTest {
 > ② 防钉住——错误:
 > ```java
 > synchronized(dataLock) {
->     String result = httpClient.send(request); // 阻塞 IO 在 synchronized 内,pin!
+>     String result = httpClient.send(request); // JDK 21–23 中会 pin；JDK 24+ 已由 JEP 491 修复
 > }
 > ```
 > 正确:
@@ -397,7 +397,7 @@ class MillionCustomersTest {
 > synchronized(dataLock) {
 >     updateData(result); // 只有快速操作在锁内
 > }
-> // 或改用 ReentrantLock(不 pin 虚拟线程)
+> // 不要为此机械改锁；先缩短临界区并确认 JDK 版本
 > ```
 > ③ ThreadLocal→ScopedValue——错误:
 > ```java

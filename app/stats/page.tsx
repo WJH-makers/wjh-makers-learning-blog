@@ -131,7 +131,7 @@ export default async function StatsPage() {
           <p className="eyebrow">Cadence · 更新节奏</p>
           <h2>按月发布量</h2>
         </div>
-        <span className="muted">含按剧情时间线排期的连载话次</span>
+        <span className="muted">仅统计当前已公开内容；排期稿不会进入本页</span>
       </section>
       <div className="stat-months">
         {months.map(([month, n]) => (

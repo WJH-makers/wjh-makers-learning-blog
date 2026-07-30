@@ -20,3 +20,12 @@ export function isAlwaysPublicCurriculum(slug: string): boolean {
 export function isPublicEpisode(slug: string | undefined, now = new Date()): boolean {
   return Boolean(slug && (isAlwaysPublicCurriculum(slug) || isPublicOn(slug.slice(0, 10), now)));
 }
+
+/** Keep unreleased manuscripts visible as non-linkable previews. */
+export function publicFacingEpisodes<T extends { status: string; slug?: string }>(episodes: T[]): T[] {
+  return episodes.map((episode) => (
+    episode.status === "published" && !isPublicEpisode(episode.slug)
+      ? { ...episode, status: "planned" }
+      : episode
+  ));
+}
