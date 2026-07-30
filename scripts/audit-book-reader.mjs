@@ -43,7 +43,8 @@ async function newPage(options) {
 }
 
 const desktop = await newPage({ viewport: { width: 1440, height: 1000 }, reducedMotion: "no-preference" });
-await desktop.page.goto(new URL(startRoute, baseUrl).href, { waitUntil: "networkidle" });
+await desktop.page.goto(new URL(startRoute, baseUrl).href, { waitUntil: "domcontentloaded" });
+await desktop.page.locator(".book-turn-next").waitFor({ state: "visible" });
 await desktop.page.evaluate(() => document.fonts.ready);
 await desktop.page.evaluate(() => {
   window.__readerAudit = { clickAt: 0, titleAt: 0, clearAt: 0, maxLongTask: 0, animationNames: [] };

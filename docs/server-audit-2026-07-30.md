@@ -1,13 +1,13 @@
 # txcloud 服务器与 SSH 审计（2026-07-30）
 
-本报告使用 `txcloud` SSH 别名执行只读检查。未记录公网 IP、密钥、令牌或 `.env` 内容，也未执行包升级、缓存删除、服务停用、端口修改或 Git 引用变更。
+本报告先使用 `txcloud` SSH 别名执行只读检查，随后按发布任务完成受控生产恢复。未记录公网 IP、密钥、令牌或 `.env` 内容；未执行包升级、数据库变更、端口修改或宽范围 Docker 清理。
 
 ## 结论
 
 - 服务器不是 SSH 交互卡顿的主要来源：负载低、无 IO wait、无 failed systemd unit，登录 shell 初始化约 0 秒。
 - 本机无线链路是主要抖动源：当前为 2.4GHz、RSSI -66dBm、发送速率 36Mbps；本地网关延迟峰值 153ms，服务器延迟峰值 733ms。
-- 博客部署 timer 正常每两分钟运行，但 `production` 被人工回退到旧提交，公网 `/api/version` 返回 404，现有 Actions 无法证明线上 SHA。
-- Docker 运行态健康，但镜像与 BuildKit 缓存占用偏高；约 20GB 可回收，系统盘使用率 68%。
+- 博客已恢复到 `62cc5ae`，公网与容器内 `/api/version` 均返回相同 SHA 和 `healthy:true`，timer 已恢复 active。
+- Docker 运行态健康，但镜像与 BuildKit 缓存占用偏高；新构建后 BuildKit 为 24.8GB、系统盘 72%。既定“仅清 7 天前”策略实测回收 0B。
 - Postfix 配置不完整且对公网监听 25 端口；邮件队列为空，但日志持续报 `/etc/mailname` 缺失。
 
 ## 系统与服务
@@ -49,22 +49,17 @@
 
 ## 部署链路
 
-- `txcloud-blog-pull.timer` 已启用且 active，每两分钟运行一次。
-- 服务端仓库与 `origin/production` 一致，当前旧提交被判断为“Already deployed”。
-- 公网和容器内 `/api/version` 都返回 404，说明当前线上版本早于版本证明接口。
-- GitHub 事件显示 `production` 在 CI 发布新引用后被账号人工回退；不是 timer 或服务器自行回滚。
-- 当前工作区中的 CI 已加入公网 SHA 验证，但远端 `main` 工作流尚未包含该步骤。
+- `txcloud-blog-pull.timer` 已启用且 active，每两分钟运行一次；fetch 使用 HTTPS、单次 180 秒、最多两次。
+- 服务器旧提交 `52cdabf` 与新生产提交原本在 `628d055` 后分叉，严格 `--ff-only` 不可能成功。已增加不改变文件树的历史汇合提交 `62cc5ae`，保留旧生产历史并恢复可快进发布。
+- 服务器到 GitHub 的 SSH fetch 曾在 `index-pack` 停顿约 10 分钟；HTTPS fetch 也出现连接建立后 2 分钟无 pack 数据。最终通过本地生成的 17.5MB 增量 Git bundle 经 SSH 恢复，证明问题是服务器到 GitHub 的出站路径，不是仓库损坏。
+- 新镜像构建约 689 秒，其中 `npm ci` 493 秒；559 个静态页面构建、TypeScript 与容器健康检查均成功。旧容器在镜像构建期间保持 healthy，镜像完成后才被替换。
+- 公网与回环 `/api/version` 当前均返回 `62cc5ae939a5408ce968d7575dcccf2e58db2126`。Cloudflare 缓存已清理，Java API 已配置 JDK 17 Judge0 后端。
 
-恢复发布前必须同时满足：
-
-1. 当前混合工作区拆成可审查提交并进入 `main`。
-2. `main` 的 typecheck、测试、构建和依赖审计通过。
-3. Actions 更新 `production`，服务器健康检查通过。
-4. 公网 `/api/version` 返回与被测试提交完全一致的 SHA。
+下一步不应继续优化“服务器现场拉源码并构建”，而应由 CI 产出按 SHA 标记的不可变镜像，服务器只拉镜像、启动候选容器、验证后切流。当前脚本在新容器 unhealthy 时只退出，没有恢复上一健康镜像。
 
 ## Docker 磁盘
 
-观测到镜像约 10.6GB、BuildKit 缓存约 23GB，其中约 20GB 可回收。运行容器日志很小，博客 compose 已有 `10m x 3` 日志轮转，因此主要问题不是日志。
+新构建后观测到镜像约 10.9GB、BuildKit 缓存约 24.8GB，其中 Docker 标记约 13.5GB 可回收。运行容器日志很小，博客 compose 已有 `10m x 3` 日志轮转，因此主要问题不是应用日志。
 
 部署脚本已增加发布成功后的保守清理：
 
@@ -73,7 +68,7 @@
 - 不执行 `docker system prune`、`docker volume prune` 或 `image prune --all`。
 - 清理有时间上限且失败不影响已经健康的发布。
 
-该逻辑尚未部署到服务器，当前线上缓存未被删除。
+该逻辑已部署。手工执行同一策略时回收 0B，因为可回收对象均未超过 7 天；系统盘已从 69% 增至 72%。这说明长期解法是把构建迁出服务器，而不是缩短保留期并反复删除近期缓存。
 
 ## Postfix
 

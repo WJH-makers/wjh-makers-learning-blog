@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { JAVA_LABS, preflightJava17SingleFile, validateJavaLabs } from "../lib/java-labs.ts";
+import { JAVA_LABS, findJavaLab, preflightJava17SingleFile, validateJavaLabs } from "../lib/java-labs.ts";
 import { validateCourseMirrors } from "../lib/course-mirrors.ts";
 import { LEARNING_EVIDENCE_FIELDS } from "../lib/learning-record.ts";
 
@@ -8,6 +8,13 @@ test("the first Java season has twelve bounded Java 17 labs", () => {
   assert.equal(JAVA_LABS.length, 12);
   assert.deepEqual(validateJavaLabs(), []);
   assert.equal(new Set(JAVA_LABS.map((lab) => lab.id)).size, 12);
+});
+
+test("Java labs resolve by both article slug and public lab id", () => {
+  const first = JAVA_LABS[0];
+  assert.ok(first);
+  assert.equal(findJavaLab(first.slug), first);
+  assert.equal(findJavaLab(first.id), first);
 });
 
 test("local preflight blocks unsupported source without pretending to compile", () => {

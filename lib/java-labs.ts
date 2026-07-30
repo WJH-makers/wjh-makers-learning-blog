@@ -156,8 +156,8 @@ export const JAVA_LABS: readonly LabManifest[] = STARTERS.map((starter) => ({
   limits: { compileMs: 4_000, runMs: 2_000, maxOutputChars: 4_000 },
 }));
 
-export function findJavaLab(slug: string): LabManifest | undefined {
-  return JAVA_LABS.find((lab) => lab.slug === slug);
+export function findJavaLab(identifier: string): LabManifest | undefined {
+  return JAVA_LABS.find((lab) => lab.slug === identifier || lab.id === identifier);
 }
 
 export function validateJavaLabs(labs: readonly LabManifest[] = JAVA_LABS): string[] {

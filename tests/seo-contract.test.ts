@@ -24,10 +24,12 @@ test("全站页脚展示 ICP 备案并链接工信部备案系统", () => {
   assert.match(footer, /鄂ICP备2026036494号-1/);
 });
 
-test("Clarity 分析端点与全站 CSP 保持一致", () => {
+test("第三方分析端点与全站 CSP 保持一致", () => {
   const clarity = fs.readFileSync(path.join(root, "app", "ClarityAnalytics.tsx"), "utf8");
   const config = fs.readFileSync(path.join(root, "next.config.ts"), "utf8");
   assert.match(clarity, /https:\/\/www\.clarity\.ms\/tag/);
   assert.match(config, /script-src[^\"]*https:\/\/www\.clarity\.ms/);
   assert.match(config, /connect-src[^\"]*https:\/\/\*\.clarity\.ms/);
+  assert.match(config, /script-src[^\"]*https:\/\/static\.cloudflareinsights\.com/);
+  assert.match(config, /connect-src[^\"]*https:\/\/cloudflareinsights\.com/);
 });
