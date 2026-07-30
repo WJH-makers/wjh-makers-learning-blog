@@ -1,0 +1,12 @@
+[Unit]
+Description=Poll the tested blog production ref
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=2min
+RandomizedDelaySec=20s
+Persistent=true
+Unit=txcloud-blog-pull.service
+
+[Install]
+WantedBy=timers.target

@@ -4,6 +4,7 @@ services:
       context: .
       args:
         NEXT_PUBLIC_SITE_URL: https://wwjjhh.online
+        APP_GIT_SHA: ${APP_GIT_SHA:-unknown}
         # Turnstile 的 site key 是 NEXT_PUBLIC_*,由 next build 内联进前端 bundle,
         # 必须在**构建期**给到;env_file 只作用于运行时,配在那里前端拿不到。
         # 值从同目录 .env 读;未配置时为空字符串 —— 前端不渲染 widget、后端跳过校验,
