@@ -140,6 +140,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="footer-bar">
             <span>豆豆课程组</span>
             <span>&copy; {new Date().getFullYear()} All Rights Reserved</span>
+            <a className="beian" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">鄂ICP备2026036494号-1</a>
           </div>
         </footer>
       </body>
