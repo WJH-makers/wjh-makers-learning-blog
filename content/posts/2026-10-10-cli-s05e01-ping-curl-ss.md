@@ -318,3 +318,12 @@ LISTEN  0  511  0.0.0.0:3000  0.0.0.0:*  users:(("node",pid=21501,fd=18))
 > **Q4** 分层排查:①**网络层:**`ping coffee-server`(确认 IP 可达,得到 IP 地址如 10.0.0.5) ②**传输层:**`telnet 10.0.0.5 8080`(如果能连通,说明端口可达;如果 Connection refused,检查 ssh 到服务器后用 `sudo ss -tlnp | grep 8080` 查看服务是否监听在 0.0.0.0 还是 127.0.0.1) ③**防火墙:**`sudo ufw status`(检查是否有 8080 的 allow 规则);如果是云服务,检查安全组(Security Group)是否放行 8080 入站端口 ④**服务层:**在服务器上 `curl localhost:8080` 正常 → 说明服务本身没问题,问题在"外部访问路径"上 ⑤**诊断结果:**服务可能绑定在 `127.0.0.1:8080` 而非 `0.0.0.0:8080` → 改为 `0.0.0.0:8080` 并重启服务;或者 ufw/安全组没有放行 8080 端口。**举一反三:**这是生产环境最常见的"内网能访问外网不行"问题——99% 是绑定地址或防火墙问题。
 >
 > **Q5** 脚本框架:`#!/bin/bash; set -e`。`HOST=coffee-server; WEB_PORT=80; DB_PORT=5432`。步骤:①`ping -c 2 -W 3 $HOST > /dev/null 2>&1 && echo "[OK] Ping $HOST" || echo "[FAIL] Ping $HOST - 网络不通或主机不可达"` ②`timeout 3 bash -c "echo > /dev/tcp/$HOST/$WEB_PORT" 2>/dev/null && echo "[OK] Port $WEB_PORT" || echo "[FAIL] Port $WEB_PORT - 服务未监听或防火墙阻挡"` ③`timeout 3 bash -c "echo > /dev/tcp/$HOST/$DB_PORT" 2>/dev/null && echo "[OK] Port $DB_PORT" || echo "[FAIL] Port $DB_PORT - 数据库未监听"` ④`STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$HOST/); [ "$STATUS" = "200" ] && echo "[OK] HTTP $STATUS" || echo "[FAIL] HTTP $STATUS - 期望 200"` ⑤如果 FAIL,输出可能原因:`echo "排查建议: 1. ssh $HOST 进入服务器 2. sudo ss -tlnp 确认端口 3. sudo ufw status 查看防火墙 4. systemctl status <service> 查看服务状态"`。**举一反三:**生产健康检查建议用专门的监控工具(Nagios/Zabbix/Prometheus+Blackbox Exporter/Uptime Kuma),它们提供告警、趋势图、历史记录。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

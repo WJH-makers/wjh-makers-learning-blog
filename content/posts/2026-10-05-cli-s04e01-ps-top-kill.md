@@ -303,3 +303,14 @@ $ uptime                     # 负载缓缓落地
 > **Q4** nginx 收到 SIGKILL 是瞬间死亡:①访问日志缓冲区未写入磁盘→最后几秒的访问日志丢失 ②正在处理的 HTTP 请求被粗暴断开,客户端收到连接重置 ③worker 进程的共享内存未释放→可能损坏。**正确操作:**`nginx -s quit`(优雅关闭:完成当前请求后退出)或 `systemctl stop nginx`(使用 nginx 的 systemd 单元,默认发送 SIGQUIT 优雅退出)。如果必须 kill:用 `kill -QUIT PID`(信号 3,nginx 推荐的优雅退出信号),而非 `-9`。
 >
 > **Q5** 监控方案:①定期采集:`while true; do ps aux | grep -E "nginx|java|postgres" >> /tmp/process_health.log; sleep 60; done`(每分钟快照) ②CPU/内存告警:`ps -p PID -o %cpu,%mem | tail -1 | awk '{if($1>80||$2>2) print "ALERT"}'` ③异常排查:先 `top` 宏观看→`ps -fp PID` 看进程详情→`lsof -p PID` 看打开的文件/连接→`strace -p PID` 跟踪系统调用 ④终止规范:服务进程优先 `systemctl stop`,应用进程先 SIGTERM→10 秒超时→SIGKILL,数据库进程**绝不用 SIGKILL**(用数据库自身的 shutdown 命令) ⑤数据保护:终止前确认是否有未完成的事务或写入(`/proc/PID/io` 查看 IO 状态),配置适当的超时时间和优雅关闭脚本。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **进程边界**：先核对 PID、命令行和父进程（`ps -fp PID`）；优先 `kill -TERM PID`，仅在进程无法自行退出时才用 `kill -KILL PID`，并检查数据写入和服务健康状态。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

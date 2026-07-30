@@ -324,3 +324,10 @@ $ git show --stat HEAD           # 最后一次提交到底动了哪些文件
 > **Q4** 正确操作:`git add a.txt b.txt`(只 add 需要提交的两个文件,`c.txt` 保持 untracked 或 modified 但不 add)→`git commit -m "bugfix: a.txt; feat: add b.txt"`。**举一反三:**`c.txt` 不会被提交是因为它不在暂存区。用 `git stash push c.txt` 可以临时保存 `c.txt` 的修改(如果已 tracked),稍后用 `git stash pop` 恢复。
 >
 > **Q5** 操作:①`git init order-service && cd order-service` ②`echo "*.log\nnode_modules/" > .gitignore && git add .gitignore` ③`git commit -m "初始化 order-service 仓库"` ④日常开发循环:`git status`(看状态)→`git diff`(看未暂存的修改内容)→`git add <files>`(选要提交的文件)→`git diff --staged`(确认即将提交的内容)→`git commit -m "描述本次修改"`→`git log --oneline -3`(确认提交成功)。**举一反三:**用 `git commit -v` 打开编辑器并显示 diff,可以在写提交信息时参照修改内容;`git commit --amend` 修正最近一次提交(改信息或补充文件)。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。

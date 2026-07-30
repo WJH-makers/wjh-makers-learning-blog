@@ -333,3 +333,14 @@ $ curl -s -o /dev/null -w "%{http_code}\n" http://203.0.113.10
 > **Q4** 安全工作流:①修改配置前:`sudo cp /etc/nginx/sites-enabled/coffee /tmp/coffee.backup`(备份) ②修改后**不直接 restart** ③`sudo nginx -t`(先测试) ④如果通过:`sudo systemctl reload nginx`(优雅重载) ⑤如果 `-t` 失败:根据错误提示修正,再次 `-t`,直到通过 ⑥**严禁在生产环境下跳过 `-t` 直接 restart/reload** ⑦如果 reload 后发现问题:快速回滚 `sudo cp /tmp/coffee.backup /etc/nginx/sites-enabled/coffee && sudo nginx -t && sudo systemctl reload nginx`。**举一反三:**自动化部署脚本中务必包含 `nginx -t` 检查,失败则回滚+告警。nginx 的 `-T` 大写选项可以输出完整的合并后配置,方便调试 include/继承问题。
 >
 > **Q5** 架构:①防火墙:`ufw default deny incoming && ufw allow 22 && ufw allow 80 && ufw allow 443 && ufw --force enable`。②HTTP→HTTPS:`server { listen 80; server_name coffee.com; return 301 https://$host$request_uri; }`(301 永久重定向)。③HTTPS 反向代理:同一 server 块:`listen 443 ssl; ssl_certificate /etc/letsencrypt/live/coffee.com/fullchain.pem; ssl_certificate_key /etc/letsencrypt/live/coffee.com/privkey.pem;` →location 规则:`location /api/orders/ { proxy_pass http://localhost:8081/; }`, `location /api/payments/ { proxy_pass http://localhost:8082/; }`, `location / { proxy_pass http://localhost:3000/; }`。④SSL 证书:`sudo apt install certbot python3-certbot-nginx && sudo certbot --nginx -d coffee.com`(自动配置 SSL 并设自动续期) ⑤零停机部署流程:改配置→`nginx -t`→`systemctl reload nginx`→`curl -I https://coffee.com/ | grep "200 OK"`(烟测)。**举一反三:**注意 `proxy_pass` URL 尾部的 `/` 行为:`location /api/ { proxy_pass http://backend/; }` 中的 `/` 会去除 `/api` 前缀;不加 `/` 会保留前缀传给后端。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **容器边界**：先执行 `docker context show`、`docker ps -a` 和 `docker system df`；清理命令只对确认无用的资源执行，带卷的删除额外确认持久化数据和备份。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

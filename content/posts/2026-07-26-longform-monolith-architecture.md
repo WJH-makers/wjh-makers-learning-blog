@@ -150,7 +150,7 @@ clientPromise = client.connect().catch((error) => {
 
 ```ts
 const options: MongoClientOptions = {
-  appName: "wjh-makers-blog",
+  appName: "coffee-station-blog",
   maxPoolSize: 10,
   minPoolSize: 1,        // 留 1 条热连接,免得稀疏查询每次重做 Atlas TLS 握手
   maxIdleTimeMS: 60000,

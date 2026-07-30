@@ -204,7 +204,7 @@ pt-query-digest /var/lib/mysql/slow.log
 
 ---
 
-# Redis 命令（难度 × 频次）
+## Redis 命令（难度 × 频次）
 
 ## Redis · S 极高频
 

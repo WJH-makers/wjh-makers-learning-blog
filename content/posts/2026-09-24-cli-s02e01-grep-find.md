@@ -290,3 +290,10 @@ grep 有个和别的命令不同的脾气:**命中 `$?`=0,没命中=1,出错=2**
 > **Q4** 卡住原因:①`/` 是整个文件系统,文件数量巨大,`find` 需要遍历所有挂载点 ②可能遍历到远程文件系统(NFS)或 `/proc` `/sys` 等虚拟文件系统,速度极慢。**优化方案:**①缩小范围:先猜测配置文件可能在 `/etc/`,用 `find /etc -name "nginx.conf"` ②限制深度:`find / -maxdepth 3 -name "nginx.conf"` ③排除虚拟文件系统:`find / -path /proc -prune -o -path /sys -prune -o -name "nginx.conf" -print` ④用 `locate nginx.conf`(如果已建立索引)。**举一反三:**永远不要在生产服务器上裸跑 `find /`,轻则让硬盘满负载,重则触发 IO timeout 告警。
 >
 > **Q5** 搜索策略:①`grep -rn --include="*.{java,py,js}" -E "FIXME|TODO" ~/project/ --exclude-dir={node_modules,__pycache__}` 一步完成前两步 ②统计:`grep -rn --include="*.java" "TODO\|FIXME" ~/project/ | wc -l` 单类型统计 ③完整脚本:用 `for ext in java py js; do count=$(grep -rn --include="*.$ext" -E "FIXME|TODO" ~/project/ --exclude-dir={node_modules,__pycache__} | wc -l); echo "$ext: $count"; done`。**举一反三:**`-E` 开启扩展正则,支持 `|`(或)操作符;`--exclude-dir` 接受花括号展开,可同时排除多个目录。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

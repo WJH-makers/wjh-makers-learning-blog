@@ -336,3 +336,13 @@ deploy@coffee:~$ █
 > **Q4** ERR_CONNECTION_REFUSED 分层排查:①**网络层:**`ping coffee.com`(能解析到正确 IP 吗?能 ping 通吗?) 如果不是,检查 DNS 解析和服务器网络 ②**防火墙:**`sudo ufw status`(防火墙是否阻挡 80/443?) + 云安全组检查 ③**端口监听:**`sudo ss -tlnp | grep -E ":80|:443"`(nginx 在监听吗?) ④**nginx 状态:**`sudo systemctl status nginx`(nginx 在运行吗?)→如果没运行,`sudo systemctl start nginx` ⑤**SSL 证书:**如果是 HTTPS 且 nginx 运行,检查 SSL 配置(`listen 443 ssl;` + 证书路径是否正确) ⑥**域名 DNS:**`dig coffee.com`(DNS 记录指向正确的服务器 IP 吗?) ⑦如果是刚部署就拒绝连接,等 1-2 分钟(DNS 传播延迟)。**解决矩阵:**nginx 没装→安装;firewall 没放行→ufw allow;服务没监听→start;DNS 指错→更新 DNS 记录;SSL 证书过期→certbot renew。
 >
 > **Q5** "零恐惧部署"方案框架:①**版本管理:**每次部署前打 tag:`git tag v$(date +%Y%m%d-%H%M%S) && git push --tags`;docker 镜像用 commit hash+timestamp 做标签:`docker build -t coffee-app:$(git rev-parse --short HEAD) .`。②**部署脚本:**`deploy.sh` 包含:备份当前版本→拉取新代码→构建镜像→启动新容器→烟测→如果烟测通过,清理旧版本;如果烟测失败,自动回滚。③**健康检查:**函数 `smoke_test() { curl -f -s -o /dev/null http://localhost:8080/health || return 1; }`;部署后调用该函数判断。④**5 分钟监控:**`./deploy.sh && sleep 300 && ./smoke_test.sh`(如果 5 分钟后健康检查失败,发告警);或者用 systemd timer 每分钟运行健康检查脚本。⑤**回滚:**保留最近 3 个版本的可运行包(镜像 tag);回滚脚本:`docker compose down && git checkout $PREV_TAG && docker compose up -d`。⑥**部署日志:**每次部署写入 JSON 格式日志:`{"time":"...","version":"...","result":"success|fail","duration":"...","who":"..."}` → 便于后续统计部署成功率。**举一反三:**当你走完这 25 话,掌握了部署链上每个环节的工具,你就建立了一个"命令自信":你知道每一步做什么、如何验证、错了怎么回滚。这就是"零恐惧"——不是不出错,而是每步可验证、每错可回滚。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **容器边界**：先执行 `docker context show`、`docker ps -a` 和 `docker system df`；清理命令只对确认无用的资源执行，带卷的删除额外确认持久化数据和备份。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

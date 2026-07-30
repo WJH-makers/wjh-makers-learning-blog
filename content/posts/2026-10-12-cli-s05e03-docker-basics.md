@@ -389,3 +389,14 @@ networks:
     driver: bridge
 ```
 **开发/生产分离:**①共用基础 compose ②`docker-compose.override.yml`(开发:挂载源码、暴露调试端口、volumes 热加载) ③`docker-compose.prod.yml`(生产:不挂载源码、配置日志驱动、限制资源 limits、使用特定镜像 tag 而非 latest) ④启动:`docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`。**举一反三:**`.env` 文件存放密码等敏感变量,不提交到 Git;生产密码通过 Docker Swarm secrets 或外部密钥管理服务注入。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **进程边界**：先核对 PID、命令行和父进程（`ps -fp PID`）；优先 `kill -TERM PID`，仅在进程无法自行退出时才用 `kill -KILL PID`，并检查数据写入和服务健康状态。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **容器边界**：先执行 `docker context show`、`docker ps -a` 和 `docker system df`；清理命令只对确认无用的资源执行，带卷的删除额外确认持久化数据和备份。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

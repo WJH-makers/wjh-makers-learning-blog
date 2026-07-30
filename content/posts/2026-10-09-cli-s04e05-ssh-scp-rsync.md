@@ -317,3 +317,12 @@ Host coffee
 > **Q4** 可能原因:①公钥没有正确添加到服务器的 `~/.ssh/authorized_keys`(拼写错误、没重启 sshd 虽不需但建议确认、文件权限不是 600) ②服务器上 `.ssh` 目录或 `authorized_keys` 文件权限过于宽松(必须 700/600,否则 sshd 忽略) ③客户端私钥路径不对(如果用了非默认路径,需要在 ssh 命令中 `-i` 或在 config 中 `IdentityFile` 指定) ④服务器 `sshd_config` 禁用了 pubkey 认证(`PubkeyAuthentication no`) ⑤使用了错误的用户名(公钥装在 userA 的 authorized_keys,但用 userB ssh 连接) ⑥`known_hosts` 中该服务器的旧密钥与新服务器不匹配(重装过服务器)。**排查:**`ssh -vvv user@server` 看详细输出,搜索 "Authentication" 和 "publickey" 关键字。
 >
 > **Q5** 方案:①创建 `~/.ssh/config`:`Host coffee-prod`、`HostName 10.0.0.5`、`User deploy`、`IdentityFile ~/.ssh/coffee_prod_ed25519` ②试运行:`rsync -avzn --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/`(`-n` dry-run 预览) ③确认无误后去掉 `-n` 正式同步:`rsync -avz --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/`(不加 `--delete`,upload 不会被删除) ④同步后远程执行重载:`rsync ... && ssh coffee-prod "sudo systemctl reload nginx"` ⑤写成脚本 `deploy.sh` 方便复用:`#!/bin/bash; set -e; rsync -avz --exclude=... ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/; ssh coffee-prod "sudo systemctl reload nginx"; echo "Deploy OK"`。**举一反三:**生产级部署还应考虑:同步前先备份、记录部署历史(Git commit hash)、支持回滚(`rsync -avz /backups/old-version/ deploy@coffee-prod:/var/www/coffee/`)、用 `--link-dest` 去重节省备份空间。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。

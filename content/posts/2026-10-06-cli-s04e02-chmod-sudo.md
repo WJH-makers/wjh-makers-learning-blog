@@ -319,3 +319,13 @@ $ sudo -v && echo "印章可借"          # 确认自己在 sudo 名单里
 > **Q4** 原因:文件权限 `-rw-r--r--` 没有 `x`(执行权限),shell 不允许直接执行。sudo 用 root 身份绕过了限制(root 通常不受权限限制)。**更好方案:**`chmod +x deploy.sh` 给文件添加执行权限。如果只有菜菜需要执行,`chmod u+x deploy.sh`(只给所有者加执行)。**举一反三:**`bash deploy.sh`(显式用解释器执行)不需要文件的 `x` 权限——因为此时是 `/bin/bash` 在执行(它有 x 权限),`deploy.sh` 只是被读取的参数文件。
 >
 > **Q5** 方案:①`code/`:属组 developer,权限 750/640(developer 组可读,其他人无权限)。②`deploy/`:属组 ops,权限 750(ops 组可读执行,developer 无权限)。③`secrets/`:属主 root,属组 ops,权限 750(ops 组可读但不能写;建议用更严格的一对一文件权限如 600) ④`logs/`:属组 audit,权限 750(audit 组只读),用 `chmod -R g-w` 确保 audit 不能修改。⑤user 分组:`usermod -aG developer user1`、`usermod -aG ops user2`、`usermod -aG audit user3`。⑥核心:在目录层面控制访问(目录的 x 控制进入,r 控制读取,w 控制创建/删除)。**举一反三:**生产环境推荐用配置管理工具(Ansible/Chef/Puppet)统一管理权限,避免手动 chmod 导致的"雪花服务器"(每台服务器权限配置不一致)。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **进程边界**：先核对 PID、命令行和父进程（`ps -fp PID`）；优先 `kill -TERM PID`，仅在进程无法自行退出时才用 `kill -KILL PID`，并检查数据写入和服务健康状态。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。

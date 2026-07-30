@@ -130,6 +130,8 @@ public class MillionCustomers {
 2. **留意超老版本的钉住(pinning)。** JDK 21–23 上,虚拟线程在 synchronized 块里阻塞,会把 carrier 一起「钉」在工位上卸不下来;JEP 491(JDK 24)已根治。基线 Java 25 无此忧,接手老系统要多看一眼。
 3. **ThreadLocal 换 Scoped Values。** 百万虚拟线程 = 百万份 ThreadLocalMap(回看第 75 话的托盘),内存压力陡增还容易忘 remove。Scoped Values(JEP 506,JDK 25 转正)不可变、随作用域自动失效:
 
+> **版本与实现边界**:JEP 444 的收益来自 JVM 支持的阻塞操作可在等待时卸载 carrier,并不是「任何阻塞都会卸载」的承诺。JDK 21–23 在 `synchronized` 内阻塞会 pin;JEP 491 在 JDK 24 修复这一种 monitor 场景,但 native / foreign-function 调用等仍可能 pin,Java 25 也不能据此承诺「绝不会 pin」。「不池化」是默认的资源复用建议;有界执行器或信号量可以作为**明确的准入控制**,阈值须按下游连接数、文件描述符、内存与 P95/P99 压测决定。文中耗时是教学推演,不是可迁移的性能基准。
+
 ```java
 static final ScopedValue<String> MEMBER_ID = ScopedValue.newInstance();
 
@@ -418,4 +420,10 @@ class MillionCustomersTest {
 
 ---
 
-*本话属于连载《从零开始学 Java》。世界观与角色设定见仓库 `docs/java-comic-academy/handbook.md`;完整季次地图与番外见 [/java](/java)。*
+## 运行环境、验证与依据
+
+- **运行环境**:示例默认以 Java SE 25 为审计基线;若代码使用较早语法或框架版本,以文章中明确写出的最低版本为准。运行前用 `java --version`、`javac --version` 与项目构建工具的版本输出确认实际环境。
+- **最后验证**:独立片段用声明的 JDK 编译/运行;依赖 Maven、JUnit、Spring、数据库或 Redis 的片段必须在相应项目、服务和测试数据具备时执行。未给出完整依赖的代码仅作示意,不能直接当作生产配置。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/index.html) 与 [OpenJDK JEP](https://openjdk.org/jeps/0)。语言规范、库 API 与 HotSpot 实现细节必须分开理解。
+- **面试边界**:先说明结论属于规范、特定 JDK 版本还是 HotSpot 实现;不要把性能数字、锁状态或调优阈值当作跨版本保证。
+*本话属于连载《从零开始学 Java》。完整季次地图与番外见 [/java](/java)。*

@@ -301,3 +301,12 @@ $ tail -n 1 memo.txt               # 刚学的 tail 立刻上岗:只验最后一
 > **Q4** 方案一:`less /var/log/nginx/access.log` 分页浏览,可按 `/` 搜索、`g` 跳到开头。方案二:`tail -n 100 /var/log/nginx/access.log` 只看最近 100 行。方案三:`head -n 50 /var/log/nginx/access.log` 只看前 50 行。**举一反三:**也可以 `cat file | grep ERROR` 过滤错误行、`wc -l file` 先看总行数再决定策略、`split` 将大文件切分后逐步分析。
 >
 > **Q5** 完整命令:`mkdir -p ~/backups/2026/09` → `date > ~/backups/2026/09/date.txt` → `tail -n 20 /var/log/app.log >> ~/backups/2026/09/recent.log`。**举一反三:**生产脚本应加错误检查:`mkdir -p ... && date > ... && tail ... >> ...` 用 `&&` 串联确保前一步成功才执行下一步;也可以用 `set -e` 让脚本遇错即停。🪟 PowerShell 中 `date` 会输出日期对象而非文本,建议用 `Get-Date -Format 'yyyy-MM-dd'`。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。
+- **定时任务边界**：cron 环境最小且非交互。先用绝对路径、显式环境变量和可写日志路径；手动执行同一命令并检查日志后再安装任务。

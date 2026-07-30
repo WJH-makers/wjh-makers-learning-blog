@@ -323,3 +323,13 @@ $ curl -s localhost:3000/menu
 > **Q4** 原因:**忘记 `daemon-reload`**。修改单元文件后,systemd 不会自动重新读取文件,它内部缓存了旧版本。`restart` 是根据缓存的旧配置重启服务。**正确操作:**`sudo systemctl daemon-reload`→`sudo systemctl restart coffee`→`sudo systemctl status coffee`(确认配置生效)。**举一反三:**也可以用 `systemctl reenable coffee`(重新创建符号链接)如果需要更新 Install 段。养成习惯:改 unit file → 想三件事(reload → restart → status)。
 >
 > **Q5** 设计:①`user-service.service` 设 `Before=order-service.service` ②`order-service.service` 设 `After=user-service.service` 和 `Before=payment-service.service` ③`payment-service.service` 设 `After=order-service.service` ④所有服务都设:`Restart=on-failure`(崩溃自动重启)、`RestartSec=5s`(重启间隔)、`StandardOutput=journal` 和 `StandardError=journal`(标准输出和错误都进 journal) ⑤日志查看:`journalctl -u user-service -u order-service -u payment-service -f`(同时查看三个服务的实时日志) ⑥状态检查:`systemctl status user-service order-service payment-service`(一次查看多个服务状态)。**举一反三:**可以用 `systemctl list-dependencies order-service.service` 查看服务的依赖树;创建 systemd target(如 `coffee.target`)统一管理三个微服务:`Wants=` 关联三个服务,`systemctl start coffee.target` 一键启动所有。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。
+- **定时任务边界**：cron 环境最小且非交互。先用绝对路径、显式环境变量和可写日志路径；手动执行同一命令并检查日志后再安装任务。

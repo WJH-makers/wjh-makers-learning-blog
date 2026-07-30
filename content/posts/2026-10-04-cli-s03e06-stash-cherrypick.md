@@ -312,3 +312,11 @@ Git 时间守卫收起沙漏,咖啡站的代码史从此清清爽爽。可就在
 > **Q4** 如果 `pop` 遇到冲突,stash 条目**没有被自动删除**(pop 失败时 Git 会保留 stash)。如果不想解决冲突:①先 `git reset --hard HEAD`(丢弃当前混乱状态) ②`git stash pop` 又回来了(如果第一次 pop 失败但 stash 还在的话)。如果 stash 已经不在(`git stash list` 看不到),虽然 pop 出冲突但条目已删,此时可以用 `git reset --merge HEAD` 回到 pop 前的状态。**核心:**pop 冲突时 Git 不会删除 stash,但一旦 stash 条目被手动 drop 且没有 reflog(不像 commit),就无法通过 Git 本身恢复了。安全流程:不确定时先 `apply` 看看。
 >
 > **Q5** 完整 hotfix 流程:①`git switch main && git pull origin main` ②`git switch -c hotfix/order-crash`(基于 main 创建) ③修 bug→commit→`git push -u origin hotfix/order-crash` ④创建 PR 合并到 main(生产环境) ⑤main 上创建 tag:`git tag v1.2.1 && git push --tags` ⑥**必须同步回 develop:**`git switch develop && git pull origin develop` ⑦`git merge hotfix/order-crash`(或 `git cherry-pick <修复提交>`) ⑧如果 develop 上已有相关修改,这里可能出现冲突——解决冲突时注意:develop 的另一份修改和 hotfix 的目的可能不同(一个是对原功能的优化,一个是紧急修复),保留两者的有效部分 ⑨测试通过→`git push origin develop` ⑩清理:`git branch -d hotfix/order-crash`。**举一反三:**Git Flow 的标签是发布管理的关键——`v1.2.1` 标记了 hotfix 后的生产版本,随时可以从这个 tag 回滚或部署。
+
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **删除边界**：`rm`/`Remove-Item` 不会进入回收站。先用 `ls -- 路径` 或 PowerShell 的 `-WhatIf` 预演；避免对变量、通配符或当前目录直接使用递归强制删除。
+- **Git 回滚边界**：`reset --hard`、rebase 和强推会改写本地或共享历史。先保存 `git status`/`git log --oneline`，共享分支优先 `git revert`；必须强推时使用 `--force-with-lease` 并与协作者确认。

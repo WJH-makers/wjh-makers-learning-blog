@@ -276,4 +276,14 @@ $ pwd               # 我在哪(任何时候迷路,先敲它)
 >
 > **Q5** 导航策略:①`ssh user@server` 登录 ②`pwd` 确认在 home ③`cd /home/deploy/app` 或逐层 `cd /home`→`cd deploy`→`cd app` ④`pwd` 确认 ⑤`cd src/main/java/com/coffee` 到达目标 ⑥`ls -la` 查看项目文件。全程每步用 `pwd`+`ls` 确认位置。**举一反三:**实际工作中可以用 `tree -L 3` 可视化目录树,或直接 `cd /home/deploy/app/src/main/java/com/coffee` 一步到位。
 
+## 运行前边界、回滚与验证
+
+- **运行前**：示例以 GNU/Linux 的 Bash 为主；先用 `command --help`、`man command` 或发行版文档确认本机版本和参数。不要把教程中的 IP、域名、用户、路径直接复制到生产机器。
+- **先确认作用域**：涉及文件、仓库、容器或远端主机时，先运行 `pwd`、`whoami`、`git status`、`docker context show` 或 `ssh -G 主机别名`，确认当前目标；对重要数据先做可恢复备份。
+- **完成后验证**：用只读命令确认结果，例如 `ls -la`、`git status`、`systemctl status 服务名`、`docker ps` 或 `curl -fS URL`；失败时停止扩大操作范围，先读报错。
+- **权限边界**：先用 `stat`/`ls -ld` 查所有者和现有权限；按最小权限原则修改，避免 `chmod -R 777`。`sudo` 仅用于明确的单条命令，不在不理解的脚本前盲加。
+- **远端边界**：首次连接核验主机指纹；传输前先确认目标路径和账号，`rsync` 删除模式必须先加 `--dry-run`。远程改网络或防火墙时保留一个已登录会话和云控制台回退路径。
+- **网络边界**：远程启用防火墙前先放行当前 SSH 入口；修改 Nginx 后先 `nginx -t`，通过后再 reload，并从外部和本机两侧验证端口与 HTTP 状态。
+
+
 *本话属于连载《从零开始玩命令行》。全卷地图见 [/cli](/cli);前作《从零开始学 Java》见 [/java](/java)。*
