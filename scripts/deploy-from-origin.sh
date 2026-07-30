@@ -34,10 +34,10 @@ if [[ "$LAST_SUCCESSFUL_COMMIT" == "$TARGET_COMMIT" ]]; then
   exit 0
 fi
 
-sudo docker compose up -d --build
+docker compose up -d --build
 
 for attempt in $(seq 1 24); do
-  health="$(sudo docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' blog 2>/dev/null || true)"
+  health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' blog 2>/dev/null || true)"
   if [[ "$health" == "healthy" ]]; then
     curl --fail --silent --show-error --max-time 15 http://127.0.0.1:3001/ >/dev/null
     install -d -m 700 "$STATE_DIR"
