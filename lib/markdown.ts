@@ -50,7 +50,14 @@ function inlineMarkdown(value: string): string {
   const stash = (html: string) => `\u0000${slots.push(html) - 1}\u0000`;
 
   let out = escapeHtml(value.replace(/\u0000/g, ""))
-    .replace(/`([^`]+)`/g, (_m, code: string) => stash(`<code>${code}</code>`))
+    // 行内代码:GFM 多反引号围栏。开启的 N 个反引号必须由**恰好** N 个闭合
+    // ((?<!`) 与 (?!`) 保证不会把 ``` 拆开来当闭合用),内容首尾同为空格时剥一层 ——
+    // 这是唯一能写出「代码内容里含反引号」的方式,例如 `` `a**b**c` ``。
+    // 原实现 /`([^`]+)`/ 会把它错配成 <code> </code> + 裸 a**b**c,于是 ** 反被加粗。
+    .replace(/(`+)(.+?)(?<!`)\1(?!`)/g, (_m, _ticks: string, code: string) => {
+      const inner = /^ .* $/.test(code) && code.trim() ? code.slice(1, -1) : code;
+      return stash(`<code>${inner}</code>`);
+    })
     .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (_m, alt: string, src: string) =>
       stash(`<img class="post-image" src="${src}" alt="${alt}" loading="lazy" decoding="async" />`))
     .replace(/!\[([^\]]*)\]\((\/comics\/java\/([A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\.png)\)/g, (_m, alt: string, _src: string, stem: string) => {
@@ -79,6 +86,10 @@ function inlineMarkdown(value: string): string {
     });
 
   out = emphasize(out);
+
+  // 表格单元格内换行在 GFM 里唯一的写法就是 <br>,放行这一个无属性单标签(零 XSS 面)。
+  // 行内代码中的 `<br>` 已被占位符保护、仍按字面展示 —— 讲 HTML 语法的文章不受影响。
+  out = out.replace(/&lt;br\s*\/?&gt;/gi, "<br />");
 
   // 回填可能嵌套(如 *`code`* 的斜体包着代码占位符),循环展开到不动点
   for (let guard = 0; guard <= slots.length && /\u0000\d+\u0000/.test(out); guard++) {
@@ -240,11 +251,38 @@ async function highlightCode(code: string, lang: string): Promise<string> {
 
 // ---------- GFM 表格 ----------
 
+/**
+ * GFM 表格行切分。管道符是列边界，所以 `\|` 是唯一能在单元格里写出竖线的方式
+ * ——规范中管道转义**优先于**行内代码，因此连 `` `a \| b` `` 也必须写转义。这里
+ * 把 `\|` 还原成裸竖线再交给 inlineMarkdown(escapeHtml 不动 `|`，安全)。
+ *
+ * 原实现直接 split("|")：`` `Get-Content access.log \| more` `` 会被劈成两格，
+ * 反引号被截断成未闭合、整行多出一列，而 renderTable 按表头列数遍历，多出来的
+ * 那一列(往往正是说明文字)被静默丢弃 —— 全站曾有 71 行栽在这上面。
+ */
 function parseTableRow(line: string): string[] {
-  let s = line.trim();
-  if (s.startsWith("|")) s = s.slice(1);
-  if (s.endsWith("|")) s = s.slice(0, -1);
-  return s.split("|").map((c) => c.trim());
+  const s = line.trim();
+  const cells: string[] = [];
+  let cur = "";
+  // 首尾的**裸**竖线是表格边框，不产生空单元格；但结尾的 `\|` 属于内容。
+  const start = s.startsWith("|") ? 1 : 0;
+  const end = s.endsWith("|") && !s.endsWith("\\|") ? s.length - 1 : s.length;
+  for (let i = start; i < end; i++) {
+    const ch = s[i];
+    if (ch === "\\" && s[i + 1] === "|") {
+      cur += "|";
+      i++;
+      continue;
+    }
+    if (ch === "|") {
+      cells.push(cur.trim());
+      cur = "";
+      continue;
+    }
+    cur += ch;
+  }
+  cells.push(cur.trim());
+  return cells;
 }
 
 function tableAligns(sep: string): string[] {

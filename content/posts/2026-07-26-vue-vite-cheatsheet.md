@@ -70,7 +70,8 @@ tags: [命令速查, Vue, Vite, 前端]
 | `vite --host` | 绑 0.0.0.0,同网设备可访问 | 或配 `server.host: true`;⚠ 公网机器别裸开 |
 | `vite --port 3000 --strictPort` | 指定端口;被占用则报错退出 | 不加 strictPort 会自动 +1,导致端口漂移 |
 | `vite --force` | 忽略缓存,强制重新预构建依赖 | 换依赖/改 optimizeDeps 后用;会变慢 |
-| HMR(自动) | 保存即热更新,保留组件状态 | `<script setup>` 顶层 state 保留;改到无法热更时整页刷新 || `server.proxy` | 代理 `/api` 到后端,绕跨域 | 详见第 10 节;只在 dev / preview 生效 |
+| HMR(自动) | 保存即热更新,保留组件状态 | `<script setup>` 顶层 state 保留;改到无法热更时整页刷新 |
+| `server.proxy` | 代理 `/api` 到后端,绕跨域 | 详见第 10 节;只在 dev / preview 生效 |
 
 ## 4、组件基础(SFC、组合式 API)
 
@@ -79,7 +80,8 @@ tags: [命令速查, Vue, Vite, 前端]
 | `<script setup lang="ts">` | 组合式 API 编译糖,顶层变量自动暴露给模板 | 首选,比 `setup()` 少大量样板 |
 | `defineProps<{ msg: string }>()` | 类型式声明 props | 3.5+ 解构 `const { msg } = defineProps(...)` 仍响应(编译器改写),默认值 `{ msg = '' }` |
 | `defineEmits<{ change: [id: number] }>()` | 类型式声明事件 | 元组即参数签名;`emit('change', 1)` |
-| `defineModel<string>()` | 双向绑定 v-model(3.4+ 稳定) | 省去 props + emit 样板;可 `defineModel('title')` || `useTemplateRef('el')` | 拿模板引用(3.5+) | 取代旧「同名 ref 变量」写法,参数对应 `ref="el"` |
+| `defineModel<string>()` | 双向绑定 v-model(3.4+ 稳定) | 省去 props + emit 样板;可 `defineModel('title')` |
+| `useTemplateRef('el')` | 拿模板引用(3.5+) | 取代旧「同名 ref 变量」写法,参数对应 `ref="el"` |
 | `onMounted` / `onUnmounted` | 生命周期钩子 | 必须在 setup 同步调用,别放异步回调 |
 
 ## 5、响应式速查(ref / reactive / computed / watch)
@@ -201,7 +203,8 @@ server: {
 |------|------|-----------|
 | `rm -rf node_modules/.vite` | 清 Vite 依赖预构建缓存 | 「改了没生效 / import 报幽灵错」先清它。Windows:`Remove-Item -Recurse -Force node_modules\.vite` |
 | `vite --force` | 强制重建依赖预构建 | 等价于清缓存后重跑 dev |
-| `rm -rf node_modules dist && npm install` | 全量重装 | ⚠ 删依赖与产物,确认在项目根目录再执行 || `npm outdated` / `npm update` | 列出可升级 / 范围内升级 | update 不跨大版本;跨大版本看 Latest 列 |
+| `rm -rf node_modules dist && npm install` | 全量重装 | ⚠ 删依赖与产物,确认在项目根目录再执行 |
+| `npm outdated` / `npm update` | 列出可升级 / 范围内升级 | update 不跨大版本;跨大版本看 Latest 列 |
 | `npx npm-check-updates -u && npm install` | 把 package.json 升到最新(含大版本) | ⚠ 可能破坏;升完必跑测试 + 读 Vue/Vite 迁移指南 |
 | `git clean -xdf -n` | 预演清理未跟踪文件(含被忽略的) | ⚠ 去掉 `-n` 才真删,先 `-n` 看清单再动手 |
 | `npx vue-tsc --noEmit` | 升级后类型自检 | 大版本升级最容易在这里暴露不兼容 |

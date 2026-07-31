@@ -178,7 +178,7 @@ tags: [命令速查, Windows, CMD]
 | `if "%1"=="" ( ... )` | 判空 | 两边都加引号，否则参数为空时语法直接崩 |
 | `if errorlevel 1 exit /b 1` | 判返回码 | ⚠ `if errorlevel 1` 的语义是「**大于等于** 1」；要精确判等用 `if %errorlevel% equ 1` |
 | `for %%i in (*.log) do echo %%i` | 遍历文件 | ⚠ 脚本里是 `%%i`，命令行里是 `%i`，两者不通用——最经典的复制粘贴翻车点 |
-| `for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do ...` | 解析命令输出 | ⚠ 单引号里的管道必须写成 `^|` 转义；读文件用 `for /f "usebackq" %%a in ("有空格的路径.txt")` |
+| `for /f "tokens=2 delims=:" %%a in ('ipconfig ^\| findstr /c:"IPv4"') do ...` | 解析命令输出 | ⚠ 单引号里的管道必须写成 `^\|` 转义；读文件用 `for /f "usebackq" %%a in ("有空格的路径.txt")` |
 | `setlocal enabledelayedexpansion` + `!var!` | 延迟展开 | ⚠ 没开它的话，`for`/`if` 块里的 `%var%` 在进入块之前就被一次性替换死了，循环里永远是旧值 |
 | `call :sub 参数` / `goto :eof` | 调用子过程 | 定义 `:sub ... goto :eof`；`call` 另一个 bat 才能返回，直接写文件名会一去不回 |
 | `exit /b 1` | 退出脚本并返回码 | ⚠ 不带 `/b` 的 `exit` 会连整个 cmd 窗口一起关掉 |

@@ -229,6 +229,49 @@ test("GFM 表格渲染回归(含对齐)", async () => {
   assert.ok(html.includes('style="text-align:center"'), html);
 });
 
+test("表格单元格内的 \\| 转义不劈列,且尾列内容不被丢弃", async () => {
+  // 曾经的真实事故:`Get-Content access.log \| more` 被 split("|") 劈成两格,
+  // 行内代码变成未闭合、整行多出一列,而 renderTable 按表头列数遍历 ——
+  // 最后一列(说明文字)被静默丢弃,全站 71 行受影响。
+  const html = await markdownToHtml(
+    "| 场景 | Linux | PowerShell | 差异 |\n|---|---|---|---|\n" +
+    "| 分页看大文件 | `less access.log` | `Get-Content access.log \\| more` | `less` 能回翻能搜索 |",
+  );
+  assert.equal((html.match(/<td/g) ?? []).length, 4, html);
+  assert.ok(html.includes("<code>Get-Content access.log | more</code>"), html);
+  assert.ok(html.includes("能回翻能搜索"), html);
+});
+
+test("表格首尾的 \\| 属于内容而非边框", async () => {
+  const html = await markdownToHtml("| 甲 | 乙 |\n|---|---|\n| `a \\|` | `\\| b` |");
+  assert.equal((html.match(/<td/g) ?? []).length, 2, html);
+  assert.ok(html.includes("<code>a |</code>"), html);
+  assert.ok(html.includes("<code>| b</code>"), html);
+});
+
+test("裸 <br> 放行为换行,行内代码里的 <br> 仍按字面展示", async () => {
+  const html = await markdownToHtml("| 键 | 值 |\n|---|---|\n| `[user]`<br>`default=me` | 讲语法时写 `<br>` |");
+  assert.ok(html.includes("<br />"), html);
+  assert.ok(html.includes("<code>&lt;br&gt;</code>"), html);
+});
+
+test("双反引号围栏:代码内容里可以含反引号,且内部 ** 不被当强调", async () => {
+  const html = await markdownToHtml("同理 `` `a**b**c` `` 里的 ** 会被误配。");
+  assert.ok(html.includes("<code>`a**b**c`</code>"), html);
+  assert.ok(!html.includes("<strong>b</strong>"), html);
+});
+
+test("多反引号围栏不会把 ``` 拆开当闭合", async () => {
+  const html = await markdownToHtml("写 ` ```Java ` 会误走纯文本回退。");
+  assert.ok(html.includes("<code>```Java</code>"), html);
+});
+
+test("单反引号行内代码与 cron 星号保持原行为", async () => {
+  const html = await markdownToHtml("定时 `30 3 * * *` 执行");
+  assert.ok(html.includes("<code>30 3 * * *</code>"), html);
+  assert.ok(!html.includes("<em>"), html);
+});
+
 test("代码围栏走 Shiki 高亮(双主题)", async () => {
   const html = await markdownToHtml("```java\nint x = 1;\n```");
   assert.ok(html.includes("shiki"), html);
