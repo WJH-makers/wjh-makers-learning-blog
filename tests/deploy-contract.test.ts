@@ -36,7 +36,9 @@ test("production ref fetches cannot hold the deploy lock indefinitely", () => {
   const workflow = read(".github/workflows/ci.yml");
   const deploy = read("scripts/deploy-from-origin.sh");
 
-  assert.match(deploy, /DEPLOY_FETCH_URL=https:\/\/github\.com\//);
+  assert.match(deploy, /DEPLOY_FETCH_URLS=\(/);
+  assert.match(deploy, /https:\/\/github\.com\/WJH-makers\/wjh-makers-learning-blog\.git/);
+  assert.match(deploy, /git@github\.com:WJH-makers\/wjh-makers-learning-blog\.git/);
   assert.match(deploy, /timeout --signal=TERM --kill-after=10s "\$FETCH_TIMEOUT"/);
   assert.match(deploy, /FETCH_ATTEMPTS=2/);
   assert.match(deploy, /refs\/heads\/production:refs\/remotes\/origin\/production/);

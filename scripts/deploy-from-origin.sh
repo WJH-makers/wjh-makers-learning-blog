@@ -3,7 +3,10 @@ set -Eeuo pipefail
 
 readonly REPOSITORY=/home/ubuntu/blog
 readonly DEPLOY_REF=origin/production
-readonly DEPLOY_FETCH_URL=https://github.com/WJH-makers/wjh-makers-learning-blog.git
+readonly DEPLOY_FETCH_URLS=(
+  "https://github.com/WJH-makers/wjh-makers-learning-blog.git"
+  "git@github.com:WJH-makers/wjh-makers-learning-blog.git"
+)
 readonly STATE_DIR=/home/ubuntu/.local/state/wjh-blog-deploy
 readonly STATE_FILE="${STATE_DIR}/last-successful-commit"
 readonly SITE_ORIGIN=https://wwjjhh.online
@@ -16,18 +19,20 @@ readonly FETCH_ATTEMPTS=2
 cd "$REPOSITORY"
 
 fetch_production_ref() {
-  local attempt
-  for attempt in $(seq 1 "$FETCH_ATTEMPTS"); do
-    if timeout --signal=TERM --kill-after=10s "$FETCH_TIMEOUT" \
-      git -c core.hooksPath=/dev/null fetch --quiet \
-        "$DEPLOY_FETCH_URL" \
-        refs/heads/production:refs/remotes/origin/production; then
-      return 0
-    fi
-    echo "Production ref fetch failed (${attempt}/${FETCH_ATTEMPTS}); retrying over HTTPS." >&2
-    sleep $((attempt * 5))
+  local url attempt
+  for url in "${DEPLOY_FETCH_URLS[@]}"; do
+    for attempt in $(seq 1 "$FETCH_ATTEMPTS"); do
+      if timeout --signal=TERM --kill-after=10s "$FETCH_TIMEOUT" \
+        git -c core.hooksPath=/dev/null fetch --quiet \
+          "$url" \
+          refs/heads/production:refs/remotes/origin/production; then
+        return 0
+      fi
+      echo "Production ref fetch failed (${attempt}/${FETCH_ATTEMPTS}) via ${url}; retrying." >&2
+      sleep $((attempt * 5))
+    done
   done
-  echo "Unable to fetch the production ref within bounded retries." >&2
+  echo "Unable to fetch the production ref within bounded retries (HTTPS and SSH)." >&2
   return 1
 }
 
