@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import type { Route } from "next";
 import Link from "next/link";
 import { getAllPublishedPosts, siteUrl } from "@/lib/posts";
 import { SERIES_META, publishedEpisodes } from "@/lib/series";
+import { seriesByRoute, seriesProgress } from "@/lib/series-registry";
+import { availabilityOf } from "@/lib/universe";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -16,16 +19,21 @@ type SkillMapTile = {
   title: string;
   detail: string;
   tone: string;
-  href?: "/java" | "/career";
+  /**
+   * 该能力域对应的连载线。是否「已点亮」由 availabilityOf 从注册表推导 ——
+   * 早先这里手写 href,类型还锁成 "/java" | "/career",于是 /spring、/db、/jvm
+   * 任何一条开更都得回来改代码,和宇宙地图当初把已完结的 /cli 画成雾区是同一个病。
+   */
+  route: Route;
 };
 
 const JAVA_SKILL_MAP: SkillMapTile[] = [
-  { code: "01", title: "语言地基", detail: "变量、分支、方法、对象与集合", tone: "foundation", href: "/java" },
-  { code: "02", title: "工程习惯", detail: "异常、文件、Maven、JUnit 与 Git", tone: "craft", href: "/java" },
-  { code: "03", title: "后端请求", detail: "HTTP、Spring、接口与数据校验", tone: "service" },
-  { code: "04", title: "数据与并发", detail: "MySQL、Redis、事务、线程与锁", tone: "runtime" },
-  { code: "05", title: "系统运行", detail: "JVM、容器、观测、部署与回滚", tone: "systems" },
-  { code: "06", title: "工程证据", detail: "项目叙事、复现记录与真实取舍", tone: "evidence", href: "/career" },
+  { code: "01", title: "语言地基", detail: "变量、分支、方法、对象与集合", tone: "foundation", route: "/java" },
+  { code: "02", title: "工程习惯", detail: "异常、文件、Maven、JUnit 与 Git", tone: "craft", route: "/java" },
+  { code: "03", title: "后端请求", detail: "HTTP、Spring、接口与数据校验", tone: "service", route: "/spring" },
+  { code: "04", title: "数据与并发", detail: "MySQL、Redis、事务、线程与锁", tone: "runtime", route: "/db" },
+  { code: "05", title: "系统运行", detail: "JVM、容器、观测、部署与回滚", tone: "systems", route: "/jvm" },
+  { code: "06", title: "工程证据", detail: "项目叙事、复现记录与真实取舍", tone: "evidence", route: "/career" },
 ];
 
 export default async function HomePage() {
@@ -33,6 +41,8 @@ export default async function HomePage() {
 
   const latestPosts = posts.slice(0, 3);
   const seriesDone = publishedEpisodes().length;
+  const cli = seriesByRoute("/cli");
+  const cliProgress = seriesProgress(cli);
 
   return (
     <div className="page-shell">
@@ -55,14 +65,15 @@ export default async function HomePage() {
           <div className="java-skill-map-topline"><span>JAVA ENGINEER / GROWTH MAP</span><span>01—06</span></div>
           <div className="java-skill-map-grid">
             {JAVA_SKILL_MAP.map((item) => {
+              const open = availabilityOf(item.route) === "open";
               const content = <>
                 <span className="skill-map-code">{item.code}</span>
                 <h2>{item.title}</h2>
                 <p>{item.detail}</p>
-                <span className="skill-map-state">{item.href ? "已点亮 · 可进入" : "能力域 · 逐步点亮"}</span>
+                <span className="skill-map-state">{open ? "已点亮 · 可进入" : "能力域 · 逐步点亮"}</span>
               </>;
-              return item.href ? (
-                <Link href={item.href} key={item.code} className={`skill-map-tile is-${item.tone}`}>{content}</Link>
+              return open ? (
+                <Link href={item.route} key={item.code} className={`skill-map-tile is-${item.tone}`}>{content}</Link>
               ) : (
                 <article key={item.code} className={`skill-map-tile is-${item.tone} is-horizon`}>{content}</article>
               );
@@ -82,6 +93,20 @@ export default async function HomePage() {
         <p className="series-hero-lead">{SERIES_META.tagline}</p>
         <p className="muted">
           已连载 {seriesDone} 话 · 跟着阿零和豆豆,把「豆豆咖啡站」从一行输出建成完整系统
+        </p>
+      </Link>
+
+      <section className="section-head">
+        <div>
+          <p className="eyebrow">Second Series · 命令行主线</p>
+          <h2>{cli.title}</h2>
+        </div>
+        <Link href="/cli">查看全卷地图 →</Link>
+      </section>
+      <Link href="/cli" className="card series-hero-card">
+        <p className="series-hero-lead">{cli.tagline}</p>
+        <p className="muted">
+          已连载 {cliProgress.done} 话{cliProgress.done >= cliProgress.total ? " · 已完结" : ""} · 每话附 🪟 双系统对照(Linux ↔ PowerShell)
         </p>
       </Link>
 
