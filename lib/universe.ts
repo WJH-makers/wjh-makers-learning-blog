@@ -100,6 +100,12 @@ export const READING_PATHS = [
     route: "/cli" as Route,
     steps: ["终端与 Git", "SSH、Nginx、Docker", "部署后的验证与回滚"],
   },
+  {
+    title: "看一个系统怎么长大",
+    audience: "想先从故事进入技术，或者想看清技术决策如何影响具体的人",
+    route: "/cafe" as Route,
+    steps: ["重新亮灯的小店", "多设备、例外与并发", "十年旧账与没有店员的对手"],
+  },
 ] as const;
 
 export const CHARACTERS = [

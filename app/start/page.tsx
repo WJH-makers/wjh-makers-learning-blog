@@ -39,7 +39,7 @@ export default function StartPage() {
         ))}
       </div>
 
-      <p className="universe-footnote">咖啡站本传仍在创作中；它会在真正开更后出现在这张路线图里。</p>
+      <p className="universe-footnote">路线随连载开更增加：只有真正发布过内容的线才会出现在这里。</p>
 
       <p className="universe-footnote">想先看全貌而不是直接开始？去 <Link href={"/universe" as never}>咖啡站宇宙地图</Link>。</p>
     </div>

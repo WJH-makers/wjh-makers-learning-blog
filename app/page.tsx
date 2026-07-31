@@ -44,6 +44,8 @@ export default async function HomePage() {
   const seriesDone = publishedEpisodes().length;
   const cli = seriesByRoute("/cli");
   const cliProgress = seriesProgress(cli);
+  const cafe = seriesByRoute("/cafe");
+  const cafeProgress = seriesProgress(cafe);
 
   return (
     <div className="page-shell">
@@ -108,6 +110,20 @@ export default async function HomePage() {
         <p className="series-hero-lead">{cli.tagline}</p>
         <p className="muted">
           已连载 {cliProgress.done} 话{cliProgress.done >= cliProgress.total ? " · 已完结" : ""} · 每话附 🪟 双系统对照(Linux ↔ PowerShell)
+        </p>
+      </Link>
+
+      <section className="section-head">
+        <div>
+          <p className="eyebrow">Story Line · 故事本传</p>
+          <h2>{cafe.title}</h2>
+        </div>
+        <Link href="/cafe">查看全卷地图 →</Link>
+      </section>
+      <Link href="/cafe" className="card series-hero-card">
+        <p className="series-hero-lead">{cafe.tagline}</p>
+        <p className="muted">
+          已连载 {cafeProgress.done} 话{cafeProgress.done >= cafeProgress.total ? " · 七卷完结" : ""} · 不讲语法,只讲技术决定落到人身上是什么样
         </p>
       </Link>
 
