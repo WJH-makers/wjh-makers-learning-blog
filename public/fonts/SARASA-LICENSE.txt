@@ -1,0 +1,40 @@
+sarasa-term-sc-ascii-subset.woff2
+=================================
+
+来源字体: Sarasa Term SC (更纱黑体·终端版) Version 1.0.39
+项目地址: https://github.com/be5invis/Sarasa-Gothic
+许可协议: SIL Open Font License 1.1 (OFL-1.1)
+          https://scripts.sil.org/OFL
+
+Copyright (c) 2015-2025, Renzhi Li (aka. Belleve Invis, belleve@typeof.net).
+Portions Copyright (c) 2016 The Inter Project Authors.
+Portions Copyright (c) 2014-2021 Adobe Systems Incorporated (http://www.adobe.com/).
+Portions Copyright (c) 2012 Google Inc.
+
+本文件是上述字体的**子集**,由 fontTools.subset 生成,仅保留站内 ASCII 框线图
+实际用到的 1462 个字形(全部框线字符 U+2500–257F、箭头 U+2190–21FF、
+几何符 U+25A0–25FF、常用全角标点,以及框线图正文里出现过的汉字与 ASCII)。
+子集化时移除了 OpenType layout features 与 hinting——框线图只需要稳定的
+advance width,连字反而可能干扰对齐。
+
+为什么必须用这个字体
+--------------------
+框线图靠空格手工对齐,要求「汉字宽度 = 拉丁宽度 × 2」且「框线字符按半角」。
+实测各字体的 advance width(em):
+
+                  拉丁A   汉字   框线─   汉字/拉丁   框线/拉丁
+  Sarasa Term SC  0.500  1.000  0.500      2.00       1.00   ← 唯一同时满足
+  SimSun/NSimSun  0.500  1.000  1.000      2.00       2.00   框线变全角,横线翻倍
+  微软雅黑         0.704  1.000  0.708      1.42       1.01   根本不等宽
+  JetBrains Mono  0.600   缺     0.600       —          —     无中文字形
+
+站点原本用 `--font-mono`(JetBrains Mono + 系统中文回退),于是拉丁走 0.600em、
+汉字回退到微软雅黑的 1.000em,比例 1:1.67 而非 1:2 —— 每行中文字数不同,
+右边框就逐行错开,竖线歪成波浪。
+
+更新方式
+--------
+新增框线图后若出现缺字(显示为方框/回退字形),需重新生成子集:
+提取全部框线图字符 → fontTools.subset 源字体 → 覆盖本文件。
+文件名不带 hash 但配了 immutable 长缓存,**更新时必须改文件名**并同步
+globals.css 里的 @font-face src。
