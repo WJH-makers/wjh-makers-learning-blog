@@ -5,6 +5,7 @@ import { getAllPublishedPosts, siteUrl } from "@/lib/posts";
 import { SERIES_META, publishedEpisodes } from "@/lib/series";
 import { seriesByRoute, seriesProgress } from "@/lib/series-registry";
 import { availabilityOf } from "@/lib/universe";
+import SkillMapPhysics from "@/app/_components/SkillMapPhysics";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -63,7 +64,7 @@ export default async function HomePage() {
         </div>
         <div className="java-skill-map" aria-label="Java 工程师成长能力地图">
           <div className="java-skill-map-topline"><span>JAVA ENGINEER / GROWTH MAP</span><span>01—06</span></div>
-          <div className="java-skill-map-grid">
+          <SkillMapPhysics>
             {JAVA_SKILL_MAP.map((item) => {
               const open = availabilityOf(item.route) === "open";
               const content = <>
@@ -78,7 +79,7 @@ export default async function HomePage() {
                 <article key={item.code} className={`skill-map-tile is-${item.tone} is-horizon`}>{content}</article>
               );
             })}
-          </div>
+          </SkillMapPhysics>
         </div>
       </section>
 

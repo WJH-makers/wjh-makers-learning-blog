@@ -242,29 +242,50 @@ time,
 .home-signal span:first-child { color: var(--accent-ink); }
 .java-skill-map { padding: clamp(18px, 2.5vw, 34px); background: #1b2026; color: #f6f1e8; }
 .java-skill-map-topline { display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid rgba(246, 241, 232, .25); color: #b7c0c8; font-family: var(--font-mono); font-size: var(--label-xs); letter-spacing: .08em; }
-.java-skill-map-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+/* perspective 放在网格上而不是每格上:六格共享同一个灭点,倾斜时才像同一张桌面上的
+   六张卡,而不是各自为政的六个小舞台。 */
+.java-skill-map-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; perspective: 900px; }
 .skill-map-tile { position: relative; display: flex; min-height: 158px; flex-direction: column; padding: 16px; overflow: hidden; border: 1px solid rgba(246, 241, 232, .25); color: inherit; text-decoration: none; transition: border-color var(--t-fast), transform var(--t-lift), box-shadow var(--t-lift); }
-/* 抬起/按压只给真正可进入的格子;未开更的是 <article>(cursor:default),不该有假反馈 */
+/* 抬起/按压只给真正可进入的格子;未开更的是 <article>(cursor:default),不该有假反馈。
+   下面这两条 transform 是**无 JS 时的降级反馈**:SkillMapPhysics 一旦接管,
+   它写的 inline transform 优先级更高,这里自动让位,不必也不能在 JS 里同步维护。 */
 .skill-map-tile[href]:hover { z-index: 1; border-color: #fff; box-shadow: 4px 4px 0 rgba(255,255,255,.75); transform: translate(-2px, -2px); }
 .skill-map-tile[href]:active { transform: translate(2px, 2px); box-shadow: none; transition-duration: var(--d-press); }
 .skill-map-tile.is-horizon { opacity: .72; border-style: dashed; cursor: default; }
+/* 光泽跟着指针走。--glow-x/--glow-y 由 JS 写入,缺省居中,所以无 JS 时也不穿帮。
+   放在 ::before 上,配合 tile 的 overflow:hidden 自动裁进卡片边界。 */
+.skill-map-tile[href]::before {
+  position: absolute;
+  z-index: 0;
+  background: radial-gradient(circle 200px at var(--glow-x, 50%) var(--glow-y, 50%), rgba(255, 255, 255, .20), transparent 62%);
+  opacity: 0;
+  content: "";
+  inset: 0;
+  transition: opacity var(--t-fast);
+  pointer-events: none;
+}
+.skill-map-tile[href]:hover::before { opacity: 1; }
+/* 正文要浮在光泽之上 */
+.skill-map-tile > * { position: relative; z-index: 1; }
 .skill-map-code { color: rgba(255,255,255,.72); font-family: var(--font-mono); font-size: var(--label-xs); font-weight: 700; }
 .skill-map-tile h2 { margin: auto 0 3px; color: #f6f1e8; font-family: var(--font-serif); font-size: clamp(1.12rem, 1.8vw, 1.45rem); line-height: 1.2; }
 .skill-map-tile p { min-height: 2.75em; margin: 0; color: rgba(255,255,255,.78); font-size: .79rem; line-height: 1.55; }
 .skill-map-state { margin-top: 12px; color: rgba(255,255,255,.74); font-family: var(--font-mono); font-size: .64rem; }
-/* 六格原本是六种饱和撞色,与全站单强调色体系割裂、也是首页最大的视觉噪音源。
-   改为同色系明度阶梯:序号 01→06 逐级变暗,层级由**明度**而非色相承担;
-   强调色只出现在「已点亮·可进入」的格子上,于是颜色重新带有信息量。 */
-.skill-map-tile.is-foundation { background: rgba(255, 255, 255, 0.11); }
-.skill-map-tile.is-craft { background: rgba(255, 255, 255, 0.095); }
-.skill-map-tile.is-service { background: rgba(255, 255, 255, 0.08); }
-.skill-map-tile.is-runtime { background: rgba(255, 255, 255, 0.065); }
-.skill-map-tile.is-systems { background: rgba(255, 255, 255, 0.05); }
-.skill-map-tile.is-evidence { background: rgba(255, 255, 255, 0.035); }
-/* [href] 只匹配可进入的 <a>;未开更的格子是 <article>,天然落选 */
+/* 六格六种色相,颜色本身就是信息:每个能力域一个固定色,读者第二次来能靠颜色认位置。
+   早先一版把它们压成白色透明度阶梯(0.11→0.035),层级是清楚了,但六格在深色底上
+   肉眼几乎无差,看起来就是"颜色没了"。现在色相回来,但统一降饱和、对齐明度,
+   不再是原版那种撞色噪音;层级改由「满不透明 + 强调色左边框」与 .is-horizon 的
+   降透明度 + 虚线框承担。 */
+.skill-map-tile.is-foundation { background: #b8503d; }
+.skill-map-tile.is-craft { background: #3f6b64; }
+.skill-map-tile.is-service { background: #47617f; }
+.skill-map-tile.is-runtime { background: #6d5482; }
+.skill-map-tile.is-systems { background: #6a5c42; }
+.skill-map-tile.is-evidence { background: #9a5069; }
+/* [href] 只匹配可进入的 <a>;未开更的格子是 <article>,天然落选。
+   微标签保持白色 —— 强调色 #d97757 压在砖红/玫红格子上对比度不够,
+   「可进入」这一信息由左边框和满不透明度承担就够了。 */
 .skill-map-tile[href] { border-left: 2px solid var(--accent); }
-.skill-map-tile[href] .skill-map-code,
-.skill-map-tile[href] .skill-map-state { color: var(--accent); }
 
 .hero-panel {
   background: var(--neutral-100);
@@ -1677,9 +1698,16 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .card:nth-child(6), .list-item:nth-child(6) { animation-delay: 0.3s; }
 
 /* 首屏能力地图六格依次落位:全站唯一的开场动画,给静态版面一个节拍。
-   纯 transform 位移(不碰 opacity),内容自始可见、不推迟 LCP。 */
+   纯位移(不碰 opacity),内容自始可见、不推迟 LCP。
+   ⚠ 用 translate 属性而不是 fadeInUp 的 transform:animation-fill-mode:both 会让
+   动画的 transform 一直压住 inline style,SkillMapPhysics 写的倾斜就永远出不来。
+   translate 与 transform 是两个独立属性,各走各的,互不覆盖。 */
+@keyframes tileRise {
+  from { translate: 0 16px; }
+  to { translate: 0 0; }
+}
 @media (prefers-reduced-motion: no-preference) {
-  .java-skill-map-grid > * { animation: fadeInUp 0.45s var(--ease-out) both; }
+  .java-skill-map-grid > * { animation: tileRise 0.52s var(--ease-spring) both; }
   .java-skill-map-grid > :nth-child(2) { animation-delay: 0.05s; }
   .java-skill-map-grid > :nth-child(3) { animation-delay: 0.10s; }
   .java-skill-map-grid > :nth-child(4) { animation-delay: 0.15s; }
