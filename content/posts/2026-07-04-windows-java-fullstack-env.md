@@ -2,7 +2,7 @@
 title: Windows Java 全栈环境整理复盘
 date: 2026-07-04
 summary: 从复盘出发的 Windows Java 全栈环境完整手册：JDK 版本管理、JAVA_HOME/PATH 排坑、Maven/Gradle 全局配置、Git/SSH 现代写法、Node/mise、MySQL 免密、IntelliJ 配置要点，每一步都附「装完怎么确认」的验证命令。
-tags: Windows, Java, Git, MySQL, Maven, Gradle, mise, IntelliJ, 环境配置
+tags: [Windows, Java, Git, MySQL, Maven, Gradle, mise, IntelliJ, 环境配置]
 ---
 
 ## 今天完成了什么

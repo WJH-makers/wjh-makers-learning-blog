@@ -61,7 +61,7 @@ tags: [Linux, 命令行, 终端漫画, grep, find, 阿零与特米]
         ┌───────────────┐         ┌────────────────────────┐
   find ─┤ src/order.js  │   grep ─┤ 第3行: // TODO: validate│
         │ config/app.conf│        │ 第2行: // TODO: load    │
-        └───────────────┘         └────────────────────────┘
+        └───────────────┘         └─────────────────────────┘
          照"叫什么、在哪"            照"里面写了什么"
 
 grep = Global Regular Expression Print  —— 逐行匹配,命中就打印
