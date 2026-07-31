@@ -11,7 +11,11 @@ const cdata = (value: string) => `<![CDATA[${value.replaceAll("]]>", "]]]]><![CD
 export async function GET() {
   const base = siteUrl();
   // RSS 仅提供摘要与原文链接：订阅者能发现更新，批量接口却不再直接分发全文。
-  const posts = (await getAllPublishedPosts()).slice(0, 30);
+  //
+  // 条数从 30 提到 80：本站更新密度高（179 篇集中在数月内），30 条只覆盖到最近 6 天，
+  // 新订阅者拉到的窗口窄得几乎看不出这是一个成体系的连载站。80 条约合两周多，
+  // 仍只含摘要，体积可控。
+  const posts = (await getAllPublishedPosts()).slice(0, 80);
   const items = (await Promise.all(
     posts.map(async (post) => `
       <item>

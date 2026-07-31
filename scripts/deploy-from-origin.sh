@@ -11,6 +11,12 @@ readonly STATE_DIR=/home/ubuntu/.local/state/wjh-blog-deploy
 readonly STATE_FILE="${STATE_DIR}/last-successful-commit"
 readonly SITE_ORIGIN=https://wwjjhh.online
 readonly PURGE_URL_LIMIT=30
+# IndexNow:把变更 URL 主动推给 Bing / Yandex,不必等它们下次爬到。
+# key 是设计上公开的 —— 校验方式就是取 https://<host>/<key>.txt 比对内容,
+# 因此它随仓库一起发布,不是泄漏。
+readonly INDEXNOW_KEY=8776802adf13c37829f7a2470db76e73
+readonly INDEXNOW_ENDPOINT=https://api.indexnow.org/indexnow
+readonly INDEXNOW_URL_LIMIT=1000
 readonly BUILD_CACHE_LIMIT=8gb
 readonly PRUNE_OLDER_THAN=168h
 readonly FETCH_TIMEOUT=180
@@ -99,6 +105,45 @@ purge_cloudflare_cache() {
     --data "$payload" >/dev/null
 }
 
+submit_indexnow() {
+  local -a urls=()
+  local file slug payload i
+
+  # 只推文章:栏目页由 sitemap 覆盖,没必要每次部署都刷一遍。
+  # 注意重命名会被 git 记成一删一增,两个 URL 都进列表 —— 这是想要的:
+  # 旧地址需要被重新抓取才能拿到 308,新地址需要被首次发现。
+  while IFS= read -r file; do
+    [[ -z "$file" ]] && continue
+    [[ "$file" != content/posts/*.md ]] && continue
+    slug="${file#content/posts/}"
+    urls+=("${SITE_ORIGIN}/posts/${slug%.md}")
+  done < <(git diff --name-only "$CURRENT_COMMIT" "$TARGET_COMMIT" 2>/dev/null || true)
+
+  # 没有文章变更时推首页即可,让索引端知道站点动过。
+  if [[ ${#urls[@]} -eq 0 ]]; then
+    urls=("${SITE_ORIGIN}/")
+  fi
+  if (( ${#urls[@]} > INDEXNOW_URL_LIMIT )); then
+    echo "IndexNow: ${#urls[@]} 个 URL 超过单次上限,只提交前 ${INDEXNOW_URL_LIMIT} 个。" >&2
+    urls=("${urls[@]:0:INDEXNOW_URL_LIMIT}")
+  fi
+
+  payload="$(
+    printf '{"host":"wwjjhh.online","key":"%s","keyLocation":"%s/%s.txt","urlList":[' \
+      "$INDEXNOW_KEY" "$SITE_ORIGIN" "$INDEXNOW_KEY"
+    for i in "${!urls[@]}"; do
+      (( i > 0 )) && printf ','
+      printf '"%s"' "${urls[$i]}"
+    done
+    printf ']}'
+  )"
+
+  curl --fail --silent --show-error --max-time 20 \
+    -X POST "$INDEXNOW_ENDPOINT" \
+    -H 'Content-Type: application/json; charset=utf-8' \
+    --data "$payload" >/dev/null
+}
+
 prune_old_build_artifacts() {
   # BuildKit 已占到数十 GB 时会挤压 59 GB 系统盘。只处理 7 天前且未被容器使用的缓存/悬空镜像，
   # 保留近期缓存加速回滚；限时与非致命处理确保清理故障不会把健康发布误判为失败。
@@ -146,6 +191,8 @@ for attempt in $(seq 1 24); do
     printf '%s\n' "$TARGET_COMMIT" > "$STATE_FILE"
     purge_cloudflare_cache \
       || echo "Deployed ${TARGET_COMMIT:0:12} but the Cloudflare purge failed; purge manually." >&2
+    submit_indexnow \
+      || echo "Deployed ${TARGET_COMMIT:0:12} but the IndexNow submission failed; search engines will pick it up on their own schedule." >&2
     prune_old_build_artifacts
     echo "Deployment healthy: ${TARGET_COMMIT:0:12}."
     exit 0

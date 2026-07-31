@@ -21,6 +21,26 @@ test("tested production ref is verified against the deployed commit", () => {
   assert.match(dockerfile, /APP_GIT_SHA=\$\{APP_GIT_SHA\}/);
 });
 
+test("IndexNow submission is best-effort and only fires after the deploy is accepted", () => {
+  const deploy = read("scripts/deploy-from-origin.sh");
+  const key = /INDEXNOW_KEY=([0-9a-f]{8,128})/.exec(deploy)?.[1];
+
+  assert.ok(key, "部署脚本必须声明 INDEXNOW_KEY");
+
+  // IndexNow 的校验方式就是取 https://<host>/<key>.txt 比对内容,
+  // 所以这个文件必须真的随站点发布出去,且内容与 key 一致 —— 少一个就静默失效。
+  const keyFile = path.join(root, "public", `${key}.txt`);
+  assert.ok(fs.existsSync(keyFile), `public/${key}.txt 必须存在`);
+  assert.equal(fs.readFileSync(keyFile, "utf8").trim(), key);
+
+  // 必须在「容器 commit 校验通过并写入成功状态」之后才推,
+  // 否则会把一次失败的部署广播给搜索引擎。
+  assert.ok(deploy.indexOf('> "$STATE_FILE"') < deploy.lastIndexOf("submit_indexnow"));
+
+  // 推送失败不能把一次健康的部署判成失败。
+  assert.match(deploy, /submit_indexnow[\s\S]{0,120}\|\| echo/);
+});
+
 test("the authoritative deploy check runs on the server, not through the public edge", () => {
   const workflow = read(".github/workflows/ci.yml");
   const deploy = read("scripts/deploy-from-origin.sh");
