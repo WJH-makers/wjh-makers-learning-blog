@@ -61,6 +61,13 @@ export default function JavaLab({ lab }: Props) {
     const controller = new AbortController();
     void fetch("/api/java/run", { signal: controller.signal })
       .then(async (response) => {
+        // 429 由边界代理(nginx 限流)直接返回,响应体是 HTML 不是 JSON。
+        // 被限流恰恰说明沙箱活着,只是这一刻挡了探测 —— 若照旧走 json() 会抛错,
+        // 读者一进文章就看到"沙箱不可用",整个编辑器被误禁用。
+        if (response.status === 429) {
+          setRunner("available");
+          return;
+        }
         const data = await response.json() as { available?: boolean };
         setRunner(data.available ? "available" : "unavailable");
       })
@@ -116,6 +123,21 @@ export default function JavaLab({ lab }: Props) {
         body: JSON.stringify({ source, stdin, labId: lab.id }),
         signal: controller.signal,
       });
+      // 同上:429 来自边界代理,响应体是 HTML。若直接 json() 会抛解析错,
+      // 落进 catch 后显示成"执行服务异常" —— 把"你点太快了"说成"服务坏了"。
+      if (response.status === 429) {
+        setResult({
+          status: "internal_error",
+          statusLabel: "运行过于频繁",
+          stdout: "",
+          stderr: "同一分钟内运行次数过多，请稍等十几秒再试。",
+          diagnostics: [],
+          truncated: false,
+        });
+        setRunState("failed");
+        setActiveTab("console");
+        return;
+      }
       const data = await response.json() as JavaRunResult | { error?: string };
       if (!response.ok || !("status" in data)) {
         throw new Error("error" in data ? data.error : "Java 沙箱暂时不可用。");

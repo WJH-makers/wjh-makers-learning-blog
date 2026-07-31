@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { READING_PATHS } from "@/lib/universe";
+import { READING_PATHS, availabilityOf } from "@/lib/universe";
 import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 3600;
@@ -26,7 +26,7 @@ export default function StartPage() {
       </section>
 
       <div className="reading-paths">
-        {READING_PATHS.filter((path) => path.availability === "open").map((path, index) => (
+        {READING_PATHS.filter((path) => availabilityOf(path.route) === "open").map((path, index) => (
           <article className="card reading-path" key={path.title}>
             <p className="reading-path-no">路线 {String(index + 1).padStart(2, "0")}</p>
             <h2>{path.title}</h2>
@@ -39,7 +39,7 @@ export default function StartPage() {
         ))}
       </div>
 
-      <p className="universe-footnote">终端、部署与咖啡站本传仍在创作中；它们会在真正开更后出现在这张路线图里。</p>
+      <p className="universe-footnote">咖啡站本传仍在创作中；它会在真正开更后出现在这张路线图里。</p>
 
       <p className="universe-footnote">想先看全貌而不是直接开始？去 <Link href={"/universe" as never}>咖啡站宇宙地图</Link>。</p>
     </div>

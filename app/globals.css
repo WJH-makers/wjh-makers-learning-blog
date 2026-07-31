@@ -22,6 +22,13 @@
   --turn-paper: #f4eddd;
   --turn-shadow: rgba(72, 57, 34, 0.24);
   --t-fast: 160ms ease-out;
+  /* 动效三档。顺滑感的物理来源是**不对称时长**:按下要快(手指一碰就有回应),
+     松手回弹要慢且带一点超调(像纸片从桌面弹回)。hover 沿用 --t-fast,
+     存量 20 处 transition 不受影响。 */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.28, 0.64, 1);
+  --d-press: 90ms;
+  --t-lift: 260ms var(--ease-spring);
   /* 等宽微标签字号三档 + 字距两档(m5 收敛) */
   --label-xs: 0.68rem;
   --label-sm: 0.74rem;
@@ -147,6 +154,8 @@ code, pre { font-family: var(--font-mono); }
 }
 .nav-links a:last-child { border-right: 0; }
 .nav-links a:hover { color: var(--paper); background: var(--foreground); }
+/* 密集小元素不用位移(会让整条导航跳动),改用强调色做一次按压脉冲 */
+.nav-links a:active { color: var(--paper); background: var(--accent-ink); transition-duration: var(--d-press); }
 
 .page-shell { padding: 32px 0 64px; }
 .narrow { max-width: 980px; }
@@ -234,15 +243,28 @@ time,
 .java-skill-map { padding: clamp(18px, 2.5vw, 34px); background: #1b2026; color: #f6f1e8; }
 .java-skill-map-topline { display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid rgba(246, 241, 232, .25); color: #b7c0c8; font-family: var(--font-mono); font-size: var(--label-xs); letter-spacing: .08em; }
 .java-skill-map-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
-.skill-map-tile { position: relative; display: flex; min-height: 158px; flex-direction: column; padding: 16px; overflow: hidden; border: 1px solid rgba(246, 241, 232, .25); color: inherit; text-decoration: none; transition: transform var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast); }
-.skill-map-tile::after { position: absolute; right: -14px; bottom: -24px; color: rgba(255,255,255,.13); font-family: var(--font-playfair); font-size: 8rem; font-weight: 900; line-height: 1; content: attr(data-mark); }
-.skill-map-tile:hover { z-index: 1; border-color: #fff; box-shadow: 4px 4px 0 rgba(255,255,255,.75); transform: translate(-2px, -2px); }
+.skill-map-tile { position: relative; display: flex; min-height: 158px; flex-direction: column; padding: 16px; overflow: hidden; border: 1px solid rgba(246, 241, 232, .25); color: inherit; text-decoration: none; transition: border-color var(--t-fast), transform var(--t-lift), box-shadow var(--t-lift); }
+/* 抬起/按压只给真正可进入的格子;未开更的是 <article>(cursor:default),不该有假反馈 */
+.skill-map-tile[href]:hover { z-index: 1; border-color: #fff; box-shadow: 4px 4px 0 rgba(255,255,255,.75); transform: translate(-2px, -2px); }
+.skill-map-tile[href]:active { transform: translate(2px, 2px); box-shadow: none; transition-duration: var(--d-press); }
 .skill-map-tile.is-horizon { opacity: .72; border-style: dashed; cursor: default; }
 .skill-map-code { color: rgba(255,255,255,.72); font-family: var(--font-mono); font-size: var(--label-xs); font-weight: 700; }
 .skill-map-tile h2 { margin: auto 0 3px; color: #f6f1e8; font-family: var(--font-serif); font-size: clamp(1.12rem, 1.8vw, 1.45rem); line-height: 1.2; }
 .skill-map-tile p { min-height: 2.75em; margin: 0; color: rgba(255,255,255,.78); font-size: .79rem; line-height: 1.55; }
 .skill-map-state { margin-top: 12px; color: rgba(255,255,255,.74); font-family: var(--font-mono); font-size: .64rem; }
-.skill-map-tile.is-foundation { background: #c74b35; }.skill-map-tile.is-craft { background: #3d6a65; }.skill-map-tile.is-service { background: #425f87; }.skill-map-tile.is-runtime { background: #73518c; }.skill-map-tile.is-systems { background: #6c5a3b; }.skill-map-tile.is-evidence { background: #a34f70; }
+/* 六格原本是六种饱和撞色,与全站单强调色体系割裂、也是首页最大的视觉噪音源。
+   改为同色系明度阶梯:序号 01→06 逐级变暗,层级由**明度**而非色相承担;
+   强调色只出现在「已点亮·可进入」的格子上,于是颜色重新带有信息量。 */
+.skill-map-tile.is-foundation { background: rgba(255, 255, 255, 0.11); }
+.skill-map-tile.is-craft { background: rgba(255, 255, 255, 0.095); }
+.skill-map-tile.is-service { background: rgba(255, 255, 255, 0.08); }
+.skill-map-tile.is-runtime { background: rgba(255, 255, 255, 0.065); }
+.skill-map-tile.is-systems { background: rgba(255, 255, 255, 0.05); }
+.skill-map-tile.is-evidence { background: rgba(255, 255, 255, 0.035); }
+/* [href] 只匹配可进入的 <a>;未开更的格子是 <article>,天然落选 */
+.skill-map-tile[href] { border-left: 2px solid var(--accent); }
+.skill-map-tile[href] .skill-map-code,
+.skill-map-tile[href] .skill-map-state { color: var(--accent); }
 
 .hero-panel {
   background: var(--neutral-100);
@@ -276,14 +298,20 @@ button.button {
   text-decoration: none;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color var(--t-fast), background-color var(--t-fast), border-color var(--t-fast), transform var(--t-fast);
+  transition: color var(--t-fast), background-color var(--t-fast), border-color var(--t-fast),
+    transform var(--t-lift), box-shadow var(--t-lift);
 }
 .button.primary { border-color: transparent; color: var(--paper); background: var(--foreground); }
 .button:hover,
-button.button:hover { color: var(--paper); background: var(--foreground); }
+button.button:hover { color: var(--paper); background: var(--foreground); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--accent); }
 .button.primary:hover { border-color: var(--foreground); color: var(--foreground); background: var(--paper); }
 .button.ghost { border-color: transparent; }
-.button:not(:disabled):active { transform: translate(1px, 1px); }
+/* 按下=按进纸面(位移吃掉阴影),松手由 --t-lift 带回弹送回原位 */
+.button:not(:disabled):active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+  transition-duration: var(--d-press);
+}
 .button:disabled,
 button.button:disabled {
   cursor: not-allowed;
@@ -388,7 +416,7 @@ a:focus-visible {
   background: rgba(var(--paper-rgb),0.9);
 }
 .track-card,
-.card { padding: clamp(16px, 2.5vw, 24px); transition: background-color var(--t-fast), box-shadow var(--t-fast), transform var(--t-fast); }
+.card { padding: clamp(16px, 2.5vw, 24px); transition: background-color var(--t-fast), box-shadow var(--t-lift), transform var(--t-lift); }
 .card:hover,
 .track-card:hover,
 .list-item:hover { background: var(--neutral-100); box-shadow: 4px 4px 0 0 var(--foreground); transform: translate(-2px, -2px); }
@@ -433,6 +461,8 @@ a:focus-visible {
 .tags a::before { content: "#"; color: var(--accent); }
 .tags a:hover,
 .tag-cloud a:hover { color: var(--paper); background: var(--foreground); }
+.tags a:active,
+.tag-cloud a:active { color: var(--paper); background: var(--accent-ink); transition-duration: var(--d-press); }
 .tags a,
 .tag-cloud a { transition: color var(--t-fast), background-color var(--t-fast); }
 
@@ -756,12 +786,34 @@ html[data-page-turn="previous"]::after { animation: chapter-sheet-previous 280ms
   margin: 12px 0;
   background: rgba(var(--paper-rgb), 0.85);
 }
+/* ASCII 框线图专用等宽字体。
+   框线图靠空格手工对齐,要求「汉字 = 拉丁 × 2」且「框线字符按半角」。实测:
+   Sarasa Term SC 0.500/1.000/0.500(比例 2.00 / 1.00)—— 唯一同时满足;
+   SimSun 框线是全角(横线长度翻倍);微软雅黑 0.704/1.000/0.708 根本不等宽。
+   站点原先靠 --font-mono(JetBrains Mono + 系统中文回退)= 1:1.67,
+   于是每行中文字数一变,右边框就错开,竖线歪成波浪。
+   子集 141KB / 1462 字形,来源与更新方式见 public/fonts/SARASA-LICENSE.txt。 */
+@font-face {
+  font-family: "Sarasa Term SC Subset";
+  src: url("/fonts/sarasa-term-sc-ascii-subset.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  /* block 而非 swap:框线图用回退字体必然是歪的,与其先歪后跳,不如短暂留白直接出正确版面 */
+  font-display: block;
+}
 .article-content .ascii-diagram {
   overflow-x: auto;
   white-space: pre;
   overflow-wrap: normal;
   word-break: normal;
   tab-size: 2;
+}
+.article-content .ascii-diagram,
+.article-content .ascii-diagram code {
+  /* 回退链同样只放「汉字=拉丁×2」的等宽 CJK;末位 monospace 兜底 */
+  font-family: "Sarasa Term SC Subset", "Sarasa Term SC", "Sarasa Mono SC",
+    "Noto Sans Mono CJK SC", "Source Han Mono SC", monospace;
+  font-variant-ligatures: none;
 }
 .article-content .ascii-diagram code {
   display: block;
@@ -1617,13 +1669,23 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
-.card, .list-item { animation: fadeInUp 0.5s ease-out both; }
-.card:nth-child(1), .list-item:nth-child(1) { animation-delay: 0.05s; }
+.card, .list-item { animation: fadeInUp 0.5s ease-out both; }.card:nth-child(1), .list-item:nth-child(1) { animation-delay: 0.05s; }
 .card:nth-child(2), .list-item:nth-child(2) { animation-delay: 0.1s; }
 .card:nth-child(3), .list-item:nth-child(3) { animation-delay: 0.15s; }
 .card:nth-child(4), .list-item:nth-child(4) { animation-delay: 0.2s; }
 .card:nth-child(5), .list-item:nth-child(5) { animation-delay: 0.25s; }
 .card:nth-child(6), .list-item:nth-child(6) { animation-delay: 0.3s; }
+
+/* 首屏能力地图六格依次落位:全站唯一的开场动画,给静态版面一个节拍。
+   纯 transform 位移(不碰 opacity),内容自始可见、不推迟 LCP。 */
+@media (prefers-reduced-motion: no-preference) {
+  .java-skill-map-grid > * { animation: fadeInUp 0.45s var(--ease-out) both; }
+  .java-skill-map-grid > :nth-child(2) { animation-delay: 0.05s; }
+  .java-skill-map-grid > :nth-child(3) { animation-delay: 0.10s; }
+  .java-skill-map-grid > :nth-child(4) { animation-delay: 0.15s; }
+  .java-skill-map-grid > :nth-child(5) { animation-delay: 0.20s; }
+  .java-skill-map-grid > :nth-child(6) { animation-delay: 0.25s; }
+}
 
 /* 视口驱动进场(Chrome/Edge 115+):长列表(/java 90 话、/cafe 32 话)不再在加载瞬间
    把视口外几十张卡片一起播完——滚到哪张播哪张。不支持的浏览器保留上面的定时版。
@@ -1638,6 +1700,30 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     }
   }
 }
+
+/* ===== 触摸设备:消除 hover 粘滞与点击高亮 ===== */
+/* 触屏没有真正的 hover:点一下之后 :hover 会一直"粘"在元素上直到点别处,
+   于是卡片停在抬起态、导航项停在反色态,看起来像卡住了。这里把主要交互元素的
+   悬停态在无 hover 能力的设备上收回——按压反馈(:active)仍然保留。 */
+@media (hover: none) {
+  .card:hover,
+  .track-card:hover,
+  .list-item:hover,
+  .skill-map-tile[href]:hover {
+    background: rgba(var(--paper-rgb), 0.9);
+    box-shadow: none;
+    transform: none;
+  }
+  .java-skill-map .skill-map-tile[href]:hover { background: inherit; border-color: rgba(246, 241, 232, .25); }
+  .button:hover,
+  button.button:hover { color: var(--foreground); background: transparent; transform: none; box-shadow: none; }
+  .button.primary:hover { color: var(--paper); background: var(--foreground); border-color: transparent; }
+  .nav-links a:hover,
+  .tags a:hover,
+  .tag-cloud a:hover { color: inherit; background: transparent; }
+}
+/* 点击时的半透明灰块是系统默认行为,和这套报纸风的按压反馈冲突 */
+a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transparent; }
 
 /* ===== Reduced motion ===== */
 @media (prefers-reduced-motion: reduce) {
@@ -1839,14 +1925,16 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
 .series-hero-lead { font-size: 1.15rem; margin: 0 0 0.4rem; }
 
-/* 盖章按压反馈:抬起的卡片被按回纸面,硬阴影收短 */
+/* 盖章按压反馈:抬起的纸片被按回桌面——位移吃掉硬阴影,松手由 --t-lift 带回弹送回。
+   按下 90ms(手指一碰即有回应)、回弹 260ms 带超调,这组不对称时长就是「顺滑」的来源。 */
 .card:active,
 .track-card:active,
 .list-item:active,
 .repo-card:active,
 .map-node:not(.planned):active {
-  transform: translate(0, 0);
-  box-shadow: 2px 2px 0 0 var(--foreground);
+  transform: translate(2px, 2px);
+  box-shadow: none;
+  transition-duration: var(--d-press);
 }
 
 /* ================================================================

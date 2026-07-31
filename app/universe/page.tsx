@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UNIVERSE_DISTRICTS } from "@/lib/universe";
+import { UNIVERSE_DISTRICTS, availabilityOf } from "@/lib/universe";
 import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 3600;
@@ -30,14 +30,15 @@ export default function UniversePage() {
 
       <div className="universe-grid">
         {UNIVERSE_DISTRICTS.map((district, index) => {
+          const open = availabilityOf(district.route) === "open";
           const content = <>
             <p className="universe-card-no">区域 {String(index + 1).padStart(2, "0")} · {district.role}</p>
             <h2>{district.title}</h2>
             <p>{district.description}</p>
-            <span>{district.availability === "open" ? `项目阶段：${district.projectStage}` : "雾区 · 尚未开更"}</span>
+            <span>{open ? `项目阶段：${district.projectStage}` : "雾区 · 尚未开更"}</span>
           </>;
 
-          return district.availability === "open" ? (
+          return open ? (
             <Link className="card universe-card" href={district.route} key={district.title}>{content}</Link>
           ) : (
             <article className="card universe-card is-horizon" key={district.title}>{content}</article>

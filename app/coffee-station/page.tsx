@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { COFFEE_PROJECT_STAGES } from "@/lib/universe";
+import { COFFEE_PROJECT_STAGES, availabilityOf } from "@/lib/universe";
 import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 3600;
@@ -27,7 +27,7 @@ export default function CoffeeStationPage() {
             <article>
               <h2>{stage.title}</h2>
               <p>{stage.summary}</p>
-              {stage.availability === "open" ? (
+              {availabilityOf(stage.route) === "open" ? (
                 <Link href={stage.route}>查看关联世界 →</Link>
               ) : (
                 <span className="muted">后续篇章 · 尚未开更</span>

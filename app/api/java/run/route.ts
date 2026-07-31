@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { clientIp } from "@/lib/client-ip";
-import { findJavaLab } from "@/lib/java-labs";
+import { findJavaLab, JAVA_LAB_LIMITS } from "@/lib/java-labs";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   judge0SubmissionUrl,
@@ -24,7 +24,7 @@ export async function GET() {
   return NextResponse.json({
     available: Boolean(runnerConfig()),
     javaVersion: 17,
-    limits: { compileMs: 4_000, runMs: 2_000, maxOutputChars: 4_000 },
+    limits: JAVA_LAB_LIMITS,
   });
 }
 

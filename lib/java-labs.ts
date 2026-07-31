@@ -143,6 +143,12 @@ const STARTERS: readonly Starter[] = [
   { number: 12, slug: "2026-05-14-java-s01e12-coffee-machine", title: "控制台咖啡机", files: [{ path: "Main.java", content: "public class Main {\n  static int total(int price, int cups) {\n    return price * cups;\n  }\n\n  public static void main(String[] args) {\n    System.out.println(\"total: \" + total(12, 2));\n  }\n}\n" }], stdin: "", assertions: [{ id: "coffee-machine", description: "整合计算功能", expectedOutput: "total: 24" }], knowledgePoints: ["java.season-one-project"], prerequisites: ["java.arrays", "java.methods", "java.debugging"], misconceptionTags: ["missing-boundary-test", "unverified-output"], projectIncrement: "控制台咖啡机 v1 的价格核心可验证。", reviewAfterDays: [1, 7, 21] },
 ];
 
+/**
+ * 所有实验共用同一套资源上限。GET /api/java/run 的能力声明也读它 ——
+ * 否则「前端看到的限制」和「后端真正施加的限制」会各写一份,改一处忘一处。
+ */
+export const JAVA_LAB_LIMITS: LabManifest["limits"] = { compileMs: 4_000, runMs: 2_000, maxOutputChars: 4_000 };
+
 export const JAVA_LABS: readonly LabManifest[] = STARTERS.map((starter) => ({
   ...starter,
   starter: starter.files[0]?.content ?? "",
