@@ -29,5 +29,8 @@ test("倒推排期后，两条完结连载靠日期本身公开，未完结的�
   assert.equal(isPublicEpisode("2026-07-31-java-s10e11-interview-night", finaleDay), true);
   assert.equal(isPublicEpisode("2026-07-31-cli-s05e04-deploy-day", finaleDay), true);
   assert.equal(isPublicEpisode("2026-05-03-java-s01e01-hello", finaleDay), true);
-  assert.equal(isPublicEpisode("2026-12-02-cafe-s07e04-open-forever", finaleDay), false);
+  assert.equal(isPublicEpisode("2026-07-26-cafe-s07e04-open-forever", finaleDay), true);
+  // 闸门本身仍要有负例:排期在未来的稿子必须被挡住。
+  // 别因为某条线开更就把这条删掉 —— 它保护的是机制,不是某一部作品。
+  assert.equal(isPublicEpisode("2027-01-01-cafe-s08e01-not-written", finaleDay), false);
 });
