@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { LEGACY_POST_SLUG_REDIRECTS } from "./lib/legacy-slug-redirects";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -26,6 +27,12 @@ const nextConfig: NextConfig = {
       destination: "/series",
       permanent: true,
     },
+    // 两条完结连载的排期日期倒推回真实区间后 slug 前缀变了，旧链接一律永久跳转到新地址。
+    ...LEGACY_POST_SLUG_REDIRECTS.map(({ from, to }) => ({
+      source: `/posts/${from}`,
+      destination: `/posts/${to}`,
+      permanent: true,
+    })),
   ],
   headers: async () => [
     {

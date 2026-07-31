@@ -24,17 +24,12 @@ export function isReleasedSlug(slug: string | undefined, now = new Date()): bool
   return Boolean(slug && isReleasedDate(slug.slice(0, 10), now));
 }
 
-/** Date-based publication check used by posts whose editorial date is authoritative. */
-export const isPublicOn = isReleasedDate;
-
-/** Java and CLI curricula were explicitly opened as complete learning paths. */
-export function isAlwaysPublicCurriculum(slug: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}-(?:java|cli)-s\d+e\d+-/.test(slug);
-}
-
-/** Series routes use the explicit curriculum policy before the scheduled slug date. */
+/**
+ * 话次是否对外可见。Java 与命令行两条线已把日期倒推回真实完稿区间，
+ * 于是「已完结的课程要全部公开」不再需要按 slug 前缀开特例——日期本身就是唯一口径。
+ */
 export function isPublicEpisode(slug: string | undefined, now = new Date()): boolean {
-  return Boolean(slug && (isAlwaysPublicCurriculum(slug) || isReleasedSlug(slug, now)));
+  return isReleasedSlug(slug, now);
 }
 
 /** Keep unreleased manuscripts visible as non-linkable previews. */

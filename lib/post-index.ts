@@ -1,4 +1,4 @@
-import { isAlwaysPublicCurriculum, isReleasedDate } from "./publication.ts";
+import { isReleasedDate } from "./publication.ts";
 
 export type PostIndexEntry = {
   slug: string;
@@ -16,6 +16,6 @@ export function mergePublishedPostIndex(
   for (const post of markdownPosts) merged.set(post.slug, post);
   for (const post of databasePosts) merged.set(post.slug, post);
   return [...merged.values()]
-    .filter((post) => isAlwaysPublicCurriculum(post.slug) || isReleasedDate(post.date))
+    .filter((post) => isReleasedDate(post.date))
     .sort((a, b) => b.date.localeCompare(a.date));
 }

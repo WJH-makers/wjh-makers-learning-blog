@@ -89,9 +89,9 @@ test("高风险命令均有与操作类型对应的安全提示", () => {
 
 test("已知 Java 版本与实现边界保留明确说明", () => {
   const byName = new Map(posts.map((post) => [post.name, post.content]));
-  assert.match(byName.get("2026-07-29-java-s01e05-switch.md") ?? "", /箭头规则.*switch.*语句.*表达式/s);
-  assert.match(byName.get("2026-11-04-java-s09e09-virtual-threads.md") ?? "", /不能据此承诺.*绝不会 pin/s);
-  assert.match(byName.get("2026-10-29-java-s09e03-sync-lock-upgrade.md") ?? "", /HotSpot.*不是 JLS 契约/s);
+  assert.match(byName.get("2026-05-07-java-s01e05-switch.md") ?? "", /箭头规则.*switch.*语句.*表达式/s);
+  assert.match(byName.get("2026-07-19-java-s09e09-virtual-threads.md") ?? "", /不能据此承诺.*绝不会 pin/s);
+  assert.match(byName.get("2026-07-13-java-s09e03-sync-lock-upgrade.md") ?? "", /HotSpot.*不是 JLS 契约/s);
 });
 
 test("Java/CLI 全文可由站点 Markdown 渲染器渲染", async () => {

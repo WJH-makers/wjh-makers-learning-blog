@@ -4,7 +4,7 @@ import { summarizeLearning, type LearningEvidence, type ReviewableLab } from "..
 
 const labs: ReviewableLab[] = [{
   id: "java-s01e01",
-  slug: "2026-07-25-java-s01e01-hello",
+  slug: "2026-05-03-java-s01e01-hello",
   title: "第一次让程序开口",
   knowledgePoints: ["java.main"],
   misconceptionTags: ["main-signature"],

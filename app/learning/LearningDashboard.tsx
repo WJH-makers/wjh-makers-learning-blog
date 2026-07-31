@@ -86,7 +86,7 @@ export default function LearningDashboard({ labs }: Props) {
         ) : (
           <div className="learning-empty">
             <p>{summary.passedLabCount > 0 ? "暂时没有到期复习。下一次提示会显示在上方。" : "还没有本机实验记录。先从第一话的最小实验开始，完成后再回来查看复习提示。"}</p>
-            <Link className="button primary" href="/posts/2026-07-25-java-s01e01-hello">第一次让程序开口 →</Link>
+            <Link className="button primary" href="/posts/2026-05-03-java-s01e01-hello">第一次让程序开口 →</Link>
           </div>
         )}
       </section>
