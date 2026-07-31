@@ -63,13 +63,13 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in $(seq 1 96); do
-            deployed="$(curl --fail --silent --show-error --max-time 15 https://wwjjhh.online/api/version 2>/dev/null \
-              | jq -r '.commit // empty' || true)"
-            if [ "$deployed" = "$EXPECTED_SHA" ]; then
+            body="$(curl --silent --show-error --max-time 15 https://wwjjhh.online/api/version 2>&1 || true)"
+            deployed="$(printf '%s' "$body" | jq -r '.commit // empty' 2>/dev/null || true)"
+            if [ -n "$deployed" ] && [ "$deployed" = "$EXPECTED_SHA" ]; then
               echo "Production is serving ${EXPECTED_SHA:0:12}."
               exit 0
             fi
-            echo "Waiting for pull deployment (${attempt}/48): ${deployed:-unavailable}"
+            echo "Waiting for pull deployment (${attempt}/96): ${deployed:-unavailable} :: ${body:0:160}"
             sleep 10
           done
           echo "Production did not reach ${EXPECTED_SHA:0:12} within 16 minutes." >&2
