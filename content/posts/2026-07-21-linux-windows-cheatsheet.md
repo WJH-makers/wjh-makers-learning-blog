@@ -56,7 +56,7 @@ tags: [Linux, Windows, 命令速查]
 | ★★★ | `ln -s` | 软链 | `ln -s target link` |
 | ★★★ | `export` / `which` / `history` | 环境 | `export JAVA_HOME=...` |
 | ★★★ | `crontab` | 定时 | `crontab -e` |
-| ★★★ | `xargs` | 批参数 | `find ... \| xargs rm` |
+| ★★★ | `xargs` | 批参数 | `find . -name '*.log' -print0 \| xargs -0 rm`。⚠ 别写 `find ... \| xargs rm`:默认按空白切分,文件名里有空格就会被拆成两个参数删错东西。要么 `-print0` 配 `xargs -0`,要么直接 `find ... -delete` |
 
 **权限数字（必背）**：`755` 目录/脚本 · `644` 普通文件 · `600` 私钥 · `700` 私密目录  
 **kill**：先 `SIGTERM(15)` 优雅，不行再 `-9 SIGKILL`

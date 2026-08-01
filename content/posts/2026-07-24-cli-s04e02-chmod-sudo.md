@@ -100,7 +100,7 @@ $ ls -l /var/cache/stress/tmp1.log
 **② chmod 发执行证(符号法与数字法等价)**:
 
 ```bash
-$ chmod +x deploy.sh              # 符号法:三组各加 x
+$ chmod +x deploy.sh              # 符号法:省略对象时默认 a(三组),但会被 umask 挡掉部分位
 $ ls -l deploy.sh
 -rwxr-xr-x 1 ubuntu ubuntu 312 Oct  6 10:02 deploy.sh
 
@@ -294,7 +294,7 @@ $ sudo -v && echo "印章可借"          # 确认自己在 sudo 名单里
 >
 > **2-A** 数字权限中:r=4,w=2,x=1。755=4+2+1(所有者)+4+1(组)+4+1(其他人)。**举一反三:**常用权限:755=目录/可执行脚本,644=普通文件(所有者读写,其他人只读),600=敏感文件(如密钥,仅所有者可读写),700=个人脚本/目录。记忆:只要记得 4=读,2=写,1=执行,用加法凑出 0-7。
 >
-> **3-B** 符号法(u=user,g=group,o=other,a=all;+添加/-移除/=精确设置):`chmod +x` 给三类用户**都**加执行权限;`chmod u+x` 只给所有者加执行;`chmod 755` 精确设置权限为 rwxr-xr-x(无视当前权限)。**举一反三:**`chmod -R 755 dir/` 递归设置目录,但会导致普通文件也获得执行权限——更好的做法:`find dir -type d -exec chmod 755 {} \; && find dir -type f -exec chmod 644 {} \;`。
+> **3-B** 符号法(u=user,g=group,o=other,a=all;+添加/-移除/=精确设置):`chmod +x` 省略作用对象时默认是 `a`,但**会被当前 umask 挡掉相应的位** —— 常见的 umask 022 下它等价于 `a+x`(三类都加),而 umask 077 下就只有所有者拿到了 x。想明确「所有人都能执行」就写 `chmod a+x`,想只给自己就写 `chmod u+x`;`chmod 755` 则是精确设置为 rwxr-xr-x(无视当前权限、也不受 umask 影响)。**举一反三:**`chmod -R 755 dir/` 递归设置目录,但会导致普通文件也获得执行权限——更好的做法:`find dir -type d -exec chmod 755 {} + && find dir -type f -exec chmod 644 {} +`。
 >
 > **4-B** `sudo`(SuperUser DO)以 root 或其他用户身份执行一条命令,命令结束后回到原有权限。**举一反三:**`sudo -i` 启动 root shell(不推荐长期使用);`sudo -u www-data command` 以指定用户执行;`sudo su -` 完全切换到 root。🪟 Windows 等价的提权方式是"以管理员身份运行"(UAC)。
 >

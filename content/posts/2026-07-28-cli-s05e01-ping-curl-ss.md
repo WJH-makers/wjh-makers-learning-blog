@@ -207,7 +207,20 @@ $ ss -tlnp | grep ':3000'
 LISTEN  0  511  0.0.0.0:3000  0.0.0.0:*  users:(("node",pid=21501,fd=18))
 ```
 
-`-w "%{http_code}"` 是 curl 的写脚本利器:不看正文,只要一个数字,配合 `$?` 就能进 if 判断。
+`-w "%{http_code}"` 是 curl 的写脚本利器:不看正文,只要一个数字。
+
+⚠ **但别拿 `$?` 当 HTTP 成败用**。curl 的退出码只回答「这次请求本身有没有跑通」,服务器回 404、500、503 都算跑通了 —— `$?` 照样是 0。健康检查这么写会把「服务挂了」判成「一切正常」。两种正确写法:
+
+```bash
+# 写法一:把 4xx/5xx 变成非零退出码,交给 && || 或 set -e
+$ curl -fsS -o /dev/null http://localhost:3000 && echo "服务正常" || echo "服务异常"
+
+# 写法二:自己拿状态码判断(需要区分 404 和 500 时用这个)
+$ code=$(curl -sS -o /dev/null -w "%{http_code}" http://localhost:3000)
+$ [ "$code" -ge 200 ] && [ "$code" -lt 400 ] && echo "正常" || echo "异常:$code"
+```
+
+`-f`/`--fail` 才是让 curl 把 HTTP 错误当失败的开关;`-s` 静音、`-S` 保留错误信息,三个常一起用。Docker 的 `HEALTHCHECK` 里那句 `curl -f ... || exit 1`,关键就在这个 `-f`。
 
 ---
 

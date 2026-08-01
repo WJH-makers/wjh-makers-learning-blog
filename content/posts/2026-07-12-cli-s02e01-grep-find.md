@@ -166,7 +166,7 @@ find 说得很直白:**路径必须在表达式之前**。它把 `-name "*.js"` 
 一个要提前记住的分水岭:`grep` 吐**文本行**,`Select-String` 吐**对象**。这条差异下一话讲管道时会变成主角。
 
 > **🎯 面试直击**:`grep` 和 `find` 有什么本质区别,什么时候用哪个?
-> `grep` 匹配文件**内容**(逐行正则),`find` 按文件**属性**(名字、类型、时间、大小)在目录树里筛。「日志里有没有 error」用 grep,「哪些文件是昨天改的」用 find。追问:两者常组合——`find . -name "*.log" | xargs grep error`,find 定位文件、grep 再照内容(`xargs` 是后话)。
+> `grep` 匹配文件**内容**(逐行正则),`find` 按文件**属性**(名字、类型、时间、大小)在目录树里筛。「日志里有没有 error」用 grep,「哪些文件是昨天改的」用 find。追问:两者常组合——`find . -name "*.log" -exec grep error {} +`,find 定位文件、grep 再照内容。⚠ 别写成 `find ... | xargs grep`:xargs 默认按空白切分,文件名带空格就会被拆开;要用管道就得 `find ... -print0 | xargs -0 grep`(`xargs` 是后话)。
 
 ---
 
