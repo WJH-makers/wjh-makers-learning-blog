@@ -312,7 +312,7 @@ $ curl -s -o /dev/null -w "%{http_code}\n" http://203.0.113.10
 >
 > **4-B** `-t`=test,检查所有配置文件(`nginx.conf` + 所有 include 文件)的语法有效性,输出 `syntax is ok` 或 `nginx: [emerg] unexpected "X" in ...`。**举一反三:**这是 nginx 的安全带——每次修改配置后,必须先 `nginx -t`,确认通过后 `systemctl reload nginx`。跳过 `-t` 直接 reload 是玩火。
 >
-> **5-B** reload 是向 master 进程发 SIGHUP 信号:master 启动一组新 worker(加载新配置),并告诉旧 worker"优雅退出"(处理完当前请求后关闭)。restart 是停掉全部进程再启动,期间服务不可用。**举一反三:**nginx 的 reload 是其"七层可靠性"的基石——配置变更无需停机。但 reload 不会重读 SSL 证书(证书只在新连接建立时校验),如果更换证书,需要 restart 或手动 `kill -USR1` 重读。
+> **5-B** reload 是向 master 进程发 SIGHUP 信号:master 启动一组新 worker(加载新配置),并告诉旧 worker"优雅退出"(处理完当前请求后关闭)。restart 是停掉全部进程再启动,期间服务不可用。**举一反三:**nginx 的 reload 是其"七层可靠性"的基石——配置变更无需停机。**换 SSL 证书同样只要 reload**:新 worker 是全新进程,启动时会重新读一遍证书文件,不必 restart。⚠ 别把它和 `SIGUSR1` 搞混——按 nginx 手册,master 支持的信号是 `TERM/INT`(快速关闭)、`QUIT`(优雅关闭)、`HUP`(重载配置)、`USR1`(**重新打开日志文件**,给日志轮转用)、`USR2`(热升级可执行文件)、`WINCH`(优雅关停 worker)。`USR1` 和证书没有任何关系。
 >
 > **6-B** `proxy_pass` 是反向代理的核心指令,将匹配的请求转发到后端服务器。如 `proxy_pass http://localhost:3000;` 把所有匹配当前 location 的请求转发给 3000 端口的 Node.js 应用。**举一反三:**常见搭配:`proxy_set_header Host $host;`(传递原始域名),`proxy_set_header X-Real-IP $remote_addr;`(传递客户端真实 IP,否则后端只能看到 nginx 的 IP),`proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`。
 >

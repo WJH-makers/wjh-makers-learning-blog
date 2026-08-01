@@ -90,7 +90,7 @@ Bash 管道传**字节流**，靠 `cut`/`awk` 按分隔符切列；PowerShell �
 |------|------|-----------|
 | `Get-Process \| Sort-Object WS -Descending \| Select-Object -First 10` | 内存 Top10 | 名字**不带** `.exe`；`WS`=工作集，`CPU` 是累计秒数不是百分比，别当 `top` 读 |
 | `Get-CimInstance Win32_Process \| Select ProcessId,CommandLine` | 看完整命令行 | 5.1 的 `Get-Process` **没有** `CommandLine`（7.1+ 才有），跨版本走 CIM 最稳 |
-| `Stop-Process -Id 1234 -Force` | ⚠ 强杀进程 | ⚠ 等价 `kill -9` 不给保存机会。先试不带 `-Force`；按名杀先确认无同名误伤 |
+| `Stop-Process -Id 1234 -Force` | ⚠ 强杀进程 | ⚠ 等价 `kill -9` 不给保存机会——而且**不带 `-Force` 也一样硬停**：按官方定义 `-Force` 只是「停止非当前用户拥有的进程时不再弹确认」，与终止方式无关。Stop-Process 根本没有优雅关闭档（对比 cmd 的 `taskkill`：不带 `/f` 会先发 WM_CLOSE 请求关闭）。按名杀先确认无同名误伤 |
 | `Start-Process pwsh -Verb RunAs` | 提权启动 | `-Verb RunAs` 触发 UAC；`-Wait` 等退出，`-PassThru` 拿回 Process 对象 |
 | `Restart-Service -Name X -Force` | ⚠ 重启服务 | ⚠ `-Force` 会连**依赖它的服务**一起停；先 `Get-Service X -DependentServices` 看连带 |
 | `Set-Service -Name X -StartupType Disabled` | ⚠ 改启动类型 | ⚠ 禁用关键服务会致无法登录/断网；改前记原值 `(Get-Service X).StartType` |
