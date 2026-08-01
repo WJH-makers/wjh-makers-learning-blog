@@ -170,7 +170,7 @@ $ pgrep stress ; echo $?   # 没输出、退出码 1 = 真死了
 |---|---|---|---|
 | 列进程 | `ps aux` | `Get-Process` | ps 吐**文本列**,靠肉眼对齐;PS 吐 **Process 对象**(.Id/.CPU/.WS 是真属性) |
 | 找某个进程 | `ps aux \| grep nginx` | `Get-Process nginx` | PS 按名字直接取对象,没有「grep 抓到自己」这回事 |
-| 按 CPU 排前 5 | `ps aux --sort=-%cpu \| head -6` | `Get-Process \| Sort-Object CPU -Descending \| Select-Object -First 5` | 一个在排**文本行**,一个在排**对象属性** |
+| 按 CPU 排前 5 | `ps aux --sort=-%cpu \| head -6` | `Get-Counter '\Process(*)\% Processor Time'` | ⚠ **别用 `Sort-Object CPU` 对照**:`%cpu` 是**此刻的占用率**,而 PS 的 `CPU` 属性 = `TotalProcessorTime.TotalSeconds`,是进程**启动至今的累计 CPU 秒数** —— 开了一天的浏览器永远排第一,真正在飙的新进程反而排不上。要占用率就用 `Get-Counter`,或前后两次采样 `CPU` 求差 |
 | 结束进程 | `kill 4721`(TERM)/ `kill -9` | `Stop-Process -Id 4721` | PS 里 `kill` 是 Stop-Process 的**别名**;Windows 没有 POSIX 信号,没有「15 商量 / 9 掀桌」的分级,Stop-Process 一律硬停 |
 | 按名字批量结束 | `pkill stress` | `Stop-Process -Name stress` | — |
 

@@ -103,7 +103,7 @@ tags: [命令速查, Windows, CMD]
 | `tracert -d host` | 路由跟踪 | `-d` 不反解域名，快很多；中间跳 `*` 常是对方禁 ICMP，未必是故障 |
 | `pathping host` | 路由 + 丢包率 | 默认要跑 5 分钟左右，判断「哪一跳在丢包」比 tracert 准 |
 | `nslookup -type=A host 8.8.8.8` | 指定 DNS 查解析 | 对比「本地 DNS vs 公共 DNS」结果，能快速判定是不是被劫持/污染 |
-| `netstat -ano \| findstr :8080` | 查端口占用 | 记住第 5 列是 PID；`-b` 能显示进程名但要管理员且极慢 |
+| `netstat -ano \| findstr :8080` | 查端口占用 | PID 是 **TCP 行**的第 5 列；⚠ UDP 行没有 State 列，PID 落在第 4 列，`findstr` 同时命中 UDP 时别数错；`-b` 能显示进程名但要管理员且极慢 |
 | `netstat -an \| findstr LISTENING` | 列所有监听端口 | 中文系统输出仍是英文状态词，findstr 匹配 `LISTENING` 安全 |
 | `route print -4` | 看路由表 | 排查 VPN 抢走默认路由（0.0.0.0 那行 metric 最小的生效） |
 | `arp -a` | 看 ARP 表 | 局域网 IP 冲突、发现同网段设备时用；`arp -d *` 清表需管理员 |

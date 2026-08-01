@@ -300,7 +300,7 @@ $ tail -n 1 memo.txt               # 刚学的 tail 立刻上岗:只验最后一
 >
 > **Q4** 方案一:`less /var/log/nginx/access.log` 分页浏览,可按 `/` 搜索、`g` 跳到开头。方案二:`tail -n 100 /var/log/nginx/access.log` 只看最近 100 行。方案三:`head -n 50 /var/log/nginx/access.log` 只看前 50 行。**举一反三:**也可以 `cat file | grep ERROR` 过滤错误行、`wc -l file` 先看总行数再决定策略、`split` 将大文件切分后逐步分析。
 >
-> **Q5** 完整命令:`mkdir -p ~/backups/2026/09` → `date > ~/backups/2026/09/date.txt` → `tail -n 20 /var/log/app.log >> ~/backups/2026/09/recent.log`。**举一反三:**生产脚本应加错误检查:`mkdir -p ... && date > ... && tail ... >> ...` 用 `&&` 串联确保前一步成功才执行下一步;也可以用 `set -e` 让脚本遇错即停。🪟 PowerShell 中 `date` 会输出日期对象而非文本,建议用 `Get-Date -Format 'yyyy-MM-dd'`。
+> **Q5** 完整命令:`mkdir -p ~/backups/2026/09` → `date > ~/backups/2026/09/date.txt` → `tail -n 20 /var/log/app.log >> ~/backups/2026/09/recent.log`。**举一反三:**生产脚本应加错误检查:`mkdir -p ... && date > ... && tail ... >> ...` 用 `&&` 串联确保前一步成功才执行下一步;也可以用 `set -e` 让脚本遇错即停。🪟 PowerShell 里**根本没有 `date` 这个命令**——它不是别名也不是函数,敲下去直接 `CommandNotFoundException`。要用 `Get-Date`;它返回的是 DateTime 对象,想要纯文本得指定格式:`Get-Date -Format 'yyyy-MM-dd'`。(cmd.exe 里的 `date` 是交互式**改系统日期**的内建命令,两回事,别混。)
 
 ## 运行前边界、回滚与验证
 
