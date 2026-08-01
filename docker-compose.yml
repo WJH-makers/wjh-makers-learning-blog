@@ -11,10 +11,16 @@ services:
         # 与未启用 Turnstile 时行为一致(两者要么都配,要么都不配)。
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
     container_name: blog
-    mem_limit: 512m
-    cpus: 1.0
+    # 512m 时实测常驻 394MiB(77%),ISR 重渲染 179 篇正是内存尖峰期 —— 留够头寸,
+    # 别让一次重建把容器推到 OOM。宿主 3.7G 尚余 1.5G,加这 256m 无压力。
+    mem_limit: 768m
+    # 宿主 2 核。1.0 会在渲染尖峰把自己钉死在单核上,而平时负载只有 0.1;
+    # cpus 是上限不是预留,给到 1.5 只在需要时多占,空闲时不影响同宿主的其他服务。
+    cpus: 1.5
     ports:
-      - "3001:3001"
+      # 必须绑回环:docker 的 publish 会绕过 ufw,一旦写成 0.0.0.0 就只剩云安全组
+      # 这一道防线兜底。公网入口只有 Cloudflare Tunnel → nginx,不需要对外监听。
+      - "127.0.0.1:3001:3001"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:

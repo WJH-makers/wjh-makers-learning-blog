@@ -152,21 +152,39 @@ test("被空行和选项拆开的选择题仍保留原始序号", async () => {
   assert.ok(flat.includes('<ol start="10"><li>题十</li></ol>'), html);
 });
 
-test("25 话命令行课程的课后选择题保持单一连续有序列表", async () => {
+/**
+ * 题号连贯性闸门。原先只扫命令行课程的 25 话,而 Java 主线 56 + 番外 34 一直在闸门外 ——
+ * 那 90 话同样是「题干 → 代码块 → 选项」的结构,同样依赖 renderListBlock 从源码编号
+ * 推断出 <ol start="N">。这里把两条课程线一起钉住:只要 openList 的推断退化,
+ * 被代码块拆开的后半段题目就会重新从 1 编号,而那是读者一眼就会看出来的错。
+ */
+test("两条课程连载的课后选择题都保持连续题号(含被代码块拆开的话次)", async () => {
   const posts = new URL("../content/posts/", import.meta.url);
-  const files = readdirSync(posts).filter((file) => /-cli-s\d+e\d+-.+\.md$/.test(file));
-  assert.equal(files.length, 25, "命令行课程应包含 25 话");
+  const files = readdirSync(posts).filter((file) => /-(java|cli)-s\d+e\d+-.+\.md$/.test(file));
+  assert.equal(files.length, 115, "Java 90 话 + 命令行 25 话");
+
+  let checked = 0;
   for (const file of files) {
     const source = readFileSync(new URL(file, posts), "utf8");
-    const quiz = /### 选择题\(10 道\)\r?\n([\s\S]*?)\r?\n### 解答题\(5 道\)/.exec(source)?.[1];
-    assert.ok(quiz, `${file} 缺少标准选择题区块`);
+    // 区块边界取「选择题标题 → 下一个同级或更高级标题」，不假定后面一定跟解答题：
+    // 各卷的收尾栏目并不统一（解答题道数不同、番外还有实操题）。
+    const quizAt = source.indexOf("### 选择题");
+    if (quizAt < 0) continue;
+    const afterQuiz = source.slice(quizAt);
+    const nextHeading = afterQuiz.slice(1).search(/\n#{2,3} /);
+    const quiz = nextHeading < 0 ? afterQuiz : afterQuiz.slice(0, nextHeading + 1);
     const sourceNumbers = [...quiz.matchAll(/^(\d+)\.\s+/gm)].map((match) => Number(match[1]));
+    // 只对标准 10 题的话次做序号断言，个别话次题量不同
+    if (sourceNumbers.length !== 10) continue;
+    checked++;
     assert.deepEqual(sourceNumbers, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], `${file} 的题目源序号不连续`);
 
     const { html } = await renderMarkdown(source);
-    const start = html.indexOf('<h3 id="选择题-10-道">');
-    const end = html.indexOf('<h3 id="解答题-5-道">', start);
-    assert.ok(start >= 0 && end > start, `${file} 的选择题 HTML 区块不完整`);
+    const start = html.indexOf('<h3 id="选择题');
+    assert.ok(start >= 0, `${file} 的选择题 HTML 区块缺失`);
+    const nextH3 = html.indexOf("<h3 ", start + 1);
+    const nextH2 = html.indexOf("<h2 ", start + 1);
+    const end = Math.min(nextH3 < 0 ? html.length : nextH3, nextH2 < 0 ? html.length : nextH2);
     const renderedQuiz = html.slice(start, end);
     const renderedStarts = [...renderedQuiz.matchAll(/<ol(?: start="(\d+)")?>/g)].map((match) => Number(match[1] ?? "1"));
     assert.equal(renderedStarts[0], 1, `${file} 的选择题必须从 1 开始`);
@@ -175,6 +193,8 @@ test("25 话命令行课程的课后选择题保持单一连续有序列表", as
       `${file} 被代码块拆分后的有序列表不得回退到 1：${renderedStarts.join(", ")}`,
     );
   }
+  // 两条课程线绝大多数话次都带标准 10 题；数量骤降说明区块体例被改动过，需要人来看一眼。
+  assert.ok(checked >= 110, `进入题号闸门的话次只有 ${checked}，远低于预期(应 ≥110)`);
 });
 
 test("任务列表回归", async () => {
