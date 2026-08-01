@@ -54,11 +54,16 @@ const nextConfig: NextConfig = {
           key: "Content-Security-Policy",
           value: [
             "default-src 'self'",
-            `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.clarity.ms https://static.cloudflareinsights.com${assetOrigin}`,
+            // clarity.ms 已移除:实测国内读者 100% 加载失败(curl http=000、浏览器
+            // ERR_CONNECTION_CLOSED),数据一条收不到,只换来每页两个控制台错误。
+            // cloudflareinsights 仍保留 —— beacon 是 CF 边缘自动注入的,在 Dashboard
+            // 关掉 Web Analytics 之前先留着白名单:删了它拦不住注入,只会把网络错误
+            // 变成 CSP violation,页面上照样报错。
+            `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com${assetOrigin}`,
             `style-src 'self' 'unsafe-inline'${assetOrigin}`,
             "img-src 'self' data: https:",
             `font-src 'self' data:${assetOrigin}`,
-            `connect-src 'self' https://challenges.cloudflare.com https://*.clarity.ms https://*.clarity.microsoft.com https://cloudflareinsights.com${assetOrigin}`,
+            `connect-src 'self' https://challenges.cloudflare.com https://cloudflareinsights.com${assetOrigin}`,
             "frame-src https://challenges.cloudflare.com",
             "object-src 'none'",
             "base-uri 'none'",

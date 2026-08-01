@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Playfair_Display, Lora, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import ClarityAnalytics from "./ClarityAnalytics";
 import { jsonLdSafe, publisherNode, publisherId, websiteId } from "@/lib/jsonld";
 import { SERIES_LIST, seriesProgress } from "@/lib/series-registry";
 
@@ -143,7 +142,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <a className="beian" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">鄂ICP备2026036494号-1</a>
           </div>
         </footer>
-        <ClarityAnalytics />
       </body>
     </html>
   );
