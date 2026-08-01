@@ -95,13 +95,13 @@ Bash 管道传**字节流**，靠 `cut`/`awk` 按分隔符切列；PowerShell �
 | `Restart-Service -Name X -Force` | ⚠ 重启服务 | ⚠ `-Force` 会连**依赖它的服务**一起停；先 `Get-Service X -DependentServices` 看连带 |
 | `Set-Service -Name X -StartupType Disabled` | ⚠ 改启动类型 | ⚠ 禁用关键服务会致无法登录/断网；改前记原值 `(Get-Service X).StartType` |
 | `Get-NetTCPConnection -LocalPort 8080 -State Listen` | 查端口占用 | 仅 Windows。拿 `OwningProcess` 再 `Get-Process -Id` 定位，比 `netstat -ano \| findstr` 干净 |
-| `Get-WinEvent -FilterHashtable @{LogName='System';Level=2}` | 查系统日志 | ⚠ `Get-EventLog` 在 PS 6+ **已移除**；必须在**日志侧** `-FilterHashtable` 过滤，先取全量再 `Where` 会慢到不可用 |
+| `Get-WinEvent -FilterHashtable @{LogName='System';Level=2}` | 查系统日志 | ⚠ `Get-EventLog` **PS 7 已不再内置**（Windows 上仍会经兼容层代理跑通，同 §6 的 `Get-WmiObject`）；必须在**日志侧** `-FilterHashtable` 过滤，先取全量再 `Where` 会慢到不可用 |
 
 ## 6、WMI 与 CIM
 
 | 命令 | 作用 | 备注 / 坑 |
 |------|------|-----------|
-| `Get-CimInstance -ClassName Win32_OperatingSystem` | 查系统信息 | ⚠ `Get-WmiObject` 系列在 PS 6+ **已彻底移除**，一律用 `*-CimInstance`（CIM 走 WSMan，WMI 走 DCOM） |
+| `Get-CimInstance -ClassName Win32_OperatingSystem` | 查系统信息 | ⚠ `Get-WmiObject` 系列 **PS 7 已不再内置**，一律用 `*-CimInstance`（CIM 走 WSMan，WMI 走 DCOM）。⚠ 但在 **Windows 上它照样跑得通** —— PS 7 会自动拉起 `WinPSCompatSession` 隐式远程到 5.1 代理执行，`Get-Command` 查到的是 `Function`（模块版本 1.0，实体在 `%TEMP%\remoteIpMoProxy_*`）而非 `Cmdlet`。**别把「跑得通」当成「还在」**：非 Windows 上直接没有，且跨进程回来的对象只剩属性没有方法 |
 | `Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3"` | 查本地磁盘 | ⚠ `-Filter` 用 **WQL 语法**（`=`、`LIKE '%x%'`），不是 PS 的 `-eq`；服务端过滤远快于管道 `Where` |
 | `Invoke-CimMethod -ClassName Win32_Process -MethodName Create` | ⚠ 调 WMI 方法启动进程 | ⚠ 常被恶意软件使用、EDR 会告警；本机启动进程请用 `Start-Process` |
 | `Set-CimInstance` / `Remove-CimInstance` | ⚠ 改写/删除实例 | ⚠ 直接改系统对象（网卡、服务、共享）无回滚；先 `Get-` 出来核对 |
@@ -173,7 +173,7 @@ Bash 管道传**字节流**，靠 `cut`/`awk` 按分隔符切列；PowerShell �
 | `Export-Csv` 结果变成一堆乱列 | 中间用了 `Format-*` | 去掉所有 `Format-*`，它只能收尾 |
 | JSON 深层节点变成 `System.Object[]` | `ConvertTo-Json` 默认 `-Depth 2` | 加 `-Depth 10` |
 | `ConvertFrom-Json` 报语法错误 | `Get-Content` 逐行喂入 | 加 `-Raw` |
-| `Get-WmiObject : 无法识别为 cmdlet` | 在 PS 7 上跑 5.1 脚本 | 改成 `Get-CimInstance` |
+| `Get-WmiObject : 无法识别为 cmdlet` | 在**非 Windows** 的 PS 7 上跑 5.1 脚本（Windows 上有兼容层接住，不会报这个） | 改成 `Get-CimInstance` |
 | `try/catch` 抓不到报红的错误 | 那是非终止错误 | 该命令加 `-ErrorAction Stop` |
 | 外部命令失败但脚本继续跑 | `$ErrorActionPreference` 不管 exe | 判 `$LASTEXITCODE` |
 | 路径含 `[` `]` 时找不到文件 | `-Path` 按通配符解析 | 换 `-LiteralPath` |

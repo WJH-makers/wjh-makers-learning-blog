@@ -75,7 +75,7 @@ tags: [命令速查, AI 工具, 工程效率]
 |------|------|-----------|
 | `rg -n "<符号>" -g '!{node_modules,dist,target,build}'` | 先自己定位，把文件+行号交给它 | 让 AI 在全仓库盲搜是最贵的用法：搜索本身要烧掉大量输入 token，且命中率不如 ripgrep |
 | `git diff --stat` / `git diff -- <path>` | 把「改了什么」作为上下文 | 比整文件复制省一个数量级；review 类任务优先喂 diff |
-| `tree -L 2 -I 'node_modules\|target'` | 给一张项目地图 | Windows 无 `tree` 等价物时用 PowerShell `Get-ChildItem -Depth 1` |
+| `tree -L 2 -I 'node_modules\|target'` | 给一张项目地图 | ⚠ Windows **自带 `tree.com`，但整个命令只有 `/F`（列文件）和 `/A`（ASCII）两个开关**——既不能限深也不能排除，这个场景用不上；改用 PowerShell `Get-ChildItem -Depth 1`（`-Depth` 本身就会开启递归，不必再加 `-Recurse`） |
 | 仓库根的规则/记忆文件（各家有约定文件名） | 固化长期约定（技术栈、代码风格、禁区） | **它进每次请求的前缀**：写太长每轮都在烧钱，而且一改动就让前缀缓存整体失效（见第 9 节）。保持短、稳、少改 |
 | 各家的 ignore 配置 | 屏蔽 `dist/`、`target/`、快照测试、大 JSON | 多数工具默认尊重 `.gitignore`，但不保证；敏感目录必须显式排除，别赌默认行为 |
 | `git check-ignore -v .env` | 确认密钥文件确实被忽略 | 返回空 = 没被忽略 = 可能被读进上下文 |
