@@ -15,7 +15,11 @@ async function loadPlaywright() {
 
 const { chromium } = await loadPlaywright();
 const baseUrl = process.env.BROWSER_AUDIT_URL ?? "http://localhost:3021";
-const outputDir = path.resolve(process.env.BROWSER_AUDIT_OUTPUT ?? ".omx/artifacts/browser-reader");
+// 审计产物是一次性排查材料，不属于源码：默认落系统临时目录，别在仓库里长出 .omx/ 这种
+// 既不该提交、又会被反复忘记清理的目录（上一版默认 ".omx/artifacts/…" 攒到了 42MB）。
+const outputDir = path.resolve(
+  process.env.BROWSER_AUDIT_OUTPUT ?? path.join(os.tmpdir(), "wjh-blog-audit", "browser-reader"),
+);
 const startRoute = "/posts/2026-07-25-java-s01e01-hello";
 const nextRoute = "/posts/2026-07-26-java-s01e02-variables";
 
