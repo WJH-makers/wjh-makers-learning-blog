@@ -10,6 +10,10 @@ services:
         # 值从同目录 .env 读;未配置时为空字符串 —— 前端不渲染 widget、后端跳过校验,
         # 与未启用 Turnstile 时行为一致(两者要么都配,要么都不配)。
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+        # assetPrefix 由 next build 内联进产物，只能在构建期给。空值 = 静态资源仍走本域，
+        # 与改造前完全一致；填成 https://cdn.wwjjhh.online 后 /_next/static/ 才改走 CF 边缘。
+        # 回退方式:清空这个变量重新 build。
+        NEXT_PUBLIC_ASSET_PREFIX: ${NEXT_PUBLIC_ASSET_PREFIX:-}
     container_name: blog
     # 512m 时实测常驻 394MiB(77%),ISR 重渲染 179 篇正是内存尖峰期 —— 留够头寸,
     # 别让一次重建把容器推到 OOM。宿主 3.7G 尚余 1.5G,加这 256m 无压力。
