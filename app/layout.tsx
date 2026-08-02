@@ -4,6 +4,7 @@ import { Playfair_Display, Lora, Inter, JetBrains_Mono } from "next/font/google"
 import "./globals.css";
 import { jsonLdSafe, publisherNode, publisherId, websiteId } from "@/lib/jsonld";
 import { SERIES_LIST, seriesProgress } from "@/lib/series-registry";
+import SiteNav from "./_components/SiteNav";
 
 // 斜体全站仅 2 处且均为装饰性(blockquote/署名),浏览器合成斜体足够——
 // 去掉 italic 变体省 2 个 woff2 preload,首屏字体请求 6→4。
@@ -100,14 +101,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <span>Java · 工程 · 系统</span>
           </div>
           <nav className="nav" aria-label="主导航">
-            <Link className="brand" href="/">咖啡站技术志</Link>
-            <div className="nav-links">
-              <Link href={"/start" as never}>开始</Link>
-              <Link href={"/universe" as never}>宇宙</Link>
-              <Link href="/series">连载</Link>
-              <Link href={"/coffee-station" as never}>咖啡站</Link>
-              <Link href="/projects">项目</Link>
-            </div>
+            <SiteNav />
           </nav>
         </header>
         <main id="main" tabIndex={-1}>{children}</main>

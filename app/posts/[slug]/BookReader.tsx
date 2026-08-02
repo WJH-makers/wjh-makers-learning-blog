@@ -12,6 +12,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
+import ReadingProgress from "@/app/_components/ReadingProgress";
 
 type PageTarget = {
   href: Route;
@@ -166,6 +167,7 @@ export default function BookReader({ children, previous, next }: Props) {
         }
       }}
     >
+      <ReadingProgress />
       {children}
       {previous && (
         <Link

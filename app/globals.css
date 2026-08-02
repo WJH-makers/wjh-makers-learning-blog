@@ -120,6 +120,7 @@ code, pre { font-family: var(--font-mono); }
 }
 
 .brand {
+  position: relative;
   padding: 12px 18px;
   color: var(--foreground);
   font-family: var(--font-serif);
@@ -137,6 +138,7 @@ code, pre { font-family: var(--font-mono); }
   border-left: 1px solid var(--border);
 }
 .nav-links a {
+  position: relative;
   min-height: 44px;
   display: inline-flex;
   align-items: center;
@@ -156,6 +158,45 @@ code, pre { font-family: var(--font-mono); }
 .nav-links a:hover { color: var(--paper); background: var(--foreground); }
 /* 密集小元素不用位移(会让整条导航跳动),改用强调色做一次按压脉冲 */
 .nav-links a:active { color: var(--paper); background: var(--accent-ink); transition-duration: var(--d-press); }
+.nav-links a.is-active,
+.brand.is-active { color: var(--accent-ink); }
+.nav-links a.is-active { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.nav-links a.is-active::after,
+.brand.is-active::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  left: 10px;
+  height: 2px;
+  background: var(--accent-ink);
+  transform-origin: left;
+  animation: navMarkIn 240ms var(--ease-out) both;
+}
+.brand.is-active::after { right: 18px; bottom: 8px; left: 18px; }
+@keyframes navMarkIn {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+
+.reading-progress {
+  position: fixed;
+  z-index: 60;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  pointer-events: none;
+}
+.reading-progress span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--accent-ink);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 45%, transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
 
 .page-shell { padding: 32px 0 64px; }
 .narrow { max-width: 980px; }
