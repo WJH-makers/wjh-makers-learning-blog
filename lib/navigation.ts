@@ -7,7 +7,7 @@ export type SiteNavItem = {
 export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
   { href: "/start", label: "开始", matches: ["/start"] },
   { href: "/universe", label: "宇宙", matches: ["/universe"] },
-  { href: "/series", label: "连载", matches: ["/series", "/java", "/cli", "/cafe", "/career"] },
+  { href: "/series", label: "连载", matches: ["/series", "/posts", "/java", "/cli", "/cafe", "/career"] },
   { href: "/coffee-station", label: "咖啡站", matches: ["/coffee-station"] },
   { href: "/projects", label: "项目", matches: ["/projects"] },
 ];

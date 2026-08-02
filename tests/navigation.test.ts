@@ -12,6 +12,6 @@ test("global navigation marks the home page and grouped series routes", () => {
   assert.equal(isHomeActive("/"), true);
   assert.equal(isHomeActive("/posts"), false);
   assert.equal(isSiteNavItemActive("/java/", nav("连载")), true);
-  assert.equal(isSiteNavItemActive("/posts/lesson", nav("连载")), false);
+  assert.equal(isSiteNavItemActive("/posts/lesson", nav("连载")), true);
   assert.equal(isSiteNavItemActive("/coffee-station", nav("咖啡站")), true);
 });
