@@ -10,6 +10,9 @@ services:
         # 值从同目录 .env 读;未配置时为空字符串 —— 前端不渲染 widget、后端跳过校验,
         # 与未启用 Turnstile 时行为一致(两者要么都配,要么都不配)。
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+        # R2_PUBLIC_URL 是公开资源域名,构建期注入后静态文章页直接产出边缘资源地址;
+        # S3 Access/Secret 只留在运行时 .env,绝不进入 build args。
+        R2_PUBLIC_URL: ${R2_PUBLIC_URL:-}
         # assetPrefix 由 next build 内联进产物，只能在构建期给。空值 = 静态资源仍走本域，
         # 与改造前完全一致；填成 https://cdn.wwjjhh.online 后 /_next/static/ 才改走 CF 边缘。
         # 回退方式:清空这个变量重新 build。
@@ -32,6 +35,14 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
       PORT: 3001
       NETDATA_URL: http://host.docker.internal:19999
+      # R2 is used only as a public read origin by the web process. The S3
+      # write credentials belong to the host-side sync helper, not this app.
+      R2_ACCOUNT_ID: ""
+      R2_ENDPOINT: ""
+      R2_BUCKET: ""
+      R2_ACCESS_KEY_ID: ""
+      R2_SECRET_ACCESS_KEY: ""
+      R2_API_TOKEN: ""
     env_file:
       - .env
     volumes:

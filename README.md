@@ -87,6 +87,31 @@ NEXT_PUBLIC_SITE_URL=https://你的域名
 
 如果某个平台只给 `DATABASE_URL`，项目也能兼容读取；项目仍优先读取 `MONGODB_URI`。
 
+## Cloudflare R2 静态资源
+
+漫画和能力地图通过 R2 自定义域名从边缘分发，文章页在配置 `R2_PUBLIC_URL` 后会自动把 `/comics/...`、`/images/...` 资源改写到该域名。S3 凭据只在服务器端使用，不要写入任何 `NEXT_PUBLIC_*` 变量。
+
+服务器 `.env` 需要配置：
+
+```text
+R2_PUBLIC_URL=https://assets.example.com
+R2_ACCOUNT_ID=<cloudflare-account-id>
+R2_ENDPOINT=https://<cloudflare-account-id>.r2.cloudflarestorage.com
+R2_BUCKET=blog-assets
+R2_ACCESS_KEY_ID=<r2-s3-access-key-id>
+R2_SECRET_ACCESS_KEY=<r2-s3-secret-access-key>
+```
+
+先在 Cloudflare R2 中把桶连接到自定义域名，再从项目根目录同步和校验资源：
+
+```bash
+python3 ops/sync-r2-assets.py --dry-run
+python3 ops/sync-r2-assets.py
+python3 ops/sync-r2-assets.py --check
+```
+
+同步脚本只处理 `public/comics` 和 `public/images`，上传时写入图片类型和一年不可变缓存元数据；它不会删除 R2 中的对象。若替换同名资源，需要配合 Cloudflare 缓存失效或改用新文件名。
+
 本地开发同样复制环境变量模板：
 
 ```powershell

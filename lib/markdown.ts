@@ -1,5 +1,6 @@
 import { createHighlighterCore, type HighlighterCore } from "shiki/core";
 import { createOnigurumaEngine } from "shiki/engine/oniguruma";
+import { publicAssetUrl } from "./assets.ts";
 import comicManifest from "./comic-manifest.json" with { type: "json" };
 
 /**
@@ -59,12 +60,12 @@ function inlineMarkdown(value: string): string {
       return stash(`<code>${inner}</code>`);
     })
     .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (_m, alt: string, src: string) =>
-      stash(`<img class="post-image" src="${src}" alt="${alt}" loading="lazy" decoding="async" />`))
+      stash(`<img class="post-image" src="${publicAssetUrl(src)}" alt="${alt}" loading="lazy" decoding="async" />`))
     .replace(/!\[([^\]]*)\]\((\/comics\/java\/([A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\.png)\)/g, (_m, alt: string, _src: string, stem: string) => {
       // AVIF 优先、512w 移动变体、webp 兜底(png 原档不再进 serve 路径,现代覆盖率已 ~100%);
       // 尺寸取 manifest 真实值(源图有 1055x1491/887x1774/1024x1536 三种,写死会让占位比例失真)。
       // 变体与 manifest 由 scripts/build-comic-variants.mjs 生成,新增漫画后需重跑一次。
-      const base = `/comics/java/${stem}`;
+      const base = publicAssetUrl(`/comics/java/${stem}`);
       const { w, h } = COMIC_SIZES[stem] ?? { w: 1024, h: 1536 };
       const sizes = "(max-width: 960px) 94vw, 900px";
       return stash(
@@ -75,7 +76,7 @@ function inlineMarkdown(value: string): string {
         `</picture>`);
     })
     .replace(/!\[([^\]]*)\]\((\/(?!\/)[A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\)/g, (_m, alt: string, src: string) =>
-      stash(`<img class="post-image" src="${src}" alt="${alt}" loading="lazy" decoding="async" />`))
+      stash(`<img class="post-image" src="${publicAssetUrl(src)}" alt="${alt}" loading="lazy" decoding="async" />`))
     // URL 支持一层平衡括号(维基/MDN 的 /Foo_(bar) 不再截断)
     .replace(/\[([^\]]+)\]\((https?:\/\/(?:\([^\s()]*\)|[^\s()])+)\)/g, (_m, text: string, url: string) =>
       stash(`<a href="${url}" target="_blank" rel="noreferrer">${emphasize(text)}</a>`))
