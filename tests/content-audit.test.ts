@@ -12,11 +12,14 @@ const posts = fs.readdirSync(postsDir)
 
 const javaPosts = posts.filter(({ name }) => name.includes("-java-") || name === "2026-07-04-windows-java-fullstack-env.md" || name === "2026-07-26-maven-gradle-cheatsheet.md");
 const cliPosts = posts.filter(({ name }) => name.includes("-cli-"));
+// JVM 火种纪自成一线,slug 形如 2026-08-01-jvm-f01e01-*;不与 java 线的 -java- 前缀重叠。
+const jvmPosts = posts.filter(({ name }) => /-jvm-f\d{2}e\d{2}-/.test(name));
 
 test("公开 Java/CLI 审计清单覆盖当前全部系列文章", () => {
   assert.ok(javaPosts.length >= 94, `expected at least 94 Java posts, got ${javaPosts.length}`);
   assert.ok(cliPosts.length >= 28, `expected at least 28 CLI posts, got ${cliPosts.length}`);
-  for (const post of [...javaPosts, ...cliPosts]) {
+  assert.ok(jvmPosts.length >= 1, `expected at least 1 JVM post, got ${jvmPosts.length}`);
+  for (const post of [...javaPosts, ...cliPosts, ...jvmPosts]) {
     assert.match(post.content, /^---\r?\n[\s\S]*?^---/m, `${post.name} is missing front matter`);
   }
 });
@@ -56,9 +59,23 @@ test("公开内容不提供全文批量导出，评论写入默认必须通过�
 });
 
 test("每篇 Java 文章均说明运行环境、验证方式与官方依据", () => {
-  for (const post of javaPosts) {
+  for (const post of [...javaPosts, ...jvmPosts]) {
     assert.match(post.content, /## 运行环境、验证与依据/, post.name);
     assert.match(post.content, /Java SE 25 JLS/, post.name);
+  }
+});
+
+test("每篇 JVM 火种纪文章都带可复现的炉底观测与版本边界", () => {
+  for (const post of jvmPosts) {
+    // 本线身份栏目:每话恰好一个,且必须给出可照抄复现的观测命令。
+    assert.equal((post.content.match(/🔬 炉底显微镜/g) ?? []).length, 1, post.name);
+    assert.match(post.content, /```bash\n[\s\S]*?(?:javap|jcmd|jfr|java(?:c)? )[\s\S]*?```/, post.name);
+    // 版本敏感结论必须区分规范与实现,不能把字节码细节当跨版本承诺。
+    assert.match(post.content, /\*\*版本边界\*\*/, post.name);
+    // 骨架完整性:漫画分格、随堂练习与折叠答案。
+    assert.ok((post.content.match(/^> \*\*〔\d+〕/gm) ?? []).length >= 4, `${post.name}: 漫画分格少于 4 格`);
+    assert.match(post.content, /## 🎯 随堂练习/, post.name);
+    assert.match(post.content, /> \[!答案\]/, post.name);
   }
 });
 
@@ -95,7 +112,7 @@ test("已知 Java 版本与实现边界保留明确说明", () => {
 });
 
 test("Java/CLI 全文可由站点 Markdown 渲染器渲染", async () => {
-  for (const post of [...javaPosts, ...cliPosts]) {
+  for (const post of [...javaPosts, ...cliPosts, ...jvmPosts]) {
     const html = await markdownToHtml(post.content);
     assert.ok(html.length > 100, `${post.name} rendered unexpectedly short output`);
     assert.doesNotMatch(html, /handbook\.md/i, post.name);
