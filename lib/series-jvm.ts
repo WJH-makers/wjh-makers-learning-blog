@@ -85,7 +85,7 @@ export const JVM_SEASONS: JavaSeason[] = [
     goal: "虚拟线程、Scoped Values 与结构化并发——豆豆制造的十万订单午高峰,是检验 Java 并发十年最大变革的试炼场。",
     covers: ["虚拟线程", "Scoped Values", "结构化并发"],
     episodes: [
-      { season: 4, episode: 1, title: "一人一单的复活", summary: "虚拟线程:平台线程是编制 200 的正式工,虚拟线程一声令下十万临时工,人手一单从头跟到尾。", chapterType: "comic", projectStage: "十万订单人手一单", technologies: ["虚拟线程", "newVirtualThreadPerTaskExecutor"], jobSkills: ["并发"], status: "planned" },
+      { season: 4, episode: 1, title: "一人一单的复活", summary: "虚拟线程:平台线程是编制 200 的正式工,虚拟线程一声令下十万临时工,人手一单从头跟到尾。", chapterType: "comic", projectStage: "十万订单人手一单", technologies: ["虚拟线程", "newVirtualThreadPerTaskExecutor"], jobSkills: ["并发"], status: "published", slug: "2026-12-19-jvm-f04e01-virtual-thread" },
       { season: 4, episode: 2, title: "临时工的分身术", summary: "挂载/卸载与载体线程:临时工一等咖啡机就灵魂出窍挂上衣架,肉身立刻服务下一位;JFR 看事件雨。", chapterType: "comic", projectStage: "看见线程灵魂出窍", technologies: ["载体线程", "挂载/卸载", "JFR"], jobSkills: ["并发", "JVM"], status: "planned" },
       { season: 4, episode: 3, title: "拔掉图钉", summary: "synchronized 去钉住(JEP 491):版本残影重演 21 时代的图钉,「快改 ReentrantLock」的旧攻略可以烧了。", chapterType: "incident", projectStage: "旧攻略纠错现场", technologies: ["synchronized", "pinning", "JEP 491"], jobSkills: ["并发", "排障"], status: "planned" },
       { season: 4, episode: 4, title: "传物不传锅", summary: "Scoped Values vs ThreadLocal:十万人背十万背包换成走廊公告牌,进走廊能看、出走廊自动失效。", chapterType: "comic", projectStage: "上下文改走公告牌", technologies: ["ScopedValue", "ThreadLocal"], jobSkills: ["并发"], status: "planned" },
