@@ -36,7 +36,7 @@ export const JVM_SEASONS: JavaSeason[] = [
     covers: ["record 全家桶", "sealed + 模式匹配", "JDK 25 新语法"],
     episodes: [
       { season: 1, episode: 1, title: "炉中来客", summary: "紧凑源文件与实例 main、模块导入声明:三行 void main() 点亮后厨,焰焰从炉口探出头初登场;一次 Date 歧义罚单说明样板没消失,只是搬进了炉底。", chapterType: "comic", projectStage: "后厨第一段 Java 25 代码", technologies: ["void main", "IO.println", "import module"], jobSkills: ["Java 25 新特性"], status: "published", slug: "2026-08-01-jvm-f01e01-furnace-guest" },
-      { season: 1, episode: 2, title: "订单卡片革命", summary: "record 与紧凑构造器校验:手抄 40 行发票换成「盖章即成」的收据打印机,出票口自带安检门。", chapterType: "comic", projectStage: "订单类换成 record", technologies: ["record", "紧凑构造器"], jobSkills: ["现代 Java"], status: "planned" },
+      { season: 1, episode: 2, title: "订单卡片革命", summary: "record 与紧凑构造器校验:手抄 40 行发票换成「盖章即成」的收据打印机,出票口自带安检门。", chapterType: "comic", projectStage: "订单类换成 record", technologies: ["record", "紧凑构造器"], jobSkills: ["现代 Java"], status: "published", slug: "2026-08-08-jvm-f01e02-order-card" },
       { season: 1, episode: 3, title: "菜单封印术", summary: "sealed 密封类/接口:菜单只许三种咖啡,想偷偷 extends 出「香菜咖啡」的直接被编译器保安架走。", chapterType: "comic", projectStage: "菜单继承树被封印", technologies: ["sealed", "permits"], jobSkills: ["现代 Java"], status: "planned" },
       { season: 1, episode: 4, title: "分拣流水线", summary: "switch 模式匹配与 when 守卫:人肉开箱验货的 instanceof-强转链,升级成自动分拣机加小秤。", chapterType: "comic", projectStage: "订单自动分拣", technologies: ["switch 模式匹配", "when 守卫", "instanceof 模式"], jobSkills: ["现代 Java"], status: "planned" },
       { season: 1, episode: 5, title: "套娃拆包机", summary: "record 解构模式与未命名变量 _:嵌套订单像俄罗斯套娃一键全拆,不要的零件丢进 _ 回收槽。", chapterType: "comic", projectStage: "嵌套订单一键全拆", technologies: ["record 解构", "未命名变量 _"], jobSkills: ["现代 Java"], status: "planned" },
