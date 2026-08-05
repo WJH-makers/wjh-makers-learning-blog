@@ -41,7 +41,7 @@ export const JVM_SEASONS: JavaSeason[] = [
       { season: 1, episode: 4, title: "分拣流水线", summary: "switch 模式匹配与 when 守卫:人肉开箱验货的 instanceof-强转链,升级成自动分拣机加小秤。", chapterType: "comic", projectStage: "订单自动分拣", technologies: ["switch 模式匹配", "when 守卫", "instanceof 模式"], jobSkills: ["现代 Java"], status: "published", slug: "2026-08-22-jvm-f01e04-sort-pipeline" },
       { season: 1, episode: 5, title: "套娃拆包机", summary: "record 解构模式与未命名变量 _:嵌套订单像俄罗斯套娃一键全拆,不要的零件丢进 _ 回收槽。", chapterType: "comic", projectStage: "嵌套订单一键全拆", technologies: ["record 解构", "未命名变量 _"], jobSkills: ["现代 Java"], status: "published", slug: "2026-08-29-jvm-f01e05-destruct" },
       { season: 1, episode: 6, title: "super 之前的自由", summary: "灵活构造器体:版本残影重演 1995 年「先喊 super 再干活」的老规矩,JDK 25 拆掉门禁先安检参数。", chapterType: "comic", projectStage: "构造器先安检再进门", technologies: ["灵活构造器体", "JEP 513"], jobSkills: ["Java 25 新特性"], status: "published", slug: "2026-09-05-jvm-f01e06-flex-ctor" },
-      { season: 1, episode: 7, title: "三件套合体", summary: "卷终综合战:sealed + record 解构 + 穷尽 switch 打造促销引擎,新增活动类型编译器自动点名。", chapterType: "project", projectStage: "促销引擎上线 · jvm-v1 语法进化", technologies: ["sealed", "record", "switch", "综合"], jobSkills: ["数据导向编程"], status: "planned" },
+      { season: 1, episode: 7, title: "三件套合体", summary: "卷终综合战:sealed + record 解构 + 穷尽 switch 打造促销引擎,新增活动类型编译器自动点名。", chapterType: "project", projectStage: "促销引擎上线 · jvm-v1 语法进化", technologies: ["sealed", "record", "switch", "综合"], jobSkills: ["数据导向编程"], status: "published", slug: "2026-09-12-jvm-f01e07-trinity" },
     ],
   },
   {
