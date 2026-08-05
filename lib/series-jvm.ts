@@ -52,7 +52,7 @@ export const JVM_SEASONS: JavaSeason[] = [
     goal: "清偿附录 D 欠下的类库债:时间、正则、队列、IO 四座大山一次补齐,这是 2026 年 Java 工程师的地板线。",
     covers: ["java.time", "正则表达式", "Queue 与 IO"],
     episodes: [
-      { season: 2, episode: 1, title: "两个世界的时间", summary: "java.time 核心类型:机器数秒(Instant)与人类看历(LocalDateTime)两块表,Date 的残影封进琥珀展览。", chapterType: "comic", projectStage: "订单时间戳换 java.time", technologies: ["Instant", "LocalDateTime", "Duration"], jobSkills: ["java.time"], status: "planned" },
+      { season: 2, episode: 1, title: "两个世界的时间", summary: "java.time 核心类型:机器数秒(Instant)与人类看历(LocalDateTime)两块表,Date 的残影封进琥珀展览。", chapterType: "comic", projectStage: "订单时间戳换 java.time", technologies: ["Instant", "LocalDateTime", "Duration"], jobSkills: ["java.time"], status: "published", slug: "2026-09-19-jvm-f02e01-two-clocks" },
       { season: 2, episode: 2, title: "夏令时凶案", summary: "时区与 DateTimeFormatter:海外分店订单凭空穿越一小时,破案元凶是夏令时与多线程共用一支笔的 SimpleDateFormat。", chapterType: "incident", projectStage: "海外分店时间破案", technologies: ["ZonedDateTime", "ZoneId", "DateTimeFormatter"], jobSkills: ["java.time", "排障"], status: "planned" },
       { season: 2, episode: 3, title: "文本捕兽夹", summary: "Pattern/Matcher 与命名分组:先铸好捕兽夹(预编译)再打猎,从小票流水里抓优惠码并给猎物挂名牌。", chapterType: "comic", projectStage: "小票里抓优惠码", technologies: ["Pattern", "Matcher", "命名分组"], jobSkills: ["正则"], status: "planned" },
       { season: 2, episode: 4, title: "贪吃的正则", summary: "贪婪/懒惰/独占与零宽断言:贪婪的 .* 一口吞下整卷小票再慢慢吐,回溯灾难吐到 CPU 风扇起飞。", chapterType: "incident", projectStage: "一次回溯灾难复盘", technologies: ["贪婪/懒惰", "零宽断言", "回溯"], jobSkills: ["正则", "排障"], status: "planned" },
