@@ -91,7 +91,7 @@ export const JVM_SEASONS: JavaSeason[] = [
       { season: 4, episode: 4, title: "传物不传锅", summary: "Scoped Values vs ThreadLocal:十万人背十万背包换成走廊公告牌,进走廊能看、出走廊自动失效。", chapterType: "comic", projectStage: "上下文改走公告牌", technologies: ["ScopedValue", "ThreadLocal"], jobSkills: ["并发"], status: "published", slug: "2027-01-09-jvm-f04e04-scoped-value" },
       { season: 4, episode: 5, title: "并发不散养", summary: "结构化并发 StructuredTaskScope:散养猫式 fork 改成带围栏的亲子任务园,一个孩子摔倒全组安全撤离。", chapterType: "comic", projectStage: "子任务进围栏", technologies: ["StructuredTaskScope"], jobSkills: ["并发"], status: "published", slug: "2027-01-16-jvm-f04e05-structured-scope" },
       { season: 4, episode: 6, title: "何时仍需未来", summary: "CompletableFuture 的取舍:三方比价场景摆出决策天平——编排/超时/合并用 CF,同步直写用虚拟线程。", chapterType: "reference", projectStage: "三方比价的决策天平", technologies: ["CompletableFuture", "虚拟线程"], jobSkills: ["并发"], status: "published", slug: "2027-01-23-jvm-f04e06-completable-future" },
-      { season: 4, episode: 7, title: "流水线魔改", summary: "卷终:Stream Gatherers 开放自定义工位,阿零焊了个滑动窗口,实时算最近 5 分钟出杯速率。", chapterType: "project", projectStage: "扛住百万并发 · jvm-v4 百万并发", technologies: ["Stream Gatherers", "综合"], jobSkills: ["函数式", "并发"], status: "planned" },
+      { season: 4, episode: 7, title: "流水线魔改", summary: "卷终:Stream Gatherers 开放自定义工位,阿零焊了个滑动窗口,实时算最近 5 分钟出杯速率。", chapterType: "project", projectStage: "扛住百万并发 · jvm-v4 百万并发", technologies: ["Stream Gatherers", "综合"], jobSkills: ["函数式", "并发"], status: "published", slug: "2027-01-30-jvm-f04e07-stream-gatherers" },
     ],
   },
   {
