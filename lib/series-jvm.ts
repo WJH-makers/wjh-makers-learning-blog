@@ -59,7 +59,7 @@ export const JVM_SEASONS: JavaSeason[] = [
       { season: 2, episode: 5, title: "排队的艺术", summary: "Queue/Deque 家族:取餐队 FIFO、盘子叠放靠 ArrayDeque 双门神、VIP 优先出杯是 PriorityQueue 小顶堆。", chapterType: "comic", projectStage: "取餐队与 VIP 优先出杯", technologies: ["ArrayDeque", "PriorityQueue"], jobSkills: ["集合"], status: "published", slug: "2026-10-17-jvm-f02e05-queue-art" },
       { season: 2, episode: 6, title: "产消协奏曲", summary: "BlockingQueue 与生产者-消费者:出杯台满了咖啡师干等、空了取餐员干瞪眼,SynchronousQueue 是手递手窗口。", chapterType: "comic", projectStage: "出杯台变阻塞队列", technologies: ["BlockingQueue", "生产者-消费者"], jobSkills: ["并发", "集合"], status: "published", slug: "2026-10-24-jvm-f02e06-producer-consumer" },
       { season: 2, episode: 7, title: "字节的地下水道", summary: "IO 字节流装饰器与编码:裸字节走地下水道,Buffered 是蓄水罐,乱码等于 UTF-8 滤网装错型号。", chapterType: "comic", projectStage: "看懂乱码的第一性原理", technologies: ["InputStream", "Buffered", "UTF-8"], jobSkills: ["IO"], status: "published", slug: "2026-10-31-jvm-f02e07-byte-stream" },
-      { season: 2, episode: 8, title: "新时代的文件柜", summary: "卷终:Files.readString 一勺舀起整个文件、Files.walk 派巡检无人机,老 File 残影抱着套娃唉声叹气。", chapterType: "project", projectStage: "文件读写全面 NIO.2 · jvm-v2 类库清债", technologies: ["Files", "Path", "try-with-resources"], jobSkills: ["IO"], status: "planned" },
+      { season: 2, episode: 8, title: "新时代的文件柜", summary: "卷终:Files.readString 一勺舀起整个文件、Files.walk 派巡检无人机,老 File 残影抱着套娃唉声叹气。", chapterType: "project", projectStage: "文件读写全面 NIO.2 · jvm-v2 类库清债", technologies: ["Files", "Path", "try-with-resources"], jobSkills: ["IO"], status: "published", slug: "2026-11-07-jvm-f02e08-nio2-files" },
     ],
   },
   {
