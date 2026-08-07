@@ -14,6 +14,7 @@ import Link from "next/link";
 import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
 import { publishedEpisodesOf, allEpisodesOf, type SeriesRef } from "@/lib/series-registry";
 import { siteUrl } from "@/lib/posts";
+import { publicAssetUrl } from "@/lib/assets";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 import JavaProgress from "../java/JavaProgress";
@@ -101,9 +102,9 @@ export default function SeriesLanding({ series }: { series: SeriesRef }) {
             <p>{series.comicCast.description}</p>
           </div>
           <picture>
-            <source type="image/avif" srcSet={`${series.comicCast.image}-512.avif 512w, ${series.comicCast.image}.avif 1024w`} sizes="(max-width: 720px) 94vw, 420px" />
-            <source type="image/webp" srcSet={`${series.comicCast.image}-512.webp 512w, ${series.comicCast.image}.webp 1024w`} sizes="(max-width: 720px) 94vw, 420px" />
-            <img src={`${series.comicCast.image}.webp`} alt={series.comicCast.alt} width={1024} height={1536} loading="eager" decoding="async" />
+            <source type="image/avif" srcSet={`${publicAssetUrl(`${series.comicCast.image}-512.avif`)} 512w, ${publicAssetUrl(`${series.comicCast.image}.avif`)} 1024w`} sizes="(max-width: 720px) 94vw, 420px" />
+            <source type="image/webp" srcSet={`${publicAssetUrl(`${series.comicCast.image}-512.webp`)} 512w, ${publicAssetUrl(`${series.comicCast.image}.webp`)} 1024w`} sizes="(max-width: 720px) 94vw, 420px" />
+            <img src={publicAssetUrl(`${series.comicCast.image}.webp`)} alt={series.comicCast.alt} width={1024} height={1536} loading="eager" decoding="async" />
           </picture>
         </section>
       )}
