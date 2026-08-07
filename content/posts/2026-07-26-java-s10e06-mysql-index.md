@@ -5,6 +5,8 @@ summary: "同一个查会员接口,一次 12 毫秒,一次 2.1 秒。EXPLAIN 一
 tags: [Java, Java漫画, MySQL, 索引, B+树, EXPLAIN, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e06-mysql-index](/comics/java/s10e06-mysql-index.png)
+
 # 《从零开始学 Java》85 · MySQL 索引内幕:B+ 树
 
 > 连载特刊 · 番外卷三「引擎室」第 6 话 · 基线 Java 25(最新 LTS)

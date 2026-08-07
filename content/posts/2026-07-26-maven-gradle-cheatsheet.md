@@ -5,8 +5,7 @@ summary: "覆盖 Maven 3.9+ 与 Gradle 9.x 在 Java 25 项目里的全生命周�
 tags: [命令速查, Java, Maven, Gradle]
 ---
 
-
-# Maven 与 Gradle 速查 · Java 构建全周期
+![Maven 与 Gradle 漫画：从依赖图到可复现构建](/comics/java/maven-gradle-build-pipeline.png)
 
 > 基线：Java 25 LTS · Maven 3.9+ · Gradle 9.x。按「从建项目到发布清理」的完整生命周期分节，同一件事两边命令并列；命令、参数、路径保留原文。
 

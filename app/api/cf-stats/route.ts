@@ -14,6 +14,7 @@ interface CfDayGroup {
 }
 
 interface CfGraphQLResponse {
+  errors?: unknown[];
   data?: {
     viewer?: {
       zones?: {
@@ -46,10 +47,10 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const token = process.env.CLOUDFLARE_TOKEN;
-  const zone = process.env.CLOUDFLARE_ZONE_ID;
+  const token = process.env.CLOUDFLARE_TOKEN?.trim();
+  const zone = process.env.CLOUDFLARE_ZONE_ID?.trim();
 
-  if (!token || !zone) {
+  if (!token || !zone || !/^[a-f\d]{32}$/i.test(zone)) {
     return NextResponse.json({ error: "not configured" }, { status: 503 });
   }
 
@@ -79,10 +80,22 @@ export async function GET() {
         "Content-Type": "application/json",
       },
       body: query,
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
     });
 
+    if (!res.ok) {
+      return NextResponse.json({ error: "fetch failed" }, { status: 502 });
+    }
+
     const json: CfGraphQLResponse = await res.json();
+    if (json.errors?.length) {
+      return NextResponse.json({ error: "fetch failed" }, { status: 502 });
+    }
     const zd = json?.data?.viewer?.zones?.[0];
+    if (!zd) {
+      return NextResponse.json({ error: "fetch failed" }, { status: 502 });
+    }
 
     const todayGroup = (zd?.today ?? [])[0];
     const yesterdayGroup = (zd?.yesterday ?? [])[0];

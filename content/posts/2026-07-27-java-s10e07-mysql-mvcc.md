@@ -5,6 +5,8 @@ summary: "双十一日志里一行 Duplicate entry:阿零明明先查后插,还�
 tags: [Java, Java漫画, MySQL, 事务, MVCC, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e07-mysql-mvcc](/comics/java/s10e07-mysql-mvcc.png)
+
 # 《从零开始学 Java》86 · MySQL 事务内幕:MVCC 与锁
 
 > 连载特刊 · 番外卷三「引擎室」第 7 话 · 基线 Java 25(最新 LTS)

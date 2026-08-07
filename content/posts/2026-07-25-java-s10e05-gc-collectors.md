@@ -5,6 +5,8 @@ summary: "GC 清洁队的全家福终于摊开:从 Serial 到分代 ZGC,谁被�
 tags: [Java, Java漫画, GC, JVM, G1, ZGC, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e05-gc-collectors](/comics/java/s10e05-gc-collectors.png)
+
 # 《从零开始学 Java》84 · GC 收集器家族选型
 
 > 连载特刊 · 番外卷三「引擎室」第 5 话 · 基线 Java 25(最新 LTS)

@@ -5,8 +5,7 @@ summary: "以 JDK 17/21/25 和 Spring 代理模型为边界，整理 Java 核心
 tags: [Java, 面试, JVM, 并发, Spring, MySQL, Redis, MQ, 排障, 后端]
 ---
 
-# Java 后端面试与生产排障题库：从八股边界到真实事故
-
+![Java 面试与生产排障漫画：从结论到证据](/comics/java/java-interview-production-playbook.png)
 > 适用边界：生产项目常见基线是 JDK 17 或 21；本文以 JDK 25 API/语言规范校验新特性。JDK 25 是 LTS，但 Java 26 已是更新的功能版本。回答任何版本题时，先说清「目标 JDK、JVM 实现、框架版本、部署模型」。
 
 > 面试不是背诵比赛。一个合格答案至少包含：**结论、适用边界、失败例子、验证证据、修复取舍**。只报名词或只背阈值，都经不起线上事故。

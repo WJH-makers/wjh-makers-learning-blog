@@ -8,6 +8,8 @@ tags: ["Java 25", "InputStream", "BufferedInputStream", "编码", "UTF-8", "IO"]
 excerpt: "裸字节走地下水道，Buffered 是蓄水罐——一滴一滴读和一桶一桶读，系统调用次数差千倍。乱码等于 UTF-8 滤网装错型号：字节本无意义，编码才给它意义。"
 ---
 
+![JVM 火种纪漫画：f02e07-byte-stream](/comics/jvm/f02e07-byte-stream.png)
+
 > **"字节流和字符流是两套水管。你用错了接头，水会流出来，但口味不对——那叫乱码。"**
 > — 焰焰，对着一屏 `???` 说
 
@@ -19,7 +21,7 @@ excerpt: "裸字节走地下水道，Buffered 是蓄水罐——一滴一滴读�
 > 阿零打开一份小票日志文件，满屏 `???`。「我就用的 `FileInputStream` 啊，读出来的怎么是这个？」
 
 > **〔2〕**
-> 焰焰指着代码：「`FileInputStream` 读的是字节，不是字符。你直接 `new String(bytes)` 没指定编码，JVM 用了平台默认编码（Windows 可能是 GBK），文件是 UTF-8 存的——字节相同，但解码用了错误的码表，结果就是乱码。」
+> 焰焰指着代码：「`FileInputStream` 读的是字节,不是字符。你直接 `new String(bytes)` 没指定编码,就把正确性押给了运行时默认值。JDK 18 起标准默认值是 UTF-8,但旧 JDK、`-Dfile.encoding=COMPAT` 与历史数据仍可能使用本地编码——字节相同,解码码表不同,结果就是乱码。」
 
 > **〔3〕**
 > 「第二个问题——性能。」焰焰打开系统调用监控：「你每次 `read()` 读 1 个字节，系统调用了 8000 次。套上 `BufferedInputStream`，攒 8192 字节一次读，系统调用降到 2 次。」
@@ -108,9 +110,9 @@ class IODemo {
         System.out.println("--- Files.readString ---");
         System.out.println(content.strip());
 
-        // ── 4. 演示乱码原因（GBK 解码 UTF-8 字节）────────────
+        // ── 4. 显式演示乱码原因（GBK 解码 UTF-8 字节）────────
         byte[] utf8Bytes = "咖啡".getBytes(StandardCharsets.UTF_8);
-        String wrongDecode = new String(utf8Bytes); // 平台默认编码（Windows = GBK）
+        String wrongDecode = new String(utf8Bytes, java.nio.charset.Charset.forName("GBK"));
         String rightDecode = new String(utf8Bytes, StandardCharsets.UTF_8);
         System.out.println("--- 编码对比 ---");
         System.out.println("UTF-8字节长: " + utf8Bytes.length);     // 6 (每汉字3字节)
@@ -145,8 +147,8 @@ UTF-8字节个数: 6
 ## ⚠️ 常见陷阱
 
 ```java
-// 陷阱1：FileReader 不指定编码，使用平台默认编码
-new FileReader("file.txt")               // 危险！Windows 默认 GBK
+// 陷阱1：FileReader 不指定编码，依赖运行时默认编码
+new FileReader("file.txt")               // JDK 18+ 默认 UTF-8；兼容模式/旧 JDK 可能不同
 new FileReader("file.txt", StandardCharsets.UTF_8) // ✅ JDK 11+ 支持
 
 // 陷阱2：new String(bytes) 不指定编码
@@ -247,11 +249,11 @@ EOF
 >
 > **Q1. 用 `InputStreamReader(InputStream, Charset)`**——它实现了 `Reader` 接口，内部调用 `CharsetDecoder` 把字节解码为字符，必须指定编码（推荐 `StandardCharsets.UTF_8`）。
 >
-> **Q2. 使用平台默认编码**——JDK 17 之前是 `Charset.defaultCharset()`，Windows 中文版通常是 `GBK`，Linux 通常是 `UTF-8`。风险：跨平台读取 UTF-8 文件时在 Windows 乱码。JDK 11 起 `FileReader` 提供了带 `Charset` 参数的构造器，应始终指定编码。
+> **Q2. 使用 `Charset.defaultCharset()`。JDK 18 起 JEP 400 把标准默认值统一为 UTF-8；JDK 17 及更早版本会随系统区域设置变化,而 JDK 18+ 仍可用 `-Dfile.encoding=COMPAT` 恢复旧行为。**因此协议、持久化文件和跨版本迁移仍应显式传 `StandardCharsets.UTF_8`（或文件实际编码）。
 >
 > **Q3. `BufferedInputStream` 内部维护一个字节数组缓冲（默认8192字节）**。首次 `read()` 触发一次系统调用，从操作系统读取最多8192字节到缓冲区；后续的 `read()` 直接从缓冲区内存读取，无需系统调用，直到缓冲耗尽才再发起一次系统调用。
 >
-> **Q4. `new String(bytes)` 使用平台默认编码解码字节，当文件用 UTF-8 存储而平台默认编码是 GBK 时，字节被按错误的码表解释，输出乱码。**根本原因：字节本身没有语义，编码才赋予语义；解码时必须使用与编码时相同的字符集。
+> **Q4. `new String(bytes)` 使用运行时默认编码解码。JDK 18+ 的默认值通常是 UTF-8,但旧 JDK、兼容模式或非标准运行环境仍可能不同。**根本原因是字节本身没有字符语义；跨系统文件必须让解码字符集与写入时一致,不能把“当前机器刚好可用”当协议。
 >
 > **Q5. `AutoCloseable` 接口**（或其子接口 `Closeable`）。所有标准 IO 流类（`InputStream`、`OutputStream`、`Reader`、`Writer` 及其子类）都实现了 `Closeable`，可直接用于 `try-with-resources`。
 >
@@ -263,7 +265,7 @@ EOF
 >
 > **Q9. `ByteArrayInputStream`**——将 `byte[]` 包装成 `InputStream`，适合在内存中模拟流、测试、或将字节数组传给需要 `InputStream` 的 API。
 >
-> **Q10. 历史原因**：`System.out` 在 JDK 1.0 就存在，那时 `PrintWriter` 还没有；为了向后兼容，`System.out` 保持 `PrintStream` 类型。`PrintStream` 内部用平台默认编码将字符转换为字节，这也是 Windows 控制台中文输出有时乱码的原因之一（控制台编码 ≠ JVM 平台编码）。JDK 17 起 `System.out` 默认使用 UTF-8。
+> **Q10. 历史兼容使 `System.out` 保持 `PrintStream` 类型。它的编码不等同于 `Charset.defaultCharset()`：JEP 400 明确把标准输出和错误输出排除在“默认 UTF-8”改动外,控制台流按 `Console.charset()`/`stdout.encoding` 等运行环境信息决定。**所以文件编码与终端显示要分开诊断,不能用一条“JDK 17 起都为 UTF-8”的规则概括。
 
 ---
 
@@ -271,7 +273,7 @@ EOF
 
 - **运行环境**：GraalVM 25.0.4+7.1（`graalvm-jdk-25.0.4`），Windows 11，编码 UTF-8。
 - **验证方式**：`javac -encoding UTF-8 --release 25 IODemo.java && java IODemo`，UTF-8 读写、Files.readString、HexFormat 输出均与文中一致；`"咖啡"` 字节数 6、`"Java火种"` 字节数 10 通过断言。
-- **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API - java.io](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/package-summary.html)。`Files.readString` 在 JDK 11 引入，JDK 25 无变更。
+- **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API - java.io](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/package-summary.html)、[JEP 400: UTF-8 by Default](https://openjdk.org/jeps/400)。`Files.readString` 在 JDK 11 引入；默认字符集从 JDK 18 起统一为 UTF-8,但控制台编码另有边界。
 
 ---
 

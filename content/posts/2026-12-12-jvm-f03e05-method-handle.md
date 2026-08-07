@@ -5,8 +5,10 @@ series: "jvm-academy"
 season: 3
 episode: 5
 tags: ["Java 25", "MethodHandle", "VarHandle", "Class-File API", "字节码"]
-excerpt: "反射镜照得到但太重。MethodHandle 是直通镜，JIT 可内联，性能接近直接调用；VarHandle 是原子操作的精密齿轮；Class-File API（JDK 25 正式）让你徒手改字节码。卷三在此收官：镜子从笨重的 Method.invoke 进化到可被编译器优化的本机级调用。"
+excerpt: "反射镜照得到但调用路径更动态。MethodHandle 给 JIT 更多内联机会；VarHandle 提供有内存语义的原子访问；Class-File API 已由 JEP 484 在 JDK 24 正式交付。卷三从运行时自省走到受支持的字节码模型。"
 ---
+
+![JVM 火种纪漫画：f03e05-method-handle](/comics/jvm/f03e05-method-handle.png)
 
 > **"MethodHandle 不是「更好的反射」，它是「让 JIT 看得见的调用」。两者都能调用方法，但 MH 的调用图在 JIT 看来和普通 invokevirtual 没什么两样——可以内联、可以消除虚调用、可以逃逸分析。"**
 > — 焰焰，把反射基准和 MethodHandle 基准对比图放在一起
@@ -22,7 +24,7 @@ excerpt: "反射镜照得到但太重。MethodHandle 是直通镜，JIT 可内�
 > 「第三面镜是 `VarHandle`。」焰焰举起一枚硬币：「你想原子地翻转这枚硬币——不用锁、只用一条 CAS 指令。以前要用 `Unsafe`，那是后门；JDK 9 之后用 `VarHandle`，这是官方正门。`compareAndSet`、`getAndAdd`、`getVolatile`——所有 Unsafe 的原子操作，`VarHandle` 都有安全版本。」
 
 > **〔3〕**
-> 「第四面镜是 Class-File API。」焰焰打开一个 `.class` 文件的十六进制视图：「JDK 25 正式把它纳入标准库（`java.lang.classfile`）。以前改字节码要么用 ASM，要么用 Javassist——现在 JDK 自带了，不需要第三方依赖。你可以在运行时读取、分析、甚至生成全新的类字节码。」
+> 「第四面镜是 Class-File API。」焰焰打开一个 `.class` 文件的十六进制视图：「JEP 484 已在 JDK 24 把它正式纳入标准库（`java.lang.classfile`）。它提供受支持的 class-file 读写模型,但不因此自动替代所有 ASM/Javassist 使用场景——生态插件、版本兼容和变换能力仍要按项目评估。」
 
 > **〔4〕**
 > 阿零翻看这三卷的路线图：枚举的类型安全 → 反射的运行时自省 → MethodHandle 的可内联调用 → Class-File API 的字节码操控。焰焰总结：「这是从『写代码』到『操控代码本身』的路——Java 的元编程工具箱。卷三到这里收官，下一卷进入并发真正的深水区：虚拟线程。」
@@ -200,7 +202,7 @@ String s3 = (String) receiptMH.invokeExact(o); // ✅ 最快
 //    演示中 version 字段标记了 volatile，保证多线程可见
 
 // ─── Class-File API ──────────────────────────────────────────
-// JDK 25 正式，取代第三方 ASM/Javassist
+// JEP 484 在 JDK 24 正式；是否替代第三方库取决于项目需求
 // parse() 是只读；transform() 可修改；build() 从头生成
 // 生成的 byte[] 可用 ClassLoader.defineClass() 加载为 Class<?>
 ```
@@ -273,7 +275,7 @@ jcmd <pid> Compiler.directives_print
 | `MethodHandles.lookup().findVirtual/findGetter` | JDK 7 | 基础查找 API |
 | `MethodHandles.privateLookupIn()` | **JDK 9** | 访问其他类私有成员，取代 Reflection hack |
 | `VarHandle` | **JDK 9** | 原子操作正门，替代 `sun.misc.Unsafe` |
-| `java.lang.classfile`（Class-File API）| **JDK 24 Preview / JDK 25 正式** | 标准库内置字节码操作，替代 ASM |
+| `java.lang.classfile`（Class-File API）| **JDK 24 正式** | JEP 484；标准库内置 class-file 读写与变换模型 |
 | 本话代码运行环境 | JDK 25 | ✅ Class-File API 正式可用 |
 
 ---
@@ -343,7 +345,7 @@ jcmd <pid> Compiler.directives_print
 
 - **运行环境**：GraalVM 25.0.4+7.1（`graalvm-jdk-25.0.4`），Windows 11，编码 UTF-8。
 - **验证方式**：`javac -encoding UTF-8 --release 25 MirrorDemo.java && java MirrorDemo`；MethodHandle 调用 private 方法/字段成功；VarHandle CAS 操作原子性验证（true/false）；Class-File API 解析 Order.class 输出类名与方法；性能基准实测（反射 193ms vs MH 18ms）与文中一致。
-- **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[JEP 484 Class-File API](https://openjdk.org/jeps/484)（JDK 24 Preview）/[JDK 25 正式](https://openjdk.org/jeps/XXX)、[java.lang.invoke 包文档](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/invoke/package-summary.html)。
+- **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[JEP 484 Class-File API](https://openjdk.org/jeps/484)（JDK 24 正式）、[java.lang.invoke 包文档](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/invoke/package-summary.html)。
 
 ---
 
@@ -354,4 +356,3 @@ jcmd <pid> Compiler.directives_print
 卷四进入并发真正的深水区：**虚拟线程**（JDK 21 正式 / JDK 25 稳固）。
 
 Project Loom 终结了「一请求一平台线程」的时代——百万虚拟线程、结构化并发、作用域值。焰焰带阿零用 200 行代码模拟一个接受 10 万并发请求的咖啡站，平台线程 OOM，虚拟线程轻松通过。
-

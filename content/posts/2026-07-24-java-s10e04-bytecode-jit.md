@@ -5,6 +5,8 @@ summary: "服务每次重启都要慢上几分钟,没人动一行代码,它却�
 tags: [Java, Java漫画, JVM, 字节码, JIT, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e04-bytecode-jit](/comics/java/s10e04-bytecode-jit.png)
+
 # 《从零开始学 Java》83 · 字节码与 JIT:越跑越快的秘密
 
 > 连载特刊 · 番外卷三「引擎室」第 4 话 · 基线 Java 25(最新 LTS)

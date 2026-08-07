@@ -5,6 +5,8 @@ summary: "加第九个口味要改五处签名?豆豆把八个 boolean 收编进
 tags: [Java, Java漫画, 位运算, 位图, 补码, HashMap, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s08e02-bitwise](/comics/java/s08e02-bitwise.png)
+
 # 《从零开始学 Java》58 · 位运算与口味开关
 
 > 连载特刊 · 番外卷一「语言宝库」第 2 话 · 基线 Java 25(最新 LTS)

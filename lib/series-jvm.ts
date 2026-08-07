@@ -24,6 +24,12 @@ export const JVM_SERIES_META = {
   tagline: "Java 线教你会写,这一部带你钻进烘豆炉——看懂 JDK 21→25 每一次进化在 JVM 里到底烧了什么,顺手补齐类库欠下的债。",
   project: "把豆豆咖啡站后厨升级到 Java 25",
   storageKey: "jvm-academy:completed",
+  comicCast: {
+    title: "遇见炉中老住户焰焰",
+    description: "炭黑鳞片里藏着余烬，尾巴会随代码热度由暗红烧到亮金。焰焰负责把每一行现代 Java 送进炉底，用可复现的证据解释它究竟烧了什么。",
+    image: "/comics/jvm/yanyan-character-sheet",
+    alt: "《JVM 火种纪》角色焰焰设定页",
+  },
 } as const;
 
 export const JVM_SEASONS: JavaSeason[] = [
@@ -89,7 +95,7 @@ export const JVM_SEASONS: JavaSeason[] = [
       { season: 4, episode: 2, title: "临时工的分身术", summary: "挂载/卸载与载体线程:临时工一等咖啡机就灵魂出窍挂上衣架,肉身立刻服务下一位;JFR 看事件雨。", chapterType: "comic", projectStage: "看见线程灵魂出窍", technologies: ["载体线程", "挂载/卸载", "JFR"], jobSkills: ["并发", "JVM"], status: "published", slug: "2026-12-26-jvm-f04e02-mount-unmount" },
       { season: 4, episode: 3, title: "拔掉图钉", summary: "synchronized 去钉住(JEP 491):版本残影重演 21 时代的图钉,「快改 ReentrantLock」的旧攻略可以烧了。", chapterType: "incident", projectStage: "旧攻略纠错现场", technologies: ["synchronized", "pinning", "JEP 491"], jobSkills: ["并发", "排障"], status: "published", slug: "2027-01-02-jvm-f04e03-pinning" },
       { season: 4, episode: 4, title: "传物不传锅", summary: "Scoped Values vs ThreadLocal:十万人背十万背包换成走廊公告牌,进走廊能看、出走廊自动失效。", chapterType: "comic", projectStage: "上下文改走公告牌", technologies: ["ScopedValue", "ThreadLocal"], jobSkills: ["并发"], status: "published", slug: "2027-01-09-jvm-f04e04-scoped-value" },
-      { season: 4, episode: 5, title: "并发不散养", summary: "结构化并发 StructuredTaskScope:散养猫式 fork 改成带围栏的亲子任务园,一个孩子摔倒全组安全撤离。", chapterType: "comic", projectStage: "子任务进围栏", technologies: ["StructuredTaskScope"], jobSkills: ["并发"], status: "published", slug: "2027-01-16-jvm-f04e05-structured-scope" },
+      { season: 4, episode: 5, title: "并发不散养", summary: "StructuredTaskScope 第五次预览:用 JDK 25 的 open + Joiner 管住子任务生命周期,并写清失败、超时与协作式取消的边界。", chapterType: "comic", projectStage: "子任务进围栏", technologies: ["StructuredTaskScope", "Joiner", "Preview API"], jobSkills: ["并发"], status: "published", slug: "2027-01-16-jvm-f04e05-structured-scope" },
       { season: 4, episode: 6, title: "何时仍需未来", summary: "CompletableFuture 的取舍:三方比价场景摆出决策天平——编排/超时/合并用 CF,同步直写用虚拟线程。", chapterType: "reference", projectStage: "三方比价的决策天平", technologies: ["CompletableFuture", "虚拟线程"], jobSkills: ["并发"], status: "published", slug: "2027-01-23-jvm-f04e06-completable-future" },
       { season: 4, episode: 7, title: "流水线魔改", summary: "卷终:Stream Gatherers 开放自定义工位,阿零焊了个滑动窗口,实时算最近 5 分钟出杯速率。", chapterType: "project", projectStage: "扛住百万并发 · jvm-v4 百万并发", technologies: ["Stream Gatherers", "综合"], jobSkills: ["函数式", "并发"], status: "published", slug: "2027-01-30-jvm-f04e07-stream-gatherers" },
     ],
@@ -99,14 +105,14 @@ export const JVM_SEASONS: JavaSeason[] = [
     code: "F5",
     title: "炉心与未来篇",
     subtitle: "JVM 内功与 2026 视野",
-    goal: "钻进炉心:JIT 热身、分代 GC、JFR 黑匣子与 Leyden 抢跑,最后翻开《JEP 编年史》未写完的章节望向 Valhalla 与 JDK 26。",
-    covers: ["JIT 与 GC", "JFR 可观测", "Valhalla 与 JDK 26"],
+    goal: "钻进炉心:JIT 热身、分代 GC、JFR 黑匣子与 Leyden 抢跑,最后把稳定 API、孵化器与 Valhalla 研究项目分层核对。",
+    covers: ["JIT 与 GC", "JFR 可观测", "Leyden 与平台演进边界"],
     episodes: [
       { season: 5, episode: 1, title: "尾巴变红之前", summary: "JVM 运行时区域与 JIT 分层编译:方法越热焰焰尾巴越红,C1 是速写素描、C2 是精修油画。", chapterType: "comic", projectStage: "看懂压测为何要预热", technologies: ["JIT", "C1/C2", "-XX:+PrintCompilation"], jobSkills: ["JVM"], status: "published", slug: "2027-02-06-jvm-f05e01-jit-tiered" },
-      { season: 5, episode: 2, title: "豆渣分代清理术", summary: "分代 ZGC 与 GC 选型决策树:新渣当场扬掉、老渣偶尔深清,ZGC 清渣时炉子不停火(亚毫秒暂停)。", chapterType: "comic", projectStage: "挂上 GC 选型决策树", technologies: ["分代 ZGC", "G1", "Shenandoah"], jobSkills: ["JVM", "GC 调优"], status: "published", slug: "2027-02-13-jvm-f05e02-gc-zgc" },
+      { season: 5, episode: 2, title: "豆渣分代清理术", summary: "分代 ZGC 与 GC 选型:厘清 JDK 23 的‘ZGC 默认模式’和 JDK 默认收集器不是一回事,延迟结论回到真实负载验证。", chapterType: "comic", projectStage: "挂上 GC 选型决策树", technologies: ["分代 ZGC", "G1", "JEP 474", "JEP 490"], jobSkills: ["JVM", "GC 调优"], status: "published", slug: "2027-02-13-jvm-f05e02-gc-zgc" },
       { season: 5, episode: 3, title: "黑匣子与显微镜", summary: "JFR 基础与自定义事件:深夜卡顿无人在场,调出黑匣子回放案发现场,业务指标埋进同一条时间线。", chapterType: "incident", projectStage: "深夜卡顿回放破案", technologies: ["JFR", "自定义事件", "CPU-time 剖析"], jobSkills: ["可观测性", "JVM 排障"], status: "published", slug: "2027-02-20-jvm-f05e03-jfr" },
-      { season: 5, episode: 4, title: "瘦身与抢跑", summary: "紧凑对象头与 AOT 缓存:杯套 96mm 裁到 64mm 整仓多放两成杯子,Leyden 是开店前夜的彩排录像。", chapterType: "lab", projectStage: "堆省两成 + 开店即巅峰", technologies: ["紧凑对象头", "AOT 缓存", "Leyden"], jobSkills: ["JVM 调优"], status: "published", slug: "2027-02-27-jvm-f05e04-aot-compact-headers" },
-      { season: 5, episode: 5, title: "炉火向明天", summary: "全剧终:FFM 打通 C 世界传送门、value class 让对象扁成拼豆、JDK 26 的 HTTP/3 快递已到门口——焰焰把火种交给阿零。", chapterType: "project", projectStage: "火种交接 · jvm-v5 炉心大成", technologies: ["FFM", "值类", "Vector API", "JDK 26"], jobSkills: ["JVM", "技术视野"], status: "published", slug: "2027-03-06-jvm-f05e05-ffm-value-finale" },
+      { season: 5, episode: 4, title: "瘦身与抢跑", summary: "JEP 519 紧凑对象头与 Leyden AOT 缓存:区分产品特性、类加载/链接缓存和方法画像,不把 JEP 484 误写成机器码缓存。", chapterType: "lab", projectStage: "对象布局 + 启动证据", technologies: ["JEP 519", "JEP 483", "JEP 514", "JEP 515"], jobSkills: ["JVM 调优"], status: "published", slug: "2027-02-27-jvm-f05e04-aot-compact-headers" },
+      { season: 5, episode: 5, title: "炉火向明天", summary: "全剧终:FFM 已正式,Vector API 仍在孵化,Valhalla 值类仍是 EA 研究;JDK 26 HTTP/3 已交付且需显式选择。", chapterType: "project", projectStage: "火种交接 · jvm-v5 炉心大成", technologies: ["FFM", "Vector API", "Valhalla", "JDK 26"], jobSkills: ["JVM", "技术视野"], status: "published", slug: "2027-03-06-jvm-f05e05-ffm-value-finale" },
     ],
   },
 ];

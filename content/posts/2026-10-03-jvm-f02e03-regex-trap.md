@@ -15,6 +15,8 @@ excerpt: "Pattern.compile() 是铸捕兽夹，Matcher.find() 是放夹子。夹�
 
 ## 🎬 开场：优惠码淹没在流水里
 
+![《JVM 火种纪》10 · 文本捕兽夹——Pattern 与 Matcher 六格漫画](/comics/jvm/f02e03-regex-trap.png)
+
 > **〔1〕**
 > 阿零面对一堆小票原始日志，每行格式混乱，优惠码散落其中：
 >

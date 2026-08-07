@@ -2,10 +2,12 @@ import "./write.css";
 import type { Route } from "next";
 import { redirect } from "next/navigation";
 import { revalidatePath, updateTag } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { BLOG_COOKIE, blogSessionToken, isBlogAuthed, isBlogSessionToken } from "@/lib/blog-auth";
 import { createDatabasePost, databaseProviderLabel, deleteDatabasePost, hasDatabaseConfig, updateDatabasePost } from "@/lib/db";
 import { getPublishedPost, PUBLIC_POSTS_CACHE_TAG } from "@/lib/posts";
 import WriteEditorClient from "./WriteEditorClient";
+import { isSameOriginRequest } from "@/lib/request-origin";
 import { safeCompare } from "@/lib/safe-compare";
 
 export const dynamic = "force-dynamic";
@@ -47,26 +49,31 @@ function revalidateBlog(slug?: string) {
   if (slug) revalidatePath(`/posts/${slug}`);
 }
 
-// Exact same admin gate the create flow has always used: form token OR the
-// httpOnly `blog_admin_token` cookie, checked against BLOG_ADMIN_TOKEN. On the
-// first successful token submit it persists the cookie, mirroring /api/auth.
+// Exact same admin gate the create flow has always used: form token OR a
+// derived httpOnly session cookie. The raw BLOG_ADMIN_TOKEN is never stored in
+// the browser; on the first successful token submit the derived cookie is set.
 async function requireAdminOrRedirect(formData: FormData): Promise<void> {
+  if (!isSameOriginRequest(await headers())) {
+    redirect("/write?error=bad-origin" as Route);
+  }
+
   const expectedToken = process.env.BLOG_ADMIN_TOKEN?.trim();
   const cookieStore = await cookies();
-  const cookieToken = cookieStore.get("blog_admin_token")?.value?.trim();
+  const cookieToken = cookieStore.get(BLOG_COOKIE)?.value ?? "";
   const formToken = String(formData.get("token") ?? "").trim();
-  const token = formToken || cookieToken || "";
 
   if (!expectedToken) {
     redirect("/write?error=missing-token-env" as Route);
   }
 
-  if (!safeCompare(token, expectedToken)) {
+  const cookieAuthed = isBlogSessionToken(cookieToken, expectedToken);
+  const formAuthed = Boolean(formToken) && safeCompare(formToken, expectedToken);
+  if (!cookieAuthed && !formAuthed) {
     redirect("/write?error=bad-token" as Route);
   }
 
-  if (!cookieToken) {
-    cookieStore.set("blog_admin_token", token, {
+  if (!cookieAuthed) {
+    cookieStore.set(BLOG_COOKIE, blogSessionToken(expectedToken), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -137,15 +144,13 @@ function errorMessage(code?: string): string | undefined {
   if (!code) return undefined;
   if (code === "missing-token-env") return "缺少 BLOG_ADMIN_TOKEN：为了安全，网页写入必须先配置写入密钥。";
   if (code === "bad-token") return "写入密钥不正确。";
+  if (code === "bad-origin") return "请求来源不受信任，请从本站写作台提交。";
   if (code === "missing-slug") return "缺少要操作的文章标识（slug）。";
   return decodeURIComponent(code);
 }
 
 async function checkAuth(): Promise<boolean> {
-  const expected = process.env.BLOG_ADMIN_TOKEN?.trim();
-  if (!expected) return false;
-  const cookieStore = await cookies();
-  return safeCompare(cookieStore.get("blog_admin_token")?.value?.trim() ?? "", expected);
+  return isBlogAuthed();
 }
 
 export default async function WritePage({ searchParams }: Props) {

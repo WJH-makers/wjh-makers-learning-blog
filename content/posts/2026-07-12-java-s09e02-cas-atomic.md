@@ -5,6 +5,8 @@ summary: "压测二十万单,volatile 计数还是丢了几千笔:count++ 是三
 tags: [Java, Java漫画, CAS, 原子类, LongAdder, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s09e02-cas-atomic](/comics/java/s09e02-cas-atomic.png)
+
 # 《从零开始学 Java》71 · 无锁计数:CAS 与原子家族
 
 > 连载特刊 · 番外卷二「并发深水区」第 2 话 · 基线 Java 25(最新 LTS)

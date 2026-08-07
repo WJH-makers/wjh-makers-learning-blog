@@ -70,7 +70,7 @@ export default function SeriesLanding({ series }: { series: SeriesRef }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(seriesJsonLd) }} />
       <section className="hero">
         <div>
-          <p className="eyebrow">连载特刊 · 蓝图先行</p>
+          <p className="eyebrow">连载特刊 · {done > 0 ? "正在连载" : "蓝图先行"}</p>
           <h1>{series.title}</h1>
           <p className="hero-text">{series.tagline}</p>
           <div className="hero-actions">
@@ -92,6 +92,21 @@ export default function SeriesLanding({ series }: { series: SeriesRef }) {
           </p>
         </div>
       </section>
+
+      {series.comicCast && (
+        <section className="comic-intro" aria-labelledby="series-comic-cast-title">
+          <div>
+            <p className="eyebrow">Comic Cast · 漫画设定</p>
+            <h2 id="series-comic-cast-title">{series.comicCast.title}</h2>
+            <p>{series.comicCast.description}</p>
+          </div>
+          <picture>
+            <source type="image/avif" srcSet={`${series.comicCast.image}-512.avif 512w, ${series.comicCast.image}.avif 1024w`} sizes="(max-width: 720px) 94vw, 420px" />
+            <source type="image/webp" srcSet={`${series.comicCast.image}-512.webp 512w, ${series.comicCast.image}.webp 1024w`} sizes="(max-width: 720px) 94vw, 420px" />
+            <img src={`${series.comicCast.image}.webp`} alt={series.comicCast.alt} width={1024} height={1536} loading="eager" decoding="async" />
+          </picture>
+        </section>
+      )}
 
       {progressSeasons.length > 0 && (
         <JavaProgress seasons={progressSeasons} storageKey={series.storageKey} />

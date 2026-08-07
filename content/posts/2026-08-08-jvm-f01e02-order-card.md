@@ -22,6 +22,8 @@ tags: [Java, Java漫画, JVM, record, Java25, 阿零与焰焰]
 
 ## 二、漫画 · 出票口的安检门
 
+![《JVM 火种纪》02 · 订单卡片革命——record 出票口六格漫画](/comics/jvm/f01e02-order-card.png)
+
 > **〔1〕** 阿零搬出旧 `Order`：「字段、构造器、getter、`equals`、`hashCode`、`toString`……一张订单卡为什么要盖这么多章?」焰焰尾巴扫过四十行代码，只剩一个 record 声明。
 
 > **〔2〕** 焰焰把三个组件钉进类型签名：`drink`、`cups`、`unitCents`。卡片背面自动浮出访问器、结构化相等性和 `toString`。「你少写的那几行，编译器一行没少盖。」

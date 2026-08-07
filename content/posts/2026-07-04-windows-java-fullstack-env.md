@@ -5,6 +5,8 @@ summary: 从复盘出发的 Windows Java 全栈环境完整手册：JDK 版本�
 tags: [Windows, Java, Git, MySQL, Maven, Gradle, mise, IntelliJ, 环境配置]
 ---
 
+![Java 全栈环境漫画：从 JDK 到可复现验证](/comics/java/java-fullstack-env-map.png)
+
 ## 今天完成了什么
 
 - 统一了 GitHub 连接方式：优先使用 SSH，避免在 remote URL 中出现 token。

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { clientIp } from "@/lib/client-ip";
 import { findJavaLab, JAVA_LAB_LIMITS } from "@/lib/java-labs";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { isSameOriginRequest } from "@/lib/request-origin";
 import {
   judge0SubmissionUrl,
   parseJavaRunRequest,
@@ -37,7 +38,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const ip = clientIp(await headers());
+  const headersList = await headers();
+  if (!isSameOriginRequest(headersList)) {
+    return NextResponse.json({ error: "请求来源不受信任。", code: "bad_origin" }, { status: 403 });
+  }
+
+  const ip = clientIp(headersList);
   if (!checkRateLimit(ip, "java-run" ).allowed) {
     return NextResponse.json({ error: "运行过于频繁，请稍后重试。", code: "rate_limited" }, { status: 429 });
   }

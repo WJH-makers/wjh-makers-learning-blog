@@ -8,6 +8,8 @@ tags: ["Java 25", "Queue", "ArrayDeque", "PriorityQueue", "集合", "数据结�
 excerpt: "取餐队 FIFO 靠 ArrayDeque 双门神，VIP 优先出杯是 PriorityQueue 小顶堆。LinkedList 退休了——双端队列和优先队列都有更专的实现。"
 ---
 
+![JVM 火种纪漫画：f02e05-queue-art](/comics/jvm/f02e05-queue-art.png)
+
 > **"队列有两种错误：用错了类，和用 LinkedList 当队列。"**
 > — 焰焰，看着代码里的 `new LinkedList<>()` 说
 

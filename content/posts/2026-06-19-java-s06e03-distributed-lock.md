@@ -22,6 +22,8 @@ tags: [Java, Java漫画, 分布式锁, Redis, Redisson, 阿零与豆豆]
 
 ## 二、漫画 · 三把各管各的锁
 
+![《从零开始学 Java》48 · 分布式锁——阿零与豆豆分镜漫画](/comics/java/s06e03-distributed-lock.png)
+
 > **〔1〕** 三台一模一样的咖啡站并排开张,门口各挂一把锁。可后厨的库存本子**只有一本**,三家共用。
 > 豆豆(叼豆子):「`synchronized`、`ReentrantLock`——都是 JVM 进程内的锁。跨进程?它俩两眼一抹黑。」
 

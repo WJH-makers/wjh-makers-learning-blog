@@ -5,6 +5,8 @@ summary: "线程池里,上一单 VIP 的 9 折残留在托盘上,普通顾客也
 tags: [Java, Java漫画, ThreadLocal, 内存泄漏, 并发, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s09e06-threadlocal](/comics/java/s09e06-threadlocal.png)
+
 # 《从零开始学 Java》75 · 一人一托盘:ThreadLocal
 
 > 连载特刊 · 番外卷二「并发深水区」第 6 话 · 基线 Java 25(最新 LTS)

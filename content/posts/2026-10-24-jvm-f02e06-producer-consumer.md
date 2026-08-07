@@ -8,6 +8,8 @@ tags: ["Java 25", "BlockingQueue", "生产者-消费者", "并发", "Synchronous
 excerpt: "出杯台满了咖啡师干等、空了取餐员干瞪眼——BlockingQueue 把等待逻辑内置在队列里，生产者和消费者不用自己写 wait/notify。SynchronousQueue 是手递手窗口，传递即握手。"
 ---
 
+![JVM 火种纪漫画：f02e06-producer-consumer](/comics/jvm/f02e06-producer-consumer.png)
+
 > **"wait/notify 是手动档，BlockingQueue 是自动挡——功能一样，但你会开错的可能性少了九成。"**
 > — 焰焰，关掉一份用 synchronized+wait 实现的生产者-消费者代码
 

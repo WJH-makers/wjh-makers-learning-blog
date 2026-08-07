@@ -5,6 +5,8 @@ summary: "豆豆按下「百万顾客」压测钮,200 条平台线程全趴在 I
 tags: [Java, Java漫画, 虚拟线程, Scoped Values, 并发, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s09e09-virtual-threads](/comics/java/s09e09-virtual-threads.png)
+
 # 《从零开始学 Java》78 · 百万顾客:虚拟线程
 
 > 连载特刊 · 番外卷二「并发深水区」第 9 话 · 基线 Java 25(最新 LTS)

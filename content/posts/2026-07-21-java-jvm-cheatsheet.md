@@ -5,8 +5,7 @@ summary: "JVM 内存结构 · GC 日志读法 · jcmd/jstack/jmap/jstat 排查�
 tags: [JVM, JDK, Java, GC, OOM, JFR, jstack, jmap, Maven, Gradle, systemctl, Vim]
 ---
 
-
-# Java JVM 排障 + Maven/Gradle 命令速查
+![JVM 排障漫画：从告警到证据链](/comics/jvm/jvm-troubleshooting-cheatsheet.png)
 
 > 从[全栈指令速查大全](/posts/2026-07-15-command-reference-cheatsheet)拆分。本篇聚焦 **JVM 线上排障**——内存结构、GC 日志读法、诊断工具（jcmd/jstack/jmap/jstat）、OOM 与 CPU 飙高套路、JFR 飞行记录仪、常用启动参数,并保留 Maven/Gradle 构建与常用运维命令。基线:JDK 25 / Ubuntu 24.04 / PowerShell 7。
 

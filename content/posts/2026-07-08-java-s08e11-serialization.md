@@ -5,6 +5,8 @@ summary: "咖啡站一断电,内存里的挂单全灭。Serializable 冷冻舱�
 tags: [Java, Java漫画, 序列化, Serializable, serialVersionUID, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s08e11-serialization](/comics/java/s08e11-serialization.png)
+
 # 《从零开始学 Java》67 · 序列化:让订单穿越重启
 
 > 连载特刊 · 番外卷一「语言宝库」第 11 话 · 基线 Java 25(最新 LTS)

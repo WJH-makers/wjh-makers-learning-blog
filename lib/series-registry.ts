@@ -43,6 +43,12 @@ export type SeriesRef = {
   route: Route; // 系列首页路由(typedRoutes 校验),如 /java、/cli、/cafe
   storageKey: string; // localStorage 进度 key
   seasons: JavaSeason[];
+  comicCast?: {
+    title: string;
+    description: string;
+    image: string;
+    alt: string;
+  };
 };
 
 /** 各 series 文件的 META 结构一致,这里统一收口,新开一条线只加一行。 */
@@ -52,6 +58,7 @@ type SeriesMetaLike = {
   readonly tagline: string;
   readonly project?: string;
   readonly storageKey?: string;
+  readonly comicCast?: SeriesRef["comicCast"];
 };
 
 function defineSeries(
@@ -68,6 +75,7 @@ function defineSeries(
     route,
     storageKey: storageKeyOverride ?? meta.storageKey ?? `${route.slice(1)}-academy:completed`,
     seasons,
+    comicCast: meta.comicCast,
   };
 }
 

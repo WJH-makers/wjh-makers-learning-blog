@@ -1,189 +1,513 @@
 {
-  "alings-and-doudou-character-sheet": {
+  "java/alings-and-doudou-character-sheet": {
     "w": 1055,
     "h": 1491
   },
-  "s01e01-first-program-speaks": {
+  "java/java-fullstack-env-map": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/java-interview-production-playbook": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/maven-gradle-build-pipeline": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s01e01-first-program-speaks": {
     "w": 1055,
     "h": 1491
   },
-  "s01e02-variable-warehouse": {
+  "java/s01e02-variable-warehouse": {
     "w": 1055,
     "h": 1491
   },
-  "s01e03-operators": {
+  "java/s01e03-operators": {
     "w": 887,
     "h": 1774
   },
-  "s01e04-if": {
+  "java/s01e04-if": {
     "w": 1024,
     "h": 1536
   },
-  "s01e05-switch": {
+  "java/s01e05-switch": {
     "w": 1024,
     "h": 1536
   },
-  "s01e06-loops": {
+  "java/s01e06-loops": {
     "w": 1024,
     "h": 1536
   },
-  "s01e07-arrays": {
+  "java/s01e07-arrays": {
     "w": 1024,
     "h": 1536
   },
-  "s01e08-methods": {
+  "java/s01e08-methods": {
     "w": 1024,
     "h": 1536
   },
-  "s01e09-scanner": {
+  "java/s01e09-scanner": {
     "w": 1024,
     "h": 1536
   },
-  "s01e10-string": {
+  "java/s01e10-string": {
     "w": 1024,
     "h": 1536
   },
-  "s01e11-bugs": {
+  "java/s01e11-bugs": {
     "w": 1024,
     "h": 1536
   },
-  "s01e12-coffee-machine": {
+  "java/s01e12-coffee-machine": {
     "w": 1024,
     "h": 1536
   },
-  "s02e01-class": {
+  "java/s02e01-class": {
     "w": 1024,
     "h": 1536
   },
-  "s02e02-encapsulation": {
+  "java/s02e02-encapsulation": {
     "w": 1024,
     "h": 1536
   },
-  "s02e03-inheritance": {
+  "java/s02e03-inheritance": {
     "w": 1024,
     "h": 1536
   },
-  "s02e04-polymorphism": {
+  "java/s02e04-polymorphism": {
     "w": 1024,
     "h": 1536
   },
-  "s02e05-interface": {
+  "java/s02e05-interface": {
     "w": 1024,
     "h": 1536
   },
-  "s02e06-abstract": {
+  "java/s02e06-abstract": {
     "w": 1024,
     "h": 1536
   },
-  "s02e07-object": {
+  "java/s02e07-object": {
     "w": 1024,
     "h": 1536
   },
-  "s02e08-list": {
+  "java/s02e08-list": {
     "w": 1024,
     "h": 1536
   },
-  "s02e09-set": {
+  "java/s02e09-set": {
     "w": 1024,
     "h": 1536
   },
-  "s02e10-map": {
+  "java/s02e10-map": {
     "w": 1024,
     "h": 1536
   },
-  "s02e11-generics": {
+  "java/s02e11-generics": {
     "w": 1024,
     "h": 1536
   },
-  "s02e12-oop-cafe": {
+  "java/s02e12-oop-cafe": {
     "w": 1024,
     "h": 1536
   },
-  "s03e01-exception": {
+  "java/s03e01-exception": {
     "w": 1024,
     "h": 1536
   },
-  "s03e02-custom-exception": {
+  "java/s03e02-custom-exception": {
     "w": 1024,
     "h": 1536
   },
-  "s03e03-files": {
+  "java/s03e03-files": {
     "w": 1024,
     "h": 1536
   },
-  "s03e04-stream": {
+  "java/s03e04-stream": {
     "w": 1024,
     "h": 1536
   },
-  "s03e05-maven": {
+  "java/s03e05-maven": {
     "w": 1024,
     "h": 1536
   },
-  "s03e06-junit": {
+  "java/s03e06-junit": {
     "w": 1024,
     "h": 1536
   },
-  "s03e07-git": {
+  "java/s03e07-git": {
     "w": 1024,
     "h": 1536
   },
-  "s03e08-multimodule": {
+  "java/s03e08-multimodule": {
     "w": 1024,
     "h": 1536
   },
-  "s04e01-http": {
+  "java/s04e01-http": {
     "w": 1024,
     "h": 1536
   },
-  "s04e02-springboot": {
+  "java/s04e02-springboot": {
     "w": 1024,
     "h": 1536
   },
-  "s04e03-layers": {
+  "java/s04e03-layers": {
     "w": 1024,
     "h": 1536
   },
-  "s04e04-mysql": {
+  "java/s04e04-mysql": {
     "w": 1024,
     "h": 1536
   },
-  "s04e05-validation": {
+  "java/s04e05-validation": {
     "w": 1024,
     "h": 1536
   },
-  "s04e06-security": {
+  "java/s04e06-security": {
     "w": 1024,
     "h": 1536
   },
-  "s04e07-api": {
+  "java/s04e07-api": {
     "w": 1024,
     "h": 1536
   },
-  "s05e01-network": {
+  "java/s05e01-network": {
     "w": 1024,
     "h": 1536
   },
-  "s05e02-threadpool": {
+  "java/s05e02-threadpool": {
     "w": 1024,
     "h": 1536
   },
-  "s05e03-lock": {
+  "java/s05e03-lock": {
     "w": 1024,
     "h": 1536
   },
-  "s05e04-cpu": {
+  "java/s05e04-cpu": {
     "w": 1024,
     "h": 1536
   },
-  "s05e05-oom": {
+  "java/s05e05-oom": {
     "w": 1024,
     "h": 1536
   },
-  "s05e06-gc": {
+  "java/s05e06-gc": {
     "w": 1024,
     "h": 1536
   },
-  "s06e01-why-distributed": {
+  "java/s06e01-why-distributed": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s06e02-redis": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s06e03-distributed-lock": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s06e04-mq": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s06e05-service-gateway": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s06e06-docker": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s07e01-k8s": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s07e02-cicd": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s07e03-observability": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s07e04-tracing": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s07e05-finale": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e01-pass-by-value": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e02-bitwise": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e03-autoboxing": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e04-bigdecimal": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e05-enum": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e06-java-time": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e07-regex": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e08-queue": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e09-sorted": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e10-io-streams": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e11-serialization": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e12-functional": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s08e13-renovation": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s09e01-jmm-volatile": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s09e02-cas-atomic": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s09e03-sync-lock-upgrade": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s09e04-aqs-locks": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s09e05-concurrenthashmap": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s09e06-threadlocal": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s09e07-sync-tools": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s09e08-completablefuture": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s09e09-virtual-threads": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s09e10-concurrency-finale": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e01-reflection": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e02-annotation-proxy": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e03-classloader": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e04-bytecode-jit": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e05-gc-collectors": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e06-mysql-index": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e07-mysql-mvcc": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e08-redis-internals": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e09-spring-bean": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e10-spring-proxy-tx": {
+    "w": 1024,
+    "h": 1536
+  },
+  "java/s10e11-interview-night": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f01e01-furnace-guest": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f01e02-order-card": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f01e03-menu-seal": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f01e04-sort-pipeline": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f01e05-destruct": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f01e06-flex-ctor": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f01e07-trinity": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f02e01-two-clocks": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f02e02-dst-case": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f02e03-regex-trap": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f02e04-greedy-regex": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f02e05-queue-art": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f02e06-producer-consumer": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f02e07-byte-stream": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f02e08-nio2-files": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f03e01-enum-badge": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f03e02-enum-tools": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f03e03-reflection": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f03e04-mini-spring": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f03e05-method-handle": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f04e01-virtual-thread": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f04e02-mount-unmount": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f04e03-pinning": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f04e04-scoped-value": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f04e05-structured-scope": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f04e06-completable-future": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f04e07-stream-gatherers": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f05e01-jit-tiered": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f05e02-gc-zgc": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f05e03-jfr": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f05e04-aot-compact-headers": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/f05e05-ffm-value-finale": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/jvm-troubleshooting-cheatsheet": {
+    "w": 1024,
+    "h": 1536
+  },
+  "jvm/yanyan-character-sheet": {
     "w": 1024,
     "h": 1536
   }

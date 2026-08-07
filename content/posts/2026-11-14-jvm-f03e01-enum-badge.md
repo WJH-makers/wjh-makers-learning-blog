@@ -8,6 +8,8 @@ tags: ["Java 25", "enum", "常量特定方法", "switch", "单例"]
 excerpt: "每枚徽章内置折扣算法，不是靠外部 if-else 分拣——焰焰揭秘 enum 是编译器替你 new 好的一组单例，常量特定方法让每个常量有自己的行为，switch 表达式让分拣穷尽无遗漏。"
 ---
 
+![JVM 火种纪漫画：f03e01-enum-badge](/comics/jvm/f03e01-enum-badge.png)
+
 > **"enum 不是 int 的别名——它是一组有名字、有行为、不可伪造的单例对象。把会员等级存 int，是在用哑巴替代会说话的对象。"**
 > — 焰焰，看着 `if (level == 1)` 的分支链说
 

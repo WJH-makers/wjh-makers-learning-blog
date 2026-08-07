@@ -5,6 +5,8 @@ summary: "三张 0.1 元折扣券加起来不等于 0.3,冬歇对账夜账本裂
 tags: [Java, Java漫画, BigDecimal, 浮点数, 金额精度, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s08e04-bigdecimal](/comics/java/s08e04-bigdecimal.png)
+
 # 《从零开始学 Java》60 · BigDecimal 与钱的尊严
 
 > 连载特刊 · 番外卷一「语言宝库」第 4 话 · 基线 Java 25(最新 LTS)

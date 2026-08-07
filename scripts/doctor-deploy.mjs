@@ -4,6 +4,7 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 
 const root = process.cwd();
 const envFiles = [".env.local", ".env", ".env.example"];
+const productionMode = process.argv.includes("--production") || process.env.DEPLOY_ENV === "production";
 function parseEnvFile(file) {
   if (!existsSync(file)) return {};
   const entries = {};
@@ -25,6 +26,16 @@ function loadLocalEnv() {
 
 function isPlaceholder(value) {
   return !value || /<.*>|你的|set-a-long-random-secret/i.test(value);
+}
+
+function isPublicHttpsUrl(value) {
+  if (isPlaceholder(value)) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  } catch {
+    return false;
+  }
 }
 
 async function checkMongo(uri, dbName) {
@@ -77,8 +88,14 @@ console.log(`${status(hasLocalEnv)} Local env file: ${hasLocalEnv ? "found" : "m
 if (!hasLocalEnv) failures.push("local env file");
 
 const hasSiteUrl = !isPlaceholder(env.NEXT_PUBLIC_SITE_URL);
-console.log(`${status(hasSiteUrl)} NEXT_PUBLIC_SITE_URL: ${hasSiteUrl ? "set" : "missing or placeholder"}`);
-if (!hasSiteUrl) failures.push("NEXT_PUBLIC_SITE_URL");
+const publicSiteUrl = isPublicHttpsUrl(env.NEXT_PUBLIC_SITE_URL);
+if (productionMode) {
+  console.log(`${status(publicSiteUrl)} NEXT_PUBLIC_SITE_URL: ${publicSiteUrl ? "public HTTPS" : "must be a public HTTPS URL in production mode"}`);
+  if (!publicSiteUrl) failures.push("NEXT_PUBLIC_SITE_URL production safety");
+} else {
+  console.log(`${status(hasSiteUrl)} NEXT_PUBLIC_SITE_URL: ${hasSiteUrl ? "set for local mode" : "missing or placeholder"}`);
+  if (!hasSiteUrl) failures.push("NEXT_PUBLIC_SITE_URL");
+}
 
 const databaseUrl = env.MONGODB_URI || env.DATABASE_URL;
 const hasDatabaseUrl = !isPlaceholder(databaseUrl);
@@ -91,6 +108,10 @@ if (hasDatabaseUrl !== hasAdminToken) {
   console.log("WARN Publishing configuration: disabled; public Markdown content remains available");
 } else {
   console.log("OK  Publishing configuration: MongoDB and admin token set");
+  if (productionMode && env.BLOG_ADMIN_TOKEN.length < 32) {
+    console.log("ERR Publishing configuration: BLOG_ADMIN_TOKEN must contain at least 32 characters in production mode");
+    failures.push("BLOG_ADMIN_TOKEN production strength");
+  }
   const result = await checkMongo(databaseUrl, env.MONGODB_DB_NAME);
   console.log(`${status(result.ok)} MongoDB Atlas: ${result.message}`);
   if (!result.ok) failures.push("MongoDB Atlas");
@@ -119,5 +140,5 @@ if (failures.length > 0) {
   console.log(`Deployment doctor found ${failures.length} blocking issue(s): ${failures.join(", ")}.`);
   process.exitCode = 1;
 } else {
-  console.log("Local deployment contract is ready. Production still requires the systemd timer and container health checks documented in docs/txcloud-pull-deploy.md.");
+  console.log(`${productionMode ? "Production" : "Local"} deployment contract is ready. Production still requires the systemd timer and container health checks documented in docs/txcloud-pull-deploy.md.`);
 }

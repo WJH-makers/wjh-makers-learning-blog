@@ -1,22 +1,22 @@
-import { cookies } from "next/headers";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { BLOG_COOKIE, blogSessionToken, isBlogAuthed } from "@/lib/blog-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/client-ip";
+import { isSameOriginRequest } from "@/lib/request-origin";
 import { safeCompare } from "@/lib/safe-compare";
 
 export async function GET() {
-  const expected = process.env.BLOG_ADMIN_TOKEN?.trim();
-  const cookieStore = await cookies();
-  const token = cookieStore.get("blog_admin_token")?.value?.trim();
-  const authed = Boolean(expected) && safeCompare(token ?? "", expected ?? "");
-
-  return NextResponse.json({ authed });
+  return NextResponse.json({ authed: await isBlogAuthed() });
 }
 
 export async function POST(request: Request) {
   const headersList = await headers();
   const ip = clientIp(headersList);
+
+  if (!isSameOriginRequest(headersList)) {
+    return NextResponse.json({ ok: false }, { status: 403 });
+  }
 
   if (!checkRateLimit(ip, "login").allowed) {
     return NextResponse.json({ ok: false }, { status: 429 });
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   }
 
   const cookieStore = await cookies();
-  cookieStore.set("blog_admin_token", token, {
+  cookieStore.set(BLOG_COOKIE, blogSessionToken(expected), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

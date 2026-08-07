@@ -5,6 +5,8 @@ summary: "双十一的监控回放里,菜单上的限定特调无声消失——
 tags: [Java, Java漫画, ConcurrentHashMap, 并发容器, HashMap, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s09e05-concurrenthashmap](/comics/java/s09e05-concurrenthashmap.png)
+
 # 《从零开始学 Java》74 · 并发菜单:ConcurrentHashMap
 
 > 连载特刊 · 番外卷二「并发深水区」第 5 话 · 基线 Java 25(最新 LTS)

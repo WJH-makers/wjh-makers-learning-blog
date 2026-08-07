@@ -28,7 +28,7 @@ const baseOrigin = new URL(baseUrl).origin;
 const outputDir = path.resolve(
   process.env.BROWSER_AUDIT_OUTPUT ?? path.join(os.tmpdir(), "wjh-blog-audit", "browser-layout"),
 );
-const articleRoute = "/posts/2026-07-25-java-s01e01-hello";
+const articleRoute = "/posts/2026-05-03-java-s01e01-hello";
 const articleSamples = [
   articleRoute,
   "/posts/2026-07-04-windows-java-fullstack-env",

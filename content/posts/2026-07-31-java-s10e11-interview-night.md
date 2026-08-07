@@ -5,6 +5,8 @@ summary: "咖啡站招后端店员,面试官的椅子第一次属于阿零。背
 tags: [Java, Java漫画, 面试, 并发, 项目实战, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e11-interview-night](/comics/java/s10e11-interview-night.png)
+
 # 《从零开始学 Java》90 · 终章:阿零的面试之夜(番外完结)
 
 > 连载特刊 · 番外卷三「引擎室」第 11 话 · 基线 Java 25(最新 LTS)

@@ -8,6 +8,8 @@ tags: ["Java 25", "ScopedValue", "ThreadLocal", "虚拟线程", "并发"]
 excerpt: "十万虚拟线程各背一个 ThreadLocal 背包 = 十万份数据拷贝常驻内存，还要手动 remove() 防泄漏。ScopedValue（JDK 25 正式）是走廊公告牌：进走廊能看，出走廊自动失效，不持续占内存，天然不可变。"
 ---
 
+![JVM 火种纪漫画：f04e04-scoped-value](/comics/jvm/f04e04-scoped-value.png)
+
 > **"ThreadLocal 是背包：你走到哪儿背到哪儿，忘了卸就一直扛着。ScopedValue 是走廊公告牌：走廊里的人都能看，走出走廊公告牌自动消失，没有泄漏，没有锅。"**
 > — 焰焰，解释为什么虚拟线程时代要换掉 ThreadLocal
 
@@ -354,4 +356,4 @@ after: false
 
 上下文传好了，下一话管好任务的生死。
 
-`StructuredTaskScope`（JDK 25 正式）：把子任务关进「围栏」——父任务等所有子任务完成（`ShutdownOnFailure`）或者任意一个成功（`ShutdownOnSuccess`），子任务失败时父任务自动取消剩余的兄弟任务。不再有「任务启动了但忘了等它结束」的散养问题。
+`StructuredTaskScope`（JDK 25 第五次预览）：把子任务关进「围栏」。JEP 505 已改为 `StructuredTaskScope.open()` + `Joiner`：默认策略等待全部成功或在失败时取消其余任务,竞速则用 `Joiner.anySuccessfulResultOrThrow()`。它仍需 `--enable-preview`,不是正式 API。

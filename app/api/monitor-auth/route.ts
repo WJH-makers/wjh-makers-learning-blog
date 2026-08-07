@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/client-ip";
 import { MONITOR_COOKIE, monitorToken } from "@/lib/monitor-auth";
+import { isSameOriginRequest } from "@/lib/request-origin";
 import { safeCompare } from "@/lib/safe-compare";
 
 // 口令来自环境变量,不再硬编码。未配置则拒绝登录(fail-closed)。
@@ -12,6 +13,10 @@ const MONITOR_PASS = process.env.MONITOR_PASS ?? "";
 export async function POST(request: Request) {
   const headersList = await headers();
   const ip = clientIp(headersList);
+
+  if (!isSameOriginRequest(headersList)) {
+    return NextResponse.json({ ok: false, message: "请求来源不受信任" }, { status: 403 });
+  }
 
   if (!checkRateLimit(ip, "login").allowed) {
     return NextResponse.json({ ok: false, message: "尝试次数过多，请 1 分钟后重试" }, { status: 429 });

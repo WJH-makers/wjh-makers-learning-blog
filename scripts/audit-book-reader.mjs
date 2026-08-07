@@ -20,8 +20,8 @@ const baseUrl = process.env.BROWSER_AUDIT_URL ?? "http://localhost:3021";
 const outputDir = path.resolve(
   process.env.BROWSER_AUDIT_OUTPUT ?? path.join(os.tmpdir(), "wjh-blog-audit", "browser-reader"),
 );
-const startRoute = "/posts/2026-07-25-java-s01e01-hello";
-const nextRoute = "/posts/2026-07-26-java-s01e02-variables";
+const startRoute = "/posts/2026-05-03-java-s01e01-hello";
+const nextRoute = "/posts/2026-05-04-java-s01e02-variables";
 
 await fs.mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });

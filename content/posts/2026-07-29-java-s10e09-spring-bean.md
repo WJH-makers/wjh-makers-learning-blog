@@ -5,6 +5,8 @@ summary: "@Autowired 拿到的对象,到底是谁在什么时候 new 的?跟豆�
 tags: [Java, Java漫画, Spring, Bean生命周期, 循环依赖, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e09-spring-bean](/comics/java/s10e09-spring-bean.png)
+
 # 《从零开始学 Java》88 · Spring 内幕(上):Bean 的一生
 
 > 连载特刊 · 番外卷三「引擎室」第 9 话 · 基线 Java 25(最新 LTS)

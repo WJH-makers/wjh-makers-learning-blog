@@ -5,6 +5,8 @@ summary: "生日券把 12 月算成来年 1 月,两笔订单的时间戳还互�
 tags: [Java, Java漫画, java.time, 日期时间, 时区, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s08e06-java-time](/comics/java/s08e06-java-time.png)
+
 # 《从零开始学 Java》62 · 时间大陆 java.time
 
 > 连载特刊 · 番外卷一「语言宝库」第 6 话 · 基线 Java 25(最新 LTS)

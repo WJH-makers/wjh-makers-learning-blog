@@ -8,6 +8,8 @@ tags: ["Java 25", "注解", "反射", "依赖注入", "Spring原理"]
 excerpt: "Spring 魔法书的第一页其实很朴素：扫类、看注解、用反射创建实例、注入依赖。阿零 60 行代码复现了 @Coffee 注入器，焰焰指出工业 Spring 在这之上加了 6 层防护——但理解第 1 层才能读懂后面的 5 层。"
 ---
 
+![JVM 火种纪漫画：f03e04-mini-spring](/comics/jvm/f03e04-mini-spring.png)
+
 > **"你害怕 Spring 是因为你没见过它去掉魔法之后的样子。去掉 AOP、作用域、代理之后，核心不过是：找注解、创对象、连线。"**
 > — 焰焰，翻开自己写的 60 行 `MiniContainer.java`
 
@@ -322,4 +324,4 @@ RUNTIME注解可见: true
 
 反射镜造出了容器，但镜子太重——`Method.invoke()` 无法被 JIT 内联，热路径用反射是性能杀手。
 
-下一话：`MethodHandle`（JDK 7）和 `VarHandle`（JDK 9）——轻量级、可内联的「快速镜子」。焰焰展示 Class-File API（JDK 24 Preview / JDK 25 正式）直接操作字节码，以及为什么现代框架从反射迁移到 `MethodHandle`。卷三在此收官。
+下一话：`MethodHandle`（JDK 7）和 `VarHandle`（JDK 9）——轻量级、可内联的「快速镜子」。焰焰展示 JDK 24 已由 JEP 484 正式交付的 Class-File API,直接操作字节码,以及为什么现代框架会在反射之外选择 `MethodHandle`。卷三在此收官。

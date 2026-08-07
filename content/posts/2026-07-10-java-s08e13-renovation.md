@@ -5,6 +5,8 @@ summary: "十二项精装修一次性验收:BigDecimal 计价、枚举状态机�
 tags: [Java, Java漫画, 项目实战, BigDecimal, 集合框架, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s08e13-renovation](/comics/java/s08e13-renovation.png)
+
 # 《从零开始学 Java》69 · 精装修验收日(番外卷一终)
 
 > 连载特刊 · 番外卷一「语言宝库」第 13 话 · 基线 Java 25(最新 LTS)

@@ -60,12 +60,12 @@ function inlineMarkdown(value: string): string {
     })
     .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (_m, alt: string, src: string) =>
       stash(`<img class="post-image" src="${src}" alt="${alt}" loading="lazy" decoding="async" />`))
-    .replace(/!\[([^\]]*)\]\((\/comics\/java\/([A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\.png)\)/g, (_m, alt: string, _src: string, stem: string) => {
+    .replace(/!\[([^\]]*)\]\((\/comics\/([A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\.png)\)/g, (_m, alt: string, _src: string, assetKey: string) => {
       // AVIF 优先、512w 移动变体、webp 兜底(png 原档不再进 serve 路径,现代覆盖率已 ~100%);
       // 尺寸取 manifest 真实值(源图有 1055x1491/887x1774/1024x1536 三种,写死会让占位比例失真)。
       // 变体与 manifest 由 scripts/build-comic-variants.mjs 生成,新增漫画后需重跑一次。
-      const base = `/comics/java/${stem}`;
-      const { w, h } = COMIC_SIZES[stem] ?? { w: 1024, h: 1536 };
+      const base = `/comics/${assetKey}`;
+      const { w, h } = COMIC_SIZES[assetKey] ?? { w: 1024, h: 1536 };
       const sizes = "(max-width: 960px) 94vw, 900px";
       return stash(
         `<picture>` +

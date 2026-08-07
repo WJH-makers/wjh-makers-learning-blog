@@ -5,6 +5,8 @@ summary: "开店仪式要等 8 台设备自检到齐,阿零却把 countDown 写�
 tags: [Java, Java漫画, CountDownLatch, CyclicBarrier, Semaphore, 并发, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s09e07-sync-tools](/comics/java/s09e07-sync-tools.png)
+
 # 《从零开始学 Java》76 · 并发工具箱:门闩·栅栏·信号量
 
 > 连载特刊 · 番外卷二「并发深水区」第 7 话 · 基线 Java 25(最新 LTS)

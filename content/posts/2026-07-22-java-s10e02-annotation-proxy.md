@@ -5,6 +5,8 @@ summary: "打折代码被复制进每个结账方法,阿零忍无可忍。豆豆
 tags: [Java, Java漫画, 注解, 动态代理, AOP, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e02-annotation-proxy](/comics/java/s10e02-annotation-proxy.png)
+
 # 《从零开始学 Java》81 · 注解与动态代理:手写迷你 AOP
 
 > 连载特刊 · 番外卷三「引擎室」第 2 话 · 基线 Java 25(最新 LTS)

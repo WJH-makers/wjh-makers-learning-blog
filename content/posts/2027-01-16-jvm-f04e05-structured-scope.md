@@ -1,64 +1,80 @@
 ---
-title: "F4E5 并发不散养 — StructuredTaskScope 结构化并发"
+title: "F4E5 并发不散养 — StructuredTaskScope 第五次预览"
 date: "2027-01-16"
 series: "jvm-academy"
 season: 4
 episode: 5
-tags: ["Java 25", "StructuredTaskScope", "结构化并发", "虚拟线程", "并发"]
-excerpt: "散养式 fork：任务启动了，忘了等，失败了无人知。StructuredTaskScope（JDK 25 正式）把子任务关进围栏：ShutdownOnFailure 任一失败全组撤退，ShutdownOnSuccess 任一成功取消剩余。父任务等所有孩子，孩子不会走丢。"
+tags: ["Java 25", "StructuredTaskScope", "结构化并发", "虚拟线程", "Preview API"]
+excerpt: "StructuredTaskScope 在 JDK 25 仍是第五次预览：旧版 ShutdownOnFailure/ShutdownOnSuccess 已被 open + Joiner 取代。用可运行的 Java 25 示例看清失败传播、竞速、超时与结构化取消。"
 ---
 
-> **"散养并发的问题不是写起来难——是出问题时找不着谁负责。StructuredTaskScope 的围栏规则很简单：任务在哪个 scope 里 fork，就在哪个 scope 里 join。不允许孩子跑到围栏外面。"**
-> — 焰焰，关上围栏门
+![JVM 火种纪漫画：f04e05-structured-scope](/comics/jvm/f04e05-structured-scope.png)
+
+> **“结构化并发的价值不是少写几行,而是让子任务的生命周期、失败和取消都回到同一个代码块里。”**
+> — 焰焰,关上围栏门
 
 ---
 
-## 🎬 开场：散养的代价
+## 🎬 开场:旧攻略先别抄
 
 > **〔1〕**
-> 咖啡站下单流程需要同时查询「库存」「会员积分」「配送时效」三个服务，有一个超时整单降级。阿零用 `CompletableFuture.allOf()` 实现：三个 `supplyAsync` 并发，`allOf.get(2, SECONDS)` 超时。「能用，但有个隐患。」焰焰指着代码：「`allOf` 超时后，三个子任务还在后台继续跑——你以为取消了，其实没有。资源泄漏，日志里的幽灵请求。」
+> 咖啡站下单流程要并发查询库存、积分和配送。阿零翻出一篇旧教程,第一行就是 `new StructuredTaskScope.ShutdownOnFailure()`。
 
 > **〔2〕**
-> 「`StructuredTaskScope` 的核心约定：在 scope 的 `join()` 返回之前，所有 fork 出去的子任务必须完成或被取消。不允许子任务比父 scope 活得更长。」焰焰画了围栏：「这叫结构化并发——并发的生命周期和词法结构对齐，就像 try-with-resources 和资源生命周期对齐一样。」
+> 焰焰把 Java 25 编译器放到桌上:「这段在 JDK 25 已经编不过。JEP 505 把 API 改成了 `StructuredTaskScope.open(...)` 与 `Joiner`,而且仍需 `--enable-preview`。」
 
 > **〔3〕**
-> 两种内置策略：`ShutdownOnFailure`——任一子任务失败，scope 关门，其他子任务收到取消信号；`ShutdownOnSuccess`——任一子任务成功，scope 关门，取消其余竞速者（适合多数据源竞速）。
+> 默认 `open()` 适合“所有任务都要成功”;`Joiner.anySuccessfulResultOrThrow()` 适合“谁先成功用谁”。策略不再藏在两个子类里,而是由 joiner 明确表达。
 
 > **〔4〕**
-> 阿零把三服务查询改成 `ShutdownOnFailure`，配送查询报错，库存和积分查询立即被取消，父任务拿到异常，整单降级。「子任务跑了多久？」「不超过 50ms——一报错就全停了。」「以前散养的话？」「最多跑满 2 秒。」
+> 配送服务先失败时,scope 取消仍在执行的兄弟任务;超时到达时,`join()` 抛 `StructuredTaskScope.TimeoutException`,随后 `close()` 等子任务退出。围栏不是“保证线程一定听话”,而是保证父作用域不会悄悄把孩子遗留在外面。
 
 ---
 
-## 🔑 核心技术：StructuredTaskScope 两种策略
+## 🔑 Java 25 的真实 API 形状
 
+```text
+全部成功才继续
+  StructuredTaskScope.open()
+  fork(...) -> Subtask<T>
+  join()     -> 任一失败时抛 FailedException
+
+竞速取任一成功结果
+  StructuredTaskScope.open(Joiner.anySuccessfulResultOrThrow())
+  join()     -> 直接返回获胜结果
+
+超时
+  open(joiner, config -> config.withTimeout(Duration...))
+  join()     -> 到期抛 StructuredTaskScope.TimeoutException
+
+自定义完成策略
+  实现 StructuredTaskScope.Joiner<T, R>
+  不再继承 StructuredTaskScope 并重写 handleComplete(...)
 ```
-ShutdownOnFailure                    ShutdownOnSuccess
-─────────────────────────────────    ────────────────────────────────
-用途：所有子任务都必须成功             用途：任意一个成功即可（竞速）
-策略：任一失败 → 关门 → 取消其余       策略：任一成功 → 关门 → 取消其余
-join 后：throwIfFailed() 重抛异常      join 后：result() 取第一个成功值
-典型场景：聚合多服务，全部成功才继续    典型场景：多地区 CDN 竞速，取最快
 
-自定义策略：继承 StructuredTaskScope<T>，override handleComplete(Subtask<T>)
+JDK 25 的 `StructuredTaskScope` 是预览 API,编译和运行两边都要显式开启:
+
+```bash
+javac -encoding UTF-8 --release 25 --enable-preview ScopeDemo.java
+java --enable-preview ScopeDemo
 ```
 
 ---
 
-## ⚙️ 代码实录：三服务并发查询
+## ⚙️ 代码实录:三服务并发查询
 
 ```java
-// javac -encoding UTF-8 --release 25 ScopeDemo.java && java ScopeDemo
-import java.util.concurrent.*;
-import java.util.concurrent.StructuredTaskScope.*;
+import java.time.Duration;
+import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.Joiner;
+import java.util.concurrent.StructuredTaskScope.Subtask;
 
 record OrderInfo(String inventory, int points, String delivery) {}
 
 class ScopeDemo {
-
-    // ── 模拟三个外部服务调用（含随机延迟和可配置失败）────────
     static String queryInventory(String item) throws InterruptedException {
         Thread.sleep(80);
-        return "库存: " + item + " ×3";
+        return "库存: " + item + " x3";
     }
 
     static int queryPoints(String userId) throws InterruptedException {
@@ -68,226 +84,121 @@ class ScopeDemo {
 
     static String queryDelivery(String addr) throws InterruptedException {
         Thread.sleep(60);
-        return "配送: 明日达 → " + addr;
+        return "配送: 明日达 -> " + addr;
     }
 
-    static String queryDeliveryFail(String addr) throws Exception {
+    static String queryDeliveryFail(String addr) throws InterruptedException {
         Thread.sleep(30);
         throw new RuntimeException("配送服务超时");
     }
 
-    // ── 场景 1：ShutdownOnFailure，全部成功才继续 ───────────
     static OrderInfo aggregateAll(String item, String userId, String addr)
-            throws Exception {
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            Subtask<String> inv  = scope.fork(() -> queryInventory(item));
+            throws InterruptedException {
+        try (var scope = StructuredTaskScope.<Object>open()) {
+            Subtask<String> inv = scope.fork(() -> queryInventory(item));
             Subtask<Integer> pts = scope.fork(() -> queryPoints(userId));
-            Subtask<String> del  = scope.fork(() -> queryDelivery(addr));
-
-            scope.join()           // 等所有子任务完成或有失败
-                 .throwIfFailed(); // 若有失败，抛出异常
-
-            return new OrderInfo(inv.get(), pts.get(), del.get());
-        }
-    }
-
-    // ── 场景 2：ShutdownOnFailure，子任务失败 → 整体失败 ────
-    static OrderInfo aggregateWithFailure(String item, String userId, String addr)
-            throws Exception {
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            Subtask<String> inv  = scope.fork(() -> queryInventory(item));
-            Subtask<Integer> pts = scope.fork(() -> queryPoints(userId));
-            Subtask<String> del  = scope.fork(() -> queryDeliveryFail(addr));
-
-            scope.join().throwIfFailed();
-            return new OrderInfo(inv.get(), pts.get(), del.get());
-        }
-    }
-
-    // ── 场景 3：ShutdownOnSuccess，竞速取最快 ────────────────
-    static String raceFastest(String query) throws Exception {
-        try (var scope = new StructuredTaskScope.ShutdownOnSuccess<String>()) {
-            // 三个数据源竞速，谁先响应用谁
-            scope.fork(() -> { Thread.sleep(150); return "源A: " + query; });
-            scope.fork(() -> { Thread.sleep(80);  return "源B: " + query; });
-            scope.fork(() -> { Thread.sleep(200); return "源C: " + query; });
+            Subtask<String> del = scope.fork(() -> queryDelivery(addr));
 
             scope.join();
-            return scope.result(); // 取第一个成功结果
-        }
-    }
-
-    // ── 场景 4：超时控制 ──────────────────────────────────────
-    static OrderInfo aggregateWithTimeout(String item, String userId, String addr)
-            throws Exception {
-        try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-            Subtask<String> inv  = scope.fork(() -> queryInventory(item));
-            Subtask<Integer> pts = scope.fork(() -> queryPoints(userId));
-            Subtask<String> del  = scope.fork(() -> queryDelivery(addr));
-
-            scope.joinUntil(java.time.Instant.now().plusMillis(200)); // 200ms 超时
-            scope.throwIfFailed();
-
-            // 检查是否有子任务因超时未完成
-            if (inv.state() != Subtask.State.SUCCESS ||
-                pts.state() != Subtask.State.SUCCESS ||
-                del.state() != Subtask.State.SUCCESS) {
-                throw new TimeoutException("部分服务超时");
-            }
             return new OrderInfo(inv.get(), pts.get(), del.get());
         }
     }
 
-    public static void main(String[] args) {
-        // 场景 1：全部成功
-        System.out.println("=== 场景 1：全部成功 ===");
-        try {
-            long t = System.currentTimeMillis();
-            OrderInfo info = aggregateAll("拿铁", "user-001", "北京朝阳");
-            System.out.printf("耗时: %dms（三任务并发，最长 120ms）%n",
-                System.currentTimeMillis() - t);
-            System.out.println(info.inventory());
-            System.out.println("积分: " + info.points());
-            System.out.println(info.delivery());
-        } catch (Exception e) {
-            System.out.println("失败: " + e.getMessage());
-        }
+    static OrderInfo aggregateWithFailure(String item, String userId, String addr)
+            throws InterruptedException {
+        try (var scope = StructuredTaskScope.<Object>open()) {
+            Subtask<String> inv = scope.fork(() -> queryInventory(item));
+            Subtask<Integer> pts = scope.fork(() -> queryPoints(userId));
+            Subtask<String> del = scope.fork(() -> queryDeliveryFail(addr));
 
-        // 场景 2：子任务失败
-        System.out.println("\n=== 场景 2：配送服务失败 ===");
+            scope.join();
+            return new OrderInfo(inv.get(), pts.get(), del.get());
+        }
+    }
+
+    static String raceFastest(String query) throws InterruptedException {
+        try (var scope = StructuredTaskScope.open(
+                Joiner.<String>anySuccessfulResultOrThrow())) {
+            scope.fork(() -> { Thread.sleep(150); return "源A: " + query; });
+            scope.fork(() -> { Thread.sleep(80); return "源B: " + query; });
+            scope.fork(() -> { Thread.sleep(200); return "源C: " + query; });
+            return scope.join();
+        }
+    }
+
+    static OrderInfo aggregateWithTimeout(String item, String userId, String addr)
+            throws InterruptedException {
+        try (var scope = StructuredTaskScope.<Object, Void>open(
+                Joiner.awaitAllSuccessfulOrThrow(),
+                config -> config.withTimeout(Duration.ofMillis(100)))) {
+            Subtask<String> inv = scope.fork(() -> queryInventory(item));
+            Subtask<Integer> pts = scope.fork(() -> queryPoints(userId));
+            Subtask<String> del = scope.fork(() -> queryDelivery(addr));
+
+            scope.join();
+            return new OrderInfo(inv.get(), pts.get(), del.get());
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        System.out.println(aggregateAll("拿铁", "user-001", "北京朝阳"));
+
         try {
-            long t = System.currentTimeMillis();
             aggregateWithFailure("拿铁", "user-001", "北京朝阳");
-        } catch (Exception e) {
-            System.out.printf("✅ 捕获异常: %s%n", e.getMessage());
+        } catch (StructuredTaskScope.FailedException expected) {
+            System.out.println("失败传播: " + expected.getCause().getMessage());
         }
 
-        // 场景 3：竞速
-        System.out.println("\n=== 场景 3：三数据源竞速 ===");
-        try {
-            long t = System.currentTimeMillis();
-            String result = raceFastest("咖啡因含量");
-            System.out.printf("耗时: %dms（最快源 80ms）| 结果: %s%n",
-                System.currentTimeMillis() - t, result);
-        } catch (Exception e) {
-            System.out.println("失败: " + e.getMessage());
-        }
+        System.out.println(raceFastest("咖啡因含量"));
 
-        // 场景 4：超时控制
-        System.out.println("\n=== 场景 4：200ms 超时控制 ===");
         try {
-            long t = System.currentTimeMillis();
-            OrderInfo info = aggregateWithTimeout("拿铁", "user-001", "北京朝阳");
-            System.out.printf("耗时: %dms | %s%n",
-                System.currentTimeMillis() - t, info.delivery());
-        } catch (Exception e) {
-            System.out.printf("超时/失败: %s%n", e.getMessage());
+            aggregateWithTimeout("拿铁", "user-001", "北京朝阳");
+        } catch (StructuredTaskScope.TimeoutException expected) {
+            System.out.println("超时取消");
         }
     }
 }
 ```
 
-**实测输出**（GraalVM 25.0.4）：
+本机 Java 25.0.4 的实际输出:
 
+```text
+OrderInfo[inventory=库存: 拿铁 x3, points=850, delivery=配送: 明日达 -> 北京朝阳]
+失败传播: 配送服务超时
+源B: 咖啡因含量
+超时取消
 ```
-=== 场景 1：全部成功 ===
-耗时: 126ms（三任务并发，最长 120ms）
-库存: 拿铁 ×3
-积分: 850
-配送: 明日达 → 北京朝阳
-
-=== 场景 2：配送服务失败 ===
-✅ 捕获异常: 配送服务超时
-
-=== 场景 3：三数据源竞速 ===
-耗时: 84ms（最快源 80ms）| 结果: 源B: 咖啡因含量
-
-=== 场景 4：200ms 超时控制 ===
-耗时: 127ms | 配送: 明日达 → 北京朝阳
-```
-
-关键验证：三任务并发总耗时 ≈ 最长单任务 120ms（非串行 260ms）；配送失败立即传播，其余任务被取消；竞速取到最快源 B（80ms）；超时控制生效（全部在 200ms 内完成则成功）。
 
 ---
 
-## ⚠️ 与 CompletableFuture 的区别
+## ⚠️ 三条不能省略的边界
 
-```java
-// ── CompletableFuture 散养问题 ───────────────────────────────
-var f1 = CompletableFuture.supplyAsync(() -> queryInventory("拿铁"));
-var f2 = CompletableFuture.supplyAsync(() -> queryPoints("user"));
-var f3 = CompletableFuture.supplyAsync(() -> queryDelivery("addr"));
+1. **Preview 不是正式 API。** JDK 25 的代码升级到 JDK 26 时要重新编译,因为 JEP 525 又进行了一轮预览。
+2. **取消是协作式的。** scope 会向未完成线程发出中断,但吞掉 `InterruptedException` 或长期执行不可中断本地调用的任务仍可能拖延关闭。
+3. **`Subtask.get()` 只对 `SUCCESS` 有效。** 失败或被取消的任务不会自动变成一个可读取的“异常值”;先让 `join()` 决定整体结果。
 
-try {
-    CompletableFuture.allOf(f1, f2, f3).get(2, TimeUnit.SECONDS);
-} catch (TimeoutException e) {
-    // ❌ 超时后 f1/f2/f3 仍在后台运行！
-    // cancel(true) 只设置标志，对 supplyAsync 的阻塞 IO 无效
-    f1.cancel(true); f2.cancel(true); f3.cancel(true);
-}
-
-// ── StructuredTaskScope 保证生命周期 ─────────────────────────
-try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-    var t1 = scope.fork(() -> queryInventory("拿铁"));
-    var t2 = scope.fork(() -> queryPoints("user"));
-    var t3 = scope.fork(() -> queryDelivery("addr"));
-    scope.joinUntil(Instant.now().plusSeconds(2));
-    // ✅ join 返回时，所有未完成任务已被取消（虚拟线程收到中断信号）
-    scope.throwIfFailed();
-    return new OrderInfo(t1.get(), t2.get(), t3.get());
-}
-// scope.close() 确保所有子任务已终止，再释放资源
-
-// CF 适合场景：复杂异步编排（thenCompose/thenCombine/handle 链式处理）
-// STS 适合场景：结构化的「并发聚合」（明确的 fork-join 生命周期）
-```
+`CompletableFuture` 也不是因此过时。事件驱动的长链编排、跨生命周期异步对象仍可能更适合 CF；结构化 scope 更适合一个请求块内边界清楚的 fork/join 聚合。
 
 ---
 
 ## 🔬 炉底显微镜
 
-> 焰焰用 `jcmd` 观察 StructuredTaskScope 下的任务树：
-
 ```bash
-# 启动时打印结构化并发任务树（需要 JDK 21+ 的增强 Thread.dump）
-java -XX:StartFlightRecording=filename=scope.jfr,duration=10s ScopeDemo
+# 必须同时开启预览 API
+javac --release 25 --enable-preview ScopeDemo.java
+java --enable-preview \
+  -XX:StartFlightRecording=filename=scope.jfr,duration=10s \
+  ScopeDemo
 
-# 查看任务层次结构（JDK 21+ Thread.dump 包含虚拟线程分组）
-jcmd <pid> Thread.dump_to_file -format=json /tmp/scope-threads.json
+# 观察虚拟线程与中断事件；事件是否出现取决于录制配置与实际执行路径
+jfr summary scope.jfr
+jfr print --events jdk.VirtualThreadStart,jdk.VirtualThreadEnd scope.jfr
 
-# JFR 查看子任务的 fork/join 时序
-jfr print --events jdk.VirtualThreadMount scope.jfr | head -50
-
-# 调试单个 Subtask 状态
-java --source 25 - <<'EOF'
-import java.util.concurrent.StructuredTaskScope.*;
-
-void main() throws Exception {
-    try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
-        var t1 = scope.fork(() -> { Thread.sleep(50); return "ok"; });
-        var t2 = scope.fork(() -> { Thread.sleep(200); return "slow"; });
-        scope.join();
-        System.out.println("t1 state: " + t1.state() + " = " + t1.get());
-        System.out.println("t2 state: " + t2.state());
-        // t2 可能是 SUCCESS 也可能是被取消（取决于 t1 是否失败）
-    }
-}
-EOF
+# 对仍在运行的进程导出线程信息
+jcmd <pid> Thread.dump_to_file -format=json scope-threads.json
 ```
 
-**Subtask.State 枚举**：
-
-```
-UNAVAILABLE  → 子任务尚未完成（join 之前查询）
-SUCCESS      → 成功完成，可调用 get()
-FAILED       → 抛出异常，调用 get() 会重抛
-```
-
-关键观测点：
-- `scope.fork()` 返回 `Subtask<T>`，仅在 `join()` 之后才能安全调用 `get()`；join 前调用 `state()` 可能返回 `UNAVAILABLE`
-- `ShutdownOnFailure.throwIfFailed()` 将第一个失败子任务的异常包装为 `ExecutionException` 重抛；多个失败只重抛第一个
-- `ShutdownOnSuccess.result()` 返回第一个成功值；若全部失败则抛 `ExecutionException`
-- `StructuredTaskScope` 是 `AutoCloseable`，`close()` = 等待所有子任务结束 + 中断未完成的；必须用 `try-with-resources`
+观测时要区分三件事:scope 发出了取消、线程收到了中断、任务真正结束。前两项不自动证明第三项;任务代码仍要正确响应中断。
 
 ---
 
@@ -295,76 +206,54 @@ FAILED       → 抛出异常，调用 get() 会重抛
 
 **版本边界**
 
-| 特性 | JDK | 说明 |
+状态核对于 2026-08-06。
+
+| JDK | 状态 | 关键变化 |
 |---|---|---|
-| `StructuredTaskScope`（Preview）| **JDK 21/22** | JEP 428/453 |
-| `StructuredTaskScope`（Preview 二）| **JDK 23/24** | JEP 480/499，API 微调 |
-| `StructuredTaskScope`（正式）| **JDK 25** | JEP 505，生产可用 ✅ |
-| `Subtask.State` 枚举 | JDK 21 Preview | UNAVAILABLE/SUCCESS/FAILED |
-| `joinUntil(Instant)` 超时 | JDK 21 Preview | 超时后关门 |
-| `ShutdownOnFailure/Success` | JDK 21 Preview | 两种内置策略 |
-| 本话代码运行环境 | JDK 25 | ✅ 正式 API |
+| 19/20 | Incubator | JEP 428/437 |
+| 21/22 | Preview / Second Preview | JEP 453/462 |
+| 23/24 | Third / Fourth Preview | JEP 480/499 |
+| 25 | **Fifth Preview** | JEP 505；改为 `open()` + `Joiner` |
+| 26 | **Sixth Preview** | JEP 525；发布前仍需再核对 |
+
+因此本文固定在 Java 25 API 形状,不把它称为“正式生产 API”,也不把旧的 `ShutdownOnFailure`/`ShutdownOnSuccess` 示例冒充 Java 25 实测。
 
 ---
 
 ## 🎯 随堂练习
 
-**Q1.** `StructuredTaskScope` 的生命周期约定是什么？
+**Q1.** JDK 25 使用 Structured Concurrency 是否需要 `--enable-preview`？
 
-**Q2.** `ShutdownOnFailure` 和 `ShutdownOnSuccess` 各自适合什么场景？
+**Q2.** “全部成功才继续”和“任一成功即可”分别用什么入口？
 
-**Q3.** `scope.join()` 返回后，能立即调用 `subtask.get()` 吗？
+**Q3.** JDK 25 如何配置 scope 超时？
 
-**Q4.** 如何给 StructuredTaskScope 添加超时控制？
+**Q4.** 子任务收到取消后是否保证立刻停止？
 
-**Q5.** `scope.throwIfFailed()` 在多个子任务都失败时，抛出哪个异常？
-
-**Q6.** `StructuredTaskScope` 和 `CompletableFuture.allOf()` 超时行为的核心差别是什么？
-
-**Q7.** `Subtask.State` 有哪三种状态？各自含义？
-
-**Q8.** 如果需要「至少 2 个子任务成功才继续」，用哪种内置策略？
-
-**Q9.** `ShutdownOnSuccess.result()` 在所有子任务都失败时会怎样？
-
-**Q10.** 为什么 `StructuredTaskScope` 必须用 `try-with-resources`？
-
----
+**Q5.** 为什么不能继续照抄 `new ShutdownOnFailure()`？
 
 > [!答案]
 >
-> **Q1. 所有在 scope 内 fork 的子任务，必须在 scope 的 `join()` 返回之前完成或被取消；子任务不能比父 scope 活得更长。**`scope.close()` 强制保证这一点：关闭时自动中断未完成的子任务，等待它们退出。这使并发生命周期和代码结构对齐，避免「幽灵任务」。
+> **Q1. 需要。** 编译用 `javac --release 25 --enable-preview`,运行也要 `java --enable-preview`。
 >
-> **Q2. `ShutdownOnFailure`：所有子任务都必须成功的聚合场景（如同时查询多个必需服务，任一失败整体失败）。`ShutdownOnSuccess`：竞速场景（如多数据源查询，取最快响应；多地区 CDN 请求，取第一个成功返回的）。**两者都在子任务完成时关门，差别在触发条件。
+> **Q2.** 全部成功用 `StructuredTaskScope.open()` 或 `Joiner.awaitAllSuccessfulOrThrow()`；竞速用 `Joiner.anySuccessfulResultOrThrow()`。
 >
-> **Q3. 是的，`join()` 返回后所有子任务均已完成（SUCCESS 或 FAILED 或被取消）。**此时 `subtask.state()` 一定不是 `UNAVAILABLE`，`subtask.get()` 对成功的任务返回结果，对失败的任务重抛异常，对被取消的任务抛 `CancellationException`。在 `join()` 之前调用 `get()` 会抛 `IllegalStateException`。
+> **Q3.** 在三参数形状的 `open(joiner, configurer)` 中调用 `config.withTimeout(Duration...)`;到期时 `join()` 抛 `StructuredTaskScope.TimeoutException`。
 >
-> **Q4. 用 `scope.joinUntil(Instant deadline)` 替代 `scope.join()`：**`scope.joinUntil(Instant.now().plusMillis(500))` 等待最多 500ms，超时后 scope 关门，未完成子任务被取消。之后调用 `throwIfFailed()` 检查是否有失败（包括超时取消算失败）；也可以手动检查每个 `subtask.state()`。
+> **Q4. 不保证立刻停止。** 取消依赖线程中断和任务协作；`close()` 会等待子任务终止,因此不响应中断的代码会拖慢父作用域退出。
 >
-> **Q5. `throwIfFailed()` 只重抛第一个发现的失败异常（以 `ExecutionException` 包装）。**如果需要获取所有失败，可以继承 `StructuredTaskScope` 实现自定义策略，在 `handleComplete()` 中收集所有失败的 `Subtask`，`join()` 后统一处理。
->
-> **Q6. `CompletableFuture.allOf().get(timeout, unit)` 超时后子任务继续在后台运行，`cancel(true)` 对正在阻塞 IO 的任务无效；`StructuredTaskScope.joinUntil()` 超时后自动向所有未完成子任务发送中断信号，`close()` 确保它们退出后才释放资源。**STS 的取消是真实有效的（虚拟线程收到 `InterruptedException`），CF 的 `cancel` 只是标志位。
->
-> **Q7. `UNAVAILABLE`：子任务尚未完成（`join()` 之前或正在运行）；`SUCCESS`：成功完成，`get()` 返回结果；`FAILED`：抛出异常，`get()` 重抛该异常。**被取消的子任务（scope 关门后未完成的）状态最终也变为 `FAILED`（`get()` 抛 `CancellationException`）。
->
-> **Q8. 两种内置策略都不直接支持「至少 N 个成功」的条件。**需要继承 `StructuredTaskScope<T>` 并重写 `handleComplete(Subtask<T> subtask)` 方法：维护成功计数器，达到 N 个时调用 `shutdown()` 关门；`join()` 后从收集的成功结果列表取前 N 个。这是自定义策略的典型用法。
->
-> **Q9. 抛出 `ExecutionException`（包装第一个失败异常）。**`ShutdownOnSuccess` 假设「至少有一个成功」；全部失败是异常情况，通过抛异常告知调用者。调用者可以通过 `catch ExecutionException` 处理全部失败的降级逻辑。
->
-> **Q10. `StructuredTaskScope` 实现了 `AutoCloseable`，`close()` 做两件事：①向所有未完成子任务发送中断信号；②等待所有子任务完全退出（状态不再是 UNAVAILABLE）。**不用 `try-with-resources` 直接 `new StructuredTaskScope()` 而不关闭，会违反「子任务不能比父 scope 活得更长」的约定，导致资源泄漏和不确定行为。编译器不会报错，但这是严重的正确性问题。
+> **Q5.** 那是 JDK 24 及更早预览版的 API 形状。JEP 505 在 JDK 25 改为工厂方法与 Joiner,旧代码不能作为 Java 25 的可运行示例。
 
 ---
 
 ## 运行环境、验证与依据
 
-- **运行环境**：GraalVM 25.0.4+7.1（`graalvm-jdk-25.0.4`），Windows 11，编码 UTF-8。
-- **验证方式**：`javac -encoding UTF-8 --release 25 ScopeDemo.java && java ScopeDemo`；并发聚合耗时 126ms（≈最长子任务 120ms）；失败传播正确（配送失败即捕获）；竞速取到 80ms 的 B 源；超时控制（200ms 内完成则成功）均与文中一致。
-- **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[JEP 505: Structured Concurrency](https://openjdk.org/jeps/505)、[java.util.concurrent.StructuredTaskScope API](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/StructuredTaskScope.html)。
+- **运行环境**:Oracle GraalVM 25.0.4+7.1,Windows 11,UTF-8。
+- **验证方式**:`javac -encoding UTF-8 --release 25 --enable-preview ScopeDemo.java && java --enable-preview ScopeDemo`;四条路径均在本机实际编译运行。
+- **官方依据**:[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[JEP 505: Structured Concurrency (Fifth Preview)](https://openjdk.org/jeps/505)、[JEP 525: Structured Concurrency (Sixth Preview)](https://openjdk.org/jeps/525)、[Java 25 StructuredTaskScope API](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/StructuredTaskScope.html)。
 
 ---
 
-## 🔮 下话预告：F4E6《何时仍需未来》
+## 🔮 下话预告:F4E6《何时仍需未来》
 
-围栏建好了，但不是所有并发都适合 StructuredTaskScope。
-
-下一话：`CompletableFuture` 的决策天平——三方比价场景，CF 的 `thenCompose/thenCombine/handle` 链式编排 vs StructuredTaskScope 的 fork-join 模型。什么时候用哪个，焰焰列出决策矩阵。
+围栏建好了,但不是所有并发都适合一个词法作用域。下一话把 `CompletableFuture` 的跨阶段编排与 Structured Concurrency 的请求内聚合放到同一张决策表里。

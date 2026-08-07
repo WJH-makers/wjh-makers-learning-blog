@@ -5,6 +5,8 @@ summary: "报表还靠十行 for?函数式收官一话补齐:方法引用四种�
 tags: [Java, Java漫画, Stream, Optional, 并行流, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s08e12-functional](/comics/java/s08e12-functional.png)
+
 # 《从零开始学 Java》68 · 函数式收官:方法引用·Optional·并行流
 
 > 连载特刊 · 番外卷一「语言宝库」第 12 话 · 基线 Java 25(最新 LTS)

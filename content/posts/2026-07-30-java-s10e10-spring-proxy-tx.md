@@ -5,6 +5,8 @@ summary: "扣减方法贴着 @Transactional,异常后账却只回滚一半——
 tags: [Java, Java漫画, Spring, 事务, AOP, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e10-spring-proxy-tx](/comics/java/s10e10-spring-proxy-tx.png)
+
 # 《从零开始学 Java》89 · Spring 内幕(下):代理与事务失效
 
 > 连载特刊 · 番外卷三「引擎室」第 10 话 · 基线 Java 25(最新 LTS)

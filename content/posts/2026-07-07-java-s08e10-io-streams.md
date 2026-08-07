@@ -5,6 +5,8 @@ summary: "排行榜发到分店满屏问号,分店回传的销量单又读成一
 tags: [Java, Java漫画, IO流, 字符编码, UTF-8, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s08e10-io-streams](/comics/java/s08e10-io-streams.png)
+
 # 《从零开始学 Java》66 · IO 流家族与乱码事故
 
 > 连载特刊 · 番外卷一「语言宝库」第 10 话 · 基线 Java 25(最新 LTS)

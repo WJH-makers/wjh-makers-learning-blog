@@ -5,6 +5,8 @@ summary: "复制订单功能上线第一天就闯祸:给新单加燕麦奶,原�
 tags: [Java, Java漫画, 值传递, 对象拷贝, 深拷贝, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s08e01-pass-by-value](/comics/java/s08e01-pass-by-value.png)
+
 # 《从零开始学 Java》57 · 值传递的真相与对象拷贝
 
 > 连载特刊 · 番外卷一「语言宝库」第 1 话 · 基线 Java 25(最新 LTS)

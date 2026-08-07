@@ -5,8 +5,10 @@ series: "jvm-academy"
 season: 4
 episode: 7
 tags: ["Java 25", "Stream Gatherers", "JEP 485", "函数式", "并发"]
-excerpt: "Stream 的中间操作是固定工位，想要滑动窗口、批量分组、出杯速率限流，标准库全没有。JDK 25 正式的 Stream Gatherers（JEP 485）让你自己焊工位：initializer 备料、integrator 处理每个元素、finisher 收尾。三件套组合，任意管道插件化。"
+excerpt: "Stream Gatherers 已由 JEP 485 在 JDK 24 正式交付。它为滑动窗口、批量分组与自定义有状态中间操作提供扩展点；本文以 Java 25 运行,但不把交付版本晚写一年。"
 ---
+
+![JVM 火种纪漫画：f04e07-stream-gatherers](/comics/jvm/f04e07-stream-gatherers.png)
 
 > **"Stream 流水线是固定工位。Gatherer 是零件盒——自己拼工位，焊进去，其他人照常用 stream 语法调。"**
 > — 焰焰，指着流水线图
@@ -19,7 +21,7 @@ excerpt: "Stream 的中间操作是固定工位，想要滑动窗口、批量分
 > 咖啡站运营系统新需求：实时监控出杯速率——每5杯一组统计平均出杯时间。标准 Stream 没有「每5个一批」的操作。`filter/map/flatMap/reduce` 全是单元素或全归约，拿不到滑动窗口。阿零翻遍文档，「只能先 collect 成 List，再手动分批，损失了流式特性。」
 
 > **〔2〕**
-> 焰焰打开 JDK 25 发布说明：「JEP 485，Stream Gatherers，正式入库。这是中间操作的扩展点——你可以自定义任意有状态的中间操作，和 `filter/map` 一样用 `.gather(myGatherer)` 插进管道。」「有状态？」「滑动窗口需要记住前几个元素，这是状态。标准 Stream 的中间操作全是无状态的，Gatherer 允许你带状态。」
+> 焰焰打开 JDK 24 发布说明：「JEP 485，Stream Gatherers，正式入库。这是中间操作的扩展点——你可以自定义有状态的中间操作,和 `filter/map` 一样用 `.gather(myGatherer)` 插进管道。」「有状态？」「滑动窗口需要记住前几个元素,这是状态。Gatherer 允许你把状态和收尾步骤表达出来。」
 
 > **〔3〕**
 > 三件套：`initializer`（可选）在流开始时初始化状态容器；`integrator` 处理每个到来的元素，决定是否向下游 emit、是否停止；`finisher`（可选）流结束后用剩余状态生成最后一批输出。还有第四个可选件：`combiner`，用于并行流合并分段状态。
@@ -349,7 +351,7 @@ EOF
 |---|---|---|
 | `Stream.gather(Gatherer)` (Preview) | **JDK 22** | JEP 461 |
 | `Stream.gather(Gatherer)` (Preview 二) | **JDK 23** | JEP 473 |
-| `Stream.gather(Gatherer)` (正式) | **JDK 25** | JEP 485，生产可用 ✅ |
+| `Stream.gather(Gatherer)` (正式) | **JDK 24** | JEP 485 |
 | `Gatherers.windowFixed/Sliding/fold/scan` | JDK 22 Preview | 内置四种 |
 | `Gatherer.ofSequential` | JDK 22 Preview | 无并行支持的简化构造 |
 | `Gatherer.of(init,integrator,combiner,finisher)` | JDK 22 Preview | 完整四件套 |
@@ -421,5 +423,3 @@ EOF
 卷五进 JVM 底层。
 
 下一话 F5E1《尾巴变红之前》：JVM 运行时区域与 JIT 分层编译。C1 速写素描 vs C2 精修油画；方法越热焰焰尾巴越红；`-XX:+PrintCompilation` 看编译日志；为什么压测需要预热才算真实性能。
-
-

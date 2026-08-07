@@ -5,6 +5,8 @@ summary: "主线程明明把 running 改成 false,盘点线程却像撞了鬼一
 tags: [Java, Java漫画, 并发, JMM, volatile, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s09e01-jmm-volatile](/comics/java/s09e01-jmm-volatile.png)
+
 # 《从零开始学 Java》70 · 可见性幽灵:JMM 与 volatile
 
 > 连载特刊 · 番外卷二「并发深水区」第 1 话 · 基线 Java 25(最新 LTS)

@@ -24,6 +24,17 @@ test("公开 Java/CLI 审计清单覆盖当前全部系列文章", () => {
   }
 });
 
+test("每篇 Java/JVM 公开文章都有可访问的首图或漫画资源", () => {
+  for (const post of [...javaPosts, ...jvmPosts]) {
+    const references = [...post.content.matchAll(/!\[[^\]]*\]\((\/(?:comics|images)\/[^)]+)\)/g)].map((match) => match[1]);
+    assert.ok(references.length > 0, `${post.name} is missing a lead visual`);
+    for (const reference of references) {
+      const assetPath = path.join(root, "public", reference.slice(1).replaceAll("/", path.sep));
+      assert.equal(fs.existsSync(assetPath), true, `${post.name} references missing visual ${reference}`);
+    }
+  }
+});
+
 test("公开内容不泄露内部创作手册或本地维护路径", () => {
   for (const post of posts) {
     assert.doesNotMatch(post.content, /(?:docs\/[^\s`)]*\/)?handbook\.md\b/i, post.name);
@@ -77,6 +88,23 @@ test("每篇 JVM 火种纪文章都带可复现的炉底观测与版本边界", 
     assert.match(post.content, /## 🎯 随堂练习/, post.name);
     assert.match(post.content, /> \[!答案\]/, post.name);
   }
+});
+
+test("JVM 火种纪不把移动中的平台能力写成已经正式交付", () => {
+  const corpus = jvmPosts.map(({ content }) => content).join("\n");
+  const registry = fs.readFileSync(path.join(root, "lib", "series-jvm.ts"), "utf8");
+  const all = `${corpus}\n${registry}`;
+
+  assert.doesNotMatch(all, /StructuredTaskScope（正式）|StructuredTaskScope[^\n]{0,80}JDK 25 正式/i);
+  assert.doesNotMatch(all, /JEP 484（JDK 25 正式）：AOT 方法代码缓存/i);
+  assert.doesNotMatch(all, /紧凑对象头[^\n]{0,100}JDK 25 是第二轮预览/i);
+  assert.doesNotMatch(all, /(?:Value Classes|值类)[^\n]{0,100}(?:JDK|Java) 25[^\n]{0,30}Preview/i);
+  assert.doesNotMatch(all, /分代 ZGC[^\n]{0,100}JDK 25 默认/i);
+
+  assert.match(corpus, /JEP 505[^\n]{0,80}(?:Fifth Preview|第五次预览)/i);
+  assert.match(corpus, /JEP 519[^\n]{0,80}(?:产品特性|Product feature)/i);
+  assert.match(corpus, /JEP 515[^\n]{0,120}(?:方法执行画像|方法画像)/i);
+  assert.match(corpus, /JEP 401[^\n]{0,80}Submitted/i);
 });
 
 test("每篇命令行文章均给出边界、回滚和验证入口", () => {

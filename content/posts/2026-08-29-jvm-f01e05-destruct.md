@@ -15,6 +15,8 @@ excerpt: "嵌套订单像俄罗斯套娃——外层 Order 包着内层 Drink，
 
 ## 🎬 开场：套娃订单
 
+![《JVM 火种纪》05 · 套娃拆包机——record 解构六格漫画](/comics/jvm/f01e05-destruct.png)
+
 > **〔1〕**
 > 午后。阿零对着一批嵌套订单犯难。
 >

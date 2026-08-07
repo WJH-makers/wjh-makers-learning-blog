@@ -5,6 +5,8 @@ summary: "会员等级 127 时 == 判等一路绿灯,128 却突然翻车;积分�
 tags: [Java, Java漫画, 包装类, 自动装箱, IntegerCache, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s08e03-autoboxing](/comics/java/s08e03-autoboxing.png)
+
 # 《从零开始学 Java》59 · 包装类与自动装箱的陷阱
 
 > 连载特刊 · 番外卷一「语言宝库」第 3 话 · 基线 Java 25(最新 LTS)

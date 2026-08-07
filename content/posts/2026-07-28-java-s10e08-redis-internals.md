@@ -5,6 +5,8 @@ summary: "取餐柜里只有一个店员,却快过一屋子工人。纯内存、
 tags: [Java, Java漫画, Redis, 缓存, 单线程, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e08-redis-internals](/comics/java/s10e08-redis-internals.png)
+
 # 《从零开始学 Java》87 · Redis 内幕:单线程为什么快
 
 > 连载特刊 · 番外卷三「引擎室」第 8 话 · 基线 Java 25(最新 LTS)

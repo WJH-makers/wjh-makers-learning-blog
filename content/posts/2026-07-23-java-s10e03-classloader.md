@@ -5,6 +5,8 @@ summary: "阿零想给 String 加个 brewLatte,货箱刚进类加载站就被 Bo
 tags: [Java, Java漫画, JVM, 类加载, 双亲委派, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e03-classloader](/comics/java/s10e03-classloader.png)
+
 # 《从零开始学 Java》82 · 类加载与双亲委派
 
 > 连载特刊 · 番外卷三「引擎室」第 3 话 · 基线 Java 25(最新 LTS)

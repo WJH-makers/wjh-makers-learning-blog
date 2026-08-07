@@ -39,9 +39,9 @@ jobs:
         run: npm run build
 
       - name: Audit
-        # sharp/libvips high CVE 暂无 next 兼容修复(next 16.2.11 仍锁 sharp ^0.34.5);
-        # 本项目仅优化可信图片,风险低,暂放行 high、保留 critical 门禁。待 next 放宽后收紧。
-        run: npm audit --audit-level=critical
+        # 当前锁定依赖的 high/critical 审计均为零；把 high 也纳入门禁，
+        # 避免新增漏洞只能等到 critical 才阻断发布。
+        run: npm audit --audit-level=high
 
   publish-deploy-ref:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'

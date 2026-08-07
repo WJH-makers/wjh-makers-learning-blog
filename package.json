@@ -17,6 +17,7 @@
     "audit:reader": "node scripts/audit-book-reader.mjs",
     "content:audit": "node --test tests/content-audit.test.ts",
     "deploy:doctor": "node scripts/doctor-deploy.mjs",
+    "deploy:doctor:production": "node scripts/doctor-deploy.mjs --production",
     "post:new": "node scripts/new-post.mjs"
   },
   "dependencies": {

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { isMonitorAuthed } from "@/lib/monitor-auth";
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,14 +16,22 @@ type Point = { t: number; cpu: number; mem: number; load: number };
 const MAX_POINTS = 10080;
 const MAX_FILE_SIZE = 512_000;
 
+function readProcFile(path: string): string {
+  try {
+    return readFileSync(path, "utf8");
+  } catch {
+    return "";
+  }
+}
+
 // 结果缓存:避免每次请求(SSR + 客户端 60s 轮询)都 fork 子进程,兼作 DoS 缓冲。
 let cache: { at: number; body: unknown } | null = null;
 const CACHE_MS = 5000;
 
-// 异步执行,永不阻塞事件循环;失败返回空串由调用方兜底。
-async function sh(cmd: string, timeout: number): Promise<string> {
+// 只执行固定的可执行文件和参数,不经过 shell 解析;失败返回空串由调用方兜底。
+async function commandOutput(file: string, args: string[], timeout: number): Promise<string> {
   try {
-    const { stdout } = await execAsync(cmd, { timeout, encoding: "utf8" });
+    const { stdout } = await execFileAsync(file, args, { timeout, encoding: "utf8" });
     return stdout;
   } catch {
     return "";
@@ -59,11 +67,13 @@ async function collect(): Promise<Point> {
   let memPct = 0;
   let load = 0;
 
-  const topRaw = await sh("top -bn1 -d0.3 | grep '%Cpu' | head -1", 6000);
+  const topRaw = await commandOutput("top", ["-bn1", "-d0.3"], 6000);
   const m = topRaw.match(/(\d+\.?\d*)\s*id/);
   cpu = m ? Math.round(100 - parseFloat(m[1])) : 0;
 
-  const mraw = await sh("free -m | grep Mem:", 3000);
+  const mraw = (await commandOutput("free", ["-m"], 3000))
+    .split(/\r?\n/)
+    .find((line) => /^\s*Mem:\s/.test(line)) ?? "";
   if (mraw) {
     const parts = mraw.trim().split(/\s+/);
     const total = parseInt(parts[1], 10);
@@ -71,20 +81,23 @@ async function collect(): Promise<Point> {
     memPct = total ? Math.round((used / total) * 100) : 0;
   }
 
-  const la = await sh("cat /proc/loadavg", 3000);
+  const la = readProcFile("/proc/loadavg");
   if (la) load = parseFloat(la.split(/\s+/)[0]) || 0;
 
   return { t: Date.now(), cpu, mem: memPct, load };
 }
 
 async function parseUptime(): Promise<string> {
-  const s = parseInt((await sh("cat /proc/uptime", 3000)).split(" ")[0], 10);
+  const s = parseInt(readProcFile("/proc/uptime").split(" ")[0], 10);
   return Number.isNaN(s) ? "?" : `${Math.floor(s / 86400)}d ${Math.floor((s % 86400) / 3600)}h`;
 }
 
 async function parseDisk(): Promise<string> {
-  const d = (await sh("df -h / | tail -1 | awk '{print $3\"/\"$2\" (\"$5\")\"}'", 5000)).trim();
-  return d || "?";
+  const output = await commandOutput("df", ["-h", "/"], 5000);
+  const row = output.split(/\r?\n/).find((line) => line.trim().endsWith("/"));
+  if (!row) return "?";
+  const parts = row.trim().split(/\s+/);
+  return parts.length >= 6 ? `${parts[2]}/${parts[1]} (${parts[4]})` : "?";
 }
 
 function downsample(data: Point[], buckets: number): Point[] {

@@ -5,6 +5,8 @@ summary: "豆豆把椅子搬到角落:超卖事故,今天阿零独立复盘。�
 tags: [Java, Java漫画, 并发, 超卖, 线程安全, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s09e10-concurrency-finale](/comics/java/s09e10-concurrency-finale.png)
+
 # 《从零开始学 Java》79 · 并发终考:超卖事故复盘(番外卷二终)
 
 > 连载特刊 · 番外卷二「并发深水区」第 10 话 · 基线 Java 25(最新 LTS)

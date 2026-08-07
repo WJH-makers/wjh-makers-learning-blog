@@ -5,6 +5,8 @@ summary: "并发考试通关,技术债账本翻到最后一页《引擎室》。
 tags: [Java, Java漫画, 反射, Class对象, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s10e01-reflection](/comics/java/s10e01-reflection.png)
+
 # 《从零开始学 Java》80 · 反射:程序照镜子
 
 > 连载特刊 · 番外卷三「引擎室」第 1 话 · 基线 Java 25(最新 LTS)

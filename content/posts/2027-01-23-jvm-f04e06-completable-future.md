@@ -5,8 +5,10 @@ series: "jvm-academy"
 season: 4
 episode: 6
 tags: ["Java 25", "CompletableFuture", "异步编排", "虚拟线程", "并发"]
-excerpt: "StructuredTaskScope 能做到的，别用 CompletableFuture。但有些场景 STS 做不到：动态链式编排、回调注册延迟执行、跨服务异步消息。三方比价场景拆解 thenCompose/thenCombine/handle，最后给出决策矩阵：什么时候选哪个，不再凭直觉猜。"
+excerpt: "CompletableFuture 与 StructuredTaskScope 解决不同形状的问题：前者擅长跨阶段管道编排，后者约束一个词法作用域内的子任务生命周期。用 Java 25 的 open + Joiner API 对照 thenCompose/thenCombine/handle。"
 ---
+
+![JVM 火种纪漫画：f04e06-completable-future](/comics/jvm/f04e06-completable-future.png)
 
 > **"CompletableFuture 不是被 StructuredTaskScope 取代的——它们解决的是不同形状的问题。STS 是围栏，CF 是管道。先确认你要建的是哪一种。"**
 > — 焰焰，画决策矩阵
@@ -16,7 +18,7 @@ excerpt: "StructuredTaskScope 能做到的，别用 CompletableFuture。但有�
 ## 🎬 开场：三家供应商报价
 
 > **〔1〕**
-> 咖啡站新功能：下单前对比三家供应商的咖啡豆报价，选最低价。三家 API 响应时间不同（A: 200ms，B: 150ms，C: 300ms），还要在最低价上叠加会员折扣（异步查用户等级），最后格式化报价单。阿零上周用 `StructuredTaskScope.ShutdownOnSuccess` 做了竞速——「但这次不是竞速，是聚合三个价格再做一步异步计算，STS 怎么做？」
+> 咖啡站新功能：下单前对比三家供应商的咖啡豆报价，选最低价。三家 API 响应时间不同（A: 200ms，B: 150ms，C: 300ms），还要在最低价上叠加会员折扣（异步查用户等级），最后格式化报价单。阿零上周用 `StructuredTaskScope.open(Joiner.anySuccessfulResultOrThrow())` 做了竞速——「但这次不是竞速，是聚合三个价格再做一步异步计算，STS 怎么做？」
 
 > **〔2〕**
 > 焰焰把需求拆开：「STS 搞定聚合 OK。但加会员折扣查询依赖报价结果——这是两步有依赖的异步。STS 可以嵌套两个 scope，也可以 join 第一个再 fork 第二个。」阿零写了嵌套版：代码 OK，但七层缩进。「CF 的 thenCompose 天生为这个设计——第一步完成后把结果传进下一步的异步函数。管道形状的逻辑用管道写。」
@@ -159,19 +161,19 @@ class CFDemo {
     static FinalQuote bestQuoteWithSTS(String userId) throws Exception {
         // 步骤1：STS 并发聚合
         Quote best;
-        try (var scope = new java.util.concurrent.StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope = java.util.concurrent.StructuredTaskScope.<Object>open()) {
             var ta = scope.fork(() -> { sleep(200); return new Quote("供应商A", 320); });
             var tb = scope.fork(() -> { sleep(150); return new Quote("供应商B", 298); });
             var tc = scope.fork(() -> { sleep(300); return new Quote("供应商C", 275); });
-            scope.join().throwIfFailed();
+            scope.join();
             best = List.of(ta.get(), tb.get(), tc.get()).stream()
                 .min(Comparator.comparingInt(Quote::pricePerKg)).orElseThrow();
         }
         // 步骤2：顺序执行会员查询（join 后再 fork 新 scope）
         String tier;
-        try (var scope2 = new java.util.concurrent.StructuredTaskScope.ShutdownOnFailure()) {
+        try (var scope2 = java.util.concurrent.StructuredTaskScope.<String>open()) {
             var tt = scope2.fork(() -> { sleep(80); return "GOLD"; });
-            scope2.join().throwIfFailed();
+            scope2.join();
             tier = tt.get();
         }
         double price = best.pricePerKg() * (tier.equals("GOLD") ? 0.90 : 1.0);
@@ -235,8 +237,8 @@ completeOnTimeout 降级: 超时默认 ¥340.0
 
 | 场景 | 推荐 | 理由 |
 |---|---|---|
-| 并发聚合 N 个必须全成功 | **STS ShutdownOnFailure** | 生命周期严格，任一失败立即取消其余 |
-| 竞速取最快 | **STS ShutdownOnSuccess** | 语义清晰，取消可靠 |
+| 并发聚合 N 个必须全成功 | **STS `open()`** | Java 25 默认 join 策略,失败时取消其余 |
+| 竞速取最快 | **STS + `Joiner.anySuccessfulResultOrThrow()`** | 类型安全,获胜后取消其余 |
 | 步骤 A 完成后异步步骤 B | **CF thenCompose** | 管道形状，无需嵌套 scope |
 | 两个异步结果合并 | **CF thenCombine** | 优于手动 allOf+join |
 | 统一异常降级 | **CF handle** | 成功/失败同路处理 |
@@ -279,7 +281,7 @@ cf.thenApply(a -> step1(a))       // step1 抛异常
 // ❌ 陷阱 5：anyOf 返回 CF<Object> 类型不安全
 Object result = CompletableFuture.anyOf(qa, qb, qc).get();
 Quote q = (Quote) result; // 运行时 ClassCastException 风险（若类型不一致）
-// ✅ 确保所有 CF 类型相同，或用 STS ShutdownOnSuccess（泛型安全）
+// ✅ 确保所有 CF 类型相同，或用 STS + Joiner.anySuccessfulResultOrThrow()
 ```
 
 ---
@@ -324,8 +326,8 @@ System.out.println(ForkJoinPool.commonPool().getParallelism()); // = 可用核�
 | `failedFuture(ex)` | **JDK 9** | 直接创建失败态 CF |
 | `defaultExecutor()` | **JDK 9** | 自定义默认 executor 入口 |
 | 虚拟线程作为 CF executor | **JDK 21+** | `Executors.newVirtualThreadPerTaskExecutor()` |
-| `StructuredTaskScope` 正式 | **JDK 25** | JEP 505（上一话） |
-| 本话代码运行环境 | JDK 25 | ✅ 正式 API |
+| `StructuredTaskScope` Fifth Preview | **JDK 25** | JEP 505,需 `--enable-preview` |
+| 本话 CF API | JDK 25 | 正式 API；对照 STS 部分是 Preview |
 
 ---
 
@@ -345,7 +347,7 @@ System.out.println(ForkJoinPool.commonPool().getParallelism()); // = 可用核�
 
 **Q7.** CF 链式中间节点抛出异常，下游节点会怎样？如何感知中间节点的异常？
 
-**Q8.** 什么场景下 `anyOf` 不如 `StructuredTaskScope.ShutdownOnSuccess`？
+**Q8.** 什么场景下 `anyOf` 不如 `StructuredTaskScope` + `Joiner.anySuccessfulResultOrThrow()`？
 
 **Q9.** `CompletableFuture.allOf(qa, qb)` 完成后，若 `qa` 异常，调用 `qa.join()` 会怎样？
 
@@ -369,7 +371,7 @@ System.out.println(ForkJoinPool.commonPool().getParallelism()); // = 可用核�
 >
 > **Q7. 中间节点抛出异常后，该节点进入异常完成态，其后的所有 `thenApply/thenCompose` 回调被跳过（短路传播），直到遇到 `handle/exceptionally` 节点。**中间节点的异常不会打印任何日志，表面上看像任务「消失」了。感知方式：在关键节点加 `.whenComplete((r, e) -> { if (e != null) log.warn("...", e); })`；或在 `get()` 时 catch `ExecutionException` 再检查 `getCause()`。
 >
-> **Q8. `anyOf` 返回 `CF<Object>`，需要强转，类型不安全；竞速结果中其他 CF 不会被取消，仍在后台运行（散养）；`ShutdownOnSuccess<T>` 返回泛型安全的 `T`，scope 关门后其余任务立即收到取消信号。**当类型一致且需要真正取消竞输者时，STS 更合适。
+> **Q8. `anyOf` 返回 `CF<Object>`，需要强转；竞速结果中其他 CF 不会自动取消。Java 25 的 `Joiner.anySuccessfulResultOrThrow()` 直接让 `join()` 返回泛型结果,获胜后 scope 会请求取消其余任务。**取消仍依赖任务响应中断,不能写成“立即停止”的硬保证。
 >
 > **Q9. `allOf(qa, qb)` 完成（任何一个异常也算完成）后，调用 `qa.join()` 会抛出 `CompletionException`，其 `getCause()` 是 `qa` 内部抛出的原始异常。**`join()` 与 `get()` 的区别：`join()` 抛 unchecked `CompletionException`；`get()` 抛 checked `ExecutionException`。两者都需要 unwrap `getCause()` 才能拿到原始异常。
 >
@@ -380,15 +382,13 @@ System.out.println(ForkJoinPool.commonPool().getParallelism()); // = 可用核�
 ## 运行环境、验证与依据
 
 - **运行环境**：GraalVM 25.0.4+7.1（`graalvm-jdk-25.0.4`），Windows 11，编码 UTF-8。
-- **验证方式**：`javac -encoding UTF-8 --release 25 CFDemo.java && java CFDemo`；三方并发聚合耗时 ~384ms（≈最慢供应商 C 300ms + 会员查询 80ms）；竞速 orTimeout 在 100ms 触发 TimeoutException；completeOnTimeout 降级正常返回；handle 降级路径验证。实测与文中描述一致。
-- **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[CompletableFuture API](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/CompletableFuture.html)、[JEP 505: Structured Concurrency](https://openjdk.org/jeps/505)。
+- **验证方式**：`javac -encoding UTF-8 --release 25 --enable-preview CFDemo.java && java --enable-preview CFDemo`；preview 开关只来自 STS 对照段,CompletableFuture 本身是正式 API。耗时数字只用于说明依赖链形状,不作为性能承诺。
+- **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[CompletableFuture API](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/CompletableFuture.html)、[JEP 505: Structured Concurrency (Fifth Preview)](https://openjdk.org/jeps/505)。
 
 ---
 
 ## 🔮 下话预告：F4E7《流水线魔改》
 
-并发模型讲完了，最后一话换个方向：`Stream Gatherers`（JDK 25 正式，JEP 485）。
+并发模型讲完了，最后一话换个方向：`Stream Gatherers`（JEP 485,JDK 24 正式）。
 
 滑动窗口、批量归组、出杯速率限流——标准 Stream API 做不到的操作，用 Gatherer 三件套 `initializer/integrator/finisher` 自己组装。卷四收官。
-
-

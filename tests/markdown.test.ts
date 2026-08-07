@@ -37,6 +37,17 @@ test("图片 alt 里的 * 不再被注入 <strong>/<em>", async () => {
   assert.ok(!html.includes("<strong>"), html);
 });
 
+test("所有连载目录下的漫画都使用 AVIF/WebP 响应式变体", async () => {
+  const html = await markdownToHtml(
+    "![炉中来客](/comics/jvm/f01e01-furnace-guest.png)",
+  );
+  assert.ok(html.includes('<picture>'), html);
+  assert.ok(html.includes('/comics/jvm/f01e01-furnace-guest-512.avif'), html);
+  assert.ok(html.includes('/comics/jvm/f01e01-furnace-guest.webp'), html);
+  assert.ok(html.includes('class="post-image comic-image"'), html);
+  assert.ok(!html.includes('.png"'), html);
+});
+
 // ---------- 链接(诊断 #7 括号截断 / #9 白名单绕过) ----------
 
 test("URL 内平衡括号完整保留,无游离 )", async () => {

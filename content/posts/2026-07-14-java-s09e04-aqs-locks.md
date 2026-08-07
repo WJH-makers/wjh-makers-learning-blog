@@ -5,6 +5,8 @@ summary: "synchronized 抢不到就死等,阿零受够了。豆豆拆开显式�
 tags: [Java, Java漫画, AQS, ReentrantLock, 并发, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s09e04-aqs-locks](/comics/java/s09e04-aqs-locks.png)
+
 # 《从零开始学 Java》73 · 锁的内脏:AQS 与显式锁
 
 > 连载特刊 · 番外卷二「并发深水区」第 4 话 · 基线 Java 25(最新 LTS)

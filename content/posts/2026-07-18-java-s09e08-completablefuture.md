@@ -5,6 +5,8 @@ summary: "门闩等得齐,票据却拼不动:Future.get 一喊,阿零在取餐�
 tags: [Java, Java漫画, CompletableFuture, 异步编程, 线程池, 番外, 阿零与豆豆]
 ---
 
+![Java漫画：s09e08-completablefuture](/comics/java/s09e08-completablefuture.png)
+
 # 《从零开始学 Java》77 · 异步编排:CompletableFuture
 
 > 连载特刊 · 番外卷二「并发深水区」第 8 话 · 基线 Java 25(最新 LTS)
