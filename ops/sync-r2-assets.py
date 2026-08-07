@@ -16,6 +16,7 @@ import hmac
 import mimetypes
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Iterable
 from urllib.error import HTTPError, URLError
@@ -154,21 +155,28 @@ def s3_request(
         f"SignedHeaders={signed_headers}, Signature={signature}"
     )
 
-    request = Request(
-        f"{endpoint}{path}",
-        data=body if method == "PUT" else None,
-        headers=request_headers,
-        method=method,
-    )
-    try:
-        with urlopen(request, timeout=30) as response:
-            response.read(1)
-            return response.status
-    except HTTPError as error:
-        error.read(512)
-        return error.code
-    except URLError as error:
-        raise RuntimeError(f"network failure for {key}: {error.reason}") from error
+    last_error: Exception | None = None
+    for attempt in range(4):
+        request = Request(
+            f"{endpoint}{path}",
+            data=body if method == "PUT" else None,
+            headers=request_headers,
+            method=method,
+        )
+        try:
+            with urlopen(request, timeout=30) as response:
+                response.read(1)
+                return response.status
+        except HTTPError as error:
+            error.read(512)
+            return error.code
+        except (OSError, TimeoutError, URLError) as error:
+            last_error = error
+            if attempt < 3:
+                time.sleep(2**attempt)
+
+    reason = getattr(last_error, "reason", last_error)
+    raise RuntimeError(f"network failure for {key}: {reason}") from last_error
 
 
 def content_type(path: Path) -> str:
@@ -219,29 +227,32 @@ def main() -> int:
 
     def process(item: tuple[Path, str]) -> tuple[str, str]:
         path, key = item
-        if args.check:
-            status = s3_request("HEAD", key, endpoint, bucket, access_key, secret_key)
-            return key, "ok" if status == 200 else f"missing({status})"
+        try:
+            if args.check:
+                status = s3_request("HEAD", key, endpoint, bucket, access_key, secret_key)
+                return key, "ok" if status == 200 else f"missing({status})"
 
-        if not args.force:
-            existing = s3_request("HEAD", key, endpoint, bucket, access_key, secret_key)
-            if existing == 200:
-                return key, "skipped"
+            if not args.force:
+                existing = s3_request("HEAD", key, endpoint, bucket, access_key, secret_key)
+                if existing == 200:
+                    return key, "skipped"
 
-        body = path.read_bytes()
-        status = s3_request(
-            "PUT",
-            key,
-            endpoint,
-            bucket,
-            access_key,
-            secret_key,
-            body,
-            content_type(path),
-        )
-        if status not in {200, 201, 204}:
-            return key, f"upload-failed({status})"
-        return key, "uploaded"
+            body = path.read_bytes()
+            status = s3_request(
+                "PUT",
+                key,
+                endpoint,
+                bucket,
+                access_key,
+                secret_key,
+                body,
+                content_type(path),
+            )
+            if status not in {200, 201, 204}:
+                return key, f"upload-failed({status})"
+            return key, "uploaded"
+        except RuntimeError as error:
+            return key, f"network-failed({error})"
 
     counts = {"ok": 0, "missing": 0, "skipped": 0, "uploaded": 0, "failed": 0}
     failures: list[str] = []
@@ -252,7 +263,7 @@ def main() -> int:
             if result.startswith("missing"):
                 counts["missing"] += 1
                 failures.append(f"{key}: {result}")
-            elif result.startswith("upload-failed"):
+            elif result.startswith(("upload-failed", "network-failed")):
                 counts["failed"] += 1
                 failures.append(f"{key}: {result}")
             else:
