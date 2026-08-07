@@ -4,8 +4,8 @@ set -Eeuo pipefail
 readonly REPOSITORY=/home/ubuntu/blog
 readonly DEPLOY_REF=origin/production
 readonly DEPLOY_FETCH_URLS=(
-  "https://github.com/WJH-makers/wjh-makers-learning-blog.git"
   "git@github.com:WJH-makers/wjh-makers-learning-blog.git"
+  "https://github.com/WJH-makers/wjh-makers-learning-blog.git"
 )
 readonly STATE_DIR=/home/ubuntu/.local/state/wjh-blog-deploy
 readonly STATE_FILE="${STATE_DIR}/last-successful-commit"
