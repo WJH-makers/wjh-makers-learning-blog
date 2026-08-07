@@ -9,6 +9,7 @@ import {
   seasonPublishedSlugs,
 } from "@/lib/series";
 import { siteUrl } from "@/lib/posts";
+import { publicAssetUrl } from "@/lib/assets";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 import JavaProgress from "./JavaProgress";
@@ -97,10 +98,10 @@ export default function JavaSeriesPage() {
           <p className="muted">从第一话开始，所有代码都会在「豆豆咖啡站」这个项目里持续生长。</p>
         </div>
         <picture>
-          <source type="image/avif" srcSet="/comics/java/alings-and-doudou-character-sheet-512.avif 512w, /comics/java/alings-and-doudou-character-sheet.avif 1055w" sizes="(max-width: 900px) 94vw, 700px" />
-          <source type="image/webp" srcSet="/comics/java/alings-and-doudou-character-sheet-512.webp 512w, /comics/java/alings-and-doudou-character-sheet.webp 1055w" sizes="(max-width: 900px) 94vw, 700px" />
+          <source type="image/avif" srcSet={`${publicAssetUrl("/comics/java/alings-and-doudou-character-sheet-512.avif")} 512w, ${publicAssetUrl("/comics/java/alings-and-doudou-character-sheet.avif")} 1055w`} sizes="(max-width: 900px) 94vw, 700px" />
+          <source type="image/webp" srcSet={`${publicAssetUrl("/comics/java/alings-and-doudou-character-sheet-512.webp")} 512w, ${publicAssetUrl("/comics/java/alings-and-doudou-character-sheet.webp")} 1055w`} sizes="(max-width: 900px) 94vw, 700px" />
           <img
-            src="/comics/java/alings-and-doudou-character-sheet.webp"
+            src={publicAssetUrl("/comics/java/alings-and-doudou-character-sheet.webp")}
             alt="阿零与豆豆的角色设定图：阿零、豆豆、javac 编译官与 Java JVM 城主，以及深夜工作台场景"
             width={1055}
             height={1491}

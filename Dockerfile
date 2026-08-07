@@ -12,11 +12,13 @@ RUN npm config set fetch-timeout 60000 && npm ci
 FROM docker.m.daocloud.io/library/node:22-alpine AS builder
 ARG NEXT_PUBLIC_SITE_URL
 ARG APP_GIT_SHA=unknown
+ARG R2_PUBLIC_URL
 # NEXT_PUBLIC_* 由 next build 内联进前端 bundle,只能在构建期传入;
 # 放到 runner 的 env_file 里前端读不到(那时 JS 早已生成)。
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL} \
     NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY} \
+    R2_PUBLIC_URL=${R2_PUBLIC_URL} \
     APP_GIT_SHA=${APP_GIT_SHA}
 WORKDIR /app
 COPY --from=build-deps /app/node_modules ./node_modules
@@ -25,6 +27,7 @@ RUN npm run build && rm -rf .next/cache
 
 FROM docker.m.daocloud.io/library/node:22-alpine AS runner
 ARG APP_GIT_SHA=unknown
+ARG R2_PUBLIC_URL
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001 -G nodejs
 WORKDIR /app
 ENV NODE_ENV=production \
@@ -35,7 +38,11 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/content ./content
 COPY --from=builder /app/public ./public
-RUN chown -R nextjs:nodejs /app
+# Once the R2 public origin is configured, the immutable comic/map payloads are
+# served from the edge and do not need to consume origin image space or bandwidth.
+# Empty R2_PUBLIC_URL keeps the local fallback for development and rollback.
+RUN if [ -n "$R2_PUBLIC_URL" ]; then rm -rf /app/public/comics /app/public/images; fi \
+    && chown -R nextjs:nodejs /app
 USER nextjs
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \

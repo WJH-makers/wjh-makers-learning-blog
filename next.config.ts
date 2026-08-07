@@ -108,6 +108,13 @@ const nextConfig: NextConfig = {
       ],
     },
     {
+      // R2 迁移前后的本地回退图也使用稳定文件名,保持与漫画资源相同的缓存策略。
+      source: "/images/:path*",
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ],
+    },
+    {
       source: "/api/:path*",
       headers: [
         // nosniff 已由上面的全站规则覆盖,这里只补接口特有的「永不缓存」。

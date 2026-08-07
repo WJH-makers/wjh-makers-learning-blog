@@ -35,6 +35,9 @@ jobs:
       - name: Test site contracts
         run: npm test
 
+      - name: Validate R2 asset helper
+        run: python3 -m py_compile ops/sync-r2-assets.py
+
       - name: Build
         run: npm run build
 
