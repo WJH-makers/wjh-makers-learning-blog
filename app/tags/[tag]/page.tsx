@@ -15,6 +15,9 @@ export async function generateStaticParams() {
 
 export const runtime = "nodejs";
 export const revalidate = 3600;
+// Tags are generated from published content. Reject arbitrary dynamic params
+// so scanners cannot make Next create unbounded ISR cache paths.
+export const dynamicParams = false;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tag } = await params;
