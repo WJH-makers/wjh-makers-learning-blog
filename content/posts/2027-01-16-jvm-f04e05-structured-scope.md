@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 4
 episode: 5
 tags: ["Java 25", "StructuredTaskScope", "结构化并发", "虚拟线程", "Preview API"]
-excerpt: "StructuredTaskScope 在 JDK 25 仍是第五次预览：旧版 ShutdownOnFailure/ShutdownOnSuccess 已被 open + Joiner 取代。用可运行的 Java 25 示例看清失败传播、竞速、超时与结构化取消。"
+summary: "StructuredTaskScope 在 JDK 25 仍是第五次预览：旧版 ShutdownOnFailure/ShutdownOnSuccess 已被 open + Joiner 取代。用可运行的 Java 25 示例看清失败传播、竞速、超时与结构化取消。"
 ---
 
 ![JVM 火种纪漫画：f04e05-structured-scope](/comics/jvm/f04e05-structured-scope.png)

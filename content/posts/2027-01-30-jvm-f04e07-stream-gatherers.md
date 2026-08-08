@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 4
 episode: 7
 tags: ["Java 25", "Stream Gatherers", "JEP 485", "函数式", "并发"]
-excerpt: "Stream Gatherers 已由 JEP 485 在 JDK 24 正式交付。它为滑动窗口、批量分组与自定义有状态中间操作提供扩展点；本文以 Java 25 运行,但不把交付版本晚写一年。"
+summary: "Stream Gatherers 已由 JEP 485 在 JDK 24 正式交付。它为滑动窗口、批量分组与自定义有状态中间操作提供扩展点；本文以 Java 25 运行,但不把交付版本晚写一年。"
 ---
 
 ![JVM 火种纪漫画：f04e07-stream-gatherers](/comics/jvm/f04e07-stream-gatherers.png)

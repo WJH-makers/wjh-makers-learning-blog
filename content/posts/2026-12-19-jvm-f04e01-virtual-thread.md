@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 4
 episode: 1
 tags: ["Java 25", "虚拟线程", "Project Loom", "并发", "Executor"]
-excerpt: "平台线程是编制 200 的正式工，每人占 1MB 栈；虚拟线程一声令下十万临时工，人手一单从头跟到尾。JDK 21 正式、JDK 25 稳固——一行代码替换 Executor，吞吐量翻 100 倍，内存却没爆。"
+summary: "平台线程是编制 200 的正式工，每人占 1MB 栈；虚拟线程一声令下十万临时工，人手一单从头跟到尾。JDK 21 正式、JDK 25 稳固——一行代码替换 Executor，吞吐量翻 100 倍，内存却没爆。"
 ---
 
 ![JVM 火种纪漫画：f04e01-virtual-thread](/comics/jvm/f04e01-virtual-thread.png)

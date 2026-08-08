@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 3
 episode: 3
 tags: ["Java 25", "反射", "Class", "Method", "Field", "setAccessible"]
-excerpt: "炉底一面照出类骨架的镜子——字段、方法、构造器，连 private 的都照得见。但照得越深代价越大：反射比直接调用慢一到两个数量级，且绕过编译器类型检查。能用泛型/接口解决的就别用反射。"
+summary: "炉底一面照出类骨架的镜子——字段、方法、构造器，连 private 的都照得见。但照得越深代价越大：反射比直接调用慢一到两个数量级，且绕过编译器类型检查。能用泛型/接口解决的就别用反射。"
 ---
 
 ![JVM 火种纪漫画：f03e03-reflection](/comics/jvm/f03e03-reflection.png)

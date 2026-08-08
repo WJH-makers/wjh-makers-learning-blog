@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 1
 episode: 5
 tags: ["Java 25", "record解构", "未命名变量", "模式匹配", "现代Java"]
-excerpt: "嵌套订单像俄罗斯套娃——外层 Order 包着内层 Drink，一次 case 就全拆开；不想要的字段扔进 _ 回收槽，编译器自动接管。"
+summary: "嵌套订单像俄罗斯套娃——外层 Order 包着内层 Drink，一次 case 就全拆开；不想要的字段扔进 _ 回收槽，编译器自动接管。"
 ---
 
 > **"以前拆套娃要先撬外壳、再掰内盖、最后取芯子——三把起子。现在一句 case，全拆。"**

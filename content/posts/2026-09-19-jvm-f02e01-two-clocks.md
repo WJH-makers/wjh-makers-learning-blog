@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 2
 episode: 1
 tags: ["Java 25", "java.time", "Instant", "LocalDateTime", "Duration"]
-excerpt: "机器数秒（Instant）与人类看历（LocalDateTime）是两块完全不同的表——Date 把它们混在一起酿成了三十年的坑，java.time 把它们分开。"
+summary: "机器数秒（Instant）与人类看历（LocalDateTime）是两块完全不同的表——Date 把它们混在一起酿成了三十年的坑，java.time 把它们分开。"
 ---
 
 > **"炉子里的温度传感器和墙上的挂钟，读的是两种不同的时间——你的旧代码把它们都叫做 Date。"**

@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 2
 episode: 7
 tags: ["Java 25", "InputStream", "BufferedInputStream", "编码", "UTF-8", "IO"]
-excerpt: "裸字节走地下水道，Buffered 是蓄水罐——一滴一滴读和一桶一桶读，系统调用次数差千倍。乱码等于 UTF-8 滤网装错型号：字节本无意义，编码才给它意义。"
+summary: "裸字节走地下水道，Buffered 是蓄水罐——一滴一滴读和一桶一桶读，系统调用次数差千倍。乱码等于 UTF-8 滤网装错型号：字节本无意义，编码才给它意义。"
 ---
 
 ![JVM 火种纪漫画：f02e07-byte-stream](/comics/jvm/f02e07-byte-stream.png)

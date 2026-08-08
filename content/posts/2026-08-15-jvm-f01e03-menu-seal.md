@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 1
 episode: 3
 tags: ["Java 25", "sealed", "permits", "穷尽switch", "现代Java"]
-excerpt: "菜单只许三种咖啡，想偷偷 extends 出「香菜咖啡」的直接被编译器保安架走——sealed 把继承树关进笼子，穷尽 switch 把出口也堵死。"
+summary: "菜单只许三种咖啡，想偷偷 extends 出「香菜咖啡」的直接被编译器保安架走——sealed 把继承树关进笼子，穷尽 switch 把出口也堵死。"
 ---
 
 > **"想把所有可能性都写在合同里，就得先把合同封印。"**

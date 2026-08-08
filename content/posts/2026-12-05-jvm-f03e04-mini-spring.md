@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 3
 episode: 4
 tags: ["Java 25", "注解", "反射", "依赖注入", "Spring原理"]
-excerpt: "Spring 魔法书的第一页其实很朴素：扫类、看注解、用反射创建实例、注入依赖。阿零 60 行代码复现了 @Coffee 注入器，焰焰指出工业 Spring 在这之上加了 6 层防护——但理解第 1 层才能读懂后面的 5 层。"
+summary: "Spring 魔法书的第一页其实很朴素：扫类、看注解、用反射创建实例、注入依赖。阿零 60 行代码复现了 @Coffee 注入器，焰焰指出工业 Spring 在这之上加了 6 层防护——但理解第 1 层才能读懂后面的 5 层。"
 ---
 
 ![JVM 火种纪漫画：f03e04-mini-spring](/comics/jvm/f03e04-mini-spring.png)

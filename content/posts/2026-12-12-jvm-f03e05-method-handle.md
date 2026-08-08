@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 3
 episode: 5
 tags: ["Java 25", "MethodHandle", "VarHandle", "Class-File API", "字节码"]
-excerpt: "反射镜照得到但调用路径更动态。MethodHandle 给 JIT 更多内联机会；VarHandle 提供有内存语义的原子访问；Class-File API 已由 JEP 484 在 JDK 24 正式交付。卷三从运行时自省走到受支持的字节码模型。"
+summary: "反射镜照得到但调用路径更动态。MethodHandle 给 JIT 更多内联机会；VarHandle 提供有内存语义的原子访问；Class-File API 已由 JEP 484 在 JDK 24 正式交付。卷三从运行时自省走到受支持的字节码模型。"
 ---
 
 ![JVM 火种纪漫画：f03e05-method-handle](/comics/jvm/f03e05-method-handle.png)

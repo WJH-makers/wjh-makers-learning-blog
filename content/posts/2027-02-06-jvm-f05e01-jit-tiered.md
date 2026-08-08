@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 5
 episode: 1
 tags: ["Java 25", "JIT", "C1", "C2", "分层编译", "JVM 调优"]
-excerpt: "方法刚开始执行时是解释器逐字翻译，跑热了才送进编译器。C1 是速写素描（快速编译 + 基础优化），C2 是精修油画（激进内联 + 逃逸分析，但编译慢）。-XX:+PrintCompilation 让你看到每一次编译事件。压测不预热，测的是解释器，不是生产状态。"
+summary: "方法刚开始执行时是解释器逐字翻译，跑热了才送进编译器。C1 是速写素描（快速编译 + 基础优化），C2 是精修油画（激进内联 + 逃逸分析，但编译慢）。-XX:+PrintCompilation 让你看到每一次编译事件。压测不预热，测的是解释器，不是生产状态。"
 ---
 
 ![JVM 火种纪漫画：f05e01-jit-tiered](/comics/jvm/f05e01-jit-tiered.png)

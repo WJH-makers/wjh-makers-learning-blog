@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 4
 episode: 2
 tags: ["Java 25", "虚拟线程", "JFR", "载体线程", "挂载卸载", "并发"]
-excerpt: "虚拟线程一等咖啡机就「灵魂出窍」，挂上衣架；肉身（载体线程）立刻去服务下一位。JFR 的事件雨让阿零第一次看见线程灵魂在 8 个载体线程之间飘移——mount、unmount、park、unpark，并发调度的底细全在这里。"
+summary: "虚拟线程一等咖啡机就「灵魂出窍」，挂上衣架；肉身（载体线程）立刻去服务下一位。JFR 的事件雨让阿零第一次看见线程灵魂在 8 个载体线程之间飘移——mount、unmount、park、unpark，并发调度的底细全在这里。"
 ---
 
 ![JVM 火种纪漫画：f04e02-mount-unmount](/comics/jvm/f04e02-mount-unmount.png)

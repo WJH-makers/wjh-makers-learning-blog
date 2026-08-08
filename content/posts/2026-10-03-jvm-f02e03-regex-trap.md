@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 2
 episode: 3
 tags: ["Java 25", "正则表达式", "Pattern", "Matcher", "命名分组", "性能"]
-excerpt: "Pattern.compile() 是铸捕兽夹，Matcher.find() 是放夹子。夹子要在炉里预先铸好，不能每次用时现铸——小票流水里抓优惠码，三行代码，命名分组让匹配结果可读如文档。"
+summary: "Pattern.compile() 是铸捕兽夹，Matcher.find() 是放夹子。夹子要在炉里预先铸好，不能每次用时现铸——小票流水里抓优惠码，三行代码，命名分组让匹配结果可读如文档。"
 ---
 
 > **"正则表达式不难——难的是每次用时都 `new Pattern()`。那不叫用正则，叫浪费 CPU。"**
