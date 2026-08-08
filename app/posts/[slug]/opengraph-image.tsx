@@ -1,6 +1,9 @@
 import { ImageResponse } from "next/og";
+import type { Route } from "next";
+import { notFound, permanentRedirect } from "next/navigation";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { LEGACY_POST_SLUG_REDIRECTS } from "@/lib/legacy-slug-redirects";
 import { getPublishedPost } from "@/lib/posts";
 import { findEpisodeInfo } from "@/lib/series-registry";
 
@@ -17,10 +20,16 @@ const fontData = readFileSync(join(process.cwd(), "public", "fonts", "noto-sc-bo
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPublishedPost(slug);
-  const rawTitle = post?.title ?? "咖啡站技术志";
+  if (!post) {
+    const legacy = LEGACY_POST_SLUG_REDIRECTS.find((item) => item.from === slug);
+    if (legacy) permanentRedirect(`/posts/${legacy.to}/opengraph-image` as Route);
+    notFound();
+  }
+
+  const rawTitle = post.title;
   // 去掉《系列名》NN · 前缀,只留话名
   const title = rawTitle.replace(/^《[^》]+》\s*\d+\s*·\s*/, "");
-  const info = findEpisodeInfo(slug);
+  const info = findEpisodeInfo(post.slug);
   const eyebrow = info
     ? `${info.series.title} · 第${info.season.season}卷 ${info.season.title}`
     : "咖啡站技术志 · 技术笔记";

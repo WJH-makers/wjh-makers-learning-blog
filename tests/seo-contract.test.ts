@@ -15,6 +15,13 @@ test("sitemap 固定入口不重复，并覆盖核心公开页面", () => {
   }
 });
 
+test("文章 OpenGraph 图片不为旧或未知 slug 伪造 200 图片", () => {
+  const imageRoute = fs.readFileSync(path.join(root, "app", "posts", "[slug]", "opengraph-image.tsx"), "utf8");
+  assert.match(imageRoute, /LEGACY_POST_SLUG_REDIRECTS/);
+  assert.match(imageRoute, /permanentRedirect\(`\/posts\/\$\{legacy\.to\}\/opengraph-image`/);
+  assert.match(imageRoute, /notFound\(\)/);
+});
+
 test("全站页脚展示 ICP 备案并链接工信部备案系统", () => {
   const layout = fs.readFileSync(path.join(root, "app", "layout.tsx"), "utf8");
   const footer = layout.match(/<footer className="footer">([\s\S]*?)<\/footer>/)?.[1];
