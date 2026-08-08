@@ -1,6 +1,7 @@
 export const STATIC_SITEMAP_ROUTES = [
   { path: "/", changeFrequency: "daily", priority: 1 },
   { path: "/start", changeFrequency: "weekly", priority: 0.9 },
+  { path: "/learning", changeFrequency: "weekly", priority: 0.6 },
   { path: "/universe", changeFrequency: "weekly", priority: 0.8 },
   { path: "/characters", changeFrequency: "monthly", priority: 0.6 },
   { path: "/coffee-station", changeFrequency: "weekly", priority: 0.8 },

@@ -10,7 +10,7 @@ test("sitemap 固定入口不重复，并覆盖核心公开页面", () => {
   const paths = STATIC_SITEMAP_ROUTES.map((entry) => entry.path);
   assert.equal(new Set(paths).size, paths.length);
 
-  for (const path of ["/", "/start", "/universe", "/posts", "/tags", "/projects", "/now"]) {
+  for (const path of ["/", "/start", "/learning", "/universe", "/posts", "/tags", "/projects", "/now"]) {
     assert.ok(paths.includes(path as (typeof paths)[number]), `sitemap 缺少 ${path}`);
   }
 });
