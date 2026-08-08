@@ -10,7 +10,9 @@ type Props = {
 
 export async function generateStaticParams() {
   return (await getAllPublishedTags())
-    .map(({ tag }) => ({ tag: encodeURIComponent(tag) }));
+    // Next encodes the segment when it writes the URL. Returning the raw
+    // value is required for dynamicParams=false to recognize the same tag.
+    .map(({ tag }) => ({ tag }));
 }
 
 export const runtime = "nodejs";
