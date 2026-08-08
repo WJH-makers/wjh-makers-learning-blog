@@ -41,7 +41,13 @@ async function newPage(options) {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
+    if (message.type() !== "error") return;
+    const text = message.text();
+    // dev 模式下 React 用 eval() 做调试特性,撞上本站 CSP 必然报错,与阅读器无关。
+    // audit-browser-layout.mjs 用同一判据过滤,两个审计对噪音的口径必须一致。
+    const expectedDevCspWarning = baseUrl.startsWith("http://localhost:")
+      && text.startsWith("eval() is not supported in this environment");
+    if (!expectedDevCspWarning) errors.push(text);
   });
   return { context, page, errors };
 }
