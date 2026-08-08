@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 5
 episode: 4
 tags: ["Java 25", "JEP 519", "AOT 缓存", "Leyden", "JVM 调优", "启动速度"]
-excerpt: "JDK 25 的紧凑对象头已是可选产品特性,不是 Preview；Leyden AOT 缓存保存类加载/链接结果与方法画像,不是把 C2 机器码直接封进缓存。用 JEP 519/483/514/515 把两条边界讲清。"
+summary: "JDK 25 的紧凑对象头已是可选产品特性,不是 Preview；Leyden AOT 缓存保存类加载/链接结果与方法画像,不是把 C2 机器码直接封进缓存。用 JEP 519/483/514/515 把两条边界讲清。"
 ---
 
 ![JVM 火种纪漫画：f05e04-aot-compact-headers](/comics/jvm/f05e04-aot-compact-headers.png)

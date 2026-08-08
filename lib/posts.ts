@@ -72,7 +72,10 @@ function postFromFile(fileName: string): Post {
     slug,
     title: data.title ?? slug,
     date: data.date ?? new Date().toISOString().slice(0, 10),
-    summary: data.summary ?? "学习记录",
+    // excerpt 是安全网:曾有 30 篇 JVM 连载写成 excerpt,静默退化成兜底文案,
+    // 把 meta description / OG 卡片 / JSON-LD / 页面导语一起拖成"学习记录"。
+    // 正式约定仍是 summary —— tests/content-frontmatter.test.ts 禁止新增 excerpt。
+    summary: data.summary ?? data.excerpt ?? "学习记录",
     tags: parseTags(data.tags),
     readingMinutes: estimateReadingMinutes(content),
     content,

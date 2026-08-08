@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 4
 episode: 4
 tags: ["Java 25", "ScopedValue", "ThreadLocal", "虚拟线程", "并发"]
-excerpt: "十万虚拟线程各背一个 ThreadLocal 背包 = 十万份数据拷贝常驻内存，还要手动 remove() 防泄漏。ScopedValue（JDK 25 正式）是走廊公告牌：进走廊能看，出走廊自动失效，不持续占内存，天然不可变。"
+summary: "十万虚拟线程各背一个 ThreadLocal 背包 = 十万份数据拷贝常驻内存，还要手动 remove() 防泄漏。ScopedValue（JDK 25 正式）是走廊公告牌：进走廊能看，出走廊自动失效，不持续占内存，天然不可变。"
 ---
 
 ![JVM 火种纪漫画：f04e04-scoped-value](/comics/jvm/f04e04-scoped-value.png)

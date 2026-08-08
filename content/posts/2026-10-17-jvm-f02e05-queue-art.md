@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 2
 episode: 5
 tags: ["Java 25", "Queue", "ArrayDeque", "PriorityQueue", "集合", "数据结构"]
-excerpt: "取餐队 FIFO 靠 ArrayDeque 双门神，VIP 优先出杯是 PriorityQueue 小顶堆。LinkedList 退休了——双端队列和优先队列都有更专的实现。"
+summary: "取餐队 FIFO 靠 ArrayDeque 双门神，VIP 优先出杯是 PriorityQueue 小顶堆。LinkedList 退休了——双端队列和优先队列都有更专的实现。"
 ---
 
 ![JVM 火种纪漫画：f02e05-queue-art](/comics/jvm/f02e05-queue-art.png)

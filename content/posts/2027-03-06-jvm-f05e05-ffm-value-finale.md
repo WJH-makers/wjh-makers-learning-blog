@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 5
 episode: 5
 tags: ["Java 25", "FFM", "Vector API", "Valhalla", "JDK 26", "全剧终"]
-excerpt: "全剧终不做版本预言：FFM 已在 JDK 22 正式,Vector API 在 JDK 25/26 仍是孵化器,Value Classes 的 JEP 401 仍处于 Submitted 并只在 Valhalla EA 试验。把可用于生产、需显式孵化模块和只能研究的能力分成三层。"
+summary: "全剧终不做版本预言：FFM 已在 JDK 22 正式,Vector API 在 JDK 25/26 仍是孵化器,Value Classes 的 JEP 401 仍处于 Submitted 并只在 Valhalla EA 试验。把可用于生产、需显式孵化模块和只能研究的能力分成三层。"
 ---
 
 ![JVM 火种纪漫画：f05e05-ffm-value-finale](/comics/jvm/f05e05-ffm-value-finale.png)

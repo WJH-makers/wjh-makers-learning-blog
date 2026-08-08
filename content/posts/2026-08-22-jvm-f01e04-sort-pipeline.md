@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 1
 episode: 4
 tags: ["Java 25", "switch模式匹配", "when守卫", "instanceof", "现代Java"]
-excerpt: "人肉开箱验货的 instanceof-强转链升级成自动分拣机——类型检查、绑定、条件守卫，三步合一，编译器拦截支配性错误。"
+summary: "人肉开箱验货的 instanceof-强转链升级成自动分拣机——类型检查、绑定、条件守卫，三步合一，编译器拦截支配性错误。"
 ---
 
 > **"老流水线靠人眼辨货，新流水线靠形状分槽——货物一进来，自动测重、贴标、入箱。"**

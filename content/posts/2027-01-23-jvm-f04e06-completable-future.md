@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 4
 episode: 6
 tags: ["Java 25", "CompletableFuture", "异步编排", "虚拟线程", "并发"]
-excerpt: "CompletableFuture 与 StructuredTaskScope 解决不同形状的问题：前者擅长跨阶段管道编排，后者约束一个词法作用域内的子任务生命周期。用 Java 25 的 open + Joiner API 对照 thenCompose/thenCombine/handle。"
+summary: "CompletableFuture 与 StructuredTaskScope 解决不同形状的问题：前者擅长跨阶段管道编排，后者约束一个词法作用域内的子任务生命周期。用 Java 25 的 open + Joiner API 对照 thenCompose/thenCombine/handle。"
 ---
 
 ![JVM 火种纪漫画：f04e06-completable-future](/comics/jvm/f04e06-completable-future.png)

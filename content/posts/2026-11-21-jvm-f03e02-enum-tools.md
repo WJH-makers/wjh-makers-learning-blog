@@ -5,7 +5,7 @@ series: "jvm-academy"
 season: 3
 episode: 2
 tags: ["Java 25", "EnumMap", "EnumSet", "状态机", "enum", "集合"]
-excerpt: "EnumMap 是按徽章开槽的专属抽屉柜，读写比 HashMap 快一个数量级；EnumSet 是位图集合，判断是否包含只需一次位运算。订单状态机用枚举画地铁线路图，走错轨道编译时就拦截。"
+summary: "EnumMap 是按徽章开槽的专属抽屉柜，读写比 HashMap 快一个数量级；EnumSet 是位图集合，判断是否包含只需一次位运算。订单状态机用枚举画地铁线路图，走错轨道编译时就拦截。"
 ---
 
 ![JVM 火种纪漫画：f03e02-enum-tools](/comics/jvm/f03e02-enum-tools.png)
