@@ -15,6 +15,8 @@
     "test": "node --test \"tests/**/*.test.ts\"",
     "audit:layout": "node scripts/audit-browser-layout.mjs",
     "audit:reader": "node scripts/audit-book-reader.mjs",
+    "audit:posts": "node scripts/audit-all-posts-render.mjs",
+    "audit:integrity": "node scripts/audit-content-integrity.mjs",
     "content:audit": "node --test tests/content-audit.test.ts",
     "deploy:doctor": "node scripts/doctor-deploy.mjs",
     "deploy:doctor:production": "node scripts/doctor-deploy.mjs --production",
