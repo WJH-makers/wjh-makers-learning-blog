@@ -17,6 +17,20 @@ export default function SiteNav() {
       <div className="nav-links">
         {SITE_NAV_ITEMS.map((item) => {
           const active = isSiteNavItemActive(pathname, item);
+          if (item.external) {
+            return (
+              <a
+                key={item.href}
+                href={item.href}
+                className={active ? "is-active" : undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${item.label}（新标签页）`}
+              >
+                {item.label}
+              </a>
+            );
+          }
           return (
             <Link
               key={item.href}

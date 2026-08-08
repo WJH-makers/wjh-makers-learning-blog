@@ -15,3 +15,10 @@ test("global navigation marks the home page and grouped series routes", () => {
   assert.equal(isSiteNavItemActive("/posts/lesson", nav("连载")), true);
   assert.equal(isSiteNavItemActive("/coffee-station", nav("咖啡站")), true);
 });
+
+test("ARC Lab is exposed as an external tool", () => {
+  const item = nav("ARC Lab");
+  assert.equal(item.external, true);
+  assert.equal(item.href, "https://arc.wwjjhh.online");
+  assert.equal(isSiteNavItemActive("/", item), false);
+});

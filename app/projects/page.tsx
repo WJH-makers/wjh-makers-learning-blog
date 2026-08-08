@@ -34,6 +34,7 @@ export default function ProjectsPage() {
           "@type": "CreativeWork",
           name: project.name,
           description: project.lead,
+          ...(project.url ? { url: project.url } : {}),
         },
       })),
     },
@@ -75,6 +76,14 @@ export default function ProjectsPage() {
                 <span key={tech}>{tech}</span>
               ))}
             </div>
+
+            {project.url && (
+              <div className="project-links">
+                <a href={project.url} target="_blank" rel="noopener noreferrer">
+                  打开 ARC Lab ↗
+                </a>
+              </div>
+            )}
 
           </article>
         ))}
