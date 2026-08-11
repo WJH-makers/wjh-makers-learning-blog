@@ -110,12 +110,17 @@ for (const file of files) {
     if (panels.join(",") !== want) issues.push(`分格编号 [${panels.join(",")}] 不连续`);
   }
 
-  // 篇幅：handbook 写 4.2k–5.8k，但已发布的 f01e01/f01e02 实测 8.7k/10.6k，
-  // 卷五工具型话次带大量命令与输出实录更长。规范值已被实践推翻，这里只兜底
-  // 拦"明显失控"（超上限 3 倍），不按 handbook 原值报警。
-  const isFinale = ep?.chapterType === "project";
-  const hi = isFinale ? 6500 : 5800;
-  if (rawFull.length > hi * 3) issues.push(`篇幅 ${rawFull.length} 超上限 ${hi} 的三倍`);
+  // 篇幅：handbook §3 写 4.2k–5.8k（卷终 5.5k–6.5k），但这个数已被实践推翻——
+  // 已发布并作为格式基准的 f01e01/f01e02 就是 8.7k/10.6k。全线 32 篇实测分布
+  // 8.7k–19.6k、中位 11.9k，带完整命令与输出实录的技术话次天然落在高位。
+  //
+  // 旧实现按 chapterType 分档（project 6500×3、其余 5800×3）会自相矛盾：
+  // 同为 19k 的 f03e05（project）合规、f04e06（reference）超标，而两者形态一样。
+  // 改为不分档的单一绝对上限，只拦真正失控的篇目（当前最大 19.6k，留足余量）。
+  const LENGTH_CEILING = 24000;
+  if (rawFull.length > LENGTH_CEILING) {
+    issues.push(`篇幅 ${rawFull.length} 超绝对上限 ${LENGTH_CEILING}`);
+  }
 
   // 内部路径与署名
   if (/handbook\.md/i.test(rawFull)) issues.push("正文含 handbook.md 内部路径");
