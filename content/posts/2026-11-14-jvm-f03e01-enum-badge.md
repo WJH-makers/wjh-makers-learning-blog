@@ -1,53 +1,62 @@
 ---
-title: "F3E1 十二枚会员徽章 — enum 本质与常量特定方法"
-date: "2026-11-14"
-series: "jvm-academy"
-season: 3
-episode: 1
-tags: ["Java 25", "enum", "常量特定方法", "switch", "单例"]
-summary: "每枚徽章内置折扣算法，不是靠外部 if-else 分拣——焰焰揭秘 enum 是编译器替你 new 好的一组单例，常量特定方法让每个常量有自己的行为，switch 表达式让分拣穷尽无遗漏。"
+title: "《JVM 火种纪》16 · 十二枚会员徽章"
+date: 2026-11-14
+summary: "文件读写全面NIO.2之后，后厨积分系统还在用 if (level == 1) 的哑巴分支链：会员等级是 int，折扣算法散落各处，漏写一个等级编译器不吭声。阿零用 enum 把五种等级变成五枚有名字、有行为的单例徽章，每枚徽章内置自己的折扣算法；switch 表达式穷尽检查兜底——javap 拆开炉底，看编译器替你 new 好的是什么。"
+tags: [Java, Java漫画, JVM, enum, Java25, 阿零与焰焰]
 ---
+
+# 《JVM 火种纪》16 · 十二枚会员徽章
+
+> JVM 火种纪 · 卷三「反射与枚举篇」第 1 话 · 基线 Java 25（最新 LTS）
+> 长期项目:**豆豆咖啡站**。上一话把文件读写全面换成 NIO.2、类库债还清——炉底积分系统却还在用一列哑巴 if-else 判断会员等级。
+
+---
+
+## 一、事故：会员折扣 if-else 迷宫漏了第四档
+
+上一话把文件读写全面换成 NIO.2、类库债还清——转头看积分系统，阿零发现会员折扣逻辑是一串 30 行 `if-else`：`if (level == 1)` 普通，`if (level == 2)` 银牌，`if (level == 3)` 黄金……`if (level == 5)` 黑金。铂金（level=4）的分支压根没写，编译器不吭声，测试也没覆盖到，上线后铂金会员一律按普通价结算。
+
+---
+
+## 二、漫画 · 五枚徽章上岗
 
 ![JVM 火种纪漫画：f03e01-enum-badge](/comics/jvm/f03e01-enum-badge.png)
 
-> **"enum 不是 int 的别名——它是一组有名字、有行为、不可伪造的单例对象。把会员等级存 int，是在用哑巴替代会说话的对象。"**
-> — 焰焰，看着 `if (level == 1)` 的分支链说
+> [!文字版]
+> **〔1〕** 阿零盯着屏幕，一脸茫然：「我写了 30 行 if-else，覆盖了 1、2、3、5，怎么铂金会员投诉折扣没算对？」焰焰探过头，直接指着第 22 行：「level=4 你没写。编译器不知道你有几种等级，它不替你数。」
+>
+> **〔2〕** 「换成 enum，编译器帮你数。」焰焰定义了五个常量：`NORMAL、SILVER、GOLD、PLATINUM、BLACK_GOLD`。「switch 表达式要求穷尽所有分支——漏写 PLATINUM，编译就报错，不是上线后客诉。」
+>
+> **〔3〕** 「但常量特定方法更优雅。」焰焰把折扣逻辑写进枚举本身：每枚徽章重写 `discount(int cents)`，主流程只剩一行 `level.discount(price)`。「折扣规则和等级住在一起，新增等级只需加一个常量，旧逻辑不动。」
+>
+> **〔4〕** 阿零翻了翻 JDK 5 时代的代码：「那时候 enum 就有了，但没有 switch 表达式。」焰焰点头：「JDK 5 引入 enum，switch 语句当时不强制穷尽——漏写分支只是静默跳过，没有编译拦截。JDK 14 的 switch 表达式才把穷尽检查变成铁律。」残影飘过：一段 2004 年的 `switch (level)` 语句，default 分支什么都不做。
+>
+> **〔5〕** 阿零把五种等级的折扣逻辑各自内置进常量，测试通过后感叹：「以前漏一个等级要靠 QA 发现，现在漏一个等级连编译都过不了。」焰焰：「这就是类型系统帮你守门。」
 
 ---
 
-## 🎬 开场：会员折扣的 if-else 迷宫
+## 三、本话目标
 
-> **〔1〕**
-> 阿零写了一个会员折扣函数，30 行 if-else：`if (level == 1)` 普通，`if (level == 2)` 银牌，……`if (level == 5)` 黑金。焰焰看了一眼：「5 种等级，忘了写 level=4 的分支，编译器不提示，测试也不一定覆盖。」
-
-> **〔2〕**
-> 「换成 enum，编译器帮你数有几个常量。switch 表达式穷尽所有分支——漏写一个，编译报错。」焰焰定义了 5 个等级：
->
-> ```java
-> enum MemberLevel { NORMAL, SILVER, GOLD, PLATINUM, BLACK_GOLD }
-> ```
-
-> **〔3〕**
-> 「但常量特定方法更优雅——把折扣逻辑放进枚举本身，不是放在外面的 switch 里。」焰焰改写：
->
-> ```java
-> enum MemberLevel {
->     NORMAL { @Override public int discount(int cents) { return cents; } },
->     GOLD   { @Override public int discount(int cents) { return cents * 9 / 10; } };
->     public abstract int discount(int cents);
-> }
-> ```
->
-> 「现在每枚徽章知道自己的折扣规则，不需要外部 switch。」
-
-> **〔4〕**
-> 阿零把 12 种折扣逻辑分别内置进每个常量，主流程只剩一行：`level.discount(price)`。逻辑从散落的 if-else 收进了枚举定义，新增等级只需加一个常量，旧逻辑不动。
+- 理解 enum 底层是编译器替你 new 好的单例对象组
+- 用常量特定方法把折扣逻辑内聚进枚举
+- 用 switch 表达式穷尽检查兜底防遗漏
+- 用 javap 看编译器对枚举做了什么
+- 掌握 ordinal/name 的正确用法与陷阱
 
 ---
 
-## 🔑 核心技术：enum 底层与常量特定方法
+## 四、炉内原理图：enum 底层是什么
 
-### enum 底层是什么
+| 写法 | 编译器等价展开 | 关键性质 |
+|---|---|---|
+| `enum Color { RED, GREEN, BLUE }` | `final class Color extends Enum<Color>` + 三个 `static final Color` 实例 | 每个常量是唯一单例，`==` 安全 |
+| `ordinal()` | 声明顺序（0 起） | 不要用于持久化/业务逻辑，插入新常量则全部错位 |
+| `name()` | 声明名称字符串 | 可持久化，`valueOf("RED")` 反向查找 |
+| `values()` | 编译器生成，每次调用克隆数组 | 频繁调用建议缓存 |
+| 常量特定方法 | 每个常量是枚举类的匿名子类 | 逻辑内聚，新增常量强制实现抽象方法 |
+| switch 表达式穷尽 | JDK 14 正式，有返回值则必须覆盖所有分支 | 漏分支→编译报错，上一话的 if-else 没有这个护栏 |
+
+把第一行摊开看，编译器替你写了什么：
 
 ```java
 enum Color { RED, GREEN, BLUE }
@@ -60,13 +69,7 @@ final class Color extends Enum<Color> {
 }
 ```
 
-关键结论：
-- 每个枚举常量是 `Color` 类的**唯一实例**（单例）
-- `==` 比较枚举常量安全（同一 JVM 内只有一个实例）
-- `ordinal()` 是声明顺序（0起），不要用于持久化/业务逻辑
-- `name()` 是声明名称（字符串），`Color.valueOf("RED")` 反向查找
-
-### 常量特定方法
+常量特定方法则是让每个常量各带一份实现：
 
 ```java
 enum Op {
@@ -78,11 +81,11 @@ enum Op {
 // Op.MINUS.apply(3, 2) → 1
 ```
 
-每个常量重写抽象方法，逻辑内聚在枚举定义里。
+上一话把文件操作全面升级到 NIO.2，类库债还清；这一话用同样的思路把等级判断从 int+if-else 升级到 enum+常量特定方法，让类型系统替你守门。
 
 ---
 
-## ⚙️ 代码实录：会员徽章折扣系统
+## 五、从上一话继续改代码：会员徽章折扣系统
 
 ```java
 // javac -encoding UTF-8 --release 25 MemberBadge.java
@@ -156,7 +159,54 @@ class MemberBadge {
 }
 ```
 
-**实测输出**（GraalVM 25.0.4）：
+---
+
+## 六、故意翻一次车：switch 漏掉 PLATINUM 分支
+
+阿零故意试一次——把 switch 表达式里的 `case PLATINUM` 删掉：
+
+```java
+// 故意漏写 PLATINUM 分支
+String badge = switch (lv) {
+    case NORMAL     -> "⚪";
+    case SILVER     -> "🥈";
+    case GOLD       -> "🥇";
+    // case PLATINUM   -> "💎";   ← 故意删掉
+    case BLACK_GOLD -> "🖤";
+};
+```
+
+---
+
+## 七、编译官罚单
+
+> **📋 编译官罚单 · switch 表达式穷尽检查**
+>
+> ```
+> MemberBadge.java:xx: error: the switch expression does not cover all possible input values
+>             String badge = switch (lv) {
+>                            ^
+> 1 error
+> ```
+>
+> switch 表达式有返回值，编译器要求覆盖枚举的所有常量。漏写 `PLATINUM` 分支，编译直接拒绝——这正是 enum + switch 表达式比 int + if-else 更可靠的原因。
+
+---
+
+## 八、修复并验证
+
+把 `case PLATINUM -> "💎";` 补回去，重新编译：
+
+```bash
+javac -encoding UTF-8 --release 25 MemberBadge.java && java MemberBadge
+```
+
+验证判据：
+1. 五种积分样本折扣输出正确
+2. switch 穷尽五枚徽章全部打印
+3. `NORMAL == byPoints(0)` 输出 `true`
+
+**正常输出**（GraalVM 25.0.4）：
 
 ```
 === 会员折扣 ===
@@ -178,25 +228,7 @@ NORMAL == byPoints(0): true
 
 ---
 
-## ⚠️ 常见陷阱
-
-```java
-// 陷阱1：ordinal() 用于持久化（常量顺序变则数据错乱）
-db.save(level.ordinal());        // 危险！
-db.save(level.name());           // ✅ 或自定义 code 字段
-
-// 陷阱2：switch 遗漏分支在 Java 14 之前不报错
-// Java 14+ switch 表达式（有返回值）要求穷尽，编译器兜底
-
-// 陷阱3：枚举构造器不能 public（编译器强制 private）
-enum X { A; public X() {} } // 编译错误：Illegal modifier for the enum constructor
-
-// 陷阱4：EnumSet/EnumMap 比普通 Set/Map 快，应优先使用（见 F3E2）
-```
-
----
-
-## 🔬 炉底显微镜
+## 九、🔬 炉底显微镜 · javap 看编译器替你 new 好的是什么
 
 > 焰焰用 `javap` 看编译器对枚举做了什么：
 
@@ -239,7 +271,7 @@ name: MON
 
 ---
 
-## 📐 版本边界
+## 十、⏳ 版本时光机 · enum 与 switch 表达式的历史边界
 
 **版本边界**
 
@@ -250,6 +282,47 @@ name: MON
 | `switch` 语句支持枚举 | JDK 5 | |
 | `switch` 表达式（穷尽检查）| **JDK 14**（正式）| 有返回值，漏分支→编译错 |
 | 本话代码运行环境 | JDK 25 | ✅ |
+
+---
+
+## 十一、常见陷阱
+
+```java
+// 陷阱1：ordinal() 用于持久化（常量顺序变则数据错乱）
+db.save(level.ordinal());        // 危险！
+db.save(level.name());           // ✅ 或自定义 code 字段
+
+// 陷阱2：switch 遗漏分支在 Java 14 之前不报错
+// Java 14+ switch 表达式（有返回值）要求穷尽，编译器兜底
+
+// 陷阱3：枚举构造器不能 public（编译器强制 private）
+enum X { A; public X() {} } // 编译错误：Illegal modifier for the enum constructor
+
+// 陷阱4：EnumSet/EnumMap 比普通 Set/Map 快，应优先使用（见 F3E2）
+```
+
+---
+
+## 十二、项目检查点 · 豆豆咖啡站 jvm-v2.1
+
+- **已具备**：会员等级枚举化，五枚徽章各自内置折扣算法（本话）；switch 表达式穷尽检查，漏写等级编译直接拦截；`byPoints` 静态工厂按积分反查等级；`==` 比较枚举安全，不需要 equals。
+- **还没有**：徽章专用容器（EnumMap/EnumSet）还没上，枚举键仍走 HashMap 的哈希计算；订单状态机没有约束，状态流转合法性靠人记。
+
+阿零的变化：他把 if-else 迷宫换成五枚会说话的徽章，铂金会员终于不再被当普通价结算——第一次意识到**等级不是一个 int，而是一个有行为的类型**。
+
+---
+
+## 十三、对应招聘技能
+
+Java枚举, enum常量特定方法, switch表达式穷尽检查, JDK14, 类型安全设计, javap字节码分析
+
+---
+
+## 十四、下一话悬念
+
+徽章建好了，但用 `HashMap<MemberLevel, Integer>` 存枚举键——还在浪费哈希计算。焰焰说枚举有专属抽屉柜：`EnumMap` 按 ordinal 直接数组下标，零碰撞；`EnumSet` 用一个 long 位图存 64 个标志，contains 是一次位与。
+
+订单状态机也等着上线——`待支付→已支付→备餐中→已完成`，走错轨道在运行时就被拦。第17话《徽章专用工具箱》，三把专用钥匙一次配齐。
 
 ---
 
@@ -307,10 +380,4 @@ name: MON
 - **验证方式**：`javac -encoding UTF-8 --release 25 MemberBadge.java && java MemberBadge`，5种等级折扣、switch 穷尽、`==` 比较输出均与文中一致。
 - **官方依据**：[Java SE 25 JLS §8.9](https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.9)（枚举类型）、[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)。`enum` 在 JDK 5 引入，switch 表达式在 JDK 14 正式化，JDK 25 无变更。
 
----
-
-## 🔮 下话预告：F3E2《徽章专用工具箱》
-
-徽章建好了——下话用专用工具箱管它们。
-
-`EnumMap` 是按徽章开槽的专属抽屉柜，读写比 `HashMap` 快一个数量级；`EnumSet` 是位图集合，含不含某个等级只需一次位运算。最后用枚举实现一个订单状态机——状态是地铁线路图，转换是轨道，走错轨道在编译时就拦截。
+*本话属于连载《从零进化Java:JVM 火种纪》。世界观与卷次地图见 [/jvm](/jvm)。*
