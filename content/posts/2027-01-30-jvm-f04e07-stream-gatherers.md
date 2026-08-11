@@ -1,39 +1,61 @@
 ---
-title: "F4E7 流水线魔改 — Stream Gatherers 自定义工位"
-date: "2027-01-30"
-series: "jvm-academy"
-season: 4
-episode: 7
-tags: ["Java 25", "Stream Gatherers", "JEP 485", "函数式", "并发"]
-summary: "Stream Gatherers 已由 JEP 485 在 JDK 24 正式交付。它为滑动窗口、批量分组与自定义有状态中间操作提供扩展点；本文以 Java 25 运行,但不把交付版本晚写一年。"
+title: "《JVM 火种纪》27 · 流水线魔改"
+date: 2027-01-30
+summary: "Stream Gatherers（JEP 485）已在 JDK 24 正式交付，为滑动窗口、批量分组与自定义有状态中间操作提供扩展点。阿零用 windowFixed 统计出杯速率、用 windowSliding 平滑监控曲线、自定义 Gatherer 过滤递增告警——看清 Stream 管道的扩展边界：三件套（initializer / integrator / finisher）怎么焊进流水线。"
+tags: [Java, Java漫画, JVM, StreamGatherers, Java25, 阿零与焰焰]
 ---
+
+# 《JVM 火种纪》27 · 流水线魔改
+
+> JVM 火种纪 · 卷四「并发新纪元篇」第 7 话 · 基线 Java 25（最新 LTS）
+> 长期项目:**豆豆咖啡站**。上一话分清了管道（CF）与围栏（STS）——可 Stream 的固定工位不够用了，滑动窗口、批量统计都要自己写。
+
+---
+
+## 一、事故：每 5 杯一批统计平均出杯时间，标准 Stream 写不出来
+
+上一话把异步编排改成 CF 管道之后，运营要一个实时监控：**每 5 杯一批统计平均出杯时间**。阿零翻遍 `Stream` API，`filter/map/flatMap/reduce` 全是单元素或全归约，拿不到「每 N 个一批」的滑动窗口。
+
+「只能先 `collect` 成 `List`，再手动分批——损失了流式特性。」焰焰打开 JDK 24 发布说明：「JEP 485，Stream Gatherers，正式入库。这是中间操作的扩展点——你可以自定义有状态的中间操作，和 `filter/map` 一样用 `.gather(myGatherer)` 插进管道。」
+
+---
+
+## 二、漫画 · 零件盒焊进流水线
 
 ![JVM 火种纪漫画：f04e07-stream-gatherers](/comics/jvm/f04e07-stream-gatherers.png)
 
-> **"Stream 流水线是固定工位。Gatherer 是零件盒——自己拼工位，焊进去，其他人照常用 stream 语法调。"**
-> — 焰焰，指着流水线图
+> [!文字版]
+> **〔1〕** 咖啡站运营系统新需求：实时监控出杯速率——每 5 杯一组统计平均出杯时间。标准 Stream 没有「每 5 个一批」的操作。`filter/map/flatMap/reduce` 全是单元素或全归约，拿不到滑动窗口。阿零翻遍文档：「只能先 collect 成 List，再手动分批，损失了流式特性。」
+>
+> **〔2〕** 焰焰打开 JDK 24 发布说明：「JEP 485，Stream Gatherers，正式入库。这是中间操作的扩展点——你可以自定义有状态的中间操作，和 `filter/map` 一样用 `.gather(myGatherer)` 插进管道。」「有状态？」「滑动窗口需要记住前几个元素，这是状态。Gatherer 允许你把状态和收尾步骤表达出来。」
+>
+> **〔3〕** 「三件套：`initializer`（可选）在流开始时初始化状态容器；`integrator` 处理每个到来的元素，决定是否向下游 emit、是否停止；`finisher`（可选）流结束后用剩余状态生成最后一批输出。还有第四个可选件：`combiner`，用于并行流合并分段状态。」焰焰在白板上画了流水线图，每个元素进来先过 integrator，攒够了才 emit。
+>
+> **〔4〕** 「那个 `Gatherers` 工具类里有现成的？」「四个内置：`windowFixed`（固定大小窗口）、`windowSliding`（滑动窗口）、`fold`（有状态归约）、`scan`（逐步归约，输出每步结果）。业务语义够用就直接用，不够再自己焊。」出杯速率监控直接用 `windowFixed(5)`，一行搞定。
+>
+> **〔5〕** 阿零写了三个场景：`windowFixed(5)` 每批统计、`windowSliding(3)` 平滑监控曲线、自定义 `onlyIncreasing()` 过滤出杯时间递增的告警事件（过滤抖动）。「看见了吗，」焰焰指着代码，「Gatherer 是零件盒——自己拼工位，焊进去，其他人照常用 stream 语法调。」
+>
+> **〔6〕** 炉底浮出一个 2015 年的 `Stream.collect(Collector.groupingBy(...))` 残影，手里攥着一堆嵌套 Collector：「我们那会儿自定义聚合要写 Collector 的三件套……Supplier / Accumulator / Combiner，还要自己处理并行合并。你们现在 Gatherer 的 integrator 每次只看一个元素，状态容器自己定义——比我们那会儿灵活多了。」残影散进火里。
 
 ---
 
-## 🎬 开场：固定工位的极限
+## 三、本话目标
 
-> **〔1〕**
-> 咖啡站运营系统新需求：实时监控出杯速率——每5杯一组统计平均出杯时间。标准 Stream 没有「每5个一批」的操作。`filter/map/flatMap/reduce` 全是单元素或全归约，拿不到滑动窗口。阿零翻遍文档，「只能先 collect 成 List，再手动分批，损失了流式特性。」
-
-> **〔2〕**
-> 焰焰打开 JDK 24 发布说明：「JEP 485，Stream Gatherers，正式入库。这是中间操作的扩展点——你可以自定义有状态的中间操作,和 `filter/map` 一样用 `.gather(myGatherer)` 插进管道。」「有状态？」「滑动窗口需要记住前几个元素,这是状态。Gatherer 允许你把状态和收尾步骤表达出来。」
-
-> **〔3〕**
-> 三件套：`initializer`（可选）在流开始时初始化状态容器；`integrator` 处理每个到来的元素，决定是否向下游 emit、是否停止；`finisher`（可选）流结束后用剩余状态生成最后一批输出。还有第四个可选件：`combiner`，用于并行流合并分段状态。
-
-> **〔4〕**
-> 阿零：「那个 `Gatherers` 工具类里有现成的？」「四个内置：`windowFixed`（固定大小窗口）、`windowSliding`（滑动窗口）、`fold`（有状态归约）、`scan`（逐步归约，输出每步结果）。业务语义够用就直接用，不够再自己焊。」出杯速率监控直接用 `windowFixed(5)`，一行搞定。
+- 理解 Gatherer 的三件套（initializer / integrator / finisher）与可选 combiner；
+- 用内置 `windowFixed` / `windowSliding` / `scan` 写出批量统计与滑动平滑；
+- 自定义 Gatherer 过滤递增告警；
+- 说清 Gatherer 与 Collector 的差异；
+- 划清 JEP 485 的版本边界（JDK 24 正式、JDK 25 可用）。
 
 ---
 
-## 🔑 核心 API：Gatherer 三（四）件套
+## 四、炉内原理图：三件套怎么焊进管道
 
-```
+上一话的教训是「按形状选工具」。这一话的坑长得又不一样：**Stream 的固定工位不够用**——标准中间操作都是单元素进单元素出（`map`）、或单元素判断（`filter`），拿不到「攒够 N 个再处理」的滑动窗口。
+
+Gatherer 是 Stream 管道的**扩展点**，允许你自定义有状态的中间操作：
+
+```text
 Gatherer<T, A, R> 接口
   T = 输入元素类型
   A = 中间状态类型（initializer 创建的容器）
@@ -53,9 +75,16 @@ Gatherers.fold(init, combine) 有状态累加，最终输出一个结果（类�
 Gatherers.scan(init, f)       逐步累加，每步都 emit 中间结果（前缀扫描）
 ```
 
+与 `Collector` 的差异：
+- Collector 是**终止操作**（`stream.collect(collector)`），Gatherer 是**中间操作**（`stream.gather(gatherer).map(...)`）；
+- Collector 的 accumulator 每次看两个参数（容器 + 元素），Gatherer 的 integrator 每次看三个（state + element + downstream），可以决定是否 emit、emit 几个、是否短路；
+- Gatherer 更灵活：可以 1 对 N（一个元素 emit 多个输出）、N 对 1（攒够 N 个才 emit 一个）、或 N 对 M。
+
 ---
 
-## ⚙️ 代码实录：出杯速率监控与自定义 Gatherer
+## 五、从上一话继续改代码：出杯速率监控与自定义 Gatherer
+
+阿零接手运营的需求：每 5 杯一批统计平均出杯时间，滑动窗口平滑监控曲线，自定义 gatherer 过滤递增告警。
 
 ```java
 // javac -encoding UTF-8 --release 25 GathererDemo.java && java GathererDemo
@@ -153,31 +182,32 @@ class GathererDemo {
                 }
                 return true;
             }),
-            // finisher：把剩余不足 size 的元素 emit 出去
-            (buf, downstream) -> {
-                if (!buf.isEmpty()) downstream.push(new ArrayList<>(buf));
+            (buf, downstream) -> {              // finisher：处理尾批
+                if (!buf.isEmpty()) {
+                    downstream.push(new ArrayList<>(buf));
+                }
             }
         );
     }
 
     public static void main(String[] args) {
-        // 模拟 12 杯出杯记录（ms）
+        // 模拟 12 杯咖啡出杯事件
         List<CupEvent> events = List.of(
             new CupEvent("C001", 210), new CupEvent("C002", 185),
             new CupEvent("C003", 230), new CupEvent("C004", 195),
             new CupEvent("C005", 220), new CupEvent("C006", 240),
-            new CupEvent("C007", 175), new CupEvent("C008", 260),
-            new CupEvent("C009", 190), new CupEvent("C010", 215),
-            new CupEvent("C011", 280), new CupEvent("C012", 170)
+            new CupEvent("C007", 200), new CupEvent("C008", 215),
+            new CupEvent("C009", 190), new CupEvent("C010", 260),
+            new CupEvent("C011", 250), new CupEvent("C012", 170)
         );
 
-        // 场景 1：固定窗口
+        // 场景 1：每5杯统计
         fixedWindowStats(events);
 
-        // 场景 2：滑动窗口
+        // 场景 2：滑动窗口平滑
         slidingWindowSmooth(events);
 
-        // 场景 3：scan 累计
+        // 场景 3：逐步累计
         scanCumulativeTime(events);
 
         // 场景 4：自定义 onlyIncreasing
@@ -248,7 +278,143 @@ class GathererDemo {
 
 ---
 
-## ⚠️ 常见陷阱
+## 六、故意翻一次车：忘记 finisher 导致尾批丢失
+
+阿零想知道——如果他写一个自定义分批 gatherer，但忘记写 finisher，会发生什么。他写了一个每 5 个一批的 gatherer，只实现 initializer 和 integrator。
+
+```java
+// 错误：只攒满 5 个才 emit，最后不足 5 个的会丢失
+static <T> Gatherer<T, ?, List<T>> chunkNoFinisher(int size) {
+    return Gatherer.ofSequential(
+        ArrayList::new,
+        Gatherer.Integrator.ofGreedy((buf, e, ds) -> {
+            buf.add(e);
+            if (buf.size() == size) {
+                ds.push(new ArrayList<>(buf));
+                buf.clear();
+            }
+            return true;
+        })
+        // ❌ 忘记 finisher！最后不足 5 个的元素永远不会 emit
+    );
+}
+```
+
+12 个元素，前 10 个输出 2 批（5+5），最后 2 个元素进了 buf，但流结束时 buf 没人处理——数据丢失。
+
+---
+
+## 七、编译官罚单
+
+> **📋 编译官罚单 · 编译器管不到数据语义**
+>
+> 编译器放行了，因为 `Gatherer.ofSequential(Supplier<A>, Integrator<A,T,R>)` 的签名合法：finisher 是可选参数，不传就是没有收尾步骤。**编译器管不到「你的业务逻辑需不需要处理尾批」**。
+>
+> 问题在运行时：12 个元素，只输出 10 个（2 批 5+5），最后 2 个丢失。症状是：**表面看代码正确，输出元素数不对**。
+
+---
+
+## 八、修复并验证
+
+修复：加 finisher，在流结束时检查 buf，如果非空就 emit。
+
+```java
+// ✅ 正确：加 finisher 处理尾批
+static <T> Gatherer<T, ?, List<T>> chunkWithFinisher(int size) {
+    return Gatherer.ofSequential(
+        ArrayList::new,
+        Gatherer.Integrator.ofGreedy((buf, e, ds) -> {
+            buf.add(e);
+            if (buf.size() == size) {
+                ds.push(new ArrayList<>(buf));
+                buf.clear();
+            }
+            return true;
+        }),
+        (buf, ds) -> { if (!buf.isEmpty()) ds.push(new ArrayList<>(buf)); }
+    );
+}
+```
+
+验证判据：12 个元素，输出 3 批（5+5+2），所有元素都被处理。
+
+正常路径的验证（GraalVM 25.0.4 实测输出）：
+
+```
+=== 自定义分块（含不满批次的 finisher）===
+  批: [C001, C002, C003, C004, C005]
+  批: [C006, C007, C008, C009, C010]
+  批: [C011, C012]
+```
+
+三批全部对上预期，最后一批只有 2 杯，也被正确输出。
+
+---
+
+## 九、🔬 炉底显微镜 · Gatherer 在 Stream 内部的调用链
+
+> 焰焰展开 Gatherer 在 Stream 内部的调用链。
+
+```bash
+## 查看 Gatherer 内置实现源码（JDK 25）
+javap -p -c java.util.stream.GathererOp  # 内部包装类
+
+## 用 JFR 观察 Stream 管道执行（含 Gatherer）
+java -XX:StartFlightRecording=filename=gather.jfr,duration=3s GathererDemo
+jfr print --events jdk.ObjectAllocationInNewTLAB gather.jfr | head -30
+## 观察 windowFixed 每批 new ArrayList 的分配热点
+
+## 基准测试：Gatherer vs 手动分批
+java --source 25 - <<'EOF'
+import java.util.stream.*;
+import java.util.*;
+
+void main() {
+    var data = LongStream.range(0, 1_000_000).boxed().toList();
+
+    // Gatherer windowFixed
+    long t1 = System.currentTimeMillis();
+    long cnt1 = data.stream()
+        .gather(Gatherers.windowFixed(100))
+        .mapToLong(List::size).sum();
+    System.out.println("Gatherer: " + (System.currentTimeMillis()-t1) + "ms, batches=" + cnt1/100);
+
+    // 手动分批
+    long t2 = System.currentTimeMillis();
+    long cnt2 = 0;
+    List<Long> buf = new ArrayList<>(100);
+    for (Long v : data) {
+        buf.add(v);
+        if (buf.size() == 100) { cnt2 += buf.size(); buf.clear(); }
+    }
+    System.out.println("手动分批: " + (System.currentTimeMillis()-t2) + "ms");
+}
+EOF
+## 实测：Gatherer ~85ms，手动 ~55ms；Gatherer 有 List 包装开销，量级差距可接受
+```
+
+**Gatherer 内部机制**：`gather(gatherer)` 包装为 `GathererOp`，插入 Stream 的 `ReferencePipeline`。`integrator` 为每个元素调用一次；`Integrator.ofGreedy` 跳过返回值检查（节约一次分支预测）；`finisher` 在流关闭（`close()`）时触发。并行流中，每个分段独立运行 `integrator`，然后 `combiner` 合并两段状态，最后运行 `finisher`。
+
+---
+
+## 十、⏳ 版本时光机 · Stream Gatherers 从预览到正式
+
+**版本边界**
+
+| 特性 | JDK | 说明 |
+|---|---|---|
+| `Stream.gather(Gatherer)` (Preview) | **JDK 22** | JEP 461 |
+| `Stream.gather(Gatherer)` (Preview 二) | **JDK 23** | JEP 473 |
+| `Stream.gather(Gatherer)` (正式) | **JDK 24** | JEP 485 |
+| `Gatherers.windowFixed/Sliding/fold/scan` | JDK 22 Preview | 内置四种 |
+| `Gatherer.ofSequential` | JDK 22 Preview | 无并行支持的简化构造 |
+| `Gatherer.of(init,integrator,combiner,finisher)` | JDK 22 Preview | 完整四件套 |
+| `Integrator.ofGreedy` | JDK 22 Preview | 跳过短路检查的性能变体 |
+| 本话代码运行环境 | JDK 25 | ✅ 正式 API |
+
+---
+
+## 十一、常见陷阱
 
 ```java
 // ❌ 陷阱 1：在 integrator 中持有外部可变状态（并行流下不安全）
@@ -297,68 +463,29 @@ List.of(1, 2).stream()
 
 ---
 
-## 🔬 炉底显微镜
+## 十二、项目检查点 · 豆豆咖啡站 jvm-v4.0（卷四终章）
 
-> 焰焰展开 Gatherer 在 Stream 内部的调用链：
+- **已具备**：虚拟线程一人一单（v3.1）；`ScopedValue` 上下文传递（v3.4）；子任务围栏管理（v3.5）；CF 与 STS 决策矩阵（v3.6）；Stream Gatherers 自定义有状态中间操作，用 `windowFixed` 批量统计、`windowSliding` 平滑监控、自定义 gatherer 过滤告警。
+- **还没有**：卷五「炉心与未来篇」将进入 JIT 编译优化与性能调优——为什么压测必须预热、C1/C2 分层编译的分水岭、逃逸分析与标量替换、方法内联的边界。
 
-```bash
-# 查看 Gatherer 内置实现源码（JDK 25）
-javap -p -c java.util.stream.GathererOp  # 内部包装类
-
-# 用 JFR 观察 Stream 管道执行（含 Gatherer）
-java -XX:StartFlightRecording=filename=gather.jfr,duration=3s GathererDemo
-jfr print --events jdk.ObjectAllocationInNewTLAB gather.jfr | head -30
-# 观察 windowFixed 每批 new ArrayList 的分配热点
-
-# 基准测试：Gatherer vs 手动分批
-java --source 25 - <<'EOF'
-import java.util.stream.*;
-import java.util.*;
-
-void main() {
-    var data = LongStream.range(0, 1_000_000).boxed().toList();
-
-    // Gatherer windowFixed
-    long t1 = System.currentTimeMillis();
-    long cnt1 = data.stream()
-        .gather(Gatherers.windowFixed(100))
-        .mapToLong(List::size).sum();
-    System.out.println("Gatherer: " + (System.currentTimeMillis()-t1) + "ms, batches=" + cnt1/100);
-
-    // 手动分批
-    long t2 = System.currentTimeMillis();
-    long cnt2 = 0;
-    List<Long> buf = new ArrayList<>(100);
-    for (Long v : data) {
-        buf.add(v);
-        if (buf.size() == 100) { cnt2 += buf.size(); buf.clear(); }
-    }
-    System.out.println("手动分批: " + (System.currentTimeMillis()-t2) + "ms");
-}
-EOF
-# 实测：Gatherer ~85ms，手动 ~55ms；Gatherer 有 List 包装开销，量级差距可接受
-```
-
-**Gatherer 内部机制**：`gather(gatherer)` 包装为 `GathererOp`，插入 Stream 的 `ReferencePipeline`。`integrator` 为每个元素调用一次；`Integrator.ofGreedy` 跳过返回值检查（节约一次分支预测）；`finisher` 在流关闭（`close()`）时触发。并行流中，每个分段独立运行 `integrator`，然后 `combiner` 合并两段状态，最后运行 `finisher`。
+阿零的变化：卷一他学会了「把不变量交给编译器守」，卷三他学会了「虚拟线程在 IO 阻塞时挂起让出 carrier 线程」，这一话他第一次遇到**管道扩展点**——标准 Stream 的固定工位不够用时，用 Gatherer 自己焊一个工位进去，而不是打破管道重写循环。于是他学会了：**先找标准组件，不够用再扩展，扩展完仍然是管道**。
 
 ---
 
-## 📐 版本边界
+## 十三、对应招聘技能
 
-**版本边界**
-
-| 特性 | JDK | 说明 |
-|---|---|---|
-| `Stream.gather(Gatherer)` (Preview) | **JDK 22** | JEP 461 |
-| `Stream.gather(Gatherer)` (Preview 二) | **JDK 23** | JEP 473 |
-| `Stream.gather(Gatherer)` (正式) | **JDK 24** | JEP 485 |
-| `Gatherers.windowFixed/Sliding/fold/scan` | JDK 22 Preview | 内置四种 |
-| `Gatherer.ofSequential` | JDK 22 Preview | 无并行支持的简化构造 |
-| `Gatherer.of(init,integrator,combiner,finisher)` | JDK 22 Preview | 完整四件套 |
-| `Integrator.ofGreedy` | JDK 22 Preview | 跳过短路检查的性能变体 |
-| 本话代码运行环境 | JDK 25 | ✅ 正式 API |
+Stream Gatherers（JEP 485）、`windowFixed` 与 `windowSliding` 的差异、`Gatherer.ofSequential` 与 `Gatherer.of` 四件套、`Integrator.ofGreedy` 的性能假设、`finisher` 处理尾批、并行流 `combiner` 合并状态、Gatherer 与 Collector 的定位差异。
 
 ---
+
+## 十四、下一话悬念
+
+管道焊完了，下一话进炉心——JIT 编译优化。
+
+卷五「炉心与未来篇」第 28 话《尾巴变红之前》：为什么压测必须预热？C1/C2 分层编译的分水岭在哪？方法内联、逃逸分析、标量替换——阿零要看清「代码变热」的全过程，以及为什么冷启动的 QPS 只有热稳态的 30%。
+
+---
+
 
 ## 🎯 随堂练习
 
@@ -414,12 +541,4 @@ EOF
 - **验证方式**：`javac -encoding UTF-8 --release 25 GathererDemo.java && java GathererDemo`；windowFixed(5) 12杯→3批（5+5+2）；windowSliding(3) 10个窗口；scan 逐步累计；自定义 onlyIncreasing 过滤下降值；sample(3) 每3杯取1；chunkWithFinisher(5) 尾批2杯正确输出。全部与文中一致。
 - **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[JEP 485: Stream Gatherers](https://openjdk.org/jeps/485)、[java.util.stream.Gatherer API](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/Gatherer.html)、[java.util.stream.Gatherers API](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/stream/Gatherers.html)。
 
----
-
-## 🔮 卷四收官 · 卷五预告：F5E1《尾巴变红之前》
-
-卷四完结。虚拟线程 → 挂载/卸载 → 钉住修复 → ScopedValue → StructuredTaskScope → CompletableFuture → Stream Gatherers，现代并发与函数式流水线全部到位。
-
-卷五进 JVM 底层。
-
-下一话 F5E1《尾巴变红之前》：JVM 运行时区域与 JIT 分层编译。C1 速写素描 vs C2 精修油画；方法越热焰焰尾巴越红；`-XX:+PrintCompilation` 看编译日志；为什么压测需要预热才算真实性能。
+*本话属于连载《从零进化Java:JVM 火种纪》。世界观与卷次地图见 [/jvm](/jvm)。*

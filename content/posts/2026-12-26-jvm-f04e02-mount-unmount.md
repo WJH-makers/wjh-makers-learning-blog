@@ -1,57 +1,98 @@
 ---
-title: "F4E2 临时工的分身术 — 挂载/卸载、载体线程与 JFR 事件雨"
-date: "2026-12-26"
-series: "jvm-academy"
-season: 4
-episode: 2
-tags: ["Java 25", "虚拟线程", "JFR", "载体线程", "挂载卸载", "并发"]
-summary: "虚拟线程一等咖啡机就「灵魂出窍」，挂上衣架；肉身（载体线程）立刻去服务下一位。JFR 的事件雨让阿零第一次看见线程灵魂在 8 个载体线程之间飘移——mount、unmount、park、unpark，并发调度的底细全在这里。"
+title: "《JVM 火种纪》22 · 临时工的分身术"
+date: 2026-12-26
+summary: "上一话换了 Executor 就把吞吐量翻了四倍，但阿零还不知道「灵魂出窍」到底是怎么发生的。焰焰打开 JFR 录制，事件雨里每一行 `jdk.VirtualThreadMount` 都是一次附体，每一行 `jdk.VirtualThreadUnmount` 都是一次卸载——同一个虚拟线程 sleep 前后挂在了不同的载体线程上，炉底把线程灵魂的飘移路径全拍了下来。"
+tags: [Java, Java漫画, JVM, JFR, Java25, 阿零与焰焰]
 ---
+
+# 《JVM 火种纪》22 · 临时工的分身术
+
+> JVM 火种纪 · 卷四「并发新纪元篇」第 2 话 · 基线 Java 25（最新 LTS）
+> 长期项目:**豆豆咖啡站**。上一话把线程池换成虚拟线程，十万订单各有人手——可阿零看到的只是结果数字，还没看见「灵魂出窍」到底是怎么发生的。
+
+---
+
+## 一、事故：我没看见卸载发生
+
+上一话压测跑完，阿零盯着 4 倍加速比发呆:「你说虚拟线程遇到 sleep 就卸载，载体线程就被交出去了——**我怎么知道它真的卸载了**？代码看起来就是普通的 `Thread.sleep(50)`，什么都没变。」
+
+豆豆从炉底探出头:「因为你看的是代码，不是事件。」
+
+焰焰打开 JFR 录制:`java -XX:StartFlightRecording=filename=vt.jfr,duration=5s ...`，跑完之后把事件打印出来，一行行全是 `jdk.VirtualThreadMount` 和 `jdk.VirtualThreadUnmount`。她指着其中一条:
+
+```
+VirtualThread[#42] 先挂在 worker-1，sleep 后卸载，醒来时挂在 worker-7。
+```
+
+「看见了吗？同一个虚拟线程，sleep 前后借了两具不同的『肉身』。这就是分身术的本质——**你的业务逻辑是一条连续的流，但底下借过三五具不同的载体线程，对你的代码完全透明**。」
+
+---
+
+## 二、漫画 · 看见灵魂飘移
 
 ![JVM 火种纪漫画：f04e02-mount-unmount](/comics/jvm/f04e02-mount-unmount.png)
 
-> **"虚拟线程的分身术不是真的分身——是灵魂暂时借了别人的肉身。等咖啡机出品完了，灵魂再找一具肉身重新上工。你写的代码没变，JVM 帮你做了全部调度。"**
-> — 焰焰，对着 JFR 事件图解释挂载/卸载
+> [!文字版]
+> **〔1〕** 阿零指着上一话的加速比数字:「虚拟线程一遇阻塞就卸载——我怎么知道它真的卸载了？代码看起来就是普通的 `Thread.sleep(50)`，编译器没报、运行时也没日志。」焰焰打开 JFR 录制:「因为你看的是代码，不是事件。」
+>
+> **〔2〕** 焰焰用 `java -XX:StartFlightRecording=filename=mount.jfr,duration=5s` 跑了一遍，然后 `jfr print --events jdk.VirtualThreadMount,jdk.VirtualThreadUnmount mount.jfr`，屏幕上刷出密密麻麻的事件雨。她指着一条:「看，VirtualThread[#42] 先挂在 worker-1 上执行，sleep 触发卸载，醒来时重新挂载——这次是 worker-7。」
+>
+> **〔3〕** 阿零翻事件日志，同一个虚拟线程 #42 的 `toString()` 从 `VirtualThread[#42]/runnable@ForkJoinPool-1-worker-1` 变成了 `@worker-7`。「所以『分身术』不是真的分身，是**灵魂暂时借了别人的肉身**？」焰焰点头:「对。你的执行流从头到尾是连续的，但底下借过三五具载体线程——续体（栈帧、局部变量）存堆上，载体线程只是临时宿主。」
+>
+> **〔4〕** 「什么触发卸载？」焰焰列举:`Thread.sleep`、阻塞式 IO（`InputStream.read`、`Socket.connect`）、`java.util.concurrent.locks.Lock` 阻塞、`BlockingQueue.take`。共同点:**JVM 能介入的阻塞操作**。`synchronized` 在 JDK 21 会钉住（pinning），JDK 24 已修复。
+>
+> **〔5〕** 版本残影浮出——2018 年 Project Loom 早期原型，手里攥着一份未完成的 `Continuation` API 草案:「我们那会儿还在争论要不要把续体暴露成公开 API……最后决定藏起来，只通过 `Thread` 暴露。用户不需要知道续体，只要写 `Thread.sleep`，JVM 替你做调度。」残影散进炉火。
+>
+> **〔6〕** 阿零统计了一下:50 个虚拟线程，62% 在 sleep 前后换了载体线程——「换肉身」是常态，不是偶然。焰焰补充:「挂载/卸载的开销约 100–500 纳秒，OS 线程上下文切换约 1–10 微秒——快了两个数量级，所以百万虚拟线程的调度成本才能忽略不计。」
 
 ---
 
-## 🎬 开场：看见灵魂出窍
+## 三、本话目标
 
-> **〔1〕**
-> 阿零在 F4E1 里看到了效果，但不明白原理：「十万虚拟线程，8 个载体线程，数学上怎么算得过来？」焰焰打开 JFR 录制：「我们不猜，我们看——`jdk.VirtualThreadMount` 和 `jdk.VirtualThreadUnmount` 会告诉你每次灵魂何时出窍、何时附体。」
-
-> **〔2〕**
-> 关键词：**挂载（mount）**= 虚拟线程占用载体线程开始执行；**卸载（unmount）**= 虚拟线程遇到阻塞，把当前状态（续体）保存到堆，载体线程释放。两步加起来通常 < 1 微秒，OS 线程上下文切换约 1-10 微秒。
-
-> **〔3〕**
-> 「什么触发卸载？」焰焰列举：`Thread.sleep`、阻塞式 IO（`InputStream.read`、`Socket.connect`）、`java.util.concurrent.locks.Lock` 阻塞、`BlockingQueue.take`。触发条件：**阻塞系统调用**或**JVM 托管的阻塞操作**。`synchronized` 在 JDK 24 之前会钉住（pinning），JDK 24 修复。
-
-> **〔4〕**
-> 阿零翻 JFR 报告，看到同一个虚拟线程 `VirtualThread[#42]` 先后挂载在 `worker-1`、`worker-3`、`worker-7` 三个不同载体线程上。焰焰：「这就是分身术的本质——你的业务逻辑从头到尾是一条连续的执行流，但底下借过三具不同的肉身。对代码完全透明。」
+- 用 JFR 实测 `jdk.VirtualThreadMount` 与 `jdk.VirtualThreadUnmount` 事件；
+- 编程式录制 JFR 并解析事件流，统计挂载/卸载次数；
+- 看清虚拟线程 `toString()` 格式，从字符串识别载体线程；
+- 说清哪些阻塞操作触发卸载，哪些会钉住（pinning）；
+- 掌握 `jfr print` 与 `jcmd` 两条观测路径。
 
 ---
 
-## 🔑 核心技术：挂载/卸载状态机
+## 四、炉内原理图：挂载/卸载状态机
+
+上一话讲了虚拟线程的**贵不贵**（创建成本与并发上限），这一话拆开**它怎么动**——从 NEW 到 TERMINATED 的状态流转，以及每次状态切换时 JVM 在底下做了什么：
 
 ```
-虚拟线程状态机（简化）
+虚拟线程状态机（简化版）
   NEW ──start()──► STARTED
-  STARTED ──挂载到载体线程──► RUNNING
+  STARTED ──挂载到载体线程──► RUNNING（占用一个载体线程）
   RUNNING ──阻塞调用──► PARKED（续体存堆，载体线程释放）
-  PARKED ──阻塞解除──► RUNNABLE（进调度队列）
+  PARKED ──阻塞解除──► RUNNABLE（进调度队列，等待挂载）
   RUNNABLE ──载体线程空闲──► RUNNING（可能换了载体线程）
   RUNNING ──任务完成──► TERMINATED
 
-关键事件（JFR）
+关键事件（JFR 可观测）
   jdk.VirtualThreadMount    → 虚拟线程挂载到载体线程
   jdk.VirtualThreadUnmount  → 虚拟线程从载体线程卸载
-  jdk.VirtualThreadPinned   → 虚拟线程被「钉住」（无法卸载）
-  jdk.VirtualThreadSubmitFailed → 提交失败（调度队列满）
+  jdk.VirtualThreadPinned   → 虚拟线程被「钉住」（无法卸载，下一话专门破案）
+  jdk.VirtualThreadSubmitFailed → 提交失败（调度队列满，极少见）
 ```
+
+关键在 RUNNING → PARKED → RUNNABLE → RUNNING 这个循环:**一次卸载产生一对 Unmount/Mount 事件，同一个虚拟线程可以经历多次**。挂载/卸载不是线程的「创建/销毁」，是**临时占用/交还载体线程**。
+
+触发卸载的操作（JVM 能介入调度的阻塞点）：
+- `Thread.sleep(N)`
+- 阻塞式 IO（`InputStream.read`、`Socket.connect`、`Files.readAllBytes`）
+- `java.util.concurrent.locks.Lock.lock()`、`Condition.await()`
+- `BlockingQueue.take()`、`CountDownLatch.await()`
+
+**不会**触发卸载的场景：
+- 纯 CPU 计算循环（JVM 无介入点）
+- `synchronized` 块内阻塞（JDK 21 会钉住，JDK 24 已修复，见第 23 话）
+- JNI 调用内阻塞（JNI 帧无法序列化，JDK 25 仍会钉住）
 
 ---
 
-## ⚙️ 代码实录：用 JFR 观测挂载/卸载
+## 五、从上一话继续改代码：用 JFR 编程式录制挂载事件
 
 ```java
 // javac -encoding UTF-8 --release 25 MountDemo.java
@@ -182,40 +223,71 @@ Pinned  事件: 0（正常为 0）
 
 ---
 
-## ⚠️ 钉住（Pinning）与诊断
+## 六、故意翻一次车：在 JNI 调用内阻塞
+
+阿零故意试一次——在 JNI 调用内部阻塞，看虚拟线程会不会被钉住。但 JNI 不是普通 Java 代码能轻易触发的，他找了个间接例子：
 
 ```java
-// JDK 21 时代的 pinning 问题（JDK 24 已修复）
-// 在 synchronized 块内调用阻塞 IO，虚拟线程被钉住，无法卸载
-synchronized (lock) {
-    Thread.sleep(1000);  // JDK 21: pinned! 载体线程被占用 1秒
-                         // JDK 24+: 已修复，可正常卸载
-}
+// JDK 25 中仍可能触发 pinning 的场景：JNI 调用内部阻塞
+// （需要原生库配合，这里只演示概念）
 
-// JDK 25 中仍可能触发 pinning 的情况：
-// 1. JNI 调用中阻塞（JNI 不支持卸载）
-// 2. 某些原生库内部的 synchronized（不在你的控制范围）
+// 理论场景：某个 JNI 方法内部调用了阻塞 IO
+// native void blockingNativeCall();  // C 代码里 read() 阻塞
+// → JVM 检测到 JNI 帧存在，无法安全卸载，虚拟线程被钉住
 
-// 诊断方式 1：JFR 事件
-// jfr print --events jdk.VirtualThreadPinned mount.jfr
-
-// 诊断方式 2：JVM 参数打印钉住事件
-// java -Djdk.tracePinnedThreads=full ...
-// 输出示例：
-// Thread[#42,ForkJoinPool-1-worker-1,5,CarrierThreads]
-//   java.base/jdk.internal.misc.Unsafe.park(Native Method)
-//   ...
-
-// 诊断方式 3：jcmd
-jcmd <pid> Thread.dump_to_file -format=json threads.json
-// 然后过滤 "mounted" 状态超长的虚拟线程
+// 实测方式：看 jdk.VirtualThreadPinned 事件的 stackTrace
+// 如果顶部是 Native Method，就是 JNI 钉住
 ```
 
 ---
 
-## 🔬 炉底显微镜
+## 七、编译官罚单
 
-> 焰焰用 `jfr` 命令和 `jcmd` 深挖挂载事件：
+> **📋 编译官罚单 · 编译官管不到调度，只能看 JFR**
+>
+> 挂载/卸载发生在运行时，是 JVM 调度器的行为，不是语法或类型错误——编译器对此一无所知：
+>
+> ```text
+> （无编译错误——Thread.sleep() 在虚拟线程与平台线程里语法完全一致）
+> 虚拟线程是否真的卸载了？       → 编译器不知道，看 JFR 事件
+> 虚拟线程换了几次载体线程？     → 编译器不知道，看 JFR 事件
+> 某个阻塞操作是否触发了钉住？   → 编译器不知道，看 jdk.VirtualThreadPinned
+> ```
+>
+> 这是并发调度问题的共性:**编译期看不见，运行时才能观测**。想确认挂载/卸载真的发生了，只有两条路——要么写代码记录 `Thread.currentThread().toString()` 前后的变化（本话前半段），要么直接看 JFR 事件流（本话后半段）。
+
+---
+
+## 八、修复并验证
+
+验证挂载/卸载机制生效，三条判据：
+
+1. **换载体线程比例 > 50%**：50 个虚拟线程，sleep 前后至少一半换了载体线程（实测 62%）；
+2. **JFR Mount/Unmount 事件成对**：10 个任务 × 1 次 sleep = 10 对事件（实测 20 Mount + 20 Unmount，启动时有初始挂载）；
+3. **Pinned 事件 = 0**：JDK 25 下 `synchronized` 不再钉住，正常代码不应有 Pinned 事件。
+
+正常路径验证（GraalVM 25.0.4 实测输出）：
+
+```
+总虚拟线程: 50
+sleep 前后换了载体线程: 31 (62%)
+  VT#21: VirtualThread[#21]/runnable@ForkJoinPool-1-worker-1 → VirtualThread[#21]/runnable@ForkJoinPool-1-worker-5
+  VT#22: VirtualThread[#22]/runnable@ForkJoinPool-1-worker-2 → VirtualThread[#22]/runnable@ForkJoinPool-1-worker-2
+  VT#23: VirtualThread[#23]/runnable@ForkJoinPool-1-worker-3 → VirtualThread[#23]/runnable@ForkJoinPool-1-worker-7
+
+=== JFR 编程式录制（2秒）===
+Mount   事件: 20
+Unmount 事件: 20
+Pinned  事件: 0（正常为 0）
+```
+
+三条全绿，确认挂载/卸载机制正常工作。阿零第一次「看见」了线程灵魂的飘移——不是通过猜，是通过 JFR 事件流实测出来的。
+
+---
+
+## 九、🔬 炉底显微镜 · Mount 事件的完整字段
+
+> 焰焰用 `jfr` 命令和 `jcmd` 深挖挂载事件
 
 ```bash
 # 1. 带 JFR 录制启动程序
@@ -263,7 +335,7 @@ jdk.VirtualThreadMount {
 
 ---
 
-## 📐 版本边界
+## 十、⏳ 版本时光机 · 虚拟线程事件与钉住修复
 
 **版本边界**
 
@@ -276,6 +348,52 @@ jdk.VirtualThreadMount {
 | JFR `EventStream` 编程式消费 | JDK 14 | 流式处理 JFR 事件 |
 | `Thread.dump_to_file` jcmd 命令 | JDK 21 | 含虚拟线程信息 |
 | 本话代码运行环境 | JDK 25 | ✅ |
+
+---
+
+## 十一、钉住诊断速查
+
+JDK 25 中 `synchronized` 已不再钉住，但仍有两类场景会触发 pinning：
+
+```
+仍会钉住的场景（JDK 25）：
+1. JNI 调用内部阻塞
+   → JNI 帧存储在 C 栈，JVM 无法序列化为续体
+   → 诊断：jdk.VirtualThreadPinned 栈顶显示 Native Method
+   
+2. 某些原生库内部的锁（不在用户控制范围）
+   → 例如某些旧版 JDBC 驱动内部用了 synchronized
+
+诊断方式速查：
+- JVM 参数：-Djdk.tracePinnedThreads=full（完整栈）或 =short（顶层帧）
+- JFR 事件：jfr print --events jdk.VirtualThreadPinned vt.jfr
+- jcmd 实时：jcmd <pid> Thread.dump_to_file，过滤 state=PINNED
+
+duration 字段直接显示钉住持续时长——多个长 duration 的 Pinned 事件 = 吞吐量瓶颈。
+```
+
+---
+
+## 十二、项目检查点 · 豆豆咖啡站 jvm-v3.2
+
+- **已具备**：虚拟线程池上线（v3.1）；**本话用 JFR 实测了挂载/卸载事件，62% 的虚拟线程换过载体线程，确认「灵魂出窍」真的发生了**；掌握编程式录制 JFR 与解析事件流。
+- **还没有**：钉住问题的旧攻略「把 synchronized 全改成 ReentrantLock」要不要信，还没亲手验证 JEP 491 的修复效果；ThreadLocal 的内存炸弹还没拆；结构化并发（StructuredTaskScope）还没学。
+
+阿零的变化：上一话他看到了虚拟线程的**效果**（吞吐量翻 4 倍），这一话他第一次**看见了机制**——不是通过文档描述，是通过 JFR 事件流实测出来的。他开始意识到:**并发问题的调试不能靠猜，要靠观测工具把运行时状态拍下来**。
+
+---
+
+## 十三、对应招聘技能
+
+JFR（Java Flight Recorder）、虚拟线程调度机制、挂载/卸载（mount/unmount）、钉住（pinning）诊断、`jdk.jfr` API 编程式录制。
+
+---
+
+## 十四、下一话悬念
+
+挂载/卸载的原理看清楚了，但阿零翻出一篇 2023 年的虚拟线程迁移指南，上面写着「在 `synchronized` 块内调用阻塞操作会导致钉住，必须改成 `ReentrantLock`」，旁边标了三个感叹号。
+
+焰焰看了看日期:「这在 JDK 21 时代是对的。JDK 24 发布 JEP 491 之后，synchronized 已经不再钉住了——**这张笔记可以进归档了**。」下一话，**拔掉图钉**:用 JFR 对比 JDK 21 与 JDK 25 的 Pinned 事件，看 JEP 491 到底修复了什么，以及什么时候 `ReentrantLock` 仍然是更好的选择。
 
 ---
 
@@ -333,10 +451,4 @@ jdk.VirtualThreadMount {
 - **验证方式**：`javac -encoding UTF-8 --release 25 MountDemo.java && java MountDemo`；62% 换载体线程实测；JFR 编程式录制 10 任务 × 1 sleep → 20 Mount/20 Unmount；Pinned 事件 = 0（JDK 25 正常）。
 - **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[JEP 444: Virtual Threads](https://openjdk.org/jeps/444)、[JEP 491: Synchronize Virtual Threads without Pinning](https://openjdk.org/jeps/491)、[JDK Flight Recorder API](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.jfr/jdk/jfr/package-summary.html)。
 
----
-
-## 🔮 下话预告：F4E3《拔掉图钉》
-
-「钉住」问题在 JDK 21 时代是虚拟线程最大的坑。
-
-下一话：焰焰拿着 JDK 21 和 JDK 25 对比运行同一段 `synchronized` + 阻塞代码——JFR Pinned 事件从「雨」变「晴」。旧攻略「把 `synchronized` 全改成 `ReentrantLock`」可以烧了，但焰焰会解释什么时候 `ReentrantLock` 仍然更好。
+*本话属于连载《从零进化Java:JVM 火种纪》。世界观与卷次地图见 [/jvm](/jvm)。*

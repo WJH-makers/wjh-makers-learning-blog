@@ -112,7 +112,7 @@ export const JVM_SEASONS: JavaSeason[] = [
       { season: 5, episode: 2, title: "豆渣分代清理术", summary: "分代 ZGC 与 GC 选型:厘清 JDK 23 的‘ZGC 默认模式’和 JDK 默认收集器不是一回事,延迟结论回到真实负载验证。", chapterType: "comic", projectStage: "挂上 GC 选型决策树", technologies: ["分代 ZGC", "G1", "JEP 474", "JEP 490"], jobSkills: ["JVM", "GC 调优"], status: "published", slug: "2027-02-13-jvm-f05e02-gc-zgc" },
       { season: 5, episode: 3, title: "黑匣子与显微镜", summary: "JFR 基础与自定义事件:深夜卡顿无人在场,调出黑匣子回放案发现场,业务指标埋进同一条时间线。", chapterType: "incident", projectStage: "深夜卡顿回放破案", technologies: ["JFR", "自定义事件", "CPU-time 剖析"], jobSkills: ["可观测性", "JVM 排障"], status: "published", slug: "2027-02-20-jvm-f05e03-jfr" },
       { season: 5, episode: 4, title: "瘦身与抢跑", summary: "JEP 519 紧凑对象头与 Leyden AOT 缓存:区分产品特性、类加载/链接缓存和方法画像,不把 JEP 484 误写成机器码缓存。", chapterType: "lab", projectStage: "对象布局 + 启动证据", technologies: ["JEP 519", "JEP 483", "JEP 514", "JEP 515"], jobSkills: ["JVM 调优"], status: "published", slug: "2027-02-27-jvm-f05e04-aot-compact-headers" },
-      { season: 5, episode: 5, title: "炉火向明天", summary: "全剧终:FFM 已正式,Vector API 仍在孵化,Valhalla 值类仍是 EA 研究;JDK 26 HTTP/3 已交付且需显式选择。", chapterType: "project", projectStage: "火种交接 · jvm-v5 炉心大成", technologies: ["FFM", "Vector API", "Valhalla", "JDK 26"], jobSkills: ["JVM", "技术视野"], status: "published", slug: "2027-03-06-jvm-f05e05-ffm-value-finale" },
+      { season: 5, episode: 5, title: "炉火向明天（全剧终）", summary: "全剧终:FFM 已正式,Vector API 仍在孵化,Valhalla 值类仍是 EA 研究;JDK 26 HTTP/3 已交付且需显式选择。", chapterType: "project", projectStage: "火种交接 · jvm-v5 炉心大成", technologies: ["FFM", "Vector API", "Valhalla", "JDK 26"], jobSkills: ["JVM", "技术视野"], status: "published", slug: "2027-03-06-jvm-f05e05-ffm-value-finale" },
     ],
   },
 ];

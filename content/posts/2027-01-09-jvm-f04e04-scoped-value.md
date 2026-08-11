@@ -1,53 +1,77 @@
 ---
-title: "F4E4 传物不传锅 — ScopedValue vs ThreadLocal"
-date: "2027-01-09"
-series: "jvm-academy"
-season: 4
-episode: 4
-tags: ["Java 25", "ScopedValue", "ThreadLocal", "虚拟线程", "并发"]
-summary: "十万虚拟线程各背一个 ThreadLocal 背包 = 十万份数据拷贝常驻内存，还要手动 remove() 防泄漏。ScopedValue（JDK 25 正式）是走廊公告牌：进走廊能看，出走廊自动失效，不持续占内存，天然不可变。"
+title: "《JVM 火种纪》24 · 传物不传锅"
+date: 2027-01-09
+summary: "十万虚拟线程各背一个 ThreadLocal 背包，副本跟着线程活，忘了 remove() 还会把上一个用户的数据漏给下一个请求。阿零改用 ScopedValue：进作用域能读、出作用域自动失效，不可变、免清理、子任务只读继承。炉底用 isBound() 看清绑定的边界严格贴着 run 块的词法范围。"
+tags: [Java, Java漫画, JVM, ScopedValue, Java25, 阿零与焰焰]
 ---
+
+# 《JVM 火种纪》24 · 传物不传锅
+
+> JVM 火种纪 · 卷四「并发新纪元篇」第 4 话 · 基线 Java 25（最新 LTS）
+> 长期项目:**豆豆咖啡站**。上一话拔掉了 synchronized 的图钉，虚拟线程终于不会被钉在载体线程上——可请求上下文还在用 `ThreadLocal` 一个个背着走。
+
+---
+
+## 一、事故：十万个背包，内存先扛不住
+
+上一话把图钉拔掉之后，十万虚拟线程终于能痛快地挂载卸载。这周大促，报警换了一种：内存。
+
+每个请求要把用户信息（`UserContext`）传给下游服务，阿零用的是 `ThreadLocal<UserContext>`，入口 `set()`、出口 `remove()`，教科书写法。可十万虚拟线程意味着十万份副本——**`ThreadLocal` 的生命周期跟线程绑定，线程活着副本就在内存里**。更早埋下的雷是线程池时代那批平台线程：漏一次 `remove()`，下一个请求就读到上一个用户的身份。
+
+豆豆端着咖啡看了一眼监控：「上一话你解决的是线程**卡住**。这一话是线程**背太多**——而且这口锅，编译器不替你背。」
+
+---
+
+## 二、漫画 · 走廊里的公告牌
 
 ![JVM 火种纪漫画：f04e04-scoped-value](/comics/jvm/f04e04-scoped-value.png)
 
-> **"ThreadLocal 是背包：你走到哪儿背到哪儿，忘了卸就一直扛着。ScopedValue 是走廊公告牌：走廊里的人都能看，走出走廊公告牌自动消失，没有泄漏，没有锅。"**
-> — 焰焰，解释为什么虚拟线程时代要换掉 ThreadLocal
+> [!文字版]
+> **〔1〕** 咖啡站大促，十万虚拟线程并发处理订单。每个请求需要传递用户信息（`UserContext`）给下游服务。阿零用的是 `ThreadLocal<UserContext>`——传统做法，在请求入口 `set()`，在出口 `remove()`。「听起来没问题？」焰焰问。「有什么问题？」
+>
+> **〔2〕** 「十万虚拟线程 = 十万个 ThreadLocal 副本。**`ThreadLocal` 的生命周期和线程绑定**——只要虚拟线程活着，副本就在内存里。如果忘了 `remove()`，线程池里的线程复用时，下一个请求会读到上一个用户的数据。虚拟线程不复用，但大量持有复杂对象仍然是内存压力。」
+>
+> **〔3〕** 「还有一个问题：ThreadLocal 是可变的。」焰焰展示了一段 bug：子任务在另一个线程里 `set()` 了 ThreadLocal，父线程的值被污染。「并发下 ThreadLocal 的可变性是隐形炸弹。」
+>
+> **〔4〕** 阿零嘴硬：「我每个出口都写了 `finally remove()`，漏不了。」焰焰尾巴一甩：「你能保证十万条出口里没有一条被 `return` 抄近路？**靠人记住的清理，迟早有人忘**——这句话你卷一就听过一次了。」
+>
+> **〔5〕** 焰焰换上 `ScopedValue`：「进入 `ScopedValue.where(K, V).run(...)` 的作用域，里面任何层级的代码都能读到 K；出了作用域，自动失效。**不可变，不需要 remove，天然线程安全。**」阿零：「这不就是函数式的动态绑定？」「正是。JDK 25 把它正式化了。」
+>
+> **〔6〕** 炉底浮出一个 1998 年的 `ThreadLocal` 残影，身上挂满解不开的背包带子：「我们那会儿一根线程一条命，背包背到线程死就自动没了……谁想到后来线程会被反复借来借去。」残影散进火里。
 
 ---
 
-## 🎬 开场：十万背包的重量
+## 三、本话目标
 
-> **〔1〕**
-> 咖啡站大促，十万虚拟线程并发处理订单。每个请求需要传递用户信息（`UserContext`）给下游服务。阿零用的是 `ThreadLocal<UserContext>`——传统做法，在请求入口 `set()`，在出口 `remove()`。「听起来没问题？」焰焰问。「有什么问题？」
-
-> **〔2〕**
-> 「十万虚拟线程 = 十万个 ThreadLocal 副本。**`ThreadLocal` 的生命周期和线程绑定**——只要虚拟线程活着，副本就在内存里。如果忘了 `remove()`，线程池里的线程复用时，下一个请求会读到上一个用户的数据。虚拟线程不复用，但大量持有复杂对象仍然是内存压力。」
-
-> **〔3〕**
-> 「还有一个问题：ThreadLocal 是可变的。」焰焰展示了一段 bug：子任务在另一个线程里 `set()` 了 ThreadLocal，父线程的值被污染。「并发下 ThreadLocal 的可变性是隐形炸弹。」
-
-> **〔4〕**
-> 焰焰换上 `ScopedValue`：「进入 `ScopedValue.where(K, V).run(...)` 的作用域，里面任何层级的代码都能读到 K；出了作用域，自动失效。**不可变，不需要 remove，天然线程安全。**」阿零：「这不就是函数式的动态绑定？」「正是。JDK 25 把它正式化了。」
+- 说清 `ThreadLocal` 的副本为什么跟着线程活；
+- 用 `ScopedValue.where(...).run/call(...)` 把上下文改成作用域绑定；
+- 验证嵌套绑定的栈式覆盖与自动恢复；
+- 确认子虚拟线程对父作用域只读继承；
+- 划清哪些场景仍然只能用 `ThreadLocal`。
 
 ---
 
-## 🔑 核心技术：两者对比
+## 四、炉内原理图：背包与公告牌的两套生命周期
 
-```
-ThreadLocal<T>                     ScopedValue<T>
-─────────────────────────────────  ──────────────────────────────────
-生命周期：与线程绑定                  生命周期：与作用域绑定（run/call 块）
-可变性：可 set/get/remove            不可变：只能在绑定时设值，作用域内只读
-继承：InheritableThreadLocal 子线程   自动继承：子任务天然可见父作用域的值
-内存：线程存活期间持续占用             作用域结束自动释放
-遗忘 remove：内存泄漏/数据污染风险    无需 remove，不存在泄漏
-虚拟线程：百万线程 = 百万份拷贝        轻量，作用域结束即释放
-JDK：JDK 1.2                        JDK 20 Preview / JDK 25 正式
-```
+卷一的教训是「把不变量交给编译器守」。这一话的坑长得不一样：**`ThreadLocal` 的副本不是坏了，是生命周期跟错了对象**——它想跟请求走，却被绑在线程上，于是每次清理都要靠人记住。
+
+`ScopedValue` 的解法是把生命周期从「线程」换成「词法作用域」：
+
+| 维度 | ThreadLocal | ScopedValue |
+|---|---|---|
+| 生命周期 | 与线程绑定 | 与作用域绑定（`run/call` 块） |
+| 可变性 | 可 `set/get/remove` | 不可变：只能在绑定时设值，作用域内只读 |
+| 子任务继承 | `InheritableThreadLocal` 拷贝 | 自动继承：子任务天然可见父作用域的值 |
+| 内存 | 线程存活期间持续占用 | 作用域结束自动释放 |
+| 遗忘 `remove` 风险 | 内存泄漏 / 数据污染 | 无需 `remove`，不存在泄漏 |
+| 虚拟线程场景 | 百万线程 = 百万份拷贝 | 轻量，作用域结束即释放 |
+| JDK 版本 | JDK 1.2 | JDK 20 Preview / **JDK 25 正式** |
+
+拆开之后，「清理」这件事就换了位置：不是靠人在 `finally` 里记得调 `remove()`，而是 **`run` 块退出时 JVM 自动把绑定从栈上弹掉**——都是把「靠人记住」换成「不给就编不过」或「作用域一结束就自动没了」。
 
 ---
 
-## ⚙️ 代码实录：ScopedValue 替代 ThreadLocal
+## 五、从上一话继续改代码：把请求上下文换成 ScopedValue
 
 ```java
 // javac -encoding UTF-8 --release 25 ScopedDemo.java && java ScopedDemo
@@ -205,7 +229,143 @@ ScopedValue.get(): 6ms
 
 ---
 
-## ⚠️ 何时仍用 ThreadLocal
+## 六、故意翻一次车：在作用域外读 ScopedValue
+
+阿零想知道——如果他不小心在 `run` 块外面调 `get()`，或者子任务试图修改父作用域的值，会发生什么。他故意写了两段翻车代码。
+
+**第一次翻车**：作用域外读取。
+
+```java
+// 错误：run 块结束后，ScopedValue 已经解绑
+var sv = ScopedValue.<String>newInstance();
+ScopedValue.where(sv, "hello").run(() -> {
+    System.out.println(sv.get());  // ✅ 这里能读到
+});
+System.out.println(sv.get());  // ❌ 作用域外，抛 NoSuchElementException
+```
+
+**第二次翻车**：子任务试图 `set()`。
+
+```java
+// ScopedValue 本身没有 set() 方法——它在设计上就是只读的
+// 子任务只能在自己的内层作用域用 where() 覆盖，不能修改父层
+ScopedValue.where(SV_USER, new UserContext("parent", "GOLD"))
+    .run(() -> {
+        // 子任务想改父作用域的值？办不到——只能读
+        // 唯一办法是创建新的内层绑定（栈式覆盖，退出后自动恢复）
+    });
+```
+
+上锁之前，`ThreadLocal.set()` 可以在任何地方调用，子线程可以污染父线程的值。上锁之后——
+
+---
+
+## 七、编译官罚单
+
+> **📋 编译官罚单 · 这次编译器只管住了一半**
+>
+> 门一，`ScopedValue` 没有 `set()` 方法：设计上就没有这个方法，想改只能在新的内层作用域用 `where()` 覆盖。编译器自然拦住——**因为 API 压根不给这个口子**。
+>
+> 门二，作用域外调用 `get()`，编译器**不拦**：
+>
+> ```text
+> （无编译错误——运行时才抛 NoSuchElementException）
+> System.out.println(sv.get());  // 作用域外
+> Exception in thread "main" java.util.NoSuchElementException
+>     at java.base/java.lang.ScopedValue.get(ScopedValue.java:...)
+> ```
+>
+> 这就是本话比卷一麻烦的地方：卷一那些坑（漏分支、写反顺序、偷加子类型）都在编译器管辖范围内，罚单当场就开。而**作用域语义是 API 设计带来的约束，不是语法错误**——`sv.get()` 这行代码本身完全合法，编译器无权过问它在哪个作用域里调用。
+
+---
+
+## 八、修复并验证
+
+修复只有一条规则：**只在 `where(...).run/call(...)` 的 lambda 内读取 `ScopedValue`**，出了这个块就当它不存在。如果不确定是否在作用域内，用 `isBound()` 先检查或 `orElse(defaultValue)` 提供兜底。
+
+验证判据三条，都要真跑出来：
+
+1. **嵌套覆盖与恢复**：内层 `where(K, V2)` 覆盖外层 `where(K, V1)`，内层结束后外层值自动恢复。
+2. **子任务只读继承**：子虚拟线程 `fork()` 的任务能读到父作用域的值，但无法修改（只能在子任务内创建新的内层绑定）。
+3. **作用域外 `isBound()` 为 false**：`run` 块结束后，`sv.isBound()` 返回 `false`，`get()` 抛异常。
+
+正常路径的验证（GraalVM 25.0.4 实测输出）：
+
+```text
+TL 处理: user-001[GOLD]
+SV 处理: user-001[GOLD]
+
+=== 嵌套作用域 ===
+外层: outer
+内层: inner
+回到外层: outer
+作用域外 isBound: false
+
+=== 虚拟线程子任务继承 ===
+子任务1: vip-001
+子任务2: BLACK_GOLD
+```
+
+六行全部对上预期。注意第 4 行：内层结束后，外层值自动恢复成 `outer`——**这是栈式绑定的自动回溯，不需要手动恢复**。第 5 行：作用域外 `isBound()` 返回 `false`，这行代码如果改成 `get()` 就会抛异常。
+
+---
+
+## 九、🔬 炉底显微镜 · isBound() 看清绑定的边界
+
+> 焰焰在炉底贴了一张对比图：「`ScopedValue` 和 `ThreadLocal` 在 JVM 里各存了什么？」
+
+```bash
+# 检查 ScopedValue 的 isBound() 状态
+java --source 25 - <<'EOF'
+void main() throws Exception {
+    var sv = ScopedValue.<String>newInstance();
+    System.out.println("before: " + sv.isBound());
+    ScopedValue.where(sv, "hello").run(() -> {
+        System.out.println("inside: " + sv.isBound() + " = " + sv.get());
+    });
+    System.out.println("after: " + sv.isBound());
+}
+EOF
+
+# 用 jfr 追踪对象分配（ScopedValue vs ThreadLocal 内存差异）
+java -XX:StartFlightRecording=filename=alloc.jfr,duration=5s,settings=profile \
+     ScopedDemo
+
+jfr print --events jdk.ObjectAllocationInNewTLAB alloc.jfr | grep "UserContext"
+```
+
+**实测输出**：
+
+```
+before: false
+inside: true = hello
+after: false
+```
+
+关键观测点：
+- `ScopedValue.where(...).run(...)` 的作用域严格对应 `run` 块的词法范围，不存在跨线程意外传播
+- `ScopedValue.get()` 在未绑定时抛 `NoSuchElementException`，用 `orElse()` / `isBound()` 防御
+- 子线程（包括虚拟线程）**只读继承**父作用域的值，无法修改父作用域
+- `ScopedValue.where(...).call(Callable)` 对应有返回值的版本（`call` vs `run`）
+
+---
+
+## 十、⏳ 版本时光机 · ScopedValue 从预览到正式
+
+**版本边界**
+
+| 特性 | JDK | 说明 |
+|---|---|---|
+| `ThreadLocal` | JDK 1.2 | 老 API，仍在维护 |
+| `InheritableThreadLocal` | JDK 1.2 | 子线程继承，但性能差 |
+| `ScopedValue`（Preview）| **JDK 20/21/22** | JEP 429/446/464 |
+| `ScopedValue`（正式）| **JDK 25** | JEP 487，生产可用 ✅ |
+| `ScopedValue.orElse()` / `isBound()` | JDK 25 | 防御性 API |
+| `StructuredTaskScope` 与 ScopedValue 联动 | JDK 25 | 见下一话 |
+
+---
+
+## 十一、何时仍用 ThreadLocal
 
 ```java
 // ✅ 继续用 ThreadLocal 的场景
@@ -231,64 +391,26 @@ ThreadLocal<SimpleDateFormat> SDF = ThreadLocal.withInitial(
 
 ---
 
-## 🔬 炉底显微镜
+## 十二、项目检查点 · 豆豆咖啡站 jvm-v3.4
 
-> 焰焰用 `jcmd` 观察 ThreadLocal 内存占用：
+- **已具备**：虚拟线程一人一单（v3.1）；挂载卸载机制（v3.2）；synchronized 去钉住（v3.3）；请求上下文改用 `ScopedValue`，作用域结束自动释放，不再手动 `remove()`。
+- **还没有**：子任务还在散养——fork 出去的任务生命周期没人管，异常了也不知道；多个子任务要聚合结果时，手动 `join()` 容易漏。
 
-```bash
-# 用堆 dump 查看 ThreadLocal 引用链
-jcmd <pid> GC.heap_dump /tmp/heap.hprof
-
-# 用 jmap 查看 ThreadLocal 数量
-jmap -histo <pid> | grep -i "ThreadLocal"
-
-# 用 jfr 追踪对象分配（ScopedValue vs ThreadLocal 内存差异）
-java -XX:StartFlightRecording=filename=alloc.jfr,duration=5s,+jdk.ObjectAllocationInNewTLAB \
-     ScopedDemo
-
-jfr print --events jdk.ObjectAllocationInNewTLAB alloc.jfr | grep "UserContext" | wc -l
-
-# 检查 ScopedValue 的 isBound() 状态
-java --source 25 - <<'EOF'
-void main() throws Exception {
-    var sv = ScopedValue.<String>newInstance();
-    System.out.println("before: " + sv.isBound());
-    ScopedValue.where(sv, "hello").run(() -> {
-        System.out.println("inside: " + sv.isBound() + " = " + sv.get());
-    });
-    System.out.println("after: " + sv.isBound());
-}
-EOF
-```
-
-**实测输出**：
-
-```
-before: false
-inside: true = hello
-after: false
-```
-
-关键观测点：
-- `ScopedValue.where(...).run(...)` 的作用域严格对应 `run` 块的词法范围，不存在跨线程意外传播
-- `ScopedValue.get()` 在未绑定时抛 `NoSuchElementException`，用 `orElse()` / `isBound()` 防御
-- 子线程（包括虚拟线程）**只读继承**父作用域的值，无法修改父作用域
-- `ScopedValue.callWhere()` 对应有返回值的版本（`call(Callable)` vs `run(Runnable)`）
+阿零的变化：卷一他学会了「把不变量交给编译器守」，卷三他学会了「把清理交给 try-with-resources 守」，这一话他第一次遇到**编译器和语法都守不了的那一类错误**——生命周期语义。于是他换了个办法：**选一个把生命周期绑在作用域上的 API，让作用域结束时自动清理**。
 
 ---
 
-## 📐 版本边界
+## 十三、对应招聘技能
 
-**版本边界**
+`ScopedValue`（JEP 487）、`ThreadLocal` 与 `InheritableThreadLocal` 的生命周期区别、虚拟线程上下文传递、不可变绑定与栈式覆盖、`isBound()` 防御性检查。
 
-| 特性 | JDK | 说明 |
-|---|---|---|
-| `ThreadLocal` | JDK 1.2 | 老 API，仍在维护 |
-| `InheritableThreadLocal` | JDK 1.2 | 子线程继承，但性能差 |
-| `ScopedValue`（Preview）| **JDK 20/21/22** | JEP 429/446/464 |
-| `ScopedValue`（正式）| **JDK 25** | JEP 487，生产可用 ✅ |
-| `ScopedValue.orElse()` / `isBound()` | JDK 25 | 防御性 API |
-| `StructuredTaskScope` 与 ScopedValue 联动 | JDK 25 | 见 F4E5 |
+---
+
+## 十四、下一话悬念
+
+上下文传好了，下一话管好任务的生死。
+
+`StructuredTaskScope`（JDK 25 第五次预览）：把子任务关进「围栏」——默认策略等待全部成功或在失败时取消其余任务，竞速则用 `Joiner.anySuccessfulResultOrThrow()`。它仍需 `--enable-preview`，不是正式 API，但已经是最接近正式的形态。
 
 ---
 
@@ -346,14 +468,11 @@ after: false
 
 ## 运行环境、验证与依据
 
+## 运行环境、验证与依据
+
 - **运行环境**：GraalVM 25.0.4+7.1（`graalvm-jdk-25.0.4`），Windows 11，编码 UTF-8。
 - **验证方式**：`javac -encoding UTF-8 --release 25 ScopedDemo.java && java ScopedDemo`；嵌套作用域自动恢复验证；子虚拟线程继承父作用域值；性能基准 TL 8ms vs SV 6ms；`isBound()` 作用域外 false 与文中一致。
 - **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[JEP 487: Scoped Values](https://openjdk.org/jeps/487)、[java.lang.ScopedValue API](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ScopedValue.html)。
 
----
+*本话属于连载《从零进化Java:JVM 火种纪》。世界观与卷次地图见 [/jvm](/jvm)。*
 
-## 🔮 下话预告：F4E5《并发不散养》
-
-上下文传好了，下一话管好任务的生死。
-
-`StructuredTaskScope`（JDK 25 第五次预览）：把子任务关进「围栏」。JEP 505 已改为 `StructuredTaskScope.open()` + `Joiner`：默认策略等待全部成功或在失败时取消其余任务,竞速则用 `Joiner.anySuccessfulResultOrThrow()`。它仍需 `--enable-preview`,不是正式 API。

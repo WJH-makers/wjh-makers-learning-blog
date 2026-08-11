@@ -1,39 +1,75 @@
 ---
-title: "F4E6 何时仍需未来 — CompletableFuture 的取舍决策"
-date: "2027-01-23"
-series: "jvm-academy"
-season: 4
-episode: 6
-tags: ["Java 25", "CompletableFuture", "异步编排", "虚拟线程", "并发"]
-summary: "CompletableFuture 与 StructuredTaskScope 解决不同形状的问题：前者擅长跨阶段管道编排，后者约束一个词法作用域内的子任务生命周期。用 Java 25 的 open + Joiner API 对照 thenCompose/thenCombine/handle。"
+title: "《JVM 火种纪》26 · 何时仍需未来"
+date: 2027-01-23
+summary: "CompletableFuture 与 StructuredTaskScope 解决不同形状的问题：前者擅长跨阶段管道编排，后者约束一个词法作用域内的子任务生命周期。阿零用三方比价场景摆出决策天平：聚合报价用 allOf、链式查会员折扣用 thenCompose、异常兜底用 handle，最后把两者混用——STS 聚合、CF 后处理。"
+tags: [Java, Java漫画, JVM, CompletableFuture, Java25, 阿零与焰焰]
 ---
+
+# 《JVM 火种纪》26 · 何时仍需未来
+
+> JVM 火种纪 · 卷四「并发新纪元篇」第 6 话 · 基线 Java 25（最新 LTS）
+> 长期项目:**豆豆咖啡站**。上一话把子任务关进 `StructuredTaskScope` 围栏——可不是所有并发都适合一个词法作用域。
+
+---
+
+## 一、事故：三家供应商报价，嵌套七层
+
+上一话把子任务关进围栏之后，阿零想把所有并发都改成 `StructuredTaskScope`。新功能：下单前对比三家供应商的咖啡豆报价，选最低价，然后在最低价上叠加会员折扣（异步查用户等级），最后格式化报价单。
+
+他用 `StructuredTaskScope` 写了第一版：外层 scope 聚合三个报价，拿到最低价后，嵌套第二个 scope 查会员等级，再嵌套第三个 scope 格式化。七层缩进，焰焰看了一眼：「代码能跑，但形状不对。」
+
+「哪里不对？」「STS 是围栏，CF 是管道。你这个需求是**两步有依赖的异步**——第一步完成后把结果传进下一步。CF 的 `thenCompose` 天生为这个设计；STS 可以嵌套两个 scope，也可以 join 第一个再 fork 第二个，但都不如管道写法自然。」
+
+---
+
+## 二、漫画 · 决策天平
 
 ![JVM 火种纪漫画：f04e06-completable-future](/comics/jvm/f04e06-completable-future.png)
 
-> **"CompletableFuture 不是被 StructuredTaskScope 取代的——它们解决的是不同形状的问题。STS 是围栏，CF 是管道。先确认你要建的是哪一种。"**
-> — 焰焰，画决策矩阵
+> [!文字版]
+> **〔1〕** 咖啡站新功能：下单前对比三家供应商的咖啡豆报价，选最低价。三家 API 响应时间不同（A: 200ms，B: 150ms，C: 300ms），还要在最低价上叠加会员折扣（异步查用户等级），最后格式化报价单。阿零上周用 `StructuredTaskScope.open(Joiner.anySuccessfulResultOrThrow())` 做了竞速——「但这次不是竞速，是聚合三个价格再做一步异步计算，STS 怎么做？」
+>
+> **〔2〕** 焰焰把需求拆开：「STS 搞定聚合 OK。但加会员折扣查询依赖报价结果——这是两步有依赖的异步。STS 可以嵌套两个 scope，也可以 join 第一个再 fork 第二个。」阿零写了嵌套版：代码 OK，但七层缩进。「CF 的 thenCompose 天生为这个设计——第一步完成后把结果传进下一步的异步函数。管道形状的逻辑用管道写。」
+>
+> **〔3〕** 「那什么时候用 STS？」「有明确的 fork-join 边界、子任务生命周期要严格管控、用虚拟线程打 IO 密集——STS 是首选。什么时候用 CF？动态决定下一步的异步函数、需要 thenApply/thenCombine/handle 链接多个异步步骤、已有 CF 接口的第三方库——CF。」焰焰在白板上画了决策树。
+>
+> **〔4〕** 「两者能混用吗？」「能。STS 聚合多个请求，拿到结果后用 CF 链式做后处理，或者 `CompletableFuture.runAsync(() -> ..., vtExecutor)` 用虚拟线程池跑 CF 任务。不是非此即彼——按形状选工具，再组合。」阿零开始写三方比价的完整实现。
+>
+> **〔5〕** 阿零写完 CF 版本，发现 `allOf` 聚合三个报价、`thenCompose` 链式查折扣、`handle` 统一兜底——三件事一气呵成。「看见了吗，」焰焰指着那段代码，「CF 是管道，每一步的输出接到下一步的输入。STS 是围栏，子任务全在一个块里生死。形状不同，适用场景不同。」
+>
+> **〔6〕** 炉底浮出一个 2014 年的 `ExecutorService.submit()` 残影，手里攥着一堆 `Future` 对象：「我们那会儿链式组合要自己写 Callback 嵌套……你们现在一个 `thenCompose` 就展平了。」残影散进火里。
 
 ---
 
-## 🎬 开场：三家供应商报价
+## 三、本话目标
 
-> **〔1〕**
-> 咖啡站新功能：下单前对比三家供应商的咖啡豆报价，选最低价。三家 API 响应时间不同（A: 200ms，B: 150ms，C: 300ms），还要在最低价上叠加会员折扣（异步查用户等级），最后格式化报价单。阿零上周用 `StructuredTaskScope.open(Joiner.anySuccessfulResultOrThrow())` 做了竞速——「但这次不是竞速，是聚合三个价格再做一步异步计算，STS 怎么做？」
-
-> **〔2〕**
-> 焰焰把需求拆开：「STS 搞定聚合 OK。但加会员折扣查询依赖报价结果——这是两步有依赖的异步。STS 可以嵌套两个 scope，也可以 join 第一个再 fork 第二个。」阿零写了嵌套版：代码 OK，但七层缩进。「CF 的 thenCompose 天生为这个设计——第一步完成后把结果传进下一步的异步函数。管道形状的逻辑用管道写。」
-
-> **〔3〕**
-> 「那什么时候用 STS？」「有明确的 fork-join 边界、子任务生命周期要严格管控、用虚拟线程打 IO 密集——STS 是首选。什么时候用 CF？动态决定下一步的异步函数、需要 thenApply/thenCombine/handle 链接多个异步步骤、已有 CF 接口的第三方库——CF。」焰焰在白板上画了决策树。
-
-> **〔4〕**
-> 「两者能混用吗？」「能。STS 聚合多个请求，拿到结果后用 CF 链式做后处理，或者 `CompletableFuture.runAsync(() -> ..., vtExecutor)` 用虚拟线程池跑 CF 任务。不是非此即彼——按形状选工具，再组合。」阿零开始写三方比价的完整实现。
+- 区分管道形状（CF）与围栏形状（STS）的适用场景；
+- 用 `allOf` 聚合多个 CF、`thenCompose` 链式组合、`handle` 统一兜底；
+- 验证 `orTimeout` 与 `completeOnTimeout` 的差异；
+- 写出 STS 与 CF 混用的代码；
+- 摆出决策矩阵：什么时候用哪个。
 
 ---
 
-## 🔑 核心 API 速查
+## 四、炉内原理图：管道与围栏的两套形状
 
-```
+上一话的教训是「子任务要关进围栏」。这一话的坑长得不一样：**不是所有异步都适合一个词法作用域**——有些逻辑是管道形状（步骤 A 完成后用 A 的结果发起步骤 B），有些是围栏形状（多个任务同时 fork、一起 join）。
+
+CF 与 STS 的差异不是功能强弱，是**形状适配**：
+
+| 维度 | CompletableFuture | StructuredTaskScope |
+|---|---|---|
+| 形状 | 管道：步骤链式组合 | 围栏：子任务 fork/join |
+| 生命周期 | 跨作用域：CF 对象可传递 | 词法作用域：try-with-resources 块 |
+| 依赖链 | `thenCompose` 展平嵌套 | 嵌套 scope 或顺序 join |
+| 异常处理 | `handle` / `exceptionally` 链式 | `join()` 抛 `FailedException` |
+| 超时 | `orTimeout` / `completeOnTimeout` | `withTimeout` 配置 |
+| 适用场景 | 动态链式、跨阶段编排 | 同步 fork/join、生命周期严格管控 |
+| JDK 版本 | JDK 8（正式） | JDK 25（第五次预览） |
+
+核心速查：
+
+```text
 thenApply(fn)          同步变换，fn 在完成线程执行，返回 CF<U>
 thenApplyAsync(fn)     异步变换，fn 在 ForkJoinPool.commonPool（或指定executor）执行
 thenCompose(fn)        fn 返回 CF<U>，展开嵌套，用于顺序异步步骤（flatMap）
@@ -48,7 +84,7 @@ completeOnTimeout(v,n) [JDK 9] 超时后用默认值 v 完成（不抛异常）
 
 ---
 
-## ⚙️ 代码实录：三方比价完整实现
+## 五、从上一话继续改代码：三方比价完整实现
 
 ```java
 // javac -encoding UTF-8 --release 25 CFDemo.java && java CFDemo
@@ -233,12 +269,102 @@ completeOnTimeout 降级: 超时默认 ¥340.0
 
 ---
 
-## 🗺️ 决策矩阵
+## 六、故意翻一次车：用 thenApply 做阻塞 IO
+
+阿零想知道——如果他在 `thenApply` 里直接做阻塞 IO 会发生什么。他把会员查询改成同步的 `thenApply` 写法。
+
+```java
+// 错误：thenApply 的 fn 在 ForkJoinPool.commonPool 线程上同步执行
+CompletableFuture.supplyAsync(() -> fetchQuote(), VT_EXEC)
+    .thenApply(quote -> {
+        // 这里直接调用一个阻塞 80ms 的查询——占满一个 FJP 线程
+        sleep(80); // 阻塞！FJP 公共池线程被占用
+        return "GOLD";
+    });
+```
+
+焰焰打开 `jcmd` 看线程池状态：「公共 FJP 默认线程数是 CPU 核数减 1。你这个阻塞占一个，其他并行流和 CF 任务都在排队。」
+
+---
+
+## 七、编译官罚单
+
+> **📋 编译官罚单 · 编译器管不到运行时性能问题**
+>
+> 编译器放行了，因为 `thenApply` 的签名合法：`Function<T, U>` 可以是任何函数。**编译器管不到这个函数是阻塞 IO 还是纯计算**。
+>
+> 问题在运行时：FJP 线程被阻塞占用，整个 JVM 的公共线程池可用线程减少，其他并行流、CF 任务都受影响。症状是：**表面看代码正确，实际吞吐量低于预期**。
+
+---
+
+## 八、修复并验证
+
+修复：把阻塞 IO 操作改用 `thenApplyAsync`，并显式传入虚拟线程 executor。
+
+```java
+// ✅ 正确：用 thenApplyAsync + 虚拟线程 executor
+CompletableFuture.supplyAsync(() -> fetchQuote(), VT_EXEC)
+    .thenApplyAsync(quote -> {
+        sleep(80); // 虚拟线程阻塞不占用平台线程
+        return "GOLD";
+    }, VT_EXEC);
+```
+
+验证判据：高并发下（1000 个任务），FJP 线程数不应超过 CPU 核数；虚拟线程数可以达到数千。
+
+---
+
+## 九、🔬 炉底显微镜 · CF 链式的线程切换
+
+> 焰焰用 `jcmd` 和 JFR 观察 CF 链式的线程切换。
+
+```bash
+# 观察 CF 使用公共 ForkJoinPool 的线程数
+jcmd <pid> Thread.print | grep "ForkJoinPool.commonPool"
+
+# 改用虚拟线程池后，观察虚拟线程数量
+java -Djdk.tracePinnedThreads=full CFDemo
+# 打印每次虚拟线程被钉住（pinned）的栈，排查同步块影响
+
+# JFR 观察 CF 任务提交与执行延迟
+java -XX:StartFlightRecording=filename=cf.jfr,duration=5s CFDemo
+jfr print --events jdk.ThreadPark cf.jfr | head -30
+# ThreadPark 对应 FJP 线程等待工作，大量 park 说明任务提交频率低
+
+# 实测：公共 FJP 线程池（默认 = CPU核数-1）
+# 64核机器：63个 FJP 线程 vs 虚拟线程池可以开数千个并发任务
+System.out.println(ForkJoinPool.commonPool().getParallelism()); // = 可用核数-1
+```
+
+**关键内部机制**：
+
+`CompletableFuture` 内部用 `Completion` 链表串接所有 `thenApply/thenCompose` 回调。每个节点完成时，唤醒链表上的下一个节点，提交到 executor 执行。`thenApply`（无 Async 后缀）在触发线程上同步执行，可能导致长链意外占用调用线程；`thenApplyAsync` 总是提交到 executor，多一次线程切换但更安全。
+
+---
+
+## 十、⏳ 版本时光机 · CF 从 JDK 8 到 JDK 25
+
+**版本边界**
+
+| 特性 | JDK | 说明 |
+|---|---|---|
+| `CompletableFuture` 基础 | **JDK 8** | thenApply/thenCompose/allOf/anyOf |
+| `orTimeout` / `completeOnTimeout` | **JDK 9** | 超时 API |
+| `copy()` / `newIncompleteFuture()` | **JDK 9** | 子类化支持 |
+| `failedFuture(ex)` | **JDK 9** | 直接创建失败态 CF |
+| `defaultExecutor()` | **JDK 9** | 自定义默认 executor 入口 |
+| 虚拟线程作为 CF executor | **JDK 21+** | `Executors.newVirtualThreadPerTaskExecutor()` |
+| `StructuredTaskScope` Fifth Preview | **JDK 25** | JEP 505，需 `--enable-preview` |
+| 本话 CF API | JDK 25 | 正式 API；对照 STS 部分是 Preview |
+
+---
+
+## 十一、决策矩阵：什么时候用哪个
 
 | 场景 | 推荐 | 理由 |
 |---|---|---|
-| 并发聚合 N 个必须全成功 | **STS `open()`** | Java 25 默认 join 策略,失败时取消其余 |
-| 竞速取最快 | **STS + `Joiner.anySuccessfulResultOrThrow()`** | 类型安全,获胜后取消其余 |
+| 并发聚合 N 个必须全成功 | **STS `open()`** | Java 25 默认 join 策略，失败时取消其余 |
+| 竞速取最快 | **STS + `Joiner.anySuccessfulResultOrThrow()`** | 类型安全，获胜后取消其余 |
 | 步骤 A 完成后异步步骤 B | **CF thenCompose** | 管道形状，无需嵌套 scope |
 | 两个异步结果合并 | **CF thenCombine** | 优于手动 allOf+join |
 | 统一异常降级 | **CF handle** | 成功/失败同路处理 |
@@ -250,7 +376,7 @@ completeOnTimeout 降级: 超时默认 ¥340.0
 
 ---
 
-## ⚠️ 常见陷阱
+## 十二、常见陷阱
 
 ```java
 // ❌ 陷阱 1：allOf 后用 join() 而不检查异常
@@ -286,48 +412,26 @@ Quote q = (Quote) result; // 运行时 ClassCastException 风险（若类型不�
 
 ---
 
-## 🔬 炉底显微镜
+## 十三、项目检查点 · 豆豆咖啡站 jvm-v3.6
 
-> 焰焰用 `jcmd` 和 JFR 观察 CF 链式的线程切换：
+- **已具备**：子任务生命周期关进 `StructuredTaskScope`（v3.5）；管道形状的异步编排用 `CompletableFuture`，掌握 `allOf` 聚合、`thenCompose` 链式、`handle` 兜底、`orTimeout` 与 `completeOnTimeout` 的差异；能按场景决策 STS 与 CF。
+- **还没有**：百万级并发下的性能瓶颈还没遇到——虚拟线程能扛多少 IO 密集任务、Stream Gatherers 如何在管道中间插入自定义聚合逻辑，都还没学。
 
-```bash
-# 观察 CF 使用公共 ForkJoinPool 的线程数
-jcmd <pid> Thread.print | grep "ForkJoinPool.commonPool"
-
-# 改用虚拟线程池后，观察虚拟线程数量
-java -Djdk.tracePinnedThreads=full CFDemo
-# 打印每次虚拟线程被钉住（pinned）的栈，排查同步块影响
-
-# JFR 观察 CF 任务提交与执行延迟
-java -XX:StartFlightRecording=filename=cf.jfr,duration=5s CFDemo
-jfr print --events jdk.ThreadPark cf.jfr | head -30
-# ThreadPark 对应 FJP 线程等待工作，大量 park 说明任务提交频率低
-
-# 实测：公共 FJP 线程池（默认 = CPU核数-1）
-# 64核机器：63个 FJP 线程 vs 虚拟线程池可以开数千个并发任务
-System.out.println(ForkJoinPool.commonPool().getParallelism()); // = 可用核数-1
-```
-
-**关键内部机制**：
-
-`CompletableFuture` 内部用 `Completion` 链表串接所有 `thenApply/thenCompose` 回调。每个节点完成时，唤醒链表上的下一个节点，提交到 executor 执行。`thenApply`（无 Async 后缀）在触发线程上同步执行，可能导致长链意外占用调用线程；`thenApplyAsync` 总是提交到 executor，多一次线程切换但更安全。
+阿零的变化：卷一他学会了「把不变量交给编译器守」，上一话他学会了「看 JEP 编号、查版本状态」，这一话他第一次遇到**编译器管不到的运行时性能问题**——代码能跑，吞吐量就是上不去。于是他学会了分形状：管道用 CF、围栏用 STS，不再试图用一个工具解决所有问题。
 
 ---
 
-## 📐 版本边界
+## 十四、对应招聘技能
 
-**版本边界**
+`CompletableFuture` 链式编排、`thenCompose` 与 `thenCombine` 的差异、`allOf` 聚合与 `anyOf` 竞速、`handle` 统一兜底、`orTimeout` 与 `completeOnTimeout`、`thenApply` vs `thenApplyAsync` 的线程模型、虚拟线程 executor、与 `StructuredTaskScope` 的决策矩阵。
 
-| 特性 | JDK | 说明 |
-|---|---|---|
-| `CompletableFuture` 基础 | **JDK 8** | thenApply/thenCompose/allOf/anyOf |
-| `orTimeout` / `completeOnTimeout` | **JDK 9** | 超时 API |
-| `copy()` / `newIncompleteFuture()` | **JDK 9** | 子类化支持 |
-| `failedFuture(ex)` | **JDK 9** | 直接创建失败态 CF |
-| `defaultExecutor()` | **JDK 9** | 自定义默认 executor 入口 |
-| 虚拟线程作为 CF executor | **JDK 21+** | `Executors.newVirtualThreadPerTaskExecutor()` |
-| `StructuredTaskScope` Fifth Preview | **JDK 25** | JEP 505,需 `--enable-preview` |
-| 本话 CF API | JDK 25 | 正式 API；对照 STS 部分是 Preview |
+---
+
+## 十五、下一话悬念
+
+管道和围栏都建好了，下一话把压力测上去——百万并发。
+
+Stream Gatherers（JEP 485，JDK 25 第二次预览）：在 Stream 管道中间插入自定义聚合逻辑，配合虚拟线程扛百万级 IO 密集任务。阿零要看清虚拟线程的极限在哪、什么时候会钉住、什么时候会被限流——这是卷四「并发新纪元篇」的终章，也是 jvm-v4.0 的检查点。
 
 ---
 
@@ -381,14 +485,17 @@ System.out.println(ForkJoinPool.commonPool().getParallelism()); // = 可用核�
 
 ## 运行环境、验证与依据
 
+- **运行环境**：GraalVM 25.0.4+7.1，Windows 11，UTF-8。
+- **验证方式**：`javac -encoding UTF-8 --release 25 CFDemo.java && java CFDemo`；三方比价 + 会员折扣两步异步约 380ms；超时控制验证 `orTimeout` 抛异常、`completeOnTimeout` 降级；STS 对照版验证同场景耗时与结果一致。
+- **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[CompletableFuture API](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/CompletableFuture.html)、[JEP 505: Structured Concurrency (Fifth Preview)](https://openjdk.org/jeps/505)。
+
+*本话属于连载《从零进化Java:JVM 火种纪》。世界观与卷次地图见 [/jvm](/jvm)。*
+
+
 - **运行环境**：GraalVM 25.0.4+7.1（`graalvm-jdk-25.0.4`），Windows 11，编码 UTF-8。
 - **验证方式**：`javac -encoding UTF-8 --release 25 --enable-preview CFDemo.java && java --enable-preview CFDemo`；preview 开关只来自 STS 对照段,CompletableFuture 本身是正式 API。耗时数字只用于说明依赖链形状,不作为性能承诺。
 - **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[CompletableFuture API](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/CompletableFuture.html)、[JEP 505: Structured Concurrency (Fifth Preview)](https://openjdk.org/jeps/505)。
 
 ---
 
-## 🔮 下话预告：F4E7《流水线魔改》
-
-并发模型讲完了，最后一话换个方向：`Stream Gatherers`（JEP 485,JDK 24 正式）。
-
-滑动窗口、批量归组、出杯速率限流——标准 Stream API 做不到的操作，用 Gatherer 三件套 `initializer/integrator/finisher` 自己组装。卷四收官。
+*本话属于连载《从零进化Java:JVM 火种纪》。世界观与卷次地图见 [/jvm](/jvm)。*
