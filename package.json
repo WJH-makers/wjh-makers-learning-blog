@@ -14,6 +14,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test \"tests/**/*.test.ts\"",
     "audit:layout": "node scripts/audit-browser-layout.mjs",
+    "audit:comics": "node scripts/build-comic-variants.mjs --check",
+    "audit:coverage": "node scripts/audit-coverage.mjs",
     "audit:reader": "node scripts/audit-book-reader.mjs",
     "audit:posts": "node scripts/audit-all-posts-render.mjs",
     "audit:integrity": "node scripts/audit-content-integrity.mjs",
@@ -38,10 +40,11 @@
     "@types/node": "26.1.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
+    "sharp": "0.35.3",
     "typescript": "6.0.3"
   },
   "overrides": {
     "postcss": "^8.5.18",
-    "sharp": "^0.35.3"
+    "sharp": "$sharp"
   }
 }

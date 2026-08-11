@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Playfair_Display, Lora, Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { jsonLdSafe, publisherNode, publisherId, websiteId } from "@/lib/jsonld";
 import { SERIES_LIST, seriesProgress } from "@/lib/series-registry";
@@ -8,10 +8,39 @@ import SiteNav from "./_components/SiteNav";
 
 // 斜体全站仅 2 处且均为装饰性(blockquote/署名),浏览器合成斜体足够——
 // 去掉 italic 变体省 2 个 woff2 preload,首屏字体请求 6→4。
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair", display: "swap" });
-const lora = Lora({ subsets: ["latin"], variable: "--font-lora", display: "swap" });
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap", preload: false });
+const playfair = localFont({
+  src: "./fonts/playfair-display-latin.woff2",
+  weight: "400 900",
+  style: "normal",
+  variable: "--font-playfair",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
+});
+const lora = localFont({
+  src: "./fonts/lora-latin.woff2",
+  weight: "400 700",
+  style: "normal",
+  variable: "--font-lora",
+  display: "swap",
+  adjustFontFallback: "Times New Roman",
+});
+const inter = localFont({
+  src: "./fonts/inter-latin.woff2",
+  weight: "100 900",
+  style: "normal",
+  variable: "--font-inter",
+  display: "swap",
+  adjustFontFallback: "Arial",
+});
+const jetbrainsMono = localFont({
+  src: "./fonts/jetbrains-mono-latin.woff2",
+  weight: "100 800",
+  style: "normal",
+  variable: "--font-jetbrains",
+  display: "swap",
+  adjustFontFallback: "Arial",
+  preload: false,
+});
 const fontVars = `${playfair.variable} ${lora.variable} ${inter.variable} ${jetbrainsMono.variable}`;
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online";

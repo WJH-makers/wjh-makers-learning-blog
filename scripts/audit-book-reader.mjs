@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { performance as nodePerformance } from "node:perf_hooks";
 import { pathToFileURL } from "node:url";
 
 async function loadPlaywright() {
@@ -57,42 +58,47 @@ await desktop.page.goto(new URL(startRoute, baseUrl).href, { waitUntil: "domcont
 await desktop.page.locator(".book-turn-next").waitFor({ state: "visible" });
 await desktop.page.evaluate(() => document.fonts.ready);
 await desktop.page.evaluate(() => {
-  window.__readerAudit = { clickAt: 0, titleAt: 0, clearAt: 0, maxLongTask: 0, animationNames: [] };
+  window.__readerAudit = { tracking: false, maxLongTask: 0, animationNames: [] };
   const audit = window.__readerAudit;
   document.querySelector(".book-turn-next")?.addEventListener("click", () => {
-    audit.clickAt = performance.now();
+    audit.tracking = true;
     const timer = window.setInterval(() => {
-      const now = performance.now();
-      if (!audit.titleAt && location.pathname.includes("s01e02") && document.querySelector("h1")?.textContent?.includes("02")) {
-        audit.titleAt = now;
-      }
-      if (audit.titleAt && !document.documentElement.dataset.pageTurn && !audit.clearAt) audit.clearAt = now;
       for (const animation of document.getAnimations()) {
         if (animation.animationName && !audit.animationNames.includes(animation.animationName)) {
           audit.animationNames.push(animation.animationName);
         }
       }
-      if (now - audit.clickAt > 900) window.clearInterval(timer);
+      if (!audit.tracking) window.clearInterval(timer);
     }, 8);
+    window.setTimeout(() => { audit.tracking = false; }, 900);
   }, { capture: true, once: true });
   new PerformanceObserver((entries) => {
     for (const entry of entries.getEntries()) {
-      if (audit.clickAt && entry.startTime >= audit.clickAt) audit.maxLongTask = Math.max(audit.maxLongTask, entry.duration);
+      if (audit.tracking) audit.maxLongTask = Math.max(audit.maxLongTask, entry.duration);
     }
   }).observe({ type: "longtask" });
 });
 await desktop.page.waitForTimeout(300);
 await desktop.page.screenshot({ path: path.join(outputDir, "desktop-before.png") });
+const desktopClickAt = nodePerformance.now();
 await desktop.page.locator(".book-turn-next").click();
-await desktop.page.waitForURL(new URL(nextRoute, baseUrl).href, { timeout: 2000 });
-await desktop.page.waitForFunction(() => document.querySelector("h1")?.textContent?.includes("02"), null, { timeout: 2000 });
+await desktop.page.waitForFunction(() => document.documentElement.dataset.pageTurn === "next", null, { timeout: 1000 });
+const [titleReadyMs, cleanupMs] = await Promise.all([
+  (async () => {
+    await desktop.page.waitForURL(new URL(nextRoute, baseUrl).href, { timeout: 2000 });
+    await desktop.page.waitForFunction(() => document.querySelector("h1")?.textContent?.includes("02"), null, { timeout: 2000 });
+    return Math.round(nodePerformance.now() - desktopClickAt);
+  })(),
+  (async () => {
+    await desktop.page.waitForFunction(() => !document.documentElement.dataset.pageTurn, null, { timeout: 2000 });
+    return Math.round(nodePerformance.now() - desktopClickAt);
+  })(),
+]);
 await desktop.page.waitForTimeout(360);
 await desktop.page.screenshot({ path: path.join(outputDir, "desktop-after.png") });
-const desktopResult = await desktop.page.evaluate(() => {
+const desktopPageState = await desktop.page.evaluate(() => {
   const audit = window.__readerAudit;
   return {
-    titleReadyMs: Math.round(audit.titleAt - audit.clickAt),
-    cleanupMs: Math.round(audit.clearAt - audit.clickAt),
     maxLongTaskMs: Math.round(audit.maxLongTask),
     animationNames: audit.animationNames,
     pathname: location.pathname,
@@ -101,6 +107,7 @@ const desktopResult = await desktop.page.evaluate(() => {
     transitionState: document.documentElement.dataset.pageTurn ?? null,
   };
 });
+const desktopResult = { titleReadyMs, cleanupMs, ...desktopPageState };
 await desktop.context.close();
 
 const mobile = await newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: "no-preference" });
