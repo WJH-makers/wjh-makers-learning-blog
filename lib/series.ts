@@ -172,10 +172,10 @@ export const SEASONS: JavaSeason[] = [
     episodes: [
       { season: 5, episode: 1, title: "网络世界:订单如何穿过网线", summary: "TCP/HTTP/Socket:数据从手机到服务器的旅程。", chapterType: "comic", projectStage: "理解底层通信", technologies: ["TCP", "HTTP", "Socket"], jobSkills: ["网络"], status: "published", slug: "2026-06-11-java-s05e01-network" },
       { season: 5, episode: 2, title: "线程与线程池", summary: "Thread/Runnable/ExecutorService,高峰并发。", chapterType: "comic", projectStage: "并发制作咖啡", technologies: ["Thread", "线程池"], jobSkills: ["并发"], status: "published", slug: "2026-06-12-java-s05e02-threadpool" },
-      { season: 5, episode: 3, title: "锁与 synchronized", summary: "Race 双胞胎:并发竞争与可见性。", chapterType: "comic", projectStage: "库存扣减不超卖", technologies: ["synchronized", "Lock"], jobSkills: ["并发"], status: "published", slug: "2026-06-13-java-s05e03-lock" },
+      { season: 5, episode: 3, title: "锁与并发", summary: "Race 双胞胎:并发竞争与可见性。", chapterType: "comic", projectStage: "库存扣减不超卖", technologies: ["synchronized", "Lock"], jobSkills: ["并发"], status: "published", slug: "2026-06-13-java-s05e03-lock" },
       { season: 5, episode: 4, title: "CPU 突然 100%", summary: "jstack 抓栈,定位热点线程。", chapterType: "incident", projectStage: "第一次线上事故", technologies: ["jstack", "top"], jobSkills: ["JVM 排障"], status: "published", slug: "2026-06-14-java-s05e04-cpu" },
       { season: 5, episode: 5, title: "OOM 内存事故", summary: "jmap + 堆分析,揪出泄漏藤蔓。", chapterType: "incident", projectStage: "内存事故复盘", technologies: ["jmap", "MAT", "GC"], jobSkills: ["JVM 排障"], status: "published", slug: "2026-06-15-java-s05e05-oom" },
-      { season: 5, episode: 6, title: "GC 停顿与 JFR 复盘", summary: "监控、日志与黑匣子。", chapterType: "incident", projectStage: "可观测的服务", technologies: ["GC", "JFR"], jobSkills: ["JVM 排障", "可观测性"], status: "published", slug: "2026-06-16-java-s05e06-gc" },
+      { season: 5, episode: 6, title: "GC 停顿与 JFR", summary: "监控、日志与黑匣子。", chapterType: "incident", projectStage: "可观测的服务", technologies: ["GC", "JFR"], jobSkills: ["JVM 排障", "可观测性"], status: "published", slug: "2026-06-16-java-s05e06-gc" },
     ],
   },
   {
@@ -190,7 +190,7 @@ export const SEASONS: JavaSeason[] = [
       { season: 6, episode: 2, title: "Redis 高速取餐柜", summary: "缓存热门菜单,穿透/击穿/雪崩。", chapterType: "comic", projectStage: "加缓存层", technologies: ["Redis"], jobSkills: ["Redis"], status: "published", slug: "2026-06-18-java-s06e02-redis-cache" },
       { season: 6, episode: 3, title: "分布式锁", summary: "多实例下的库存扣减一致性。", chapterType: "comic", projectStage: "分布式扣减", technologies: ["Redis", "分布式锁"], jobSkills: ["分布式"], status: "published", slug: "2026-06-19-java-s06e03-distributed-lock" },
       { season: 6, episode: 4, title: "MQ 派单站", summary: "下单不再干等咖啡制作,异步解耦。", chapterType: "comic", projectStage: "异步制作", technologies: ["Kafka", "RocketMQ"], jobSkills: ["消息队列"], status: "published", slug: "2026-06-20-java-s06e04-mq" },
-      { season: 6, episode: 5, title: "服务注册、网关、限流熔断", summary: "Spring Cloud / Nacos 微服务基座。", chapterType: "comic", projectStage: "微服务化", technologies: ["Spring Cloud", "Nacos", "Sentinel"], jobSkills: ["微服务"], status: "published", slug: "2026-06-21-java-s06e05-microservice" },
+      { season: 6, episode: 5, title: "服务注册 · 网关 · 限流熔断", summary: "Spring Cloud / Nacos 微服务基座。", chapterType: "comic", projectStage: "微服务化", technologies: ["Spring Cloud", "Nacos", "Sentinel"], jobSkills: ["微服务"], status: "published", slug: "2026-06-21-java-s06e05-microservice" },
       { season: 6, episode: 6, title: "Docker 集装箱", summary: "多阶段构建 + Compose,换电脑也能一键运行。", chapterType: "lab", projectStage: "容器镜像", technologies: ["Docker", "Compose"], jobSkills: ["Docker"], status: "published", slug: "2026-06-22-java-s06e06-docker" },
     ],
   },
