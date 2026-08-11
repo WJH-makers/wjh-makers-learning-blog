@@ -60,6 +60,10 @@ test("公开内容不提供全文批量导出，评论写入默认必须通过�
   assert.equal(fs.existsSync(path.join(root, "app", "agent", "markdown", "route.ts")), false);
   assert.equal(fs.existsSync(path.join(root, "app", "llms.txt", "route.ts")), false);
   assert.equal(fs.existsSync(path.join(root, "app", "posts", "[slug]", "markdown", "route.ts")), false);
+  // 生成器本身也不留:只守出口不守生成器时,lib/agent-markdown.ts 会作为「已导出
+  // 但无调用方」的死代码留在仓库里,下一个人很容易把它读成漏接线的 bug 而去补路由
+  // (本次就发生过)。策略是不提供全文导出,那么连生成器一起不留才没有歧义。
+  assert.equal(fs.existsSync(path.join(root, "lib", "agent-markdown.ts")), false);
   const rss = fs.readFileSync(path.join(root, "app", "rss.xml", "route.ts"), "utf8");
   const comments = fs.readFileSync(path.join(root, "lib", "comments.ts"), "utf8");
   const proxy = fs.readFileSync(path.join(root, "proxy.ts"), "utf8");
