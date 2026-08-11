@@ -132,6 +132,24 @@ test("高风险命令均有与操作类型对应的安全提示", () => {
   }
 });
 
+test("便利贴标签都是渲染器认识的类型，不会静默降级", () => {
+  // lib/markdown.ts 对未知类型是 `STICKY_CLASS[type] ?? "sticky-note"`——写错标签
+  // 不报错，只是悄悄掉成默认样式。合法集合有两个来源，都从源码里取，避免硬编码漂移：
+  // ① STICKY_CLASS 对象字面量的键；② renderLines 里 `type === "xxx"` 的特判分支。
+  const markdown = fs.readFileSync(path.join(root, "lib", "markdown.ts"), "utf8");
+  const valid = new Set<string>();
+  const table = markdown.match(/const STICKY_CLASS[^{]*\{([\s\S]*?)\n\};/)?.[1] ?? "";
+  for (const match of table.matchAll(/([A-Za-z一-龥]+):\s*"/g)) valid.add(match[1]);
+  for (const match of markdown.matchAll(/type\s*===\s*"([^"]+)"/g)) valid.add(match[1]);
+  assert.ok(valid.size >= 10, `合法标签集合只抽到 ${valid.size} 个，提取逻辑可能已失效`);
+
+  for (const post of posts) {
+    for (const match of post.content.matchAll(/^>\s*\[!([^\]]+)\]/gm)) {
+      assert.ok(valid.has(match[1]), `${post.name}: 未知便利贴标签 [!${match[1]}]`);
+    }
+  }
+});
+
 test("已知 Java 版本与实现边界保留明确说明", () => {
   const byName = new Map(posts.map((post) => [post.name, post.content]));
   assert.match(byName.get("2026-05-07-java-s01e05-switch.md") ?? "", /箭头规则.*switch.*语句.*表达式/s);

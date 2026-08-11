@@ -50,7 +50,7 @@ summary: "平台线程是编制 200 的正式工，每人占 1MB 栈；虚拟线
 
 4. 不适合的场景
    CPU 密集任务（虚拟线程无帮助，用 ForkJoinPool）
-   synchronized 钉住（JDK 21 时代的坑，JDK 25 JEP 491 已修复）
+   synchronized 钉住（JDK 21 时代的坑，JDK 24 JEP 491 已修复）
    ThreadLocal 大量使用（换 ScopedValue，见 F4E4）
 ```
 
