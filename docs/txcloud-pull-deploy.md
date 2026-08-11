@@ -30,3 +30,23 @@ sudo journalctl -u txcloud-blog-pull.service -n 100 --no-pager
 ```
 
 生产 `.env` 需要 `CLOUDFLARE_TOKEN` 与 `CLOUDFLARE_ZONE_ID`。旧的 `DEPLOY_*` GitHub Secrets 应在确认数个发布周期稳定后再按密钥指纹轮换或删除。
+
+## 从本地查看服务器状态
+
+`scripts/txcloud.sh` 把多条命令合并进一次 SSH 会话：
+
+```bash
+scripts/txcloud.sh status            # 主机 / 磁盘 / 内存 / 容器 / 部署版本 / 定时器
+scripts/txcloud.sh logs 40           # 部署日志尾部
+scripts/txcloud.sh deploy            # 手动触发一次拉取部署
+scripts/txcloud.sh run 'cmd1' 'cmd2' # 任意多条命令，仍只连一次
+```
+
+**为什么要合并**：管理入口走 Cloudflare Access（公网 5522 已关），每建一个新连接都要重新完成一次 Access 授权往返，实测固定约 4 秒——KEXINIT 1 秒、认证 2 秒、命令下发 1 秒。分 6 次连接查状态要 24 秒，合成一次是 5 秒。
+
+这 4 秒在客户端消不掉，两条路都验证过不通：
+
+- **ControlMaster 连接复用**：Windows OpenSSH 不支持 Unix domain socket 形式的复用，配上去连接直接失败并报 `getsockname failed: Not a socket`。`~/.ssh/config` 里留了注释记着这个坑。
+- **cloudflared 常驻 `access tcp --listener`**：隧道确实复用了，但每个新 TCP 连接仍要重走 Access 授权，实测同样 4.1 秒。慢的是授权而不是隧道建立。
+
+1Password SSH agent 签名只占 67 毫秒，密钥也一次命中（`IdentitiesOnly yes` + 指定 `IdentityFile`），这两处都不是瓶颈。所以唯一有效的办法就是少连几次。
