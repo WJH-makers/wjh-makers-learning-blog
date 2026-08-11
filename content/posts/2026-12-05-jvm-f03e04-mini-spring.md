@@ -1,41 +1,51 @@
 ---
-title: "F3E4 自制迷你 Spring — 注解 + 反射扫描 60 行依赖注入"
-date: "2026-12-05"
-series: "jvm-academy"
-season: 3
-episode: 4
-tags: ["Java 25", "注解", "反射", "依赖注入", "Spring原理"]
-summary: "Spring 魔法书的第一页其实很朴素：扫类、看注解、用反射创建实例、注入依赖。阿零 60 行代码复现了 @Coffee 注入器，焰焰指出工业 Spring 在这之上加了 6 层防护——但理解第 1 层才能读懂后面的 5 层。"
+title: 《JVM 火种纪》19 · 自制迷你 Spring
+date: 2026-12-05
+summary: "反射镜照出了类骨架——下一步是用它造容器。阿零发现 Spring 的核心逻辑就三件事：扫描带注解的类、用反射 newInstance、把依赖字段 set 进去。60 行 @Coffee 注入器运转起来，再对照工业 Spring 的六层防护，魔法书的第一页翻开了。"
+tags: [Java, Java漫画, JVM, 注解, Java25, 阿零与焰焰]
 ---
+
+# 《JVM 火种纪》19 · 自制迷你 Spring
+
+> JVM 火种纪 · 卷三「反射与枚举篇」第 4 话 · 基线 Java 25（最新 LTS）
+> 长期项目:**豆豆咖啡站**。上一话反射镜照出类骨架，但调用路径有代价——这次把镜子用起来，造一个迷你容器，拆解 Spring 的第一层魔法。
+
+---
+
+## 一、事故：@Autowired 是怎么把对象注进去的
+
+上一话反射镜照出类骨架，但调用路径有代价——阿零转头看 Spring 的 `@Autowired`，标在字段上，容器启动后对象自动就有了。「这是怎么做到的？」焰焰把一个 250 行的 Spring Bean 生命周期图推到一边：「先别看这个。我们先用 60 行代码复现核心——你自己写一遍，黑魔法就消失了。」
+
+---
+
+## 二、漫画 · 60 行拆解魔法
 
 ![JVM 火种纪漫画：f03e04-mini-spring](/comics/jvm/f03e04-mini-spring.png)
 
-> **"你害怕 Spring 是因为你没见过它去掉魔法之后的样子。去掉 AOP、作用域、代理之后，核心不过是：找注解、创对象、连线。"**
-> — 焰焰，翻开自己写的 60 行 `MiniContainer.java`
-
----
-
-## 🎬 开场：拆解 Spring 的第一层魔法
-
-> **〔1〕**
-> 阿零第一次看 Spring 配置：`@Autowired` 标在字段上，容器启动后对象自动就有了。「这是怎么做到的？里面有黑魔法吗？」焰焰把一个 250 行的 Spring Bean 生命周期图推到一边：「先别看这个。我们先用 60 行代码复现核心——你自己写一遍，黑魔法就消失了。」
-
-> **〔2〕**
-> 「DI 容器的最小原型只需要三件事。」焰焰写下：
+> [!文字版]
+> **〔1〕** 阿零第一次看 Spring 配置：`@Autowired` 标在字段上，容器启动后对象自动就有了。「里面有黑魔法吗？」焰焰把 Spring 生命周期图推到一边：「先用 60 行代码复现核心——你自己写一遍，黑魔法就消失了。」
 >
-> 1. **@Coffee**：标记「这个类由容器管理」
-> 2. **扫描**：找到当前包下所有带 `@Coffee` 的类
-> 3. **创建 + 注入**：用反射创建实例，把依赖字段（也带 `@Coffee`）填进去
-
-> **〔3〕**
-> 阿零问：「Spring 的 `@Autowired` 是字段注入，你这个也是？」焰焰点头：「是，字段注入最容易实现——直接 `setAccessible(true)` 写进去。工业 Spring 更推荐构造器注入（显式依赖、易于测试），但字段注入最能展示反射的威力，先用它入门。」
-
-> **〔4〕**
-> 60 行代码写完，阿零用三个类测试：`CoffeeShop`（咖啡站）依赖 `OrderService`（订单服务），`OrderService` 依赖 `InventoryRepo`（库存仓库）。容器启动，三个对象自动创建并连线，`coffeeShop.takeOrder("拿铁")` 正常运行。「就这样？」「就这样。」
+> **〔2〕** 「DI 容器的最小原型只需要三件事。」焰焰写下：①`@Coffee` 标记「这个类由容器管理」；②扫描，找到当前包下所有带 `@Coffee` 的类；③用反射创建实例，把依赖字段填进去。阿零：「就这三步？」「就这三步。」
+>
+> **〔3〕** 「字段注入最容易实现。」焰焰：「直接 `setAccessible(true)` 写进去。工业 Spring 更推荐构造器注入——显式依赖、易于测试，但字段注入最能展示反射的威力，先用它入门。」
+>
+> **〔4〕** 版本残影飘过：「`@Retention(CLASS)` 是默认策略——.class 文件有，但运行时反射读不到。」JDK 5 引入注解时，这个默认值坑了很多新手。「Spring 的注解全部用 `RUNTIME`，不然反射扫不到。」
+>
+> **〔5〕** 60 行代码写完，阿零用三个类测试：`CoffeeShop` 依赖 `OrderService`，`OrderService` 依赖 `InventoryRepo`。容器启动，三个对象自动创建并连线，`coffeeShop.takeOrder("拿铁")` 正常运行。「就这样？」「就这样。工业 Spring 在这之上加了六层防护，但核心就是你刚写的这些。」
 
 ---
 
-## 🔑 核心技术：注解 + 反射扫描流程
+## 三、本话目标
+
+- 理解注解三种保留策略与 RUNTIME 的必要性
+- 用反射扫描带注解的类并创建实例
+- 实现字段注入，理解 setAccessible 在容器中的作用
+- 对比工业 Spring 与 60 行版本的六层差距
+- 认识循环依赖、作用域等容器进阶问题
+
+---
+
+## 四、炉内原理图：注解 + 反射扫描流程
 
 ```
 1. 定义 @Coffee 注解（@Retention RUNTIME，才能在运行时被反射读到）
@@ -46,9 +56,17 @@ summary: "Spring 魔法书的第一页其实很朴素：扫类、看注解、用
 6. 重复 5 直到所有依赖都满足（简单 BFS/拓扑，60 行版本做单轮扫描）
 ```
 
+| 注解保留策略 | .class 文件 | 运行时反射可读 | 用途 |
+|---|---|---|---|
+| `SOURCE` | ✗ | ✗ | Lombok、编译时检查 |
+| `CLASS`（默认） | ✅ | ✗ | 编译时处理工具（APT） |
+| `RUNTIME` | ✅ | ✅ | Spring、Jackson 等框架扫描 |
+
+上一话用反射读写类成员；这一话把反射升级为容器引擎，驱动依赖图的自动装配。
+
 ---
 
-## ⚙️ 代码实录：60 行迷你容器
+## 五、从上一话继续改代码：60 行迷你容器
 
 ```java
 // javac -encoding UTF-8 --release 25 -d out *.java && java -cp out MiniApp
@@ -158,7 +176,50 @@ class MiniApp {
 }
 ```
 
-**实测输出**（GraalVM 25.0.4）：
+---
+
+## 六、故意翻一次车：@Coffee 注解改成 @Retention(CLASS)
+
+阿零故意试一次——把 `@Retention(RetentionPolicy.RUNTIME)` 改成默认的 `CLASS`：
+
+```java
+// 故意用默认保留策略（CLASS），运行时反射读不到
+@Retention(RetentionPolicy.CLASS)   // ← 故意改
+@Target({ElementType.TYPE, ElementType.FIELD})
+@interface Coffee {}
+```
+
+---
+
+## 七、编译官罚单
+
+> **📋 编译官罚单 · 编译官放行了，运行时才拦**
+>
+> ```
+> Exception in thread "main" java.lang.RuntimeException:
+>     找不到依赖: InventoryRepo in OrderService
+>     at MiniContainer.scan(MiniApp.java:xx)
+>     at MiniApp.main(MiniApp.java:xx)
+> ```
+>
+> `@Retention(CLASS)` 是默认值——.class 文件里有注解信息，但运行时 `cls.isAnnotationPresent(Coffee.class)` 返回 `false`，容器扫描不到任何 Bean，注入时找不到依赖，抛出 `RuntimeException`。编译器完全不知道这是问题，它只检查注解的语法，不检查保留策略是否满足运行时需求。这正是反射注解的代价——错误在运行时才暴露。
+
+---
+
+## 八、修复并验证
+
+把 `@Retention` 改回 `RUNTIME`，重新编译运行：
+
+```bash
+javac -encoding UTF-8 --release 25 -d out *.java && java -cp out MiniApp
+```
+
+验证判据：
+1. 三层依赖自动注入成功，无需手动 new
+2. `takeOrder` 正常输出下单结果
+3. 单例验证 `s1 == s2` 为 `true`
+
+**正常输出**（GraalVM 25.0.4）：
 
 ```
 下单成功: 拿铁
@@ -170,39 +231,7 @@ class MiniApp {
 
 ---
 
-## ⚠️ 与工业 Spring 的差距
-
-```java
-// 工业 Spring 在这 60 行之上加了什么？
-
-// ❶ 作用域（Scope）
-// @Scope("prototype") → 每次 getBean() 返回新实例
-// 60行版：全部单例，无法区分
-
-// ❷ 循环依赖检测
-// A 依赖 B，B 依赖 A → Spring 用三级缓存处理
-// 60行版：循环依赖会 StackOverflowError 或永远填不满
-
-// ❸ 代理（AOP）
-// @Transactional / @Async → Spring 生成 CGLIB/JDK 动态代理包装 Bean
-// 60行版：没有代理，注解语义靠手写实现
-
-// ❹ 生命周期回调
-// @PostConstruct / @PreDestroy / InitializingBean
-// 60行版：创建后不回调任何方法
-
-// ❺ 构造器注入（推荐）
-// Spring 推荐：final 字段 + 构造器注入，不需要 setAccessible
-// 60行版：字段注入，需要 setAccessible，框架友好度低
-
-// ❻ 类扫描范围与类加载器隔离
-// Spring Boot 用 classpath 扫描 + 多级 ClassLoader
-// 60行版：只扫一个目录，不处理 jar 内部的类
-```
-
----
-
-## 🔬 炉底显微镜
+## 九、🔬 炉底显微镜 · @Retention 三种策略的差异
 
 > 焰焰用 `javap` 验证 `@Retention(RUNTIME)` 的必要性：
 
@@ -249,7 +278,7 @@ RUNTIME注解可见: true
 
 ---
 
-## 📐 版本边界
+## 十、⏳ 版本时光机 · 注解 API 的历史边界
 
 **版本边界**
 
@@ -261,6 +290,66 @@ RUNTIME注解可见: true
 | 注解处理器 `javax.annotation.processing` | JDK 6 | 编译时处理（APT），不需要 RUNTIME |
 | `AnnotatedElement.getDeclaredAnnotationsByType()` | JDK 8 | 读取重复注解 |
 | 本话代码运行环境 | JDK 25 | ✅ |
+
+---
+
+## 十一、与工业 Spring 的差距
+
+```java
+// 工业 Spring 在这 60 行之上加了什么？
+
+// ❶ 作用域（Scope）
+// @Scope("prototype") → 每次 getBean() 返回新实例
+// 60行版：全部单例，无法区分
+
+// ❷ 循环依赖检测
+// A 依赖 B，B 依赖 A → Spring 用三级缓存处理
+// 60行版：循环依赖会 StackOverflowError 或永远填不满
+
+// ❸ 代理（AOP）
+// @Transactional / @Async → Spring 生成 CGLIB/JDK 动态代理包装 Bean
+// 60行版：没有代理，注解语义靠手写实现
+
+// ❹ 生命周期回调
+// @PostConstruct / @PreDestroy / InitializingBean
+// 60行版：创建后不回调任何方法
+
+// ❺ 构造器注入（推荐）
+// Spring 推荐：final 字段 + 构造器注入，不需要 setAccessible
+// 60行版：字段注入，需要 setAccessible，框架友好度低
+
+// ❻ 类扫描范围与类加载器隔离
+// Spring Boot 用 classpath 扫描 + 多级 ClassLoader
+// 60行版：只扫一个目录，不处理 jar 内部的类
+```
+
+---
+
+## 十二、项目检查点 · 豆豆咖啡站 jvm-v2.4
+
+**已具备：**
+- 注解 + 反射驱动的 DI 容器原型
+- @Coffee 标记 + 扫描 + 实例化 + 字段注入全流程
+- 单例容器，依赖图自动装配
+- 理解工业 Spring 在此基础上的六层防护
+
+**还没有：**
+- 反射调用的性能瓶颈解决方案——MethodHandle 等下一话登场
+- Class-File API——直接操作字节码
+
+阿零把魔法书的第一页翻开了。下一步要换一面更快的镜子。
+
+---
+
+## 十三、对应招聘技能
+
+Java注解, @Retention策略, 运行时反射扫描, 依赖注入原理, Spring容器核心, APT注解处理器, Java25
+
+---
+
+## 十四、下一话悬念
+
+60 行注入器运转了，但反射路径是 JIT 的盲区——每次 `Method.invoke()` 都带着装箱、权限检查、解释器分发。下一话换一面更快的镜子：`MethodHandle` 给 JIT 一个可内联的调用目标，实测快 10 倍；`VarHandle` 把 `Unsafe` 的后门换成正门；Class-File API（JEP 484，JDK 24 正式）让阿零第一次徒手读字节码。第20话《更快的镜子》，卷三魔法祛魅收官。
 
 ---
 
@@ -318,10 +407,4 @@ RUNTIME注解可见: true
 - **验证方式**：`javac -encoding UTF-8 --release 25 -d out *.java && java -cp out MiniApp`，三层依赖自动注入成功，单例验证 `true`，`@Retention` 差异实测输出 `false/true`，与文中一致。
 - **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API - java.lang.annotation](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/package-summary.html)。注解 API 在 JDK 5 引入，`@Repeatable` 在 JDK 8 引入，JDK 25 无变更。
 
----
-
-## 🔮 下话预告：F3E5《更快的镜子》（卷三收官）
-
-反射镜造出了容器，但镜子太重——`Method.invoke()` 无法被 JIT 内联，热路径用反射是性能杀手。
-
-下一话：`MethodHandle`（JDK 7）和 `VarHandle`（JDK 9）——轻量级、可内联的「快速镜子」。焰焰展示 JDK 24 已由 JEP 484 正式交付的 Class-File API,直接操作字节码,以及为什么现代框架会在反射之外选择 `MethodHandle`。卷三在此收官。
+*本话属于连载《从零进化Java:JVM 火种纪》。世界观与卷次地图见 [/jvm](/jvm)。*

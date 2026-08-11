@@ -1,41 +1,51 @@
 ---
-title: "F3E3 镜之洞窟 — 反射 Class、Method、Field 与 setAccessible"
-date: "2026-11-28"
-series: "jvm-academy"
-season: 3
-episode: 3
-tags: ["Java 25", "反射", "Class", "Method", "Field", "setAccessible"]
-summary: "炉底一面照出类骨架的镜子——字段、方法、构造器，连 private 的都照得见。但照得越深代价越大：反射比直接调用慢一到两个数量级，且绕过编译器类型检查。能用泛型/接口解决的就别用反射。"
+title: 《JVM 火种纪》18 · 镜之洞窟
+date: 2026-11-28
+summary: "订单状态机上线之后，阿零拿到一个没有源码的第三方 jar——想知道里面有什么，只能照镜子：Class<?> 是入口，getDeclaredFields/getDeclaredMethods 照出所有骨架，setAccessible(true) 打开私门。但照得越深代价越大：反射调用比直接调用慢 90 倍，JDK 9 模块系统在没有 opens 的包门口立了新的牌子。"
+tags: [Java, Java漫画, JVM, 反射, Java25, 阿零与焰焰]
 ---
+
+# 《JVM 火种纪》18 · 镜之洞窟
+
+> JVM 火种纪 · 卷三「反射与枚举篇」第 3 话 · 基线 Java 25（最新 LTS）
+> 长期项目:**豆豆咖啡站**。上一话状态机上线，枚举工具箱封好——这次阿零拿到一个没有源码的第三方 jar，想知道里面有什么字段和方法。
+
+---
+
+## 一、事故：第三方 jar 无源码，不知道里面有什么
+
+上一话状态机上线，枚举工具箱封好——这次阿零拿到一个第三方 jar，没有源码，需要知道 `Order` 类里有哪些私有字段可以调试。焰焰拿出照妖镜：「`Class<?>` 是入口，从它可以拿到所有字段、方法、构造器的元数据——不需要源码，运行时照出来。」
+
+---
+
+## 二、漫画 · 镜子三层
 
 ![JVM 火种纪漫画：f03e03-reflection](/comics/jvm/f03e03-reflection.png)
 
-> **"反射是照妖镜，不是日常工具。用它做框架的脚手架可以，用它替代正常调用就是在给自己挖坑。"**
-> — 焰焰，看着一份用反射调用普通 getter 的代码说
-
----
-
-## 🎬 开场：类的骨架扫描仪
-
-> **〔1〕**
-> 阿零拿到一个第三方 jar 包，没有源码，想知道里面有什么公开字段和方法。焰焰拿出「反射镜」：「`Class<?>` 是入口，从它可以拿到所有字段、方法、构造器的元数据——不需要源码，运行时照出来。」
-
-> **〔2〕**
-> 「反射有三层镜像：」焰焰列出层次：
+> [!文字版]
+> **〔1〕** 阿零对着第三方 jar 一筹莫展：「没有源码，IDE 提示都没有，怎么知道里面有什么？」焰焰拿出一面镜子：「反射。`Class<?>` 是炉底的一面镜，照出这个类在 JVM 里的样子——字段、方法、构造器，连 private 的都照得见。」
 >
-> - `getDeclaredFields()` / `getDeclaredMethods()`：照出本类声明的所有成员（含 private），不含继承
-> - `getFields()` / `getMethods()`：照出所有 public 成员，含继承的
-> - `field.setAccessible(true)` / `method.setAccessible(true)`：打开私门，强行访问 private
-
-> **〔3〕**
-> 「`setAccessible(true)` 是双刃剑。」焰焰尾巴变成警戒色：「它绕过访问控制，可以读写 `private final` 字段。JDK 9+ 模块系统对这个做了限制——不在同一模块且未开放的包，反射访问会抛 `InaccessibleObjectException`。框架用了 `--add-opens` 绕过，不代表你也应该这样做。」
-
-> **〔4〕**
-> 阿零用反射扫描了咖啡站订单类，把所有 `String` 类型字段的值打印出来，用于调试日志。焰焰补充：「做完这件事就行，别在热路径上反复用反射——每次 `method.invoke()` 比直接调用慢 10-100 倍，缓存 `Method` 对象，或者换 `MethodHandle`（见 F3E5）。」
+> **〔2〕** 「反射有三层。」焰焰列层次：`getDeclaredFields()` 照出本类声明的所有成员含 private，不含继承；`getFields()` 照出所有 public 成员含继承；`field.setAccessible(true)` 打开私门，强行访问 private。阿零试了试，把 `Order` 的所有 String 字段值打印出来了。
+>
+> **〔3〕** 「但 `setAccessible(true)` 是双刃剑。」焰焰尾巴变成警戒色：「它绕过访问控制，JDK 9 模块系统对这个做了限制——不在同一模块且未开放的包，反射访问会抛 `InaccessibleObjectException`。框架用了 `--add-opens` 绕过，不代表你也应该这样做。」
+>
+> **〔4〕** 版本残影飘过：JDK 1.1 引入反射，`setAccessible` 当时没有任何限制。「那时候反射是全开放的，一把万能钥匙。JDK 9 把门加了锁——没有 `opens` 的包，私门进不去。」阿零若有所思。
+>
+> **〔5〕** 阿零用反射扫描了咖啡站订单类，调试日志打出来了。焰焰补充：「做完这件事就行，别在热路径上反复用反射——每次 `method.invoke()` 比直接调用慢 10-100 倍，缓存 `Method` 对象，或者换 `MethodHandle`（见 F3E5）。」阿零：「反射是照妖镜，不是日常工具。」
 
 ---
 
-## 🔑 核心技术：反射三层结构
+## 三、本话目标
+
+- 理解 Class<?> 是反射入口，掌握三种获取方式
+- 区分 getDeclaredXxx 和 getXxx 的作用范围
+- 用 setAccessible(true) 访问 private 成员
+- 了解 JDK 9 模块系统对反射的新限制
+- 认识反射性能代价，知道何时该换 MethodHandle
+
+---
+
+## 四、炉内原理图：反射三层结构
 
 ```
 Class<T>  ←── 入口，通过 .class / Class.forName() / obj.getClass() 获取
@@ -50,9 +60,18 @@ Field  → field.get(obj) / field.set(obj, val)  [需 setAccessible(true) for pr
 Method → method.invoke(obj, args...)            [需 setAccessible(true) for private]
 ```
 
+| 场景 | 适合使用反射 |
+|---|---|
+| 框架扫描注解注入、序列化/反序列化 | ✅ |
+| 测试工具访问私有状态 | ✅ |
+| 第三方 jar 无源码调试 | ✅（临时） |
+| 业务热路径替代直接调用 | ❌ 慢 10-100 倍 |
+
+上一话用枚举+状态机约束了业务流转；这一话用反射打开了类骨架——两者都是"元"层面的操作，代价不同。
+
 ---
 
-## ⚙️ 代码实录：反射扫描与调用
+## 五、从上一话继续改代码：反射扫描与调用
 
 ```java
 // javac -encoding UTF-8 --release 25 ReflectDemo.java
@@ -124,7 +143,52 @@ class ReflectDemo {
 }
 ```
 
-**实测输出**（GraalVM 25.0.4）：
+---
+
+## 六、故意翻一次车：不调用 setAccessible 直接访问 private
+
+阿零故意试一次——跳过 `setAccessible(true)`，直接访问 private 字段：
+
+```java
+// 故意不调用 setAccessible(true)
+Field centsField = Order.class.getDeclaredField("cents");
+// centsField.setAccessible(true);  ← 故意跳过
+System.out.println(centsField.get(o));  // 直接访问 private
+```
+
+---
+
+## 七、编译官罚单
+
+> **📋 编译官罚单 · 编译官放行了，运行时才拦**
+>
+> ```
+> Exception in thread "main" java.lang.IllegalAccessException:
+>     class ReflectDemo cannot access a member of class Order
+>     with modifiers "private"
+>     at java.base/java.lang.reflect.AccessibleObject.checkAccess(...)
+>     at java.base/java.lang.reflect.Field.get(Field.java:...)
+> ```
+>
+> 反射绕过了编译期类型检查——编译器不知道运行时会去访问 private 字段，它只检查 `field.get(obj)` 调用本身是否合法。非法访问是运行时的 `IllegalAccessException`，不是编译错误。JDK 9+ 的模块强封装会进一步抛 `InaccessibleObjectException`。反射绕过了编译期检查，这正是它的代价。
+
+---
+
+## 八、修复并验证
+
+加上 `centsField.setAccessible(true)` 后重新编译运行：
+
+```bash
+javac -encoding UTF-8 --release 25 ReflectDemo.java && java ReflectDemo
+```
+
+验证判据：
+1. `getDeclaredFields` 含 `private`/`static` 字段全部打印
+2. `setAccessible(true)` 允许修改 `private` 值
+3. `private` 方法调用成功
+4. static 字段 `get(null)` 正确
+
+**正常输出**（GraalVM 25.0.4）：
 
 ```
 === 字段 ===
@@ -153,28 +217,7 @@ class ReflectDemo {
 
 ---
 
-## ⚠️ 反射使用边界
-
-```java
-// ✅ 合理使用：框架扫描注解注入、序列化/反序列化、测试工具访问私有状态
-// ❌ 不合理使用：在业务热路径里替代直接调用
-
-// 性能陷阱：每次 invoke 有开销
-for (int i = 0; i < 1_000_000; i++) {
-    method.invoke(obj, args); // 比直接调用慢 10-100 倍
-}
-// 改进1：缓存 Method 对象（避免重复查找）
-// 改进2：用 MethodHandle（JDK 7+，可内联，见 F3E5）
-// 改进3：用接口代替反射（如果能控制类型）
-
-// JDK 9+ 模块系统限制
-// 访问其他模块的 private 字段/方法，需要目标模块 opens 或 --add-opens
-// java --add-opens java.base/java.lang=ALL-UNNAMED ...
-```
-
----
-
-## 🔬 炉底显微镜
+## 九、🔬 炉底显微镜 · 反射调用代价实测
 
 > 焰焰用 `javap` 看反射代价：
 
@@ -223,7 +266,7 @@ EOF
 
 ---
 
-## 📐 版本边界
+## 十、⏳ 版本时光机 · 反射 API 的历史边界
 
 **版本边界**
 
@@ -235,6 +278,55 @@ EOF
 | `InaccessibleObjectException` | JDK 9 | 模块限制异常 |
 | `MethodHandle`（性能替代）| JDK 7 | 见 F3E5 |
 | 本话代码运行环境 | JDK 25 | ✅ |
+
+---
+
+## 十一、反射使用边界
+
+```java
+// ✅ 合理使用：框架扫描注解注入、序列化/反序列化、测试工具访问私有状态
+// ❌ 不合理使用：在业务热路径里替代直接调用
+
+// 性能陷阱：每次 invoke 有开销
+for (int i = 0; i < 1_000_000; i++) {
+    method.invoke(obj, args); // 比直接调用慢 10-100 倍
+}
+// 改进1：缓存 Method 对象（避免重复查找）
+// 改进2：用 MethodHandle（JDK 7+，可内联，见 F3E5）
+// 改进3：用接口代替反射（如果能控制类型）
+
+// JDK 9+ 模块系统限制
+// 访问其他模块的 private 字段/方法，需要目标模块 opens 或 --add-opens
+// java --add-opens java.base/java.lang=ALL-UNNAMED ...
+```
+
+---
+
+## 十二、项目检查点 · 豆豆咖啡站 jvm-v2.3
+
+**已具备：**
+- 反射扫描类骨架——字段、方法、构造器全部照出
+- setAccessible(true) 访问 private 成员
+- 反射创建实例、调用 private 方法、读写 private 字段
+- 理解 JDK 9 模块限制与 InaccessibleObjectException
+
+**还没有：**
+- 用反射+注解造容器——Spring 的核心逻辑是什么
+- 反射性能替代方案——MethodHandle 等下一话的主角
+
+阿零第一次照镜子，把第三方 jar 的骨架全部扫出来了。下一步要用这面镜子造容器。
+
+---
+
+## 十三、对应招聘技能
+
+Java反射, Class反射API, setAccessible, 模块系统opens, 反射性能优化, JDK9强封装, Java25
+
+---
+
+## 十四、下一话悬念
+
+镜子有了——下一话用镜子造一个迷你 Spring。阿零发现 Spring 的核心逻辑就三件事：扫描带注解的类、用反射 `newInstance`、把依赖字段 `set` 进去。60 行 `@Coffee` 注入器运转起来，再对照工业 Spring 的六层防护，魔法书的第一页翻开了。第19话《自制迷你 Spring》，黑魔法消失的那一刻。
 
 ---
 
@@ -292,10 +384,4 @@ EOF
 - **验证方式**：`javac -encoding UTF-8 --release 25 ReflectDemo.java && java ReflectDemo`，字段扫描、private 访问、方法调用、static 字段输出均与文中一致；基准测试（直接 2ms vs 反射 187ms）为实测数据。
 - **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API - java.lang.reflect](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/reflect/package-summary.html)。反射 API 在 JDK 1.1 引入，模块强封装在 JDK 9 引入，JDK 25 无变更。
 
----
-
-## 🔮 下话预告：F3E4《自制迷你 Spring》
-
-镜子有了——下一话用镜子造一个迷你 Spring。
-
-`@Coffee` 注解 + 反射扫描：阿零 60 行代码写出一个依赖注入容器——扫描类上的注解，找到有 `@Coffee` 构造器的类，用反射创建实例并注入依赖。Spring 魔法书的第一页原来就是这个。
+*本话属于连载《从零进化Java:JVM 火种纪》。世界观与卷次地图见 [/jvm](/jvm)。*

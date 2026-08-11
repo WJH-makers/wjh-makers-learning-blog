@@ -1,72 +1,64 @@
 ---
-title: "F3E2 徽章专用工具箱 — EnumMap、EnumSet 与枚举状态机"
-date: "2026-11-21"
-series: "jvm-academy"
-season: 3
-episode: 2
-tags: ["Java 25", "EnumMap", "EnumSet", "状态机", "enum", "集合"]
-summary: "EnumMap 是按徽章开槽的专属抽屉柜，读写比 HashMap 快一个数量级；EnumSet 是位图集合，判断是否包含只需一次位运算。订单状态机用枚举画地铁线路图，走错轨道编译时就拦截。"
+title: 《JVM 火种纪》17 · 徽章专用工具箱
+date: 2026-11-21
+summary: "徽章建好了，下一关是容器：HashMap 存枚举键在浪费哈希计算，EnumMap 按 ordinal 直接数组下标，零碰撞；EnumSet 用一个 long 位图存 64 个标志，contains 是一次位与。阿零用这两把钥匙给订单状态画了一张地铁线路图——走错轨道在运行时就被拦。"
+tags: [Java, Java漫画, JVM, EnumMap, Java25, 阿零与焰焰]
 ---
+
+# 《JVM 火种纪》17 · 徽章专用工具箱
+
+> JVM 火种纪 · 卷三「反射与枚举篇」第 2 话 · 基线 Java 25（最新 LTS）
+> 长期项目:**豆豆咖啡站**。上一话建好了五枚会员徽章，枚举常量各自内置折扣算法——但存徽章的容器还在用通用 HashMap，浪费哈希计算。
+
+---
+
+## 一、事故：HashMap 存枚举键——哈希白算了
+
+上一话建好了五枚会员徽章，枚举常量各自内置折扣算法——转头看统计模块，`HashMap<MemberLevel, Integer>` 在算每个枚举键的 `hashCode()`，分桶，处理碰撞。焰焰看了一眼：「枚举常量的 ordinal 就是天然下标，你非要绕一圈哈希计算，相当于已经有了门牌号还要算坐标。」
+
+---
+
+## 二、漫画 · 三把专用钥匙
 
 ![JVM 火种纪漫画：f03e02-enum-tools](/comics/jvm/f03e02-enum-tools.png)
 
-> **"用 HashMap 存枚举键，就像用通用货架摆专属卡槽的东西——能放，但浪费空间，也浪费时间。"**
-> — 焰焰，把 `HashMap<MemberLevel, Integer>` 换成 `EnumMap`
+> [!文字版]
+> **〔1〕** 阿零面对三个需求：统计每个等级今日下单数（键是枚举）、判断订单享有哪些特权（多个标志位）、订单状态只能按合法路径流转。「三个需求，我全用 HashMap 和 HashSet，有什么问题吗？」
+>
+> **〔2〕** 焰焰拿出第一把钥匙：「`EnumMap`。键是枚举时，它用数组代替哈希表，按 `ordinal` 直接下标，O(1) 无哈希碰撞——枚举常量本来就是有序单例，ordinal 就是天然的数组下标。」阿零：「那 EnumSet 呢？」
+>
+> **〔3〕** 「第二把：`EnumSet`。」焰焰拿出一个 long 值：「一个 `long` 存 64 个标志，每个常量占一位。`contains` 是一次位与操作——`(bitmap & (1L << ordinal)) != 0`，一条指令。你用 `HashSet` 存枚举，是在用卡车运一粒米。」
+>
+> **〔4〕** 版本残影飘过：JDK 5 同时引入 enum、EnumMap、EnumSet。「那时候 Java 泛型刚出，这三件套一起到的。」焰焰补充：「`EnumSet` 的 `JumboEnumSet` 是 JDK 5 就有的——超过 64 个常量自动切换 `long[]` 数组，接口不变。」
+>
+> **〔5〕** 「第三把：枚举状态机。」焰焰在白板画地铁线路图：`PENDING→PAID→PREPARING→READY→DONE`，`PREPARING` 旁边有一条支线到 `CANCELLED`。「每个常量持有合法后继集，转换前先校验，非法路径运行时立即拦。」阿零把三个模块串起来，代码量少了一半。
 
 ---
 
-## 🎬 开场：三种需求，三把专用钥匙
+## 三、本话目标
 
-> **〔1〕**
-> 阿零面对三个需求：
->
-> - 统计每个会员等级的今日下单数（键是枚举，值是整数）
-> - 判断某订单享有哪些特权（多个枚举标志位）
-> - 订单状态只能按合法路径流转（`待支付→已支付→备餐中→已完成`，不能跳过）
-
-> **〔2〕**
-> 焰焰拿出三把专用钥匙：「`EnumMap` 对应第一个——键是枚举时，它用数组代替哈希表，按 `ordinal` 直接下标，O(1) 无哈希碰撞。`EnumSet` 对应第二个——位图，一个 `long` 存 64 个标志，`contains` 是一次位与操作。」
-
-> **〔3〕**
-> 「状态机对应第三个。」焰焰在白板上画了一条地铁线路：
->
-> ```
-> PENDING → PAID → PREPARING → READY → DONE
->                               ↓
->                            CANCELLED（仅从 PREPARING 可取消）
-> ```
->
-> 「每个枚举常量持有一个合法后继状态集，转换前先校验，非法转换立即抛异常。」
-
-> **〔4〕**
-> 阿零把三个模块串起来：下单→入状态机，支付→查 EnumMap 更新统计，享特权→EnumSet 位图检查。代码量少了一半，运行速度快了一倍，逻辑漏洞从运行时变成了编译时。
+- 用 EnumMap 替代 HashMap 存枚举键，理解底层数组优化
+- 用 EnumSet 做特权位图，理解 long 位图原理
+- 用枚举状态机约束订单流转，非法转换运行时拦截
+- 掌握 EnumMap/EnumSet 的遍历顺序与补集操作
+- 识别哪些场景应优先使用专用枚举容器
 
 ---
 
-## 🔑 核心技术：EnumMap vs HashMap
+## 四、炉内原理图：EnumMap vs HashMap vs EnumSet
 
-```
-HashMap<MemberLevel, Integer>:
-  put/get → 计算 hashCode() → 定位桶 → 处理碰撞
-  内存：Entry 对象 + 数组 + 链表/红黑树
-  时间：O(1) 均摊，但有哈希计算和碰撞概率
+| 容器 | 底层结构 | put/get 时间 | 内存 | 特点 |
+|---|---|---|---|---|
+| `HashMap<Enum, V>` | 哈希表 + 链表/红黑树 | O(1) 均摊，有哈希计算 | Entry 对象 + 数组 | 通用，但对枚举键多算了一步 |
+| `EnumMap<Enum, V>` | `Object[] vals`，长度=枚举常量数 | O(1) 严格，直接 `vals[key.ordinal()]` | 极小，一个数组 | 遍历按声明顺序，快且省内存 |
+| `HashSet<Enum>` | 哈希表 | O(1) 均摊 | Entry 对象 | 通用 |
+| `EnumSet<Enum>` | `long` 位图（≤64）/ `long[]`（>64） | O(1)，一次位运算 | 极小，一个 long | contains/add/remove 全是位操作 |
 
-EnumMap<MemberLevel, Integer>:
-  put/get → level.ordinal() 直接数组下标
-  内存：一个 Object[] 数组，大小 = 枚举常量数量
-  时间：O(1) 严格，无哈希计算，无碰撞
-```
-
-`EnumSet` 实现：
-```
-RegularEnumSet（≤64个常量）：一个 long 位图
-JumboEnumSet（>64个常量）：long[] 数组
-contains(X) → (bitmap & (1L << X.ordinal())) != 0  ← 一条指令
-```
+上一话用常量特定方法把逻辑内聚进枚举；这一话用专用容器把存取效率拉满，同一套枚举设计继续演进。
 
 ---
 
-## ⚙️ 代码实录：三件套实战
+## 五、从上一话继续改代码：EnumMap/EnumSet/状态机三件套
 
 ```java
 // javac -encoding UTF-8 --release 25 EnumTools.java
@@ -175,7 +167,48 @@ class EnumTools {
 }
 ```
 
-**实测输出**（GraalVM 25.0.4）：
+---
+
+## 六、故意翻一次车：直接 PENDING 跳到 DONE
+
+阿零故意试一次——不走状态机，直接把订单从 `PENDING` 转到 `DONE`：
+
+```java
+// 跳过中间所有步骤，直接完成
+OrderStatus badState = transition(OrderStatus.PENDING, OrderStatus.DONE);
+```
+
+---
+
+## 七、编译官罚单
+
+> **📋 编译官罚单 · 编译官放行了，运行时才拦**
+>
+> ```
+> Exception in thread "main" java.lang.IllegalStateException: 待支付 → 已完成 不合法
+>     at EnumTools.transition(EnumTools.java:xx)
+>     at EnumTools.main(EnumTools.java:xx)
+> ```
+>
+> 状态机的合法性校验在运行时发生，不是编译期错误。编译器看到的只是 `transition(OrderStatus, OrderStatus)`，两个参数类型完全合法——它不知道业务规则要求必须按顺序流转。非法转换是 `IllegalStateException`（运行时异常），由状态机逻辑主动抛出。
+
+---
+
+## 八、修复并验证
+
+不直接跳转，按合法路径逐步流转：
+
+```bash
+javac -encoding UTF-8 --release 25 EnumTools.java && java EnumTools
+```
+
+验证判据：
+1. EnumMap 累加后各等级计数正确（GOLD=2, SILVER=1）
+2. EnumSet 位图 contains/containsAll 结果正确
+3. 合法路径状态机全程通过
+4. 非法转换 `PENDING→DONE` 精准被拦截
+
+**正常输出**（GraalVM 25.0.4）：
 
 ```
 === 各等级订单数（EnumMap）===
@@ -201,7 +234,7 @@ class EnumTools {
 
 ---
 
-## 🔬 炉底显微镜
+## 九、🔬 炉底显微镜 · EnumMap 底层数组与 EnumSet 位图
 
 > 焰焰把 `EnumMap` 的内部数组暴露出来：
 
@@ -249,7 +282,7 @@ complement: [PENNY, NICKEL]
 
 ---
 
-## 📐 版本边界
+## 十、⏳ 版本时光机 · EnumMap/EnumSet 的历史边界
 
 **版本边界**
 
@@ -261,6 +294,59 @@ complement: [PENNY, NICKEL]
 | `EnumSet.complementOf()` | JDK 5 | 取补集 |
 | `SequencedCollection`（`EnumSet`）| JDK 21 | `EnumSet` 实现了该接口 |
 | 本话代码运行环境 | JDK 25 | ✅ |
+
+---
+
+## 十一、核心技术结构速查
+
+```
+HashMap<MemberLevel, Integer>:
+  put/get → 计算 hashCode() → 定位桶 → 处理碰撞
+  内存：Entry 对象 + 数组 + 链表/红黑树
+  时间：O(1) 均摊，但有哈希计算和碰撞概率
+
+EnumMap<MemberLevel, Integer>:
+  put/get → level.ordinal() 直接数组下标
+  内存：一个 Object[] 数组，大小 = 枚举常量数量
+  时间：O(1) 严格，无哈希计算，无碰撞
+```
+
+`EnumSet` 实现：
+```
+RegularEnumSet（≤64个常量）：一个 long 位图
+JumboEnumSet（>64个常量）：long[] 数组
+contains(X) → (bitmap & (1L << X.ordinal())) != 0  ← 一条指令
+```
+
+---
+
+## 十二、项目检查点 · 豆豆咖啡站 jvm-v2.2
+
+**已具备：**
+- EnumMap 替代 HashMap 存枚举键，按 ordinal 直接数组下标
+- EnumSet 位图存特权标志，contains 是一次位运算
+- 订单状态机上线，非法转换运行时立即拦截
+- 状态转换表用 `EnumMap<OrderStatus, EnumSet<OrderStatus>>` 双层专用结构
+
+**还没有：**
+- 反射能力——拿到第三方 jar 还是不知道里面有什么
+- 运行时类骨架扫描
+
+阿零把三个模块串起来：专用容器 + 状态机，订单流转合法性终于有了约束。下一步要打开炉底那面镜子。
+
+---
+
+## 十三、对应招聘技能
+
+Java枚举容器, EnumMap, EnumSet, 枚举状态机, 位图操作, Java集合优化, Java25
+
+---
+
+## 十四、下一话悬念
+
+工具箱封好了——阿零拿到一个没有源码的第三方 jar，想知道里面有什么字段和方法。焰焰拿出照妖镜：`Class<?>` 是入口，`getDeclaredFields/getDeclaredMethods` 照出所有骨架，`setAccessible(true)` 打开私门。
+
+但照得越深代价越大：反射调用比直接调用慢 90 倍，JDK 9 模块系统在没有 opens 的包门口立了新的牌子。第18话《镜之洞窟》，进去了就要付代价。
 
 ---
 
@@ -318,10 +404,4 @@ complement: [PENNY, NICKEL]
 - **验证方式**：`javac -encoding UTF-8 --release 25 EnumTools.java && java EnumTools`，EnumMap 统计、EnumSet 位图、状态机合法/非法转换输出均与文中一致。
 - **官方依据**：[Java SE 25 JLS](https://docs.oracle.com/javase/specs/jls/se25/html/index.html)、[Java SE 25 API - EnumMap](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/EnumMap.html) 与 [EnumSet](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/EnumSet.html)。两者在 JDK 5 引入，JDK 25 无变更。
 
----
-
-## 🔮 下话预告：F3E3《镜之洞窟》
-
-工具箱封好了——下一话打开炉底那面镜子。
-
-反射（Reflection）让你在运行时看见类的骨骼：字段、方法、构造器，甚至 `private` 的也看得见。焰焰拿着 `Class<?>` 走进镜之洞窟，教阿零「照镜子」的代价，以及为什么不能只依赖镜子——`MethodHandle` 才是更快更安全的替代。
+*本话属于连载《从零进化Java:JVM 火种纪》。世界观与卷次地图见 [/jvm](/jvm)。*
