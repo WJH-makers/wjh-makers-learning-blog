@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { getAllPublishedPosts, siteUrl, type Post } from "@/lib/posts";
+import { getAllPublishedPosts, type Post } from "@/lib/posts";
 import { findEpisodeInfo } from "@/lib/series-registry";
-import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 
 export const revalidate = 3600;

@@ -4,10 +4,11 @@ import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { getDatabasePost, getDatabasePostIndex, getDatabasePosts } from "@/lib/db";
 import { estimateReadingMinutes } from "@/lib/text";
-import { isReleasedDate } from "@/lib/publication";
+import { isReleasedDate, shanghaiDate } from "@/lib/publication";
 import { mergePublishedPostIndex, type PostIndexEntry } from "@/lib/post-index";
 
 export { mergePublishedPostIndex, type PostIndexEntry } from "@/lib/post-index";
+export { outboundDate } from "@/lib/publication";
 
 export const PUBLIC_POSTS_CACHE_TAG = "public-posts-v1";
 
@@ -71,7 +72,7 @@ function postFromFile(fileName: string): Post {
   return {
     slug,
     title: data.title ?? slug,
-    date: data.date ?? new Date().toISOString().slice(0, 10),
+    date: data.date ?? shanghaiDate(),
     // excerpt 是安全网:曾有 30 篇 JVM 连载写成 excerpt,静默退化成兜底文案,
     // 把 meta description / OG 卡片 / JSON-LD / 页面导语一起拖成"学习记录"。
     // 正式约定仍是 summary —— tests/content-frontmatter.test.ts 禁止新增 excerpt。
@@ -211,15 +212,4 @@ export async function getRelatedPosts(slug: string, tags: string[], limit = 4): 
 
 export function siteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online").replace(/\/$/, "");
-}
-
-/**
- * 对外声明日期时的钳制:内容日历排到未来是有意为之(连载按剧情时间线排期),
- * 但 RSS/sitemap/JSON-LD 携带未来时间会被吃掉 —— Search Console 忽略未来 lastmod,
- * 部分阅读器直接丢弃未来条目。站内展示仍用原始 date,只在这些出口钳到"最晚是现在"。
- */
-export function outboundDate(date: string): Date {
-  const parsed = Date.parse(date);
-  const now = Date.now();
-  return new Date(Number.isNaN(parsed) ? now : Math.min(parsed, now));
 }

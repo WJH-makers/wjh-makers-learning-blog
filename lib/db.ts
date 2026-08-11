@@ -4,6 +4,7 @@ import { resolveMongoUri } from "@/lib/database-config";
 import type { Post } from "@/lib/posts";
 import type { PostIndexEntry } from "@/lib/post-index";
 import { estimateReadingMinutes } from "@/lib/text";
+import { shanghaiDate } from "@/lib/publication";
 
 type NewDatabasePost = {
   title: string;
@@ -227,7 +228,7 @@ export async function createDatabasePost(input: NewDatabasePost): Promise<Post> 
   const title = input.title.trim();
   const content = input.content.trim();
   const summary = input.summary.trim() || content.slice(0, 120);
-  const date = input.date.trim() || new Date().toISOString().slice(0, 10);
+  const date = input.date.trim() || shanghaiDate();
   const tags = input.tags.map((tag) => tag.trim()).filter(Boolean);
 
   if (!title) throw new Error("标题不能为空。");

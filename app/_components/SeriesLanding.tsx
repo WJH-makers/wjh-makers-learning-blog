@@ -12,7 +12,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
-import { publishedEpisodesOf, allEpisodesOf, type SeriesRef } from "@/lib/series-registry";
+import { publishedEpisodesOf, type SeriesRef } from "@/lib/series-registry";
 import { siteUrl } from "@/lib/posts";
 import { publicAssetUrl } from "@/lib/assets";
 import { jsonLdSafe } from "@/lib/jsonld";

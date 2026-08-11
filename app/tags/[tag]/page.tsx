@@ -39,7 +39,6 @@ export default async function TagPage({ params }: Props) {
   const { tag } = await params;
   const decoded = decodeURIComponent(tag);
   const posts = await getPublishedPostsByTag(decoded);
-  const allTags = await getAllPublishedTags();
   const url = `${siteUrl()}/tags/${encodeURIComponent(decoded)}`;
 
   // 收集本标签下所有文章中出现频率最高的关联标签

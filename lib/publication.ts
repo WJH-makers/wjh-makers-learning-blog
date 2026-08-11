@@ -19,6 +19,14 @@ export function isReleasedDate(date: string, now = new Date()): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(date) && date <= shanghaiDate(now);
 }
 
+export function outboundDate(date: string, now = new Date()): Date {
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(date)
+    ? new Date(`${date}T00:00:00+08:00`)
+    : undefined;
+  const valid = parsed && !Number.isNaN(parsed.getTime()) && shanghaiDate(parsed) === date;
+  return valid && parsed <= now ? parsed : new Date(now.getTime());
+}
+
 /** 连载 slug 以 YYYY-MM-DD 开头；无有效日期的条目绝不当作已发布。 */
 export function isReleasedSlug(slug: string | undefined, now = new Date()): boolean {
   return Boolean(slug && isReleasedDate(slug.slice(0, 10), now));

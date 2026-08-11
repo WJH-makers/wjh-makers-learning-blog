@@ -9,6 +9,7 @@ import { getPublishedPost, PUBLIC_POSTS_CACHE_TAG } from "@/lib/posts";
 import WriteEditorClient from "./WriteEditorClient";
 import { isSameOriginRequest } from "@/lib/request-origin";
 import { safeCompare } from "@/lib/safe-compare";
+import { shanghaiDate } from "@/lib/publication";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -155,7 +156,7 @@ async function checkAuth(): Promise<boolean> {
 
 export default async function WritePage({ searchParams }: Props) {
   const { error, slug } = await searchParams;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = shanghaiDate();
   const dbReady = hasDatabaseConfig();
   const tokenReady = Boolean(process.env.BLOG_ADMIN_TOKEN?.trim());
   const publishingReady = dbReady && tokenReady;

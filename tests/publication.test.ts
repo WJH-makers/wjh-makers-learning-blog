@@ -4,6 +4,7 @@ import {
   isPublicEpisode,
   isReleasedDate,
   isReleasedSlug,
+  outboundDate,
   shanghaiDate,
 } from "../lib/publication.ts";
 
@@ -13,6 +14,14 @@ test("上海日期作为发布边界，发布日期当天可见、未来日期�
   assert.equal(shanghaiDate(noonInShanghai), "2026-07-29");
   assert.equal(isReleasedDate("2026-07-29", noonInShanghai), true);
   assert.equal(isReleasedDate("2026-07-30", noonInShanghai), false);
+});
+
+test("对外时间使用上海午夜，未来或无效日期钳到当前时刻", () => {
+  const earlyMorning = new Date("2026-08-10T17:30:00.000Z");
+  assert.equal(outboundDate("2026-08-11", earlyMorning).toISOString(), "2026-08-10T16:00:00.000Z");
+  assert.equal(outboundDate("2026-08-12", earlyMorning).toISOString(), earlyMorning.toISOString());
+  assert.equal(outboundDate("2026-02-30", earlyMorning).toISOString(), earlyMorning.toISOString());
+  assert.equal(outboundDate("not-a-date", earlyMorning).toISOString(), earlyMorning.toISOString());
 });
 
 test("连载 slug 必须具有已到达的 YYYY-MM-DD 前缀才可公开", () => {

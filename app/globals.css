@@ -16,6 +16,7 @@
   --paper-rgb: 250, 249, 245;
   --ink-rgb: 20, 20, 19;
   --font-serif: var(--font-playfair), "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", STSong, SimSun, Georgia, serif;
+  --font-display: var(--font-serif);
   --font-body: var(--font-lora), "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", STSong, SimSun, Georgia, serif;
   --font-sans: var(--font-inter), "Microsoft YaHei UI", system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), "JetBrains Mono", "Cascadia Code", Consolas, monospace;

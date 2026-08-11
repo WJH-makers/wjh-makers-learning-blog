@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SERIES_LIST, seriesProgress, allSeriesProgress } from "@/lib/series-registry";
+import { SERIES_LIST, seriesProgress } from "@/lib/series-registry";
 import { siteUrl } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
