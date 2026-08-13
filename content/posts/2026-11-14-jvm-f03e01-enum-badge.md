@@ -23,6 +23,7 @@ tags: [Java, Java漫画, JVM, enum, Java25, 阿零与焰焰]
 ![JVM 火种纪漫画：f03e01-enum-badge](/comics/jvm/f03e01-enum-badge.png)
 
 > [!文字版]
+>
 > **〔1〕** 阿零盯着屏幕，一脸茫然：「我写了 30 行 if-else，覆盖了 1、2、3、5，怎么铂金会员投诉折扣没算对？」焰焰探过头，直接指着第 22 行：「level=4 你没写。编译器不知道你有几种等级，它不替你数。」
 >
 > **〔2〕** 「换成 enum，编译器帮你数。」焰焰定义了五个常量：`NORMAL、SILVER、GOLD、PLATINUM、BLACK_GOLD`。「switch 表达式要求穷尽所有分支——漏写 PLATINUM，编译就报错，不是上线后客诉。」

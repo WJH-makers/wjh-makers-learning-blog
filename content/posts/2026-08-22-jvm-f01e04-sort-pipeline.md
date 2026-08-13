@@ -40,6 +40,7 @@ if (item instanceof Espresso) {
 ![《JVM 火种纪》04 · 分拣流水线——模式匹配六格漫画](/comics/jvm/f01e04-sort-pipeline.png)
 
 > [!文字版]
+>
 > **〔1〕** 早高峰。阿零站在订单分拣台前，对着一摞 `MenuItem` 发呆。屏幕上那条 `instanceof` 链一直往下拖，看不到底。「六行换一个路由，每次加品类都要往里钻三处。」他捏着鼻子。
 >
 > **〔2〕** 焰焰探头进来，尾巴是跃跃欲试的橙红色。「Java 21 起，switch 可以直接写 `case Espresso e when e.shots() >= 2`——**类型检查、绑定变量、条件守卫，一行搞定**。」

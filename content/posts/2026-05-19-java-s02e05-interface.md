@@ -25,6 +25,7 @@ tags: [Java, Java漫画, 接口, interface, 阿零与豆豆]
 
 
 > [!文字版]
+>
 > **〔1〕** 一份合同摊开,标题 `interface PaymentMethod`,通篇只有一条条款:`void pay(double amount);`。
 > 豆豆:「接口只写**要能做什么**,不写**怎么做**。」
 >

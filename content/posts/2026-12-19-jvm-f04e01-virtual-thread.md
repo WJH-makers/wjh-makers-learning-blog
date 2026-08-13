@@ -29,6 +29,7 @@ tags: [Java, Java漫画, JVM, 虚拟线程, Java25, 阿零与焰焰]
 ![JVM 火种纪漫画：f04e01-virtual-thread](/comics/jvm/f04e01-virtual-thread.png)
 
 > [!文字版]
+>
 > **〔1〕** 促销日凌晨，烘豆炉一楼被订单小票淹了。阿零指着监控:「十万订单，活跃线程数卡在 200 一动不动，CPU 才 12%。」他用的是 `Executors.newFixedThreadPool(200)`——200 个平台线程，每个栈 1 MB，共 200 MB，可 99% 的时间都在等数据库和咖啡机。第 201 个请求原地排队。
 >
 > **〔2〕** 焰焰尾巴一甩，只改了一行:`Executors.newVirtualThreadPerTaskExecutor()`。「十万个任务，十万个虚拟线程。底下的载体线程（平台线程）还是只有 CPU 核数个——虚拟线程一等 IO 就自动『灵魂出窍』，把载体线程交还给下一单。」

@@ -34,6 +34,7 @@ System.out.println(new String(bytes)); // 没指定编码
 ![《JVM 火种纪》14 · 字节的地下水道——IO 装饰器四格漫画](/comics/jvm/f02e07-byte-stream.png)
 
 > [!文字版]
+>
 > **〔1〕** 阿零打开一份小票日志文件，满屏 `???`。「我就用的 `FileInputStream` 啊，读出来的怎么是这个？」他把代码递给焰焰，一脸委屈。
 >
 > **〔2〕** 焰焰指着代码：「`FileInputStream` 读的是字节，不是字符。你直接 `new String(bytes)` 没指定编码，就把正确性押给了运行时默认值。JDK 18 起标准默认值是 UTF-8，但旧 JDK、`-Dfile.encoding=COMPAT` 与历史数据仍可能使用本地编码——字节相同，解码码表不同，结果就是乱码。」

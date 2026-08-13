@@ -32,6 +32,7 @@ while (台.poll() == null) { /* 忙等 */ }          // 台空时死循环
 ![《JVM 火种纪》13 · 产消协奏曲——BlockingQueue 四格漫画](/comics/jvm/f02e06-producer-consumer.png)
 
 > [!文字版]
+>
 > **〔1〕** 咖啡站自动化改造：咖啡师线程生产饮品，取餐员线程消费饮品，中间有一个出杯台（容量=4）。阿零的旧代码台满了死循环重试、台空了死循环等待——两边都在烧 CPU。
 >
 > **〔2〕** 阿零拿出 `synchronized + wait/notify` 方案。焰焰直接摇头：「会写对，但太容易写错。你得自己管 `notifyAll` 时机，自己处理虚假唤醒，自己保证锁的获取顺序。`BlockingQueue` 把这些全包了——`put()` 队满时阻塞，`take()` 队空时阻塞，内部用 `ReentrantLock + Condition` 实现，经过千锤百炼。」

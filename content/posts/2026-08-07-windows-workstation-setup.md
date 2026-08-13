@@ -5,6 +5,8 @@ summary: "把游戏、IDE、前端、Java、Python GPU 实验和 Linux 工具放
 tags: [Windows, WSL2, Java, 全栈开发, PyTorch, 性能优化, 环境配置, 复盘]
 ---
 
+# 我的 Windows 全栈工作站：性能优先的 Java + WSL2 配置复盘
+
 ## 为什么要重新整理工作站
 
 开发环境最容易变成一座“能运行但说不清”的旧仓库：系统里有好几份 JDK，终端里有好几个 Node，容器一会儿走 Docker、一会儿走 Podman，IDE 还能自己偷偷选另一套构建 JVM。偶尔能跑通，并不等于环境可靠。

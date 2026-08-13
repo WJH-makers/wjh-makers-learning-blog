@@ -37,6 +37,7 @@ if (obj instanceof Order o) {
 ![《JVM 火种纪》05 · 套娃拆包机——record 解构六格漫画](/comics/jvm/f01e05-destruct.png)
 
 > [!文字版]
+>
 > **〔1〕** 午后。阿零对着一批嵌套订单犯难：外层 `Order(Drink item, int qty)`，里面还包着 `Drink(String name, int price)`。他手上那段代码先 `instanceof Order o`，再 `o.item().name()`、`o.qty()`——一路点号往里钻。「外层拆一次、内层再拆一次，两把钥匙。」
 >
 > **〔2〕** 焰焰挂着《JEP 编年史》溜进来，尾巴是懒洋洋的暗红色，翻到「解构模式」那页。「Java 21 起，record 能**直接在 case 里解构**——外层和内层一起写，编译器一次拆完。」

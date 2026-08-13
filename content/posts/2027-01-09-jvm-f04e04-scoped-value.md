@@ -27,6 +27,7 @@ tags: [Java, Java漫画, JVM, ScopedValue, Java25, 阿零与焰焰]
 ![JVM 火种纪漫画：f04e04-scoped-value](/comics/jvm/f04e04-scoped-value.png)
 
 > [!文字版]
+>
 > **〔1〕** 咖啡站大促，十万虚拟线程并发处理订单。每个请求需要传递用户信息（`UserContext`）给下游服务。阿零用的是 `ThreadLocal<UserContext>`——传统做法，在请求入口 `set()`，在出口 `remove()`。「听起来没问题？」焰焰问。「有什么问题？」
 >
 > **〔2〕** 「十万虚拟线程 = 十万个 ThreadLocal 副本。**`ThreadLocal` 的生命周期和线程绑定**——只要虚拟线程活着，副本就在内存里。如果忘了 `remove()`，线程池里的线程复用时，下一个请求会读到上一个用户的数据。虚拟线程不复用，但大量持有复杂对象仍然是内存压力。」

@@ -27,6 +27,7 @@ tags: [Java, Java漫画, JVM, StructuredTaskScope, Java25, 阿零与焰焰]
 ![JVM 火种纪漫画：f04e05-structured-scope](/comics/jvm/f04e05-structured-scope.png)
 
 > [!文字版]
+>
 > **〔1〕** 咖啡站下单流程要并发查询库存、积分和配送。阿零翻出一篇旧教程，第一行就是 `new StructuredTaskScope.ShutdownOnFailure()`。
 >
 > **〔2〕** 焰焰把 Java 25 编译器放到桌上：「这段在 JDK 25 已经编不过。JEP 505 把 API 改成了 `StructuredTaskScope.open(...)` 与 `Joiner`，而且仍需 `--enable-preview`。」

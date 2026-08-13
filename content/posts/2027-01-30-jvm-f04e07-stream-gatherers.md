@@ -25,6 +25,7 @@ tags: [Java, Java漫画, JVM, StreamGatherers, Java25, 阿零与焰焰]
 ![JVM 火种纪漫画：f04e07-stream-gatherers](/comics/jvm/f04e07-stream-gatherers.png)
 
 > [!文字版]
+>
 > **〔1〕** 咖啡站运营系统新需求：实时监控出杯速率——每 5 杯一组统计平均出杯时间。标准 Stream 没有「每 5 个一批」的操作。`filter/map/flatMap/reduce` 全是单元素或全归约，拿不到滑动窗口。阿零翻遍文档：「只能先 collect 成 List，再手动分批，损失了流式特性。」
 >
 > **〔2〕** 焰焰打开 JDK 24 发布说明：「JEP 485，Stream Gatherers，正式入库。这是中间操作的扩展点——你可以自定义有状态的中间操作，和 `filter/map` 一样用 `.gather(myGatherer)` 插进管道。」「有状态？」「滑动窗口需要记住前几个元素，这是状态。Gatherer 允许你把状态和收尾步骤表达出来。」

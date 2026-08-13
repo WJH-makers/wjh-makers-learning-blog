@@ -23,6 +23,7 @@ tags: [Java, Java漫画, JVM, EnumMap, Java25, 阿零与焰焰]
 ![JVM 火种纪漫画：f03e02-enum-tools](/comics/jvm/f03e02-enum-tools.png)
 
 > [!文字版]
+>
 > **〔1〕** 阿零面对三个需求：统计每个等级今日下单数（键是枚举）、判断订单享有哪些特权（多个标志位）、订单状态只能按合法路径流转。「三个需求，我全用 HashMap 和 HashSet，有什么问题吗？」
 >
 > **〔2〕** 焰焰拿出第一把钥匙：「`EnumMap`。键是枚举时，它用数组代替哈希表，按 `ordinal` 直接下标，O(1) 无哈希碰撞——枚举常量本来就是有序单例，ordinal 就是天然的数组下标。」阿零：「那 EnumSet 呢？」

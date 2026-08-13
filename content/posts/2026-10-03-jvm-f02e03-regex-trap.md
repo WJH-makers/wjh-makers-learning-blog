@@ -33,6 +33,7 @@ tags: [Java, Java漫画, JVM, 正则表达式, Java25, 阿零与焰焰]
 ![《JVM 火种纪》10 · 文本捕兽夹——Pattern 与 Matcher 六格漫画](/comics/jvm/f02e03-regex-trap.png)
 
 > [!文字版]
+>
 > **〔1〕** 阿零面对一堆小票原始日志，每行格式混乱，优惠码散落其中:「我想把所有 `COUPON:XXXXXX` 提取出来，分别拿到码本身。」他展示那串 `indexOf` 链，每次需求一变就往里加一层。
 >
 > **〔2〕** 焰焰看了一眼，「两件事要想清楚——**先铸夹，再放夹**。」`Pattern` 是编译好的正则引擎（铸夹），不可变，线程安全，可以 `static final` 共享。`Matcher` 是一次匹配过程（放夹），有可变状态，每次 `pattern.matcher(input)` 创建新实例，不要跨线程共用。

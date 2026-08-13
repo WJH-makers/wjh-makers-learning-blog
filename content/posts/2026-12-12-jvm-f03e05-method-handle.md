@@ -29,6 +29,7 @@ tags: [Java, Java漫画, JVM, MethodHandle, Java25, 阿零与焰焰]
 ![JVM 火种纪漫画：f03e05-method-handle](/comics/jvm/f03e05-method-handle.png)
 
 > [!文字版]
+>
 > **〔1〕** 阿零把反射镜擦得发亮:「照得见私有字段,又缓存了 `Method`,还能慢到哪去?」焰焰把压测曲线拍在台面上——一条稳稳抬高的延迟线。「反射镜能照到私有成员，但每次照都要检查权限、装箱参数、走解释器——JIT 看到 `Method.invoke()` 就头疼，因为它不知道里面最终调哪个方法。」
 >
 > **〔2〕** 焰焰拿出第二面镜:「`MethodHandle`——形状和反射一样，但 JIT 能看穿它，看见真正的调用目标，然后把它内联掉。」阿零凑近一看,镜面上刻着一行 `MethodType`:返回 String、无参数。「权限在 lookup 那一刻查一次,之后每次调用都不再查。」

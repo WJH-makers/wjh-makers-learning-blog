@@ -23,6 +23,7 @@ tags: [Java, Java漫画, JVM, 反射, Java25, 阿零与焰焰]
 ![JVM 火种纪漫画：f03e03-reflection](/comics/jvm/f03e03-reflection.png)
 
 > [!文字版]
+>
 > **〔1〕** 阿零对着第三方 jar 一筹莫展：「没有源码，IDE 提示都没有，怎么知道里面有什么？」焰焰拿出一面镜子：「反射。`Class<?>` 是炉底的一面镜，照出这个类在 JVM 里的样子——字段、方法、构造器，连 private 的都照得见。」
 >
 > **〔2〕** 「反射有三层。」焰焰列层次：`getDeclaredFields()` 照出本类声明的所有成员含 private，不含继承；`getFields()` 照出所有 public 成员含继承；`field.setAccessible(true)` 打开私门，强行访问 private。阿零试了试，把 `Order` 的所有 String 字段值打印出来了。

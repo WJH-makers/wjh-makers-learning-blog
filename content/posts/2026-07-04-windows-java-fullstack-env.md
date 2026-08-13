@@ -5,6 +5,8 @@ summary: 从复盘出发的 Windows Java 全栈环境完整手册：JDK 版本�
 tags: [Windows, Java, Git, MySQL, Maven, Gradle, mise, IntelliJ, 环境配置]
 ---
 
+# Windows Java 全栈环境整理复盘
+
 ![Java 全栈环境漫画：从 JDK 到可复现验证](/comics/java/java-fullstack-env-map.png)
 
 ## 今天完成了什么

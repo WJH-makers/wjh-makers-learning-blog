@@ -33,6 +33,7 @@ VirtualThread[#42] 先挂在 worker-1，sleep 后卸载，醒来时挂在 worker
 ![JVM 火种纪漫画：f04e02-mount-unmount](/comics/jvm/f04e02-mount-unmount.png)
 
 > [!文字版]
+>
 > **〔1〕** 阿零指着上一话的加速比数字:「虚拟线程一遇阻塞就卸载——我怎么知道它真的卸载了？代码看起来就是普通的 `Thread.sleep(50)`，编译器没报、运行时也没日志。」焰焰打开 JFR 录制:「因为你看的是代码，不是事件。」
 >
 > **〔2〕** 焰焰用 `java -XX:StartFlightRecording=filename=mount.jfr,duration=5s` 跑了一遍，然后 `jfr print --events jdk.VirtualThreadMount,jdk.VirtualThreadUnmount mount.jfr`，屏幕上刷出密密麻麻的事件雨。她指着一条:「看，VirtualThread[#42] 先挂在 worker-1 上执行，sleep 触发卸载，醒来时重新挂载——这次是 worker-7。」

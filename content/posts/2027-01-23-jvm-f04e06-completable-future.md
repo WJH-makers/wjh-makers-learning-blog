@@ -27,6 +27,7 @@ tags: [Java, Java漫画, JVM, CompletableFuture, Java25, 阿零与焰焰]
 ![JVM 火种纪漫画：f04e06-completable-future](/comics/jvm/f04e06-completable-future.png)
 
 > [!文字版]
+>
 > **〔1〕** 咖啡站新功能：下单前对比三家供应商的咖啡豆报价，选最低价。三家 API 响应时间不同（A: 200ms，B: 150ms，C: 300ms），还要在最低价上叠加会员折扣（异步查用户等级），最后格式化报价单。阿零上周用 `StructuredTaskScope.open(Joiner.anySuccessfulResultOrThrow())` 做了竞速——「但这次不是竞速，是聚合三个价格再做一步异步计算，STS 怎么做？」
 >
 > **〔2〕** 焰焰把需求拆开：「STS 搞定聚合 OK。但加会员折扣查询依赖报价结果——这是两步有依赖的异步。STS 可以嵌套两个 scope，也可以 join 第一个再 fork 第二个。」阿零写了嵌套版：代码 OK，但七层缩进。「CF 的 thenCompose 天生为这个设计——第一步完成后把结果传进下一步的异步函数。管道形状的逻辑用管道写。」
