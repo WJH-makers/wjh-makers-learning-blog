@@ -95,7 +95,10 @@ test("production ref fetches cannot hold the deploy lock indefinitely", () => {
   assert.match(deploy, /git@github\.com:WJH-makers\/wjh-makers-learning-blog\.git/);
   assert.match(deploy, /timeout --signal=TERM --kill-after=10s "\$FETCH_TIMEOUT"/);
   assert.match(deploy, /FETCH_ATTEMPTS=2/);
-  assert.match(deploy, /refs\/heads\/production:refs\/remotes\/origin\/production/);
+  // production 是 CI 强推的发布引用；服务器必须显式接受引用回退，
+  // 否则第一次 force-push 后 git fetch 会 non-fast-forward 拒绝，timer 永远卡在旧提交。
+  assert.match(deploy, /\+refs\/heads\/production:refs\/remotes\/origin\/production/);
+  assert.doesNotMatch(deploy, /\n\s+refs\/heads\/production:refs\/remotes\/origin\/production; then/);
   assert.match(workflow, /for attempt in \$\(seq 1 96\)/);
   assert.match(workflow, /within 16 minutes/);
 });

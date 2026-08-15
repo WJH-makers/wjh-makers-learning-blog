@@ -28,10 +28,14 @@ fetch_production_ref() {
   local url attempt
   for url in "${DEPLOY_FETCH_URLS[@]}"; do
     for attempt in $(seq 1 "$FETCH_ATTEMPTS"); do
+      # CI 用 `git push --force` 重写 refs/heads/production(每次发布都指向新测过的 SHA),
+      # 所以本地 origin/production 常常不是新引用的祖先。不带 `+` 的 refspec 会被
+      # Git 以 non-fast-forward 拒绝(exit 1),而外层只会打印"fetch failed",
+      # 看起来像网络问题 —— 实际每轮重试都注定失败,发布永远卡在旧提交。
       if timeout --signal=TERM --kill-after=10s "$FETCH_TIMEOUT" \
         git -c core.hooksPath=/dev/null fetch --quiet \
           "$url" \
-          refs/heads/production:refs/remotes/origin/production; then
+          "+refs/heads/production:refs/remotes/origin/production"; then
         return 0
       fi
       echo "Production ref fetch failed (${attempt}/${FETCH_ATTEMPTS}) via ${url}; retrying." >&2
