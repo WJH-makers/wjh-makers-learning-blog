@@ -54,7 +54,7 @@ git status -> git diff -> git add -p -> git commit -> git push
 | `java -version` | 看当前生效的 JDK 版本与厂商 | 输出走 **stderr**，脚本里重定向要用 `2>&1`；显示的是 PATH 里第一个 `java`，未必等于 `JAVA_HOME` 指的那个（见下节） |
 | `java --version` | 同上，新式单行输出 | JDK 9+ 才有；老脚本仍用 `-version` |
 | `javac -version` | 确认编译器版本 | 只装 JRE 时没有 `javac`；能跑 `java` 不代表能编译 |
-| `where java`（PS/CMD）/ `which -a java`（Bash） | 列出 PATH 中**所有** java，按顺序 | ⚠ Windows 常见幽灵：`C:\Windows\System32\java.exe` 或 `C:\ProgramData\Oracle\Java\javapath\java.exe`（Oracle 安装器留的 shim），排在你的 JDK 前面就会「版本对不上」 |
+| `where java`（PS/CMD）/ `which -a java`（Bash） | 列出 PATH 中**所有** java，按顺序 | ⚠ Windows 常见幽灵：`<Windows目录>\System32\java.exe` 或 `<ProgramData>\Oracle\Java\javapath\java.exe`（Oracle 安装器留的 shim），排在你的 JDK 前面就会「版本对不上」 |
 | `echo $env:JAVA_HOME`（PS）/ `echo $JAVA_HOME`（Bash） | 确认 JAVA_HOME 指向 | 值应指到 JDK **根目录**，不是 `\bin`；结尾不要带反斜杠 |
 
 ## 2、JAVA_HOME 与 PATH：全栈环境头号坑区
@@ -65,7 +65,7 @@ git status -> git diff -> git add -p -> git commit -> git push
 | --- | --- | --- |
 | `JAVA_HOME` 指到 `\bin` | Maven/Gradle 报 `JAVA_HOME is set to an invalid directory` | 指向 JDK **根目录**（含 `bin`、`lib`、`conf`） |
 | 结尾带反斜杠或引号 | 拼出 `...\bin\\java` 或路径被引号污染 | 值里不写引号、不留尾部 `\`；PATH 里写 `%JAVA_HOME%\bin` |
-| 路径含空格未处理 | `C:\Program Files\...` 在脚本/CI 里被截断 | 用户变量里直接填无妨，但脚本内引用要加引号；能避开 `Program Files` 就装到无空格路径 |
+| 路径含空格未处理 | `<Program Files>\...` 在脚本/CI 里被截断 | 用户变量里直接填无妨，但脚本内引用要加引号；能避开 `Program Files` 就装到无空格路径 |
 | PATH 顺序错 | `where java` 里 System32/Oracle 的 shim 排第一 | 把 `%JAVA_HOME%\bin`（或 mise shim）**移到 PATH 最前**；删掉 Oracle javapath |
 | 用户变量 vs 系统变量混设 | 一个窗口对、另一个错 | 统一在**用户变量**设，别系统/用户各设一份互相打架 |
 | 改了变量不重开终端 | 老进程仍读旧值 | 环境变量只在进程启动时读取；改完**新开** shell（连 IDE、连资源管理器有时都要重启） |
@@ -81,7 +81,7 @@ PowerShell 7 里临时改（只影响当前会话，用来快速验证某版本�
 
 ## 3、Maven 全局配置（settings.xml）
 
-Maven 的用户级配置在 `~/.m2/settings.xml`（Windows 即 `C:\Users\<你>\.m2\settings.xml`），默认**不存在**，需要自己建。三件事最值得配：镜像（国内加速）、本地仓库位置、以及可选的私服认证。
+Maven 的用户级配置在 `~/.m2/settings.xml`（Windows 即 `~\.m2\settings.xml`），默认**不存在**，需要自己建。三件事最值得配：镜像（国内加速）、本地仓库位置、以及可选的私服认证。
 
 | 配置项 | 位置 / 键 | 备注 / 坑 |
 | --- | --- | --- |
@@ -103,7 +103,7 @@ Maven 的用户级配置在 `~/.m2/settings.xml`（Windows 即 `C:\Users\<你>\.
 
 ## 4、Gradle 全局配置（GRADLE_USER_HOME / gradle.properties）
 
-Gradle 的用户级目录由 `GRADLE_USER_HOME` 决定（默认 `~/.gradle`），里面放全局 `gradle.properties`、缓存、wrapper 分发包。本机把它**外置到 `E:\.dev-cache\gradle-home`**（缓存能涨到十几 GB，别占 C 盘系统盘）。
+Gradle 的用户级目录由 `GRADLE_USER_HOME` 决定（默认 `~/.gradle`），里面放全局 `gradle.properties`、缓存、wrapper 分发包。本机把它**外置到 `<数据盘>.dev-cache\gradle-home`**（缓存能涨到十几 GB，别占 C 盘系统盘）。
 
 全局 `gradle.properties`（放在 `GRADLE_USER_HOME` 下，对所有项目生效）常配：
 

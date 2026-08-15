@@ -43,7 +43,7 @@ ubuntu@coffee-server:~$ █
 > **〔3〕** 特米指着那行字:`ubuntu@coffee-server:~$`
 > 特米:「这叫**提示符**,是服务器在报家门:`ubuntu` 是你的身份,`coffee-server` 是这台机器,`~` 是你现在站的位置,`$` 是它在说——**该你了**。」
 
-> **〔4〕** 阿零壮着胆子敲了 `pwd`,回车,屏幕吐出 `/home/ubuntu`。
+> **〔4〕** 阿零壮着胆子敲了 `pwd`,回车,屏幕吐出 `/coffee-lab/home/ubuntu`。
 > 阿零:「它、它回话了!」特米(淡定):「一问一答。这就是 **shell**——你和机器之间的翻译官。」
 
 > **〔5〕** 阿零想进咖啡站的目录,敲 `cd Coffee`,屏幕冷冷回了句 `No such file or directory`。
@@ -91,7 +91,7 @@ cd   = change directory         挪到另一根枝
 
 ```bash
 $ pwd                       # 我在哪
-/home/ubuntu
+/coffee-lab/home/ubuntu
 
 $ ls                        # 这有什么
 coffee-shop  logs  notes.md
@@ -103,7 +103,7 @@ drwxr-xr-x 2 ubuntu ubuntu 4096 Sep 19 10:00 coffee-shop
 
 $ cd coffee-shop            # 走过去
 $ pwd
-/home/ubuntu/coffee-shop
+/coffee-lab/home/ubuntu/coffee-shop
 
 $ cd ..                     # .. = 上一级
 $ cd                        # 不带参数 = 回家(~)
@@ -163,7 +163,7 @@ ubuntu
 $ echo $SHELL       # 谁在替我翻译
 /bin/bash
 $ pwd               # 我在哪(任何时候迷路,先敲它)
-/home/ubuntu/coffee-shop
+/coffee-lab/home/ubuntu/coffee-shop
 ```
 
 三问三答都对,你在这个世界就算站住了。
@@ -212,8 +212,8 @@ $ pwd               # 我在哪(任何时候迷路,先敲它)
 3. 执行 `pwd` 命令的作用是?
    - A) 修改当前工作目录　B) 列出当前目录下的文件　C) 打印当前工作目录的绝对路径　D) 切换到上级目录
 
-4. 用户位于 `/home/ubuntu/projects`,执行 `cd ..` 后,`pwd` 输出是什么?
-   - A) `/home/ubuntu`　B) `/home`　C) `/home/ubuntu/projects/..`　D) `/`
+4. 用户位于 `/coffee-lab/home/ubuntu/projects`,执行 `cd ..` 后,`pwd` 输出是什么?
+   - A) `/coffee-lab/home/ubuntu`　B) `/home`　C) `/coffee-lab/home/ubuntu/projects/..`　D) `/`
 
 5. 在 Linux 中,以下哪两个文件名会被视为**同一个文件**?
    - A) `Readme.md` 和 `readme.md`　B) `Readme.md` 和 `README.md`　C) `readme.md` 和 `README.md`　D) 以上都不是,Linux 大小写敏感
@@ -222,10 +222,10 @@ $ pwd               # 我在哪(任何时候迷路,先敲它)
    - A) 重新安装系统　B) `ls` 列出当前目录确认文件名拼写和大小写　C) 重启终端　D) 用 `sudo` 再执行一次
 
 7. 以下路径中,哪个是**绝对路径**?
-   - A) `../var/log`　B) `./config/app.conf`　C) `/etc/nginx/nginx.conf`　D) `~/.ssh/id_rsa`
+   - A) `../coffee-lab/var/log`　B) `./config/app.conf`　C) `/coffee-lab/etc/nginx/nginx.conf`　D) `~/.ssh/id_rsa`
 
-8. 执行 `cd /var/log && cd ../../home/ubuntu` 后,最终所在目录是什么?
-   - A) `/var/log/home/ubuntu`　B) `/home/ubuntu`　C) `/var/home/ubuntu`　D) `/var/../home/ubuntu`
+8. 执行 `cd /coffee-lab/var/log && cd ../../coffee-lab/home/ubuntu` 后,最终所在目录是什么?
+   - A) `/coffee-lab/var/log/coffee-lab/home/ubuntu`　B) `/coffee-lab/home/ubuntu`　C) `/coffee-lab/var/coffee-lab/home/ubuntu`　D) `/coffee-lab/var/../coffee-lab/home/ubuntu`
 
 9. 关于 Linux 文件系统树,以下说法**错误**的是?
    - A) 所有文件和目录都挂在唯一的根 `/` 下　B) `.` 代表当前目录,`..` 代表父目录　C) `~` 永远等于 `/root`　D) `/` 是文件系统树的根节点
@@ -239,20 +239,20 @@ $ pwd               # 我在哪(任何时候迷路,先敲它)
 
 **Q2 解释:** 为什么执行 `cd Coffee` 报错,但执行 `ls` 后发现目录名实际是 `coffee`?请用"大小写敏感"和"报错三段式读法"解释排查过程。
 
-**Q3 操作:** 写出从任意位置一步跳转到 `/var/log` 目录的命令,然后列出其中所有文件,再快速返回上一次所在目录的完整操作序列。
+**Q3 操作:** 写出从任意位置一步跳转到 `/coffee-lab/var/log` 目录的命令,然后列出其中所有文件,再快速返回上一次所在目录的完整操作序列。
 
 **Q4 排障:** 某同学 ssh 登录后,在 home 目录下执行 `cd downloads` 报 `No such file or directory`,但 `ls` 显示 `Downloads` 目录存在。请诊断错误原因并给出两种解决方案。
 
-**Q5 综合设计:** 你需要在服务器上快速查看项目结构:已知道路根 `/home/deploy/app`,目录树为 `app/src/main/java/com/coffee/`,请写出从登录到定位该目录的完整路径导航策略(含确认每一步的命令)。
+**Q5 综合设计:** 你需要在服务器上快速查看项目结构:已知道路根 `/coffee-lab/home/deploy/app`,目录树为 `app/src/main/java/com/coffee/`,请写出从登录到定位该目录的完整路径导航策略(含确认每一步的命令)。
 
 > [!答案]
 > **1-A** SSH 命令格式为 `ssh 用户名@主机地址`。**举一反三:**还可以指定端口 `ssh -p 2222 user@host`,默认端口 22。🪟 Windows 中可用 `ssh` 命令(PowerShell 内置 OpenSSH 客户端),也可用 PuTTY 等图形工具。
 >
-> **2-B** `~` 是当前用户 home 目录的缩写。**举一反三:**`echo ~` 可以展开查看实际路径,通常是 `/home/username`。🪟 Windows PowerShell 中 `~` 同样代表 `C:\Users\用户名`。
+> **2-B** `~` 是当前用户 home 目录的缩写。**举一反三:**`echo ~` 可以展开查看实际路径,通常是 `/coffee-lab/home/username`。🪟 Windows PowerShell 中 `~` 同样代表 `<用户目录>\用户名`。
 >
 > **3-C** `pwd` = Print Working Directory。**举一反三:**`pwd -P` 会显示物理路径(解析所有符号链接),`pwd -L` 显示逻辑路径(默认)。
 >
-> **4-A** `..` 代表父目录,所以从 `/home/ubuntu/projects` 上移一层是 `/home/ubuntu`。**举一反三:**`cd ../..` 可以连上两层,`cd -` 返回上一个目录。
+> **4-A** `..` 代表父目录,所以从 `/coffee-lab/home/ubuntu/projects` 上移一层是 `/coffee-lab/home/ubuntu`。**举一反三:**`cd ../..` 可以连上两层,`cd -` 返回上一个目录。
 >
 > **5-D** Linux 文件系统严格区分大小写,`Readme.md`、`readme.md`、`README.md` 是三个不同的文件。**举一反三:**Windows 文件系统不区分大小写(保留大小写但不敏感),所以 `Readme.md` 和 `readme.md` 在 Windows 上指向同一文件。🪟 这是跨平台开发最常见的坑之一——在 Windows 上开发正常,部署到 Linux 后文件名找不到。
 >
@@ -260,21 +260,21 @@ $ pwd               # 我在哪(任何时候迷路,先敲它)
 >
 > **7-C** 绝对路径以 `/` 开头,从根目录出发。A、B 是相对路径,D 的 `~` 虽然展开后是绝对路径,但写法本身不是以 `/` 开头的"纯"绝对路径形式。**举一反三:**写脚本时一律用绝对路径最安全,避免因工作目录不同而出错。
 >
-> **8-B** `cd /var/log` 到达 `/var/log`;`cd ../../home/ubuntu` 从 `/var/log` 上两层到 `/`,再进入 `/home/ubuntu`。**举一反三:**在脑中把 `..` 拆成"上一层",逐层追踪即可。🪟 PowerShell 也支持 `..` 语法。
+> **8-B** `cd /coffee-lab/var/log` 到达 `/coffee-lab/var/log`;`cd ../../coffee-lab/home/ubuntu` 从 `/coffee-lab/var/log` 上两层到 `/`,再进入 `/coffee-lab/home/ubuntu`。**举一反三:**在脑中把 `..` 拆成"上一层",逐层追踪即可。🪟 PowerShell 也支持 `..` 语法。
 >
-> **9-C** `~` 展开为当前用户的 home 目录;普通用户是 `/home/username`,root 用户才是 `/root`。所以 `~` 永远等于 `/root` 是错的。**举一反三:**用 `echo ~` 和 `echo ~root` 可以分别查看自己和其他用户的 home 目录。
+> **9-C** `~` 展开为当前用户的 home 目录;普通用户是 `/coffee-lab/home/username`,root 用户才是 `/root`。所以 `~` 永远等于 `/root` 是错的。**举一反三:**用 `echo ~` 和 `echo ~root` 可以分别查看自己和其他用户的 home 目录。
 >
 > **10-C** `cd /etc` 切换到 `/etc`;`cd -` 返回上一个工作目录即 `~/projects/coffee`。**举一反三:**`cd -` 只能切回上一次的位置,不是历史栈;如果需要更复杂的目录跳转,可以用 `pushd`/`popd`。
 >
-> **Q1** 提示符 `user@host:path$` 各部分:①`user`=当前登录用户名 ②`host`=主机名 ③`path`=当前工作目录(`~`=home) ④`$`=普通用户,`#`=root 超级用户。**举一反三:**提示符由环境变量 `PS1` 控制,可用 `echo $PS1` 查看格式模板。🪟 PowerShell 提示符默认 `PS C:\Users\user>` ,由 `prompt` 函数控制。
+> **Q1** 提示符 `user@host:path$` 各部分:①`user`=当前登录用户名 ②`host`=主机名 ③`path`=当前工作目录(`~`=home) ④`$`=普通用户,`#`=root 超级用户。**举一反三:**提示符由环境变量 `PS1` 控制,可用 `echo $PS1` 查看格式模板。🪟 PowerShell 提示符默认 `PS <用户目录>\user>` ,由 `prompt` 函数控制。
 >
 > **Q2** Linux 大小写敏感,`coffee`≠`Coffee`。排查过程:①看到 `No such file or directory` ②定位"哪个文件/目录不存在"→`Coffee` ③`ls` 列出实际内容,发现是 `coffee` ④结论:大小写不匹配。**举一反三:**所有 Linux 命令、文件名、路径都区分大小写,习惯性先用 `ls` 再 `cd`。
 >
-> **Q3** 操作序列:`cd /var/log` → `ls -la` → `cd -`。**举一反三:**也可以 `ls /var/log` 不切换目录直接查看;`cd -` 利用 `OLDPWD` 环境变量记录上次位置。
+> **Q3** 操作序列:`cd /coffee-lab/var/log` → `ls -la` → `cd -`。**举一反三:**也可以 `ls /coffee-lab/var/log` 不切换目录直接查看;`cd -` 利用 `OLDPWD` 环境变量记录上次位置。
 >
 > **Q4** 错误原因:`Downloads` 首字母大写,`downloads` 全小写不匹配。方案一:`cd Downloads`(纠正大小写);方案二:先 `ls` 确认准确名称再 `cd`。**举一反三:**养成习惯——不盲敲路径,先 `ls` 后 `cd`;可用 Tab 键自动补全避免拼写错误。
 >
-> **Q5** 导航策略:①`ssh user@server` 登录 ②`pwd` 确认在 home ③`cd /home/deploy/app` 或逐层 `cd /home`→`cd deploy`→`cd app` ④`pwd` 确认 ⑤`cd src/main/java/com/coffee` 到达目标 ⑥`ls -la` 查看项目文件。全程每步用 `pwd`+`ls` 确认位置。**举一反三:**实际工作中可以用 `tree -L 3` 可视化目录树,或直接 `cd /home/deploy/app/src/main/java/com/coffee` 一步到位。
+> **Q5** 导航策略:①`ssh user@server` 登录 ②`pwd` 确认在 home ③`cd /coffee-lab/home/deploy/app` 或逐层 `cd /home`→`cd deploy`→`cd app` ④`pwd` 确认 ⑤`cd src/main/java/com/coffee` 到达目标 ⑥`ls -la` 查看项目文件。全程每步用 `pwd`+`ls` 确认位置。**举一反三:**实际工作中可以用 `tree -L 3` 可视化目录树,或直接 `cd /coffee-lab/home/deploy/app/src/main/java/com/coffee` 一步到位。
 
 ## 运行前边界、回滚与验证
 

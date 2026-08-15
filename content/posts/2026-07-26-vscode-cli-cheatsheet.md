@@ -92,7 +92,7 @@ Get-Content extensions.txt | % { code --install-extension $_ }    # 新机还原
 | 命令 | 作用 | 备注 / 坑 |
 |------|------|-----------|
 | `code --remote ssh-remote+<主机> <绝对路径>` | 连 SSH 主机并开目录 | 主机名取自 `~/.ssh/config`；路径必须是远端**绝对路径**；URI 形式 `--folder-uri "vscode-remote://ssh-remote+<主机>/path"` 脚本里更稳 |
-| `code --remote wsl+<发行版> <路径>` | 连 WSL 发行版 | 发行版名用 `wsl -l -q` 查；例 `wsl+Ubuntu /home/me/app` |
+| `code --remote wsl+<发行版> <路径>` | 连 WSL 发行版 | 发行版名用 `wsl -l -q` 查；例 `wsl+Ubuntu /coffee-lab/home/me/app` |
 | （在 WSL shell 内）`code .` | 从 WSL 里反连开窗 | WSL 装了 `code` shim 后直接用，最省事 |
 | Dev Container | 在容器里开发 | CLI 直连要 hex 编码 URI，不实用；走面板 `Dev Containers: Reopen in Container` |
 | `devcontainer up --workspace-folder .` | 起容器开发环境 | 独立 npm 包 `@devcontainers/cli`，**不是** `code` 自带 |

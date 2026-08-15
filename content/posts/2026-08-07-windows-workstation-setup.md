@@ -97,7 +97,7 @@ podman ps -a
 
 ## 权限：纯净不等于全盘只留两个 SID
 
-用户目录和项目目录可以收紧到“本人 + Administrators + SYSTEM”。但 `C:\Windows`、`Program Files` 和磁盘根目录必须保留 `SYSTEM`、`TrustedInstaller`、应用包以及系统默认的读取/遍历权限。把整台电脑的 ACL 强行改成两个 SID，会让更新、驱动、Defender、WSL 或 Hyper-V 在某个看似无关的时刻坏掉。
+用户目录和项目目录可以收紧到“本人 + Administrators + SYSTEM”。但 `<Windows目录>`、`Program Files` 和磁盘根目录必须保留 `SYSTEM`、`TrustedInstaller`、应用包以及系统默认的读取/遍历权限。把整台电脑的 ACL 强行改成两个 SID，会让更新、驱动、Defender、WSL 或 Hyper-V 在某个看似无关的时刻坏掉。
 
 更好的规则是：
 

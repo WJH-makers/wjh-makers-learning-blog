@@ -143,7 +143,7 @@ class IODemo {
 **实测输出**（GraalVM 25.0.4，Windows 11 UTF-8 环境）：
 
 ```
-写入: C:\Users\...\AppData\Local\Temp\receipt.txt
+写入: <用户目录>\...\AppData\Local\Temp\receipt.txt
 --- 正确读（UTF-8）---
   咖啡×2 ￥56.00
   COUPON:BREW20

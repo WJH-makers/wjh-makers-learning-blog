@@ -86,7 +86,7 @@ tags: [Linux, 命令行, 终端漫画, ps, kill, 阿零与特米]
 $ ps aux | head -4
 USER   PID %CPU %MEM    VSZ   RSS TTY   STAT START  TIME COMMAND
 root     1  0.0  0.5 167404 11808 ?     Ss   09:00  0:02 /sbin/init
-root   812  0.0  0.3  15420  6900 ?     Ss   09:00  0:00 sshd: /usr/sbin/sshd
+root   812  0.0  0.3  15420  6900 ?     Ss   09:00  0:00 sshd: /coffee-lab/usr/sbin/sshd
 ubuntu 4721 99.3  0.1   7368  3200 pts/0 R   23:47 412:10 /bin/bash ./stress.sh
 ```
 
@@ -219,7 +219,7 @@ $ uptime                     # 负载缓缓落地
 
 ## 十一、下一话悬念
 
-元凶伏法,但它一夜狂奔在 `/var/cache/` 拉了一地临时文件。阿零卷起袖子 `rm`——屏幕冷冷回了一句 `Permission denied`。他瞪着那行字:「机器是我在管,文件凭什么不让我删?」特米的肚皮浮出九个格子:「因为在 Linux 眼里,**你不是你以为的你**。每个文件都带着一张九宫格通行证,先学会读它。」
+元凶伏法,但它一夜狂奔在 `/coffee-lab/var/cache/` 拉了一地临时文件。阿零卷起袖子 `rm`——屏幕冷冷回了一句 `Permission denied`。他瞪着那行字:「机器是我在管,文件凭什么不让我删?」特米的肚皮浮出九个格子:「因为在 Linux 眼里,**你不是你以为的你**。每个文件都带着一张九宫格通行证,先学会读它。」
 
 > 下一话《权限九宫格:chmod / chown / sudo》:ls -l 开头那十个神秘字符逐位拆解,rwx 九宫格与 755 的二进制真相,以及 sudo 到底是不是「变身超人」。
 

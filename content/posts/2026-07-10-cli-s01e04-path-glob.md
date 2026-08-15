@@ -16,7 +16,7 @@ tags: [Linux, 命令行, 终端漫画, 通配符, Tab 补全, 阿零与特米]
 
 事故复盘会。特米把昨天那条 `rm * .tmp` 投在肚皮屏幕上,一格一格回放:「元凶不是 rm,是你**看不见的中间人**。今天不学新命令——学走路的姿势。」
 
-阿零也有一肚子苦水:昨天往返 `/var/log` 和 `~/coffee-shop/config` 抄日志、对配置,一条路径十几个字符,**目录名敲错三遍**;同一条长命令,重敲了五次。
+阿零也有一肚子苦水:昨天往返 `/coffee-lab/var/log` 和 `~/coffee-shop/config` 抄日志、对配置,一条路径十几个字符,**目录名敲错三遍**;同一条长命令,重敲了五次。
 
 特米:「高手的手速,是**少敲字**,不是敲得快。」
 
@@ -24,13 +24,13 @@ tags: [Linux, 命令行, 终端漫画, 通配符, Tab 补全, 阿零与特米]
 
 ## 二、漫画 · 看不见的中间人
 
-> **〔1〕** 阿零满头大汗地敲 `/home/ubuntu/coffee-shop/config/app.conf`,第三次把 `coffee` 敲成 `cofee`。
+> **〔1〕** 阿零满头大汗地敲 `/coffee-lab/home/ubuntu/coffee-shop/config/app.conf`,第三次把 `coffee` 敲成 `cofee`。
 > 特米:「你在用手速弥补路标意识。先认路,再赶路。」
 
 > **〔2〕** 特米在肚皮上画出一棵树:
 > 特米:「**绝对路径**从根 `/` 说起,是完整住址,在哪敲都一个意思;**相对路径**从『你现在站的地方』出发——**锚点错,全错**。`~` 是家,`..` 是上一级。」
 
-> **〔3〕** 阿零学会 `cd -`,在 `/var/log` 和家之间弹来弹去,玩得不亦乐乎。
+> **〔3〕** 阿零学会 `cd -`,在 `/coffee-lab/var/log` 和家之间弹来弹去,玩得不亦乐乎。
 > 阿零:「传送门!回去还能再回来!」特米:「`-` 记的是『上一个目录』,只有一格记忆,别当时光机。」
 
 > **〔4〕** 特米回放昨天的事故,把 `*` 圈出来:
@@ -62,16 +62,16 @@ tags: [Linux, 命令行, 终端漫画, 通配符, Tab 补全, 阿零与特米]
   你敲:    cp  ~/coffee-shop/src/*.js  backup/
                │
                │  shell 预处理(在 cp 启动之前):
-               │   ① ~      → /home/ubuntu            (家目录展开)
+               │   ① ~      → /coffee-lab/home/ubuntu            (家目录展开)
                │   ② *.js   → menu.js order.js         (glob 按磁盘上实际有的文件展开)
                │   ③ backup/ 是相对路径,原样留给 cp 拿"当前目录"去拼
                ▼
-  cp 收到:  cp /home/ubuntu/coffee-shop/src/menu.js /home/ubuntu/coffee-shop/src/order.js backup/
+  cp 收到:  cp /coffee-lab/home/ubuntu/coffee-shop/src/menu.js /coffee-lab/home/ubuntu/coffee-shop/src/order.js backup/
 
 路标速记:
-  /home/ubuntu/coffee-shop   绝对路径:从根说起的完整住址
+  /coffee-lab/home/ubuntu/coffee-shop   绝对路径:从根说起的完整住址
   config/app.conf            相对路径:从"当前目录"出发 —— 先确认你站在哪
-  ~ = /home/ubuntu     . = 这里     .. = 上一级     cd - = 弹回上一个目录
+  ~ = /coffee-lab/home/ubuntu     . = 这里     .. = 上一级     cd - = 弹回上一个目录
 
 glob 两条脾气:
   有匹配 → 换成名单(命令看到的是文件名,不是星号)
@@ -87,15 +87,15 @@ glob 两条脾气:
 路标:
 
 ```bash
-$ cd /var/log                   # 绝对路径:在哪敲都去同一个地方
+$ cd /coffee-lab/var/log                   # 绝对路径:在哪敲都去同一个地方
 $ pwd
-/var/log
+/coffee-lab/var/log
 $ cd -                          # 弹回上一个目录(它还会把去处报出来)
-/home/ubuntu
+/coffee-lab/home/ubuntu
 $ cd coffee-shop/src            # 相对路径:从当前目录出发
 $ cd ../..                      # 连跳两级回家
 $ pwd
-/home/ubuntu
+/coffee-lab/home/ubuntu
 ```
 
 预览展开(把昨天的事故变成安全演习):
@@ -159,7 +159,7 @@ ls: cannot access '*.log': No such file or directory
 cp: cannot stat 'config/app.conf': No such file or directory
 ```
 
-`cannot stat` = 按这个路径没摸到东西。根因:相对路径锚在**当前目录**——他人在 `/home/ubuntu`,而 `config/` 长在 `~/coffee-shop` 底下。命令没错,路径没错,**站的地方错了**。修法三条:① 迷路先 `pwd`(第 1 话的规矩,今天升级成肌肉记忆);② 提示符把当前位置写在脸上,养成瞟一眼的习惯;③ 关键操作用绝对路径或 `~` 开头写全,**不赌自己站在哪**。
+`cannot stat` = 按这个路径没摸到东西。根因:相对路径锚在**当前目录**——他人在 `/coffee-lab/home/ubuntu`,而 `config/` 长在 `~/coffee-shop` 底下。命令没错,路径没错,**站的地方错了**。修法三条:① 迷路先 `pwd`(第 1 话的规矩,今天升级成肌肉记忆);② 提示符把当前位置写在脸上,养成瞟一眼的习惯;③ 关键操作用绝对路径或 `~` 开头写全,**不赌自己站在哪**。
 
 > **🪟 双系统对照 · 走路的姿势,PowerShell 版**
 
@@ -184,7 +184,7 @@ cp: cannot stat 'config/app.conf': No such file or directory
 
 ```bash
 $ pwd                                   # 第一步永远是确认锚点
-/home/ubuntu
+/coffee-lab/home/ubuntu
 $ echo coffee-shop/logs/*.log           # 第二步预览名单
 coffee-shop/logs/access.log
 $ cp ~/coffee-shop/config/app.conf backup/   # 关键操作用 ~ 写全,不赌 cwd
@@ -234,7 +234,7 @@ $ ls backup
 ### 选择题(10 道)
 
 1. 相对路径的参照起点是什么?
-   - A) 根目录 `/`　B) 当前工作目录(pwd)　C) 用户的 home 目录　D) `/usr/local`
+   - A) 根目录 `/`　B) 当前工作目录(pwd)　C) 用户的 home 目录　D) `/coffee-lab/usr/local`
 
 2. `cd -` 的作用是?
    - A) 切换到 home 目录　B) 切换到根目录　C) 切换到上一次所在的工作目录　D) 切换到父目录
@@ -251,8 +251,8 @@ $ ls backup
 6. Ctrl+R 快捷键的功能是什么?
    - A) 重启终端　B) 反向搜索命令历史(reverse-i-search)　C) 清屏　D) 撤销上一条命令
 
-7. 在 `/home/user/docs` 下执行 `cd ../../var/log`,等价于?
-   - A) `cd /var/log`　B) `cd /home/var/log`　C) `cd /home/user/var/log`　D) `cd /home/user/docs/var/log`
+7. 在 `/coffee-lab/home/user/docs` 下执行 `cd ../../coffee-lab/var/log`,等价于?
+   - A) `cd /coffee-lab/var/log`　B) `cd /coffee-lab/home/coffee-lab/var/log`　C) `cd /coffee-lab/home/user/coffee-lab/var/log`　D) `cd /coffee-lab/home/user/docs/coffee-lab/var/log`
 
 8. 关于 glob 通配符,以下哪种写法可以匹配 `file1.txt`、`file2.txt`、`file10.txt`,但**不能**匹配 `file.txt`?
    - A) `file*.txt`　B) `file?.txt`　C) `file[0-9]*.txt`　D) `file+([0-9]).txt`
@@ -261,7 +261,7 @@ $ ls backup
    - A) `cd && ls`　B) `cd ~ && ls`　C) `cd; ls`　D) 以上都可以
 
 10. 以下关于路径的说法,**全部正确**的是?
-   - A) `~` 永远是 `/home/用户名`　B) `.` 代表父目录,`..` 代表当前目录　C) `cd /` 回到 home 目录　D) 以上都不全对
+   - A) `~` 永远是 `/coffee-lab/home/用户名`　B) `.` 代表父目录,`..` 代表当前目录　C) `cd /` 回到 home 目录　D) 以上都不全对
 
 ### 解答题(5 道)
 
@@ -269,9 +269,9 @@ $ ls backup
 
 **Q2 解释:** Shell glob 展开和正则表达式是同一回事吗?通过 `*.txt` 和 `.*\.txt` 说明 glob 与正则的核心差异。
 
-**Q3 操作:** 假设当前目录是 `/var/log/nginx`,写出三条不同的方法回到 `/var/log` 目录。
+**Q3 操作:** 假设当前目录是 `/coffee-lab/var/log/nginx`,写出三条不同的方法回到 `/coffee-lab/var/log` 目录。
 
-**Q4 排障:** 菜菜敲 `cat /etc/ngnix/nginx.conf`,报 `No such file or directory`。他确定配置一定在 `/etc/` 下。请列出排查思路。
+**Q4 排障:** 菜菜敲 `cat /coffee-lab/etc/ngnix/nginx.conf`,报 `No such file or directory`。他确定配置一定在 `/coffee-lab/etc/` 下。请列出排查思路。
 
 **Q5 综合设计:** 你需要查一个日志文件,只记得文件名中有 `access` 和日期 `202609`,但不确定文件在哪个子目录、后缀是 `.log` 还是 `.txt`。请设计一套搜索策略(利用 Tab 补全、Ctrl+R、find、glob 等工具)。
 
@@ -288,23 +288,23 @@ $ ls backup
 >
 > **6-B** Ctrl+R 进入反向增量搜索模式,边输入边匹配历史命令中的最近一条。**举一反三:**再按一次 Ctrl+R 跳到下一个匹配;Ctrl+Shift+R 正向搜索;`history | grep keyword` 也可以检索。🪟 PowerShell 中 Ctrl+R 同样支持历史搜索(PSReadLine 模块)。
 >
-> **7-A** 从 `/home/user/docs`→`cd ..`→`/home/user`→`cd ..`→`/home`→`cd ../..`→`/`→`cd var/log`→`/var/log`。等价于直接 `cd /var/log`。**举一反三:**`.。/.。` 手动追踪很容易出错,实际场景中优先使用绝对路径或 Tab 补全。
+> **7-A** 从 `/coffee-lab/home/user/docs`→`cd ..`→`/coffee-lab/home/user`→`cd ..`→`/home`→`cd ../..`→`/`→`cd var/log`→`/coffee-lab/var/log`。等价于直接 `cd /coffee-lab/var/log`。**举一反三:**`.。/.。` 手动追踪很容易出错,实际场景中优先使用绝对路径或 Tab 补全。
 >
 > **8-D** `file+([0-9]).txt`(需启用 extglob)精确匹配文件名主体后跟至少一个数字。`?` 只匹配单个字符,所以 `file?.txt` 不能匹配 `file10.txt`(数字>1位)。`*` 匹配任意长度,所以 `file*.txt` 也会匹配 `file.txt`。**举一反三:**glob 的 `?`=任意单个字符,`*`=任意长度任意字符,`[abc]`=字符集。
 >
-> **9-D** `cd`(无参数)默认回到 home,`cd ~` 也是。`&&` 和 `;` 都可以串联命令,前者要求前一步成功才执行。**举一反三:**`cd ~/projects` 等价于 `cd /home/user/projects`(假设用户 home 为 `/home/user`)。
+> **9-D** `cd`(无参数)默认回到 home,`cd ~` 也是。`&&` 和 `;` 都可以串联命令,前者要求前一步成功才执行。**举一反三:**`cd ~/projects` 等价于 `cd /coffee-lab/home/user/projects`(假设用户 home 为 `/coffee-lab/home/user`)。
 >
 > **10-D** A:`~` 对 root 用户是 `/root`;B:`.` 是当前,`..` 是父目录;C:`cd /` 去根目录。所以三条都不完全正确。**举一反三:**基础概念务必准确——`.`≠`..`, `/`≠`~`, `cd`≠`cd /`。
 >
-> **Q1** 绝对路径:从根 `/` 出发的完整路径,如 `/etc/nginx/nginx.conf`;无论当前在哪都可以准确定位。相对路径:从当前工作目录 `pwd` 出发,如 `../config/app.conf`。**转换:**已知 pwd=`/home/user`,相对路径 `projects/coffee` 的绝对形式是 `/home/user/projects/coffee`;绝对路径 `/etc/passwd` 相对于 `/` 的相对路径是 `etc/passwd`。
+> **Q1** 绝对路径:从根 `/` 出发的完整路径,如 `/coffee-lab/etc/nginx/nginx.conf`;无论当前在哪都可以准确定位。相对路径:从当前工作目录 `pwd` 出发,如 `../config/app.conf`。**转换:**已知 pwd=`/coffee-lab/home/user`,相对路径 `projects/coffee` 的绝对形式是 `/coffee-lab/home/user/projects/coffee`;绝对路径 `/coffee-lab/etc/passwd` 相对于 `/` 的相对路径是 `etc/passwd`。
 >
 > **Q2** 不是同一回事。Glob 用于文件名匹配,语法简单:`*`=任意字符,`?`=单字符,`[...]`=字符集。正则表达式用于文本内容匹配,语法更丰富:`.`=任意字符,`*`=前一元素重复0+次,`\`=转义。**举例:**glob `*.txt` 匹配所有 `.txt` 文件;正则 `.*\.txt` 匹配文本中任何以 `.txt` 结尾的字符串(其中 `\.` 转义了 `.` 字符)。**何时用哪个:**`ls`/`find -name` 用 glob;`grep`/`sed` 用正则。
 >
-> **Q3** 方法一:`cd ..`;方法二:`cd /var/log`(用绝对路径);方法三:`cd -`(如果上次就在 `/var/log`)。**举一反三:**也可以 `cd "$(dirname "$(pwd)")"` 通过命令展开获取父目录。
+> **Q3** 方法一:`cd ..`;方法二:`cd /coffee-lab/var/log`(用绝对路径);方法三:`cd -`(如果上次就在 `/coffee-lab/var/log`)。**举一反三:**也可以 `cd "$(dirname "$(pwd)")"` 通过命令展开获取父目录。
 >
-> **Q4** 排查思路:①`ls /etc/ | grep -i nginx` 确认目录下的实际文件名 ②注意到了拼写:`ngnix` 应该是 `nginx` ③用 Tab 补全:`ls /etc/ng`然后按 Tab,让 shell 自动补全 ④用 `find /etc -maxdepth 1 -iname "*nginx*"` 模糊搜索(不区分大小写)。**举一反三:**`-iname` 不区分大小写,适合不确定大小写格式时使用。
+> **Q4** 排查思路:①`ls /coffee-lab/etc/ | grep -i nginx` 确认目录下的实际文件名 ②注意到了拼写:`ngnix` 应该是 `nginx` ③用 Tab 补全:`ls /coffee-lab/etc/ng`然后按 Tab,让 shell 自动补全 ④用 `find /etc -maxdepth 1 -iname "*nginx*"` 模糊搜索(不区分大小写)。**举一反三:**`-iname` 不区分大小写,适合不确定大小写格式时使用。
 >
-> **Q5** 搜索策略:①`find /var/log -type f -name "*access*202609*"` 按文件名模糊搜索 ②如果 find 太慢,先用 `ls /var/log/**/*access*202609*`(需开启 globstar) ③用 Ctrl+R 搜索之前查看过该文件的命令 ④如果完全不确定路径,`find / -type f -name "*access*202609*" 2>/dev/null` 全局搜索 ⑤用 `locate access202609`(如果系统有 mlocate 索引)。**举一反三:**搜索优先级:已知目录用 glob+Tab → 子目录用 find → 全局用 locate → 都不行用 grep 搜内容。
+> **Q5** 搜索策略:①`find /coffee-lab/var/log -type f -name "*access*202609*"` 按文件名模糊搜索 ②如果 find 太慢,先用 `ls /coffee-lab/var/log/**/*access*202609*`(需开启 globstar) ③用 Ctrl+R 搜索之前查看过该文件的命令 ④如果完全不确定路径,`find / -type f -name "*access*202609*" 2>/dev/null` 全局搜索 ⑤用 `locate access202609`(如果系统有 mlocate 索引)。**举一反三:**搜索优先级:已知目录用 glob+Tab → 子目录用 find → 全局用 locate → 都不行用 grep 搜内容。
 
 ## 运行前边界、回滚与验证
 

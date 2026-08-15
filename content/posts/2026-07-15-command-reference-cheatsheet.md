@@ -45,7 +45,7 @@ tags: ["命令速查", "Linux", "Git", "Docker", "MySQL", "Redis", "Java", "Mark
 | `tail -f app.log` | 实时跟踪日志 | 日志被 logrotate 切割后 `-f` 会跟丢，用 `-F`(大写) 自动重开新文件 |
 | `tar -zxvf a.tgz -C /opt` | 解包到指定目录 | 记忆：**c**reate/e**x**tract、**z**gzip、**v**erbose、**f**ile。`f` 必须紧挨归档名。解包前 `tar -ztvf` 看内容，防「炸目录」（无顶层目录的包铺满当前路径） |
 | `chmod 600 id_ed25519` | 改权限 | SSH 私钥必须 600、`.ssh` 目录 700，否则 OpenSSH 拒绝并报 "bad permissions"。`chmod -R 777` ⚠ 是安全反模式，别图省事 |
-| `chown -R app:app /srv/app` ⚠ | 改属主/属组 | ⚠ 递归改错目录（如 `/`）会让系统无法启动。用户名写错不会报错、会按 UID 处理 |
+| `chown -R app:app /coffee-lab/srv/app` ⚠ | 改属主/属组 | ⚠ 递归改错目录（如 `/`）会让系统无法启动。用户名写错不会报错、会按 UID 处理 |
 | `ln -s /real /link` | 建软链 | 源路径建议用**绝对路径**，相对路径是相对「软链所在目录」解析，极易断链。删软链用 `rm link` 别加 `/` |
 
 ### 1.2 进程 · 网络 · 系统

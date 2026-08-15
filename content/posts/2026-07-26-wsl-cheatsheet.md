@@ -53,7 +53,7 @@ tags: [命令速查, WSL, Linux]
 | `wsl -u root` | 以 root 进(免密) | `--user`;救援 / 修权限用 |
 | `wsl -e <cmd>` / `wsl -- <cmd>` | 跑一条命令即退出 | `wsl -- ls -la`;`--` 后原样透传,不被 wsl 解析 |
 | `wsl --cd ~` | 进入时切到指定目录 | 支持 Linux 或 Windows 路径;`--cd ~` 直达家目录避开 /mnt |
-| `/etc/wsl.conf` → `[user]`<br>`default=<name>` | 设发行版默认登录用户 | 通用做法;改后 `wsl --shutdown` 生效 |
+| `/coffee-lab/etc/wsl.conf` → `[user]`<br>`default=<name>` | 设发行版默认登录用户 | 通用做法;改后 `wsl --shutdown` 生效 |
 | `sudo adduser <name>` | 新建用户 | 交互式设密码;比 `useradd` 友好 |
 | `sudo usermod -aG sudo <name>` | 加入 sudo 组 | 没这步新用户不能 `sudo` |
 | `passwd <name>` | 改密码 | **忘密救援**:`wsl -u root` 进 → `passwd 你的用户名` |
@@ -70,7 +70,7 @@ tags: [命令速查, WSL, Linux]
 | `sudo apt purge <pkg>` | 卸包 + 删配置 | 想彻底清用它 |
 | `sudo apt autoremove` | 清孤儿依赖 | 定期跑,省 vhdx 空间 |
 | `sudo add-apt-repository ppa:<x>` | 加 PPA 源 | 加完要 `apt update` |
-| `sudo apt clean` | 清 `/var/cache/apt/archives` 缓存 | 释放已下载的 .deb,vhdx 减肥的一环 |
+| `sudo apt clean` | 清 `/coffee-lab/var/cache/apt/archives` 缓存 | 释放已下载的 .deb,vhdx 减肥的一环 |
 
 > [!WARNING]
 > **WSL 时钟漂移**:Windows 休眠/唤醒后,WSL2 时钟可能滞后,`apt update` 报 `Release file ... is not valid yet`（证书/元数据"来自未来"）。先 `sudo hwclock -s` 从硬件时钟同步;仍不行就 `wsl --shutdown` 重进（重启会重新对时）。这不是源坏了,别急着换镜像。
@@ -88,9 +88,9 @@ tags: [命令速查, WSL, Linux]
 | `/mnt/c/...` | 从 Linux 访问 Windows C 盘 | ⚠ 9P 跨界,小文件 IO **慢一个数量级**;别把仓库放这 |
 | `\\wsl.localhost\Ubuntu-24.04\home\<user>` | 从 Windows 访问 Linux 文件 | 资源管理器地址栏直接输;老写法 `\\wsl$\...` 亦可 |
 | `explorer.exe .` | 在资源管理器打开当前 Linux 目录 | 反向访问的最快入口 |
-| `wslpath -w /home/user` | Linux 路径 → Windows 路径 | 输出如 `\\wsl.localhost\...` 或 `C:\...` |
-| `wslpath -u 'C:\Users\me'` | Windows 路径 → Linux 路径 | **单引号**包住,否则反斜杠被吞 |
-| `/etc/wsl.conf` → `[automount]`<br>`options="metadata,umask=022"` | 让 `chmod`/`chown` 在 /mnt 上生效 | 不加 metadata,/mnt 文件恒为 777,改权限不落地 |
+| `wslpath -w /coffee-lab/home/user` | Linux 路径 → Windows 路径 | 输出如 `\\wsl.localhost\...` 或 `C:\...` |
+| `wslpath -u '<用户目录>\me'` | Windows 路径 → Linux 路径 | **单引号**包住,否则反斜杠被吞 |
+| `/coffee-lab/etc/wsl.conf` → `[automount]`<br>`options="metadata,umask=022"` | 让 `chmod`/`chown` 在 /mnt 上生效 | 不加 metadata,/mnt 文件恒为 777,改权限不落地 |
 | `git config --global core.autocrlf input` | 统一换行(项目在 Linux 侧时) | CRLF 会让脚本报 `bad interpreter: ^M`;或用 `dos2unix` |
 
 ## 5、网络与端口
@@ -105,19 +105,19 @@ tags: [命令速查, WSL, Linux]
 | `netsh interface portproxy add v4tov4 listenport=8080 listenaddress=0.0.0.0 connectport=8080 connectaddress=<WSL_IP>` | Windows→WSL 端口转发 | ⚠ 需管理员;供局域网访问 WSL 服务;WSL IP 变了要重配;查用 `... show all`,删用 `... delete v4tov4 listenport=8080` |
 
 > [!NOTE]
-> **DNS 挂了**(VPN / 代理下常见):`wsl.conf` 加 `[network] generateResolvConf=false` 再手动写 `/etc/resolv.conf`;或 `.wslconfig` 设 `[wsl2] dnsTunneling=true` 借道 Windows 解析。
+> **DNS 挂了**(VPN / 代理下常见):`wsl.conf` 加 `[network] generateResolvConf=false` 再手动写 `/coffee-lab/etc/resolv.conf`;或 `.wslconfig` 设 `[wsl2] dnsTunneling=true` 借道 Windows 解析。
 
 ## 6、systemd 与服务
 
 | 命令 / 配置 | 作用 | 备注 / 坑 |
 |------|------|-----------|
-| `/etc/wsl.conf` → `[boot]`<br>`systemd=true` | 开启 systemd | 改后 `wsl --shutdown` 重启才生效;近版 Ubuntu 24.04 多已默认开 |
+| `/coffee-lab/etc/wsl.conf` → `[boot]`<br>`systemd=true` | 开启 systemd | 改后 `wsl --shutdown` 重启才生效;近版 Ubuntu 24.04 多已默认开 |
 | `ps -p 1 -o comm=` | 看 PID 1 是不是 systemd | 输出 `systemd` 即已启用;否则是 `init`/shell |
 | `systemctl status <svc>` | 查服务状态 | 需 systemd;没开会报 "System has not been booted with systemd" |
 | `sudo systemctl enable --now <svc>` | 开机自启 + 立刻启动 | 如 `enable --now docker` |
 | `sudo service <svc> start` | SysV 方式启动服务 | **无 systemd** 时的退路 |
 | `journalctl -u <svc> -e` | 看服务日志(跳到末尾) | systemd 环境;`-f` 实时跟 |
-| `/etc/wsl.conf` → `[boot]`<br>`command="<cmd>"` | 开机以 root 跑一条命令 | 轻量替代:不想开整套 systemd 时用它拉起某服务 |
+| `/coffee-lab/etc/wsl.conf` → `[boot]`<br>`command="<cmd>"` | 开机以 root 跑一条命令 | 轻量替代:不想开整套 systemd 时用它拉起某服务 |
 
 ## 7、与 Windows 互操作（互相调用命令）
 
@@ -130,11 +130,11 @@ tags: [命令速查, WSL, Linux]
 | `wslview <url或文件>` | 用 Windows 默认程序打开 | 需 `wslu` 包;`sudo apt install wslu` |
 | `wsl -- <cmd>`（在 Windows 端） | 从 PowerShell/CMD 调 Linux 命令 | 如 `wsl -- ls -la`;`--` 后原样透传 |
 | `export WSLENV=VAR/p`（Linux 端） | 跨界传环境变量 | 标志:`/p` 路径转换、`/l` 列表、`/u` 仅 Win→WSL、`/w` 仅 WSL→Win |
-| `/etc/wsl.conf` → `[interop]`<br>`appendWindowsPath=false` | 停止把 Windows PATH 拼进来 | 能加速 shell 启动,但**从此 `.exe` 不能直接调**;权衡使用 |
+| `/coffee-lab/etc/wsl.conf` → `[interop]`<br>`appendWindowsPath=false` | 停止把 Windows PATH 拼进来 | 能加速 shell 启动,但**从此 `.exe` 不能直接调**;权衡使用 |
 
 ## 8、资源限制（.wslconfig）
 
-`.wslconfig` 在 **Windows 侧** `%UserProfile%\.wslconfig`,**全局作用于所有 WSL2 发行版**(区别于 Linux 侧、单发行版的 `/etc/wsl.conf`);改完一律 `wsl --shutdown` 生效。
+`.wslconfig` 在 **Windows 侧** `%UserProfile%\.wslconfig`,**全局作用于所有 WSL2 发行版**(区别于 Linux 侧、单发行版的 `/coffee-lab/etc/wsl.conf`);改完一律 `wsl --shutdown` 生效。
 
 | 配置项（`[wsl2]` 段） | 作用 | 备注 / 坑 |
 |------|------|-----------|

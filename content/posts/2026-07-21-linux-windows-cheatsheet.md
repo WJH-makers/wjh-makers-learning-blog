@@ -15,7 +15,7 @@ tags: [Linux, Windows, 命令速查]
 | 难度 | 命令 | 作用 | 示例 |
 |:----:|------|------|------|
 | ★ | `ls` | 列目录 | `ls -lah` |
-| ★ | `cd` | 切换目录 | `cd /var/log` `cd -` |
+| ★ | `cd` | 切换目录 | `cd /coffee-lab/var/log` `cd -` |
 | ★ | `pwd` | 当前路径 | `pwd` |
 | ★ | `mkdir` | 建目录 | `mkdir -p a/b` |
 | ★ | `rm` | 删除 | `rm -rf dir`（慎用） |
@@ -41,7 +41,7 @@ tags: [Linux, Windows, 命令速查]
 
 | 难度 | 命令 | 作用 | 示例 |
 |:----:|------|------|------|
-| ★ | `df -h` / `du -sh` / `free -h` | 盘/目录/内存 | `df -h` · `du -sh /var/log` · `free -h` |
+| ★ | `df -h` / `du -sh` / `free -h` | 盘/目录/内存 | `df -h` · `du -sh /coffee-lab/var/log` · `free -h` |
 | ★ | `uname -a` / `uptime` | 系统/负载 | `uname -a` · `uptime` |
 | ★★ | `chown` / `chgrp` | 属主/组 | `chown -R u:g /app` |
 | ★★ | `tar` | 打包 | `tar -zcvf a.tgz dir/` · `tar -zxvf a.tgz` |

@@ -14,7 +14,7 @@ tags: [Linux, 命令行, 终端漫画, systemctl, journalctl, 阿零与特米]
 
 ## 一、需求:ssh 一断,咖啡站就倒闭
 
-上一话结尾,阿零终于用 `sudo` 把权限捋顺,兴冲冲在服务器上敲 `node /srv/coffee/app.js`,咖啡站跑起来了。他合上笔记本去吃了顿饭,回来一看——**站没了**。进程消失得干干净净,连句遗言都没有。
+上一话结尾,阿零终于用 `sudo` 把权限捋顺,兴冲冲在服务器上敲 `node /coffee-lab/srv/coffee/app.js`,咖啡站跑起来了。他合上笔记本去吃了顿饭,回来一看——**站没了**。进程消失得干干净净,连句遗言都没有。
 
 他没按 Ctrl+C,没 `kill`,只是断开了 ssh。豆豆幽幽补刀:「店员下班它就关门,还得店员盯着屏幕才营业——这不叫部署,叫**人肉挂机**。」
 
@@ -64,7 +64,7 @@ tags: [Linux, 命令行, 终端漫画, systemctl, journalctl, 阿零与特米]
    └ ssh 断开 → SIGHUP → 死             ssh 断不断,与它无关;
                                         挂了还能按 Restart 策略拉起
 
-单元文件 = 写给 systemd 的说明书(放 /etc/systemd/system/coffee.service):
+单元文件 = 写给 systemd 的说明书(放 /coffee-lab/etc/systemd/system/coffee.service):
  [Unit]     这是个啥、排在谁后面启动(Description / After)
  [Service]  怎么跑(ExecStart)、挂了怎么办(Restart)
  [Install]  跟哪一批服务一起开机(WantedBy=multi-user.target)
@@ -79,7 +79,7 @@ tags: [Linux, 命令行, 终端漫画, systemctl, journalctl, 阿零与特米]
 先写说明书(要动 `/etc`,得 sudo):
 
 ```bash
-$ sudo vim /etc/systemd/system/coffee.service
+$ sudo vim /coffee-lab/etc/systemd/system/coffee.service
 ```
 
 ```ini
@@ -88,7 +88,7 @@ Description=Doudou Coffee Station
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/node /srv/coffee/app.js
+ExecStart=/coffee-lab/usr/bin/node /coffee-lab/srv/coffee/app.js
 Restart=on-failure
 
 [Install]
@@ -102,14 +102,14 @@ $ sudo systemctl daemon-reload        # 新装/改过说明书,先让 systemd �
 $ sudo systemctl start coffee
 $ systemctl status coffee
 ● coffee.service - Doudou Coffee Station
-     Loaded: loaded (/etc/systemd/system/coffee.service; disabled; vendor preset: enabled)
+     Loaded: loaded (/coffee-lab/etc/systemd/system/coffee.service; disabled; vendor preset: enabled)
      Active: active (running) since Wed 2026-10-07 12:03:41 UTC; 6s ago
    Main PID: 3182 (node)
      CGroup: /system.slice/coffee.service
-             └─3182 /usr/bin/node /srv/coffee/app.js
+             └─3182 /coffee-lab/usr/bin/node /coffee-lab/srv/coffee/app.js
 
 $ sudo systemctl enable coffee        # 开机自启——注意,这和 start 是两件事
-Created symlink /etc/systemd/system/multi-user.target.wants/coffee.service → /etc/systemd/system/coffee.service.
+Created symlink /coffee-lab/etc/systemd/system/multi-user.target.wants/coffee.service → /coffee-lab/etc/systemd/system/coffee.service.
 ```
 
 日志不再散落在你的终端里,统一进了 journald,按服务名调取:
@@ -129,7 +129,7 @@ $ journalctl -u coffee -n 20 --no-pager      # 最后 20 行,直接打印不进�
 阿零把项目重构了一下,顺手改 `ExecStart`,手一滑把 node 敲成了 `nodee`:
 
 ```ini
-ExecStart=/usr/bin/nodee /srv/coffee/app.js
+ExecStart=/coffee-lab/usr/bin/nodee /coffee-lab/srv/coffee/app.js
 ```
 
 然后凭直觉直接重启服务——**没有 daemon-reload**:
@@ -162,22 +162,22 @@ $ sudo systemctl daemon-reload && sudo systemctl restart coffee
 
 ```text
 × coffee.service - Doudou Coffee Station
-     Loaded: loaded (/etc/systemd/system/coffee.service; enabled; vendor preset: enabled)
+     Loaded: loaded (/coffee-lab/etc/systemd/system/coffee.service; enabled; vendor preset: enabled)
      Active: failed (Result: exit-code) since Wed 2026-10-07 12:31:07 UTC; 4s ago
-    Process: 3521 ExecStart=/usr/bin/nodee /srv/coffee/app.js (code=exited, status=203/EXEC)
+    Process: 3521 ExecStart=/coffee-lab/usr/bin/nodee /coffee-lab/srv/coffee/app.js (code=exited, status=203/EXEC)
    Main PID: 3521 (code=exited, status=203/EXEC)
 ```
 
 ```bash
 $ journalctl -u coffee -n 5 --no-pager
-Oct 07 12:31:07 coffee-server (nodee)[3521]: coffee.service: Failed to locate executable /usr/bin/nodee: No such file or directory
-Oct 07 12:31:07 coffee-server (nodee)[3521]: coffee.service: Failed at step EXEC spawning /usr/bin/nodee: No such file or directory
+Oct 07 12:31:07 coffee-server (nodee)[3521]: coffee.service: Failed to locate executable /coffee-lab/usr/bin/nodee: No such file or directory
+Oct 07 12:31:07 coffee-server (nodee)[3521]: coffee.service: Failed at step EXEC spawning /coffee-lab/usr/bin/nodee: No such file or directory
 Oct 07 12:31:07 coffee-server systemd[1]: coffee.service: Main process exited, code=exited, status=203/EXEC
 Oct 07 12:31:07 coffee-server systemd[1]: coffee.service: Failed with result 'exit-code'.
 Oct 07 12:31:08 coffee-server systemd[1]: coffee.service: Start request repeated too quickly.
 ```
 
-根因:**203/EXEC 是 systemd 的行话,专指"启动第一步就没找到/没法执行 ExecStart 那个文件"**——路径写错、文件不存在、没执行权限,都是它。日志第一行已挑明:`Failed to locate executable /usr/bin/nodee`。修法:`which node` 核实真实路径,改回 `/usr/bin/node`,再走一遍 `daemon-reload` + `restart`。至于最后那行 `Start request repeated too quickly`,是 `Restart=on-failure` 连拉几次都失败后 systemd 熔断了——别跟它较劲,先修根因。
+根因:**203/EXEC 是 systemd 的行话,专指"启动第一步就没找到/没法执行 ExecStart 那个文件"**——路径写错、文件不存在、没执行权限,都是它。日志第一行已挑明:`Failed to locate executable /coffee-lab/usr/bin/nodee`。修法:`which node` 核实真实路径,改回 `/coffee-lab/usr/bin/node`,再走一遍 `daemon-reload` + `restart`。至于最后那行 `Start request repeated too quickly`,是 `Restart=on-failure` 连拉几次都失败后 systemd 熔断了——别跟它较劲,先修根因。
 
 > **🪟 双系统对照 · Windows 的服务世界**
 
@@ -192,7 +192,7 @@ Oct 07 12:31:08 coffee-server systemd[1]: coffee.service: Start request repeated
 老话重提:Linux 给你文本自己 grep,PowerShell 给你对象按属性过滤——看日志这件事上,两种哲学差异最直观。
 
 > **🎯 面试直击**:`systemctl enable` 和 `systemctl start` 有什么区别?
-> `start` 是**现在立刻启动一次**,不影响开机;`enable` 是**注册开机自启**(本质是在 `/etc/systemd/system/multi-user.target.wants/` 下建一个指向单元文件的软链接),不影响当下。两个都要就 `enable --now`。追问链:`is-enabled` / `is-active` 分别查两种状态;`mask` 是更狠的"焊死",连手动 start 都不许。
+> `start` 是**现在立刻启动一次**,不影响开机;`enable` 是**注册开机自启**(本质是在 `/coffee-lab/etc/systemd/system/multi-user.target.wants/` 下建一个指向单元文件的软链接),不影响当下。两个都要就 `enable --now`。追问链:`is-enabled` / `is-active` 分别查两种状态;`mask` 是更狠的"焊死",连手动 start 都不许。
 
 ---
 
@@ -203,8 +203,8 @@ $ systemctl is-active coffee
 active
 $ systemctl is-enabled coffee
 enabled
-$ ps -o ppid=,cmd= -p $(pgrep -f 'node /srv/coffee')
-      1 /usr/bin/node /srv/coffee/app.js        # 父进程 PID=1,过继成功
+$ ps -o ppid=,cmd= -p $(pgrep -f 'node /coffee-lab/srv/coffee')
+      1 /coffee-lab/usr/bin/node /coffee-lab/srv/coffee/app.js        # 父进程 PID=1,过继成功
 $ sudo reboot
 # ……重新 ssh 上来
 $ systemctl status coffee | head -3              # Active: active (running) since 开机时刻
@@ -279,7 +279,7 @@ $ curl -s localhost:3000/menu
    - A) 删除指定日期的日志　B) 查看 2026-09-20 这一天的所有日志　C) 备份日志　D) 统计日志行数
 
 10. 以下哪个是 systemd 单元文件的正确存放位置(用户自定义)?
-   - A) `/usr/bin/`　B) `/etc/systemd/system/`　C) `/var/log/`　D) `/home/user/`
+   - A) `/coffee-lab/usr/bin/`　B) `/coffee-lab/etc/systemd/system/`　C) `/coffee-lab/var/log/`　D) `/coffee-lab/home/user/`
 
 ### 解答题(5 道)
 
@@ -289,7 +289,7 @@ $ curl -s localhost:3000/menu
 
 **Q3 操作:** 写出为咖啡站 Java 应用编写 systemd 单元文件并部署的完整步骤:创建 `.service` 文件→重载配置→启动→设置开机自启→验证。
 
-**Q4 排障:** 菜菜修改了 `/etc/systemd/system/coffee.service` 中的 `ExecStart`,执行 `systemctl restart coffee` 后服务仍然按旧配置运行。诊断原因并给出正确操作。
+**Q4 排障:** 菜菜修改了 `/coffee-lab/etc/systemd/system/coffee.service` 中的 `ExecStart`,执行 `systemctl restart coffee` 后服务仍然按旧配置运行。诊断原因并给出正确操作。
 
 **Q5 综合设计:** 咖啡站有 3 个微服务(order-service、payment-service、user-service),每个都需要:①systemd 管理 ②崩溃自动重启(Restart=on-failure) ③日志集中查看 ④依赖顺序(user-service 先于 order-service,order-service 先于 payment-service)。设计完整的 systemd 配置和运维命令集。
 
@@ -312,13 +312,13 @@ $ curl -s localhost:3000/menu
 >
 > **9-B** `--since` 和 `--until` 组合指定时间窗口。**举一反三:**时间格式灵活:`--since "1 hour ago"`,`--since yesterday`,`--since "2026-09-20 14:00:00"`。`journalctl --since "2026-09-20" --until "2026-09-21"` 显示一天内的所有日志。
 >
-> **10-B** `/etc/systemd/system/` 是管理员自定义单元文件的标准位置。**举一反三:**`/lib/systemd/system/`=包管理器安装的单元文件(如 nginx.service);`/etc/systemd/system/`=本地管理员自定义(优先于 /lib 的同名文件);`/run/systemd/system/`=运行时临时单文件。`systemctl cat nginx` 可以查看实际的单元文件内容。
+> **10-B** `/coffee-lab/etc/systemd/system/` 是管理员自定义单元文件的标准位置。**举一反三:**`/lib/systemd/system/`=包管理器安装的单元文件(如 nginx.service);`/coffee-lab/etc/systemd/system/`=本地管理员自定义(优先于 /lib 的同名文件);`/run/systemd/system/`=运行时临时单文件。`systemctl cat nginx` 可以查看实际的单元文件内容。
 >
 > **Q1** 单元文件(Unit)是 systemd 管理的**万物**(服务、定时器、socket、挂载点等)的配置描述文件。三类:①`.service`=服务单元,定义如何启动/停止一个后台服务(最常用)。②`.timer`=定时器单元,替代 cron 任务(精确到秒级、支持随机延迟、可与服务单元关联)。③`.socket`=套接字激活单元,监听端口/文件,有连接时自动启动关联的服务(实现"按需启动",不活动时节省资源)。**核心思想:**一切都抽象为"单元",用统一的命令(`systemctl`)和格式管理——而不像旧时代 `service`、`crontab`、`inetd` 三套命令。
 >
 > **Q2** start 和 enable 是独立的,因为"立即运行"和"开机启动"是两个不同的管理意图。**不需要 enable 的场景:**①临时启动一个测试服务,测试完就停 ②手动维护时启动数据库备份脚本,不需要下次开机自启 ③用 systemd timer 触发的一次性任务(定时器会启动服务,不需要开机自启)。**正确配置新服务:**`systemctl enable --now service_name`(--now 同时 start+enable 一步完成)。
 >
-> **Q3** 完整步骤:①创建单元文件:`sudo vim /etc/systemd/system/coffee.service`,内容包含 `[Unit]` 描述/依赖、`[Service]` Type/ExecStart/User/Restart、`[Install]` WantedBy=multi-user.target ②`sudo systemctl daemon-reload`(重载配置) ③`sudo systemctl start coffee`(启动) ④`sudo systemctl enable coffee`(设置开机自启) ⑤验证:`sudo systemctl status coffee`(状态)、`sudo systemctl is-active coffee`(运行中?)、`sudo journalctl -u coffee -f`(查看日志输出)。**举一反三:**`systemctl cat coffee` 查看已加载的单元文件内容;`systemctl edit coffee --full` 编辑;`systemctl show coffee` 显示所有属性。
+> **Q3** 完整步骤:①创建单元文件:`sudo vim /coffee-lab/etc/systemd/system/coffee.service`,内容包含 `[Unit]` 描述/依赖、`[Service]` Type/ExecStart/User/Restart、`[Install]` WantedBy=multi-user.target ②`sudo systemctl daemon-reload`(重载配置) ③`sudo systemctl start coffee`(启动) ④`sudo systemctl enable coffee`(设置开机自启) ⑤验证:`sudo systemctl status coffee`(状态)、`sudo systemctl is-active coffee`(运行中?)、`sudo journalctl -u coffee -f`(查看日志输出)。**举一反三:**`systemctl cat coffee` 查看已加载的单元文件内容;`systemctl edit coffee --full` 编辑;`systemctl show coffee` 显示所有属性。
 >
 > **Q4** 原因:**忘记 `daemon-reload`**。修改单元文件后,systemd 不会自动重新读取文件,它内部缓存了旧版本。`restart` 是根据缓存的旧配置重启服务。**正确操作:**`sudo systemctl daemon-reload`→`sudo systemctl restart coffee`→`sudo systemctl status coffee`(确认配置生效)。**举一反三:**也可以用 `systemctl reenable coffee`(重新创建符号链接)如果需要更新 Install 段。养成习惯:改 unit file → 想三件事(reload → restart → status)。
 >

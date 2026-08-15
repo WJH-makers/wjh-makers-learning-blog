@@ -205,14 +205,14 @@ mvn install:install-file \
 
 ```bash
 # 1. 编辑 service 文件
-sudo vim /etc/systemd/system/myapp.service
+sudo vim /coffee-lab/etc/systemd/system/myapp.service
 
 # 内容示例：
 # [Unit]
 # Description=My Java App
 # After=network.target
 # [Service]
-# ExecStart=/usr/bin/java -jar /opt/app/app.jar
+# ExecStart=/coffee-lab/usr/bin/java -jar /coffee-lab/opt/app/app.jar
 # Restart=always
 # [Install]
 # WantedBy=multi-user.target
@@ -223,7 +223,7 @@ sudo systemctl enable --now myapp
 ```
 
 > [!NOTE]
-> **daemon-reload vs reload 区别（面试考点）**：`daemon-reload` 重载 systemd 对 unit 文件的认知（修改 `/etc/systemd/system/*.service` 后必执行）；`reload` 重载具体服务的应用配置。  
+> **daemon-reload vs reload 区别（面试考点）**：`daemon-reload` 重载 systemd 对 unit 文件的认知（修改 `/coffee-lab/etc/systemd/system/*.service` 后必执行）；`reload` 重载具体服务的应用配置。  
 > MySQL 服务名在不同发行版为 `mysqld`（RHEL/CentOS）或 `mysql`（Debian/Ubuntu），MariaDB 为 `mariadb`。
 
 ---

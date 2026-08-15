@@ -45,7 +45,7 @@ tags: [命令速查, Windows, CMD]
 | `cd /d D:\proj` | 切盘并切目录 | ⚠ 最高频误用：不带 `/d` 时 `cd D:\proj` 只是**记住 D 盘的当前目录**，人还留在 C 盘 |
 | `D:` | 单纯切盘符 | 切过去会落在该盘「上次所在目录」，不是根目录 |
 | `cd` | 打印当前目录 | 和 Linux 不同：不带参数**不会**回家目录；也没有 `cd -` |
-| `cd ..` / `cd \` | 上级 / 本盘根 | 路径含空格必须整体加引号：`cd /d "C:\Program Files"` |
+| `cd ..` / `cd \` | 上级 / 本盘根 | 路径含空格必须整体加引号：`cd /d "<Program Files>"` |
 | `pushd \\srv\share` | 压栈并进入 | 对 UNC 路径会**自动映射一个临时盘符**，`popd` 才会释放；忘了 popd 会攒一堆幽灵盘符 |
 | `dir /a /o-d /t:w` | 列目录（含隐藏、按修改时间倒序） | `/b` 只出裸文件名（适合喂给 for），`/s` 递归，`/a:d` 只看目录 |
 | `tree /f /a` | 树状列出含文件 | `/a` 用 ASCII 线条，重定向到文件时不会乱码 |
@@ -141,7 +141,7 @@ tags: [命令速查, Windows, CMD]
 | `reg add HKCU\Environment /v FOO /t REG_SZ /d bar /f` | 写值 | `/f` 是「不提示直接覆盖」；写 HKLM 需管理员窗口 |
 | `reg delete "HKCU\Software\X" /f` | 删键或值 | ⚠ 破坏性：`/f` 无确认、无回收站、不可撤销。安全替代：先 `reg export` 同一路径，再删 |
 | `reg query <键> /reg:64` / `/reg:32` | 指定注册表视图 | 32 位进程读 HKLM\Software 会被重定向到 `WOW6432Node`；「明明装了却查不到」十有八九是视图选错 |
-| `reg load HKLM\TmpHive C:\Users\x\NTUSER.DAT` | 挂载离线用户配置单元 | 需管理员；用完必须 `reg unload HKLM\TmpHive`，否则该用户无法正常登录 |
+| `reg load HKLM\TmpHive <用户目录>\x\NTUSER.DAT` | 挂载离线用户配置单元 | 需管理员；用完必须 `reg unload HKLM\TmpHive`，否则该用户无法正常登录 |
 | `setx FOO bar` | 持久化用户环境变量 | ⚠ 两个坑：**对当前窗口不生效**（要重开）；且 `setx PATH "%PATH%;新目录"` 会把「用户+系统」合并后的 PATH 写进用户 PATH，**超过 1024 字符直接截断**——改 PATH 请用系统属性 GUI 或 PowerShell 的 `[Environment]::SetEnvironmentVariable` |
 | `regedit /e out.reg "HKLM\SOFTWARE\X"` | 图形工具的导出模式 | 与 `reg export` 等价，区别是默认 UTF-16 编码，脚本解析要注意 |
 

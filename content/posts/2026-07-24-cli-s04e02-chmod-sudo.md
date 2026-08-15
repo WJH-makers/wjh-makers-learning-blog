@@ -14,7 +14,7 @@ tags: [Linux, 命令行, 终端漫画, chmod, sudo, 阿零与特米]
 
 ## 一、需求:这台机器,凭什么不听我的
 
-上一话 `kill -9` 送走了失控的压测脚本,它却在 `/var/cache/stress/` 拉了一地临时文件——那目录是豆豆当初图省事用 `sudo` 跑初始化时建的,归 root 所有。阿零一个 `rm` 抡过去,`Permission denied`。
+上一话 `kill -9` 送走了失控的压测脚本,它却在 `/coffee-lab/var/cache/stress/` 拉了一地临时文件——那目录是豆豆当初图省事用 `sudo` 跑初始化时建的,归 root 所有。阿零一个 `rm` 抡过去,`Permission denied`。
 
 祸不单行:他刚给咖啡站写好第一版部署脚本 `deploy.sh`,兴冲冲 `./deploy.sh`,又是一句 `Permission denied`——**这回文件明明是他自己的**。
 
@@ -74,7 +74,7 @@ tags: [Linux, 命令行, 终端漫画, chmod, sudo, 阿零与特米]
 
 sudo ≠ 变身:
   阿零 ──sudo──▶ [以 root 身份执行这一条命令] ──▶ 印章收回,还是阿零
-  (每次使用记入 /var/log/auth.log,借印有账)
+  (每次使用记入 /coffee-lab/var/log/auth.log,借印有账)
 ```
 
 一句话:**权限 = 「谁」×「能干什么」的九宫格;chmod 改格子,chown 换主人,sudo 借最高的章用一次。**
@@ -91,8 +91,8 @@ total 8
 -rw-r--r-- 1 ubuntu ubuntu 312 Oct  6 10:02 deploy.sh
 drwxr-xr-x 2 ubuntu ubuntu 4096 Oct  6 09:58 coffee-shop
 
-$ ls -l /var/cache/stress/tmp1.log
--rw-r--r-- 1 root root 52428800 Oct  5 23:59 /var/cache/stress/tmp1.log
+$ ls -l /coffee-lab/var/cache/stress/tmp1.log
+-rw-r--r-- 1 root root 52428800 Oct  5 23:59 /coffee-lab/var/cache/stress/tmp1.log
 ```
 
 `deploy.sh` 主人是 ubuntu,但九宫格里没有一个 `x`;垃圾文件主人是 **root**,对「其他人」只开了 `r`——难怪删不动(顺带一记:能不能删文件,其实看的是**所在目录**的 `w` 位,这目录也是 root 的)。
@@ -111,13 +111,13 @@ $ chmod 755 deploy.sh             # 和上面 +x 后的结果一样,一步到位
 **③ chown 换主人(动别人的东西就得借印)**:
 
 ```bash
-$ chown ubuntu:ubuntu /var/cache/stress/tmp1.log
-chown: changing ownership of '/var/cache/stress/tmp1.log': Operation not permitted
+$ chown ubuntu:ubuntu /coffee-lab/var/cache/stress/tmp1.log
+chown: changing ownership of '/coffee-lab/var/cache/stress/tmp1.log': Operation not permitted
 
-$ sudo chown -R ubuntu:ubuntu /var/cache/stress/
+$ sudo chown -R ubuntu:ubuntu /coffee-lab/var/cache/stress/
 [sudo] password for ubuntu:
-$ ls -l /var/cache/stress/tmp1.log
--rw-r--r-- 1 ubuntu ubuntu 52428800 Oct  5 23:59 /var/cache/stress/tmp1.log
+$ ls -l /coffee-lab/var/cache/stress/tmp1.log
+-rw-r--r-- 1 ubuntu ubuntu 52428800 Oct  5 23:59 /coffee-lab/var/cache/stress/tmp1.log
 ```
 
 换主人本身就是特权操作——**普通用户连「把别人的东西过户给自己」都不行**,不然通行证制度形同虚设。过户完,`rm` 顺理成章。
@@ -125,10 +125,10 @@ $ ls -l /var/cache/stress/tmp1.log
 **④ sudo !! 偷懒咒**:
 
 ```bash
-$ rm /var/cache/stress/tmp2.log
-rm: cannot remove '/var/cache/stress/tmp2.log': Permission denied
+$ rm /coffee-lab/var/cache/stress/tmp2.log
+rm: cannot remove '/coffee-lab/var/cache/stress/tmp2.log': Permission denied
 $ sudo !!
-sudo rm /var/cache/stress/tmp2.log        # bash 先回显它替你拼好的命令
+sudo rm /coffee-lab/var/cache/stress/tmp2.log        # bash 先回显它替你拼好的命令
 ```
 
 `!!` 是 bash 的「上一条命令」占位符,`sudo !!` = 把刚被拒的那条抬着重跑。爽,但特米的叮嘱同样重要:**回显那一行先看一眼再回车**——盖着 root 的章,手滑没有后悔药。
@@ -171,7 +171,7 @@ bash: ./deploy.sh: Permission denied
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @         WARNING: UNPROTECTED PRIVATE KEY FILE!          @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-Permissions 0777 for '/home/ubuntu/.ssh/id_ed25519' are too open.
+Permissions 0777 for '/coffee-lab/home/ubuntu/.ssh/id_ed25519' are too open.
 This private key will be ignored.
 ```
 
@@ -235,7 +235,7 @@ $ sudo -v && echo "印章可借"          # 确认自己在 sudo 名单里
 
 ## 十一、下一话悬念
 
-权限捋顺,`deploy.sh` 把代码稳稳铺进 `/srv/coffee/`。阿零深吸一口气,敲下 `node /srv/coffee/app.js`——屏幕滚出一行 `Coffee shop listening on 3000`,咖啡站**第一次真正跑在了服务器上**!他截图发给豆豆,心满意足地合上笔记本,吃饭庆祝去了。只有特米盯着那扇正在合拢的终端,肚皮上的 `>_` 幽幽闪了一下:「他还不知道,这扇门一关……」
+权限捋顺,`deploy.sh` 把代码稳稳铺进 `/coffee-lab/srv/coffee/`。阿零深吸一口气,敲下 `node /coffee-lab/srv/coffee/app.js`——屏幕滚出一行 `Coffee shop listening on 3000`,咖啡站**第一次真正跑在了服务器上**!他截图发给豆豆,心满意足地合上笔记本,吃饭庆祝去了。只有特米盯着那扇正在合拢的终端,肚皮上的 `>_` 幽幽闪了一下:「他还不知道,这扇门一关……」
 
 > 下一话《常驻服务:systemctl 与日志》:ssh 一断、服务就死的真相(一封叫 SIGHUP 的「散伙信」),以及把咖啡站过继给 1 号进程 systemd——单元文件、start 与 enable 的两码事、journalctl 翻日志破案。
 
@@ -271,7 +271,7 @@ $ sudo -v && echo "印章可借"          # 确认自己在 sudo 名单里
 8. 目录的执行权限(`x`)有什么特殊含义?
    - A) 对目录无意义　B) 目录的执行权限 = "进入目录"的权限(可以 cd 进去,访问目录内的文件)　C) 目录的执行权限 = 可以列出目录内容　D) 目录的执行权限 = 可以删除目录
 
-9. 为什么 `sudo chmod 777 /var/www` 是危险操作?
+9. 为什么 `sudo chmod 777 /coffee-lab/var/www` 是危险操作?
    - A) 没有任何风险　B) 777 允许任何用户读写执行 Web 根目录,可能导致代码被篡改、植入恶意脚本　C) 777 会导致网站无法访问　D) 777 是只读权限
 
 10. UID 0 是什么用户的标识?
@@ -302,7 +302,7 @@ $ sudo -v && echo "印章可借"          # 确认自己在 sudo 名单里
 >
 > **6-B** `u=rw`(所有者=读+写),`g=r`(组=只读),`o=`(其他人=无权限) → 数字等价:6(rw-)4(r--)0(---)=640。**举一反三:**`ugo`(你/组/其他)和 `a`(所有人)是符号法的精髓。`chmod a-w` 去掉所有人的写权限。
 >
-> **7-C** 三种写法要分清:`chown user file.txt`(**不带任何分隔符**)只改属主、组保持不动;`chown user: file.txt`(冒号后为空)把组改成 user 的主要组(通常在 `/etc/passwd` 中定义);`chown :group file.txt`(只给组)只改属组不改属主。**举一反三:**`chown user. file.txt`(点号)是冒号的老式写法,**行为与 `user:` 完全相同——它同样会改组,不是「只改属主」**;GNU coreutils 现在还会直接告警 `chown: warning: '.' should be ':'`,新代码一律用冒号。`chown -R user:group dir/` 递归修改目录属主属组。
+> **7-C** 三种写法要分清:`chown user file.txt`(**不带任何分隔符**)只改属主、组保持不动;`chown user: file.txt`(冒号后为空)把组改成 user 的主要组(通常在 `/coffee-lab/etc/passwd` 中定义);`chown :group file.txt`(只给组)只改属组不改属主。**举一反三:**`chown user. file.txt`(点号)是冒号的老式写法,**行为与 `user:` 完全相同——它同样会改组,不是「只改属主」**;GNU coreutils 现在还会直接告警 `chown: warning: '.' should be ':'`,新代码一律用冒号。`chown -R user:group dir/` 递归修改目录属主属组。
 >
 > **8-B** 目录的 `x`="能否进入这个目录(通过 cd 或访问目录内文件/子目录)"。"没有 x 权限的目录,你不知道里面有什么——即使你有 ls 权限也不行(会产生 `Permission denied`)"。`r`="能否列出目录内容(ls)",`w`="能否在目录内创建/删除文件"。**举一反三:**有一个极端的案例:目录权限 `--x`(只有执行),可以 cd 进去、访问已知文件名的文件,但不能 `ls` 列出内容——这是"盲"目录的权限设置,偶尔用于安全场景。
 >

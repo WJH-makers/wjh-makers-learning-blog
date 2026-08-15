@@ -241,7 +241,7 @@ $ tail -n 1 memo.txt               # 刚学的 tail 立刻上岗:只验最后一
 4. `cat` 与 `less` 的核心区别是什么?
    - A) `cat` 更快,`less` 更慢　B) `cat` 一次输出全部,`less` 支持分页浏览/搜索/回退　C) `cat` 只能看文本,`less` 能看二进制　D) 没有区别,只是不同时代的产物
 
-5. 用 `tail -f /var/log/app.log` 查看日志时,以下说法正确的是?
+5. 用 `tail -f /coffee-lab/var/log/app.log` 查看日志时,以下说法正确的是?
    - A) 显示文件最后 10 行然后退出　B) 显示文件全部内容　C) 持续追踪文件末尾新增内容,实时显示　D) 只显示文件第一行
 
 6. 已有文件 `a.txt` 内容为 "old",执行 `echo "new" > a.txt`,以下说法**错误**的是?
@@ -267,7 +267,7 @@ $ tail -n 1 memo.txt               # 刚学的 tail 立刻上岗:只验最后一
 
 **Q3 操作:** 写出创建一个三层目录结构 `project/src/components` 并在 `src` 下创建空文件 `index.js` 的完整命令序列。
 
-**Q4 排障:** 菜菜执行 `cat /var/log/nginx/access.log`,终端瞬间刷过几万行日志,完全看不清开头。请给出三种不同的实用方案让他能有效查看日志内容。
+**Q4 排障:** 菜菜执行 `cat /coffee-lab/var/log/nginx/access.log`,终端瞬间刷过几万行日志,完全看不清开头。请给出三种不同的实用方案让他能有效查看日志内容。
 
 **Q5 综合设计:** 你需要为咖啡站写一个部署脚本:①创建备份目录 `~/backups/2026/09`(必须能自动创建中间目录) ②把当前日期写入 `~/backups/2026/09/date.txt` ③将应用日志最近 20 行追加到 `~/backups/2026/09/recent.log`。写出完整命令。
 
@@ -298,9 +298,9 @@ $ tail -n 1 memo.txt               # 刚学的 tail 立刻上岗:只验最后一
 >
 > **Q3** 完整序列:`mkdir -p project/src/components` → `touch project/src/index.js`。也可以先 `cd project` 再在内部创建。**举一反三:**验证目录结构用 `tree project` 或 `find project -type d`,检查文件用 `find project -type f`。
 >
-> **Q4** 方案一:`less /var/log/nginx/access.log` 分页浏览,可按 `/` 搜索、`g` 跳到开头。方案二:`tail -n 100 /var/log/nginx/access.log` 只看最近 100 行。方案三:`head -n 50 /var/log/nginx/access.log` 只看前 50 行。**举一反三:**也可以 `cat file | grep ERROR` 过滤错误行、`wc -l file` 先看总行数再决定策略、`split` 将大文件切分后逐步分析。
+> **Q4** 方案一:`less /coffee-lab/var/log/nginx/access.log` 分页浏览,可按 `/` 搜索、`g` 跳到开头。方案二:`tail -n 100 /coffee-lab/var/log/nginx/access.log` 只看最近 100 行。方案三:`head -n 50 /coffee-lab/var/log/nginx/access.log` 只看前 50 行。**举一反三:**也可以 `cat file | grep ERROR` 过滤错误行、`wc -l file` 先看总行数再决定策略、`split` 将大文件切分后逐步分析。
 >
-> **Q5** 完整命令:`mkdir -p ~/backups/2026/09` → `date > ~/backups/2026/09/date.txt` → `tail -n 20 /var/log/app.log >> ~/backups/2026/09/recent.log`。**举一反三:**生产脚本应加错误检查:`mkdir -p ... && date > ... && tail ... >> ...` 用 `&&` 串联确保前一步成功才执行下一步;也可以用 `set -e` 让脚本遇错即停。🪟 PowerShell 里**根本没有 `date` 这个命令**——它不是别名也不是函数,敲下去直接 `CommandNotFoundException`。要用 `Get-Date`;它返回的是 DateTime 对象,想要纯文本得指定格式:`Get-Date -Format 'yyyy-MM-dd'`。(cmd.exe 里的 `date` 是交互式**改系统日期**的内建命令,两回事,别混。)
+> **Q5** 完整命令:`mkdir -p ~/backups/2026/09` → `date > ~/backups/2026/09/date.txt` → `tail -n 20 /coffee-lab/var/log/app.log >> ~/backups/2026/09/recent.log`。**举一反三:**生产脚本应加错误检查:`mkdir -p ... && date > ... && tail ... >> ...` 用 `&&` 串联确保前一步成功才执行下一步;也可以用 `set -e` 让脚本遇错即停。🪟 PowerShell 里**根本没有 `date` 这个命令**——它不是别名也不是函数,敲下去直接 `CommandNotFoundException`。要用 `Get-Date`;它返回的是 DateTime 对象,想要纯文本得指定格式:`Get-Date -Format 'yyyy-MM-dd'`。(cmd.exe 里的 `date` 是交互式**改系统日期**的内建命令,两回事,别混。)
 
 ## 运行前边界、回滚与验证
 

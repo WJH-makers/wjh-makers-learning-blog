@@ -195,9 +195,9 @@ ORDER BY SUM_TIMER_WAIT DESC LIMIT 10;
 
 ```bash
 # 3) 离线聚合慢日志：mysqldumpslow 按平均耗时排序取 Top10
-mysqldumpslow -s t -t 10 /var/lib/mysql/slow.log
+mysqldumpslow -s t -t 10 /coffee-lab/var/lib/mysql/slow.log
 # 更强的第三方：pt-query-digest（Percona Toolkit），输出指纹聚合 + 采样
-pt-query-digest /var/lib/mysql/slow.log
+pt-query-digest /coffee-lab/var/lib/mysql/slow.log
 ```
 
 **定位流程**：慢日志/`performance_schema` 找出慢 SQL → `EXPLAIN`/`EXPLAIN ANALYZE` 看执行计划 → 检查 `type=ALL`、`key=NULL`、`Extra` 有无 `Using filesort/temporary` → 补索引或改写 SQL（拆分、避免 `SELECT *`、分页深翻用游标 `WHERE id>上次最大id LIMIT n` 代替 `LIMIT 大偏移`）→ 再验证。

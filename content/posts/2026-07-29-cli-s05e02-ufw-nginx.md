@@ -109,11 +109,11 @@ OpenSSH (v6)               ALLOW       Anywhere (v6)
 
 ```bash
 $ sudo apt install -y nginx
-$ sudo vim /etc/nginx/sites-available/coffee     # vim 是第 9 话的老朋友
+$ sudo vim /coffee-lab/etc/nginx/sites-available/coffee     # vim 是第 9 话的老朋友
 ```
 
 ```text
-# /etc/nginx/sites-available/coffee
+# /coffee-lab/etc/nginx/sites-available/coffee
 server {
     listen 80;
     server_name _;
@@ -128,16 +128,16 @@ server {
 挂载到 `sites-enabled`(nginx 只认这里的软链接),然后**生效三连**:
 
 ```bash
-$ sudo ln -s /etc/nginx/sites-available/coffee /etc/nginx/sites-enabled/coffee
-$ sudo rm /etc/nginx/sites-enabled/default      # 摘掉默认欢迎页
+$ sudo ln -s /coffee-lab/etc/nginx/sites-available/coffee /coffee-lab/etc/nginx/sites-enabled/coffee
+$ sudo rm /coffee-lab/etc/nginx/sites-enabled/default      # 摘掉默认欢迎页
 
 $ sudo nginx -t                                 # 一连:体检
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful
+nginx: the configuration file /coffee-lab/etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /coffee-lab/etc/nginx/nginx.conf test is successful
 
 $ sudo systemctl reload nginx                   # 二连:不断线生效
 
-$ sudo tail -f /var/log/nginx/access.log        # 三连:看真实流量
+$ sudo tail -f /coffee-lab/var/log/nginx/access.log        # 三连:看真实流量
 198.51.100.23 - - [11/Oct/2026:10:23:45 +0800] "GET / HTTP/1.1" 200 1287 "-" "Mozilla/5.0 (iPhone; ...)"
 ```
 
@@ -181,8 +181,8 @@ Command may disrupt existing ssh connections. Proceed with operation (y|n)?
 **坑二**,nginx -t 一口咬住行号:
 
 ```text
-nginx: [emerg] directive "proxy_pass" is not terminated by ";" in /etc/nginx/sites-enabled/coffee:7
-nginx: configuration file /etc/nginx/nginx.conf test failed
+nginx: [emerg] directive "proxy_pass" is not terminated by ";" in /coffee-lab/etc/nginx/sites-enabled/coffee:7
+nginx: configuration file /coffee-lab/etc/nginx/nginx.conf test failed
 ```
 
 `emerg` 是 emergency——配置根本没法加载。人话翻译:「`proxy_pass` 这条指令没用分号收尾,案发地点 coffee 文件第 7 行。」nginx 配置里**每条指令以分号结束**,少一个,轻则像这样被点名,重则(比如少了右花括号)报 `unexpected end of file, expecting "}"`,行号直接指到文件末尾,得往回找。修法:补上分号,重跑 `-t` 到 `syntax is ok`,再 reload。**体检不过,绝不上岗**——这就是三连里 `-t` 排第一的原因。
@@ -318,7 +318,7 @@ $ curl -s -o /dev/null -w "%{http_code}\n" http://203.0.113.10
 >
 > **7-D** `ufw enable` 激活之前添加的所有规则(含 SSH 的 allow 规则)。如果只配置了 `ufw allow 80`,默认策略是拒绝其他端口。但之前已经配置的规则(如 `ufw allow 22`)会被保留并生效。**举一反三:**`ufw status numbered` 显示带编号的规则列表;`ufw delete 3` 通过编号删除规则;`ufw reset` 重置所有规则并禁用防火墙。
 >
-> **8-C** nginx 配置文件**严格**要求每条指令以分号 `;` 结尾,每对花括号正确闭合。`nginx -t` 会报错:`nginx: [emerg] unexpected ";" in /etc/nginx/sites-enabled/coffee:5`(精确到文件和行号)。**举一反三:**`;` 遗漏 + `{}` 不匹配 + `server_name` 域名拼写错误是 nginx 配置的三大刽子手。每次改配置后执行 `nginx -t` 是肌肉记忆。
+> **8-C** nginx 配置文件**严格**要求每条指令以分号 `;` 结尾,每对花括号正确闭合。`nginx -t` 会报错:`nginx: [emerg] unexpected ";" in /coffee-lab/etc/nginx/sites-enabled/coffee:5`(精确到文件和行号)。**举一反三:**`;` 遗漏 + `{}` 不匹配 + `server_name` 域名拼写错误是 nginx 配置的三大刽子手。每次改配置后执行 `nginx -t` 是肌肉记忆。
 >
 > **9-B** reload=旧 worker 优雅退出(处理完现有请求)+ 新 worker 启动(用新配置处理新请求),整个过程**不丢失连接**。restart=stop→start,这中间的窗口期所有请求都被拒绝。**举一反三:**即使 `nginx -t` 通过,reload 也可能遇到语法错误(比如 include 的文件在 test 后被删除)。如果 reload 失败,旧 worker 继续工作(回退保护),但最好还是 reload 后立即 `curl -I` 测试一下。
 >
@@ -328,11 +328,11 @@ $ curl -s -o /dev/null -w "%{http_code}\n" http://203.0.113.10
 >
 > **Q2** 请求流转:用户浏览器→ `https://coffee.com` → DNS 解析→服务器 IP→nginx(监听 443)→根据 `server_name` 匹配 server 块→根据 URL 路径匹配 location→`proxy_pass` 转发到后端应用(localhost:8080)→应用处理→返回响应给 nginx→nginx 返回给用户。**为什么需要 nginx:**①安全:只有 80/443 暴露给外网,后端应用隐藏在 localhost(不绑定公网 IP) ②SSL 终端:nginx 负责 HTTPS 加密/解密,后端无需处理 SSL ③静态文件加速:nginx 直接提供 HTML/CSS/JS,不经过后端应用 ④负载均衡:`upstream` 块分发请求到多个后端实例 ⑤缓存/Gzip/限流等中间件功能。
 >
-> **Q3** 完整步骤:①`sudo ufw allow ssh && sudo ufw allow http && sudo ufw allow https`(分别或 `sudo ufw allow 22,80,443/tcp`) ②确认 SSH 已放行后 `sudo ufw enable` → `sudo ufw status` 验证 ③`sudo vim /etc/nginx/sites-available/coffee`,写入:`server { listen 80; server_name coffee.com; location / { proxy_pass http://localhost:8080; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; } }` ④`sudo ln -s /etc/nginx/sites-available/coffee /etc/nginx/sites-enabled/`(启用站点) ⑤`sudo nginx -t`(测试配置) ⑥`sudo systemctl reload nginx`(重载) ⑦`curl -I http://coffee.com/` 验证(如果 DNS 未配,可 `curl -H "Host: coffee.com" http://server-ip/`)。**举一反三:**配置前备份:`cp original.conf original.conf.bak`。
+> **Q3** 完整步骤:①`sudo ufw allow ssh && sudo ufw allow http && sudo ufw allow https`(分别或 `sudo ufw allow 22,80,443/tcp`) ②确认 SSH 已放行后 `sudo ufw enable` → `sudo ufw status` 验证 ③`sudo vim /coffee-lab/etc/nginx/sites-available/coffee`,写入:`server { listen 80; server_name coffee.com; location / { proxy_pass http://localhost:8080; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; } }` ④`sudo ln -s /coffee-lab/etc/nginx/sites-available/coffee /coffee-lab/etc/nginx/sites-enabled/`(启用站点) ⑤`sudo nginx -t`(测试配置) ⑥`sudo systemctl reload nginx`(重载) ⑦`curl -I http://coffee.com/` 验证(如果 DNS 未配,可 `curl -H "Host: coffee.com" http://server-ip/`)。**举一反三:**配置前备份:`cp original.conf original.conf.bak`。
 >
-> **Q4** 安全工作流:①修改配置前:`sudo cp /etc/nginx/sites-enabled/coffee /tmp/coffee.backup`(备份) ②修改后**不直接 restart** ③`sudo nginx -t`(先测试) ④如果通过:`sudo systemctl reload nginx`(优雅重载) ⑤如果 `-t` 失败:根据错误提示修正,再次 `-t`,直到通过 ⑥**严禁在生产环境下跳过 `-t` 直接 restart/reload** ⑦如果 reload 后发现问题:快速回滚 `sudo cp /tmp/coffee.backup /etc/nginx/sites-enabled/coffee && sudo nginx -t && sudo systemctl reload nginx`。**举一反三:**自动化部署脚本中务必包含 `nginx -t` 检查,失败则回滚+告警。nginx 的 `-T` 大写选项可以输出完整的合并后配置,方便调试 include/继承问题。
+> **Q4** 安全工作流:①修改配置前:`sudo cp /coffee-lab/etc/nginx/sites-enabled/coffee /tmp/coffee.backup`(备份) ②修改后**不直接 restart** ③`sudo nginx -t`(先测试) ④如果通过:`sudo systemctl reload nginx`(优雅重载) ⑤如果 `-t` 失败:根据错误提示修正,再次 `-t`,直到通过 ⑥**严禁在生产环境下跳过 `-t` 直接 restart/reload** ⑦如果 reload 后发现问题:快速回滚 `sudo cp /tmp/coffee.backup /coffee-lab/etc/nginx/sites-enabled/coffee && sudo nginx -t && sudo systemctl reload nginx`。**举一反三:**自动化部署脚本中务必包含 `nginx -t` 检查,失败则回滚+告警。nginx 的 `-T` 大写选项可以输出完整的合并后配置,方便调试 include/继承问题。
 >
-> **Q5** 架构:①防火墙:`ufw default deny incoming && ufw allow 22 && ufw allow 80 && ufw allow 443 && ufw --force enable`。②HTTP→HTTPS:`server { listen 80; server_name coffee.com; return 301 https://$host$request_uri; }`(301 永久重定向)。③HTTPS 反向代理:同一 server 块:`listen 443 ssl; ssl_certificate /etc/letsencrypt/live/coffee.com/fullchain.pem; ssl_certificate_key /etc/letsencrypt/live/coffee.com/privkey.pem;` →location 规则:`location /api/orders/ { proxy_pass http://localhost:8081/; }`, `location /api/payments/ { proxy_pass http://localhost:8082/; }`, `location / { proxy_pass http://localhost:3000/; }`。④SSL 证书:`sudo apt install certbot python3-certbot-nginx && sudo certbot --nginx -d coffee.com`(自动配置 SSL 并设自动续期) ⑤零停机部署流程:改配置→`nginx -t`→`systemctl reload nginx`→`curl -I https://coffee.com/ | grep "200 OK"`(烟测)。**举一反三:**注意 `proxy_pass` URL 尾部的 `/` 行为:`location /api/ { proxy_pass http://backend/; }` 中的 `/` 会去除 `/api` 前缀;不加 `/` 会保留前缀传给后端。
+> **Q5** 架构:①防火墙:`ufw default deny incoming && ufw allow 22 && ufw allow 80 && ufw allow 443 && ufw --force enable`。②HTTP→HTTPS:`server { listen 80; server_name coffee.com; return 301 https://$host$request_uri; }`(301 永久重定向)。③HTTPS 反向代理:同一 server 块:`listen 443 ssl; ssl_certificate /coffee-lab/etc/letsencrypt/live/coffee.com/fullchain.pem; ssl_certificate_key /coffee-lab/etc/letsencrypt/live/coffee.com/privkey.pem;` →location 规则:`location /api/orders/ { proxy_pass http://localhost:8081/; }`, `location /api/payments/ { proxy_pass http://localhost:8082/; }`, `location / { proxy_pass http://localhost:3000/; }`。④SSL 证书:`sudo apt install certbot python3-certbot-nginx && sudo certbot --nginx -d coffee.com`(自动配置 SSL 并设自动续期) ⑤零停机部署流程:改配置→`nginx -t`→`systemctl reload nginx`→`curl -I https://coffee.com/ | grep "200 OK"`(烟测)。**举一反三:**注意 `proxy_pass` URL 尾部的 `/` 行为:`location /api/ { proxy_pass http://backend/; }` 中的 `/` 会去除 `/api` 前缀;不加 `/` 会保留前缀传给后端。
 
 ## 运行前边界、回滚与验证
 

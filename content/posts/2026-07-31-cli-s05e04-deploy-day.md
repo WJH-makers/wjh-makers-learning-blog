@@ -108,10 +108,10 @@ $ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000   # 本机自�
 后厨就位。前台换上正式门牌(23 话的 server 块,`server_name` 填上域名),生效三连:
 
 ```bash
-$ sudo vim /etc/nginx/sites-available/coffee    # server_name coffee.example.com;
+$ sudo vim /coffee-lab/etc/nginx/sites-available/coffee    # server_name coffee.example.com;
 $ sudo nginx -t
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful
+nginx: the configuration file /coffee-lab/etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /coffee-lab/etc/nginx/nginx.conf test is successful
 $ sudo systemctl reload nginx
 ```
 
@@ -161,12 +161,12 @@ request: "GET / HTTP/1.1", upstream: "http://127.0.0.1:3300/", host: "coffee.exa
 根因全写在里面:nginx 去连 `upstream: http://127.0.0.1:3300` 被 **Connection refused**(22 话教的:秒拒 = 那个端口没人听)——3300 是笔误,后厨在 3000。这就是 502 的本质:**网关自己活着,但它代拨的上游没接电话。**同族病友还有一个:compose 里 `ports` 忘了写,容器活着但宿主 3000 根本没人听——同一套三板斧,ss 那一斧就能看穿。修法:
 
 ```bash
-$ sudo grep -n proxy_pass /etc/nginx/sites-enabled/coffee
+$ sudo grep -n proxy_pass /coffee-lab/etc/nginx/sites-enabled/coffee
 7:        proxy_pass http://127.0.0.1:3300;
-$ sudo vim /etc/nginx/sites-available/coffee     # 3300 → 3000
+$ sudo vim /coffee-lab/etc/nginx/sites-available/coffee     # 3300 → 3000
 $ sudo nginx -t && sudo systemctl reload nginx   # 体检通过才 reload
-nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
-nginx: configuration file /etc/nginx/nginx.conf test is successful
+nginx: the configuration file /coffee-lab/etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /coffee-lab/etc/nginx/nginx.conf test is successful
 ```
 
 刷新手机——首页亮起。豆豆咖啡站的菜单,第一次出现在公网上。
@@ -206,7 +206,7 @@ Server: nginx/1.18.0 (Ubuntu)
 Content-Type: text/html; charset=utf-8
 Content-Length: 1287
 
-$ tail -3 /var/log/nginx/access.log                            # 第 4 关:真实客人
+$ tail -3 /coffee-lab/var/log/nginx/access.log                            # 第 4 关:真实客人
 198.51.100.23 - - [13/Oct/2026:08:26:02 +0800] "GET / HTTP/1.1" 200 1287 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) ..."
 203.0.113.77 - - [13/Oct/2026:08:26:41 +0800] "GET /menu HTTP/1.1" 200 2054 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ..."
 192.0.2.56 - - [13/Oct/2026:08:27:03 +0800] "GET / HTTP/1.1" 200 1287 "-" "CoffeeBot/1.0 (doudou)"
@@ -327,11 +327,11 @@ deploy@coffee:~$ █
 >
 > **10-B** Git tag 标记版本号+保留可运行包的方案,可以在任何时间点精确回滚。`latest` 标签总是指向最新,无法精确回滚。**举一反三:**`git tag v1.2.3 && git push --tags` 标记版本;`docker tag coffee-app:v1.2.3 coffee-app:stable` 维护可工作指针;回滚脚本:`docker-compose down && git checkout v1.2.2 && docker-compose up -d`。
 >
-> **Q1** 完整上线链流程:①`git clone`/`git pull` 获取代码 ②`cd project` 进入项目 ③准备环境变量(`cp .env.example .env && vim .env`) ④`docker compose build` 构建镜像/`npm install` 安装依赖 ⑤`docker compose up -d` 启动服务 ⑥验证服务:`docker-compose ps`(所有 Up)→`ss -tlnp | grep :8080`(端口监听)→`curl localhost:8080/health`(健康端点) ⑦配置 nginx:`sudo vim /etc/nginx/sites-available/coffee`(server_name+proxy_pass)→`nginx -t`→`sudo systemctl reload nginx` ⑧SSL 证书:`sudo certbot --nginx -d coffee.com` ⑨烟测:`curl -I https://coffee.com/ | grep "200 OK"`→`curl -s https://coffee.com/ | grep "Coffee"` ⑩记录:`echo "$(date): deployed $(git rev-parse --short HEAD)" >> /var/log/deploy.log`。**核心:**每一步都验证,而不是一口气做完最后才发现问题。
+> **Q1** 完整上线链流程:①`git clone`/`git pull` 获取代码 ②`cd project` 进入项目 ③准备环境变量(`cp .env.example .env && vim .env`) ④`docker compose build` 构建镜像/`npm install` 安装依赖 ⑤`docker compose up -d` 启动服务 ⑥验证服务:`docker-compose ps`(所有 Up)→`ss -tlnp | grep :8080`(端口监听)→`curl localhost:8080/health`(健康端点) ⑦配置 nginx:`sudo vim /coffee-lab/etc/nginx/sites-available/coffee`(server_name+proxy_pass)→`nginx -t`→`sudo systemctl reload nginx` ⑧SSL 证书:`sudo certbot --nginx -d coffee.com` ⑨烟测:`curl -I https://coffee.com/ | grep "200 OK"`→`curl -s https://coffee.com/ | grep "Coffee"` ⑩记录:`echo "$(date): deployed $(git rev-parse --short HEAD)" >> /coffee-lab/var/log/deploy.log`。**核心:**每一步都验证,而不是一口气做完最后才发现问题。
 >
 > **Q2** 三种 nginx 错误码:①**502 Bad Gateway:**nginx 作为网关/代理,从上游收到无效响应。含义:后端服务**存在但有问题**(崩溃/返回了乱码/连接被 RST)。排查:后端进程状态、端口监听、应用日志(stack trace/OOM)。②**503 Service Unavailable:**nginx 暂时无法处理请求。含义:后端服务**不存在**(未启动/停机维护/连接池耗尽)。排查:后端进程是否存在(start/enable)、上游服务器配置是否正确。③**504 Gateway Timeout:**nginx 等待上游响应超时。含义:后端服务**在运行但太慢**(处理超时,默认 60s)。排查:应用性能(数据库慢查询/死锁/GC 长时间暂停)、`proxy_read_timeout` 是否过短。**晴雨表比喻:**502/503/504 的差异就像体温计的不同读数:502=发烧了(有问题)、503=昏过去了(不存在)、504=反应迟钝(太慢)。
 >
-> **Q3** 完整命令序列:`git clone git@github.com:coffee/shop.git && cd shop` → `cp .env.example .env && vim .env`(设置密码和密钥) → `docker compose build && docker compose up -d` → `docker-compose ps`(确认所有容器 Up) → `sudo vim /etc/nginx/sites-available/coffee`(配置反向代理) → `sudo ln -s /etc/nginx/sites-available/coffee /etc/nginx/sites-enabled/` → `sudo nginx -t && sudo systemctl reload nginx` → `sudo certbot --nginx -d coffee.com -d www.coffee.com` → 烟测:`ss -tlnp | grep :80`(nginx 监听)→`ss -tlnp | grep :8080`(app 监听)→`curl -o /dev/null -s -w "%{http_code}\n" https://coffee.com/`(应输出 200)→`curl -s https://coffee.com/ | grep "Welcome"`(内容验证) → `echo "$(date '+%Y-%m-%d %H:%M:%S') | $(git rev-parse --short HEAD) | deploy success" | sudo tee -a /var/log/coffee-deploy.log`。**举一反三:**把整段命令写成 `deploy.sh`,使用 `set -euo pipefail`(遇错立即退出),前面 24 话的技巧全部用上。
+> **Q3** 完整命令序列:`git clone git@github.com:coffee/shop.git && cd shop` → `cp .env.example .env && vim .env`(设置密码和密钥) → `docker compose build && docker compose up -d` → `docker-compose ps`(确认所有容器 Up) → `sudo vim /coffee-lab/etc/nginx/sites-available/coffee`(配置反向代理) → `sudo ln -s /coffee-lab/etc/nginx/sites-available/coffee /coffee-lab/etc/nginx/sites-enabled/` → `sudo nginx -t && sudo systemctl reload nginx` → `sudo certbot --nginx -d coffee.com -d www.coffee.com` → 烟测:`ss -tlnp | grep :80`(nginx 监听)→`ss -tlnp | grep :8080`(app 监听)→`curl -o /dev/null -s -w "%{http_code}\n" https://coffee.com/`(应输出 200)→`curl -s https://coffee.com/ | grep "Welcome"`(内容验证) → `echo "$(date '+%Y-%m-%d %H:%M:%S') | $(git rev-parse --short HEAD) | deploy success" | sudo tee -a /coffee-lab/var/log/coffee-deploy.log`。**举一反三:**把整段命令写成 `deploy.sh`,使用 `set -euo pipefail`(遇错立即退出),前面 24 话的技巧全部用上。
 >
 > **Q4** ERR_CONNECTION_REFUSED 分层排查:①**网络层:**`ping coffee.com`(能解析到正确 IP 吗?能 ping 通吗?) 如果不是,检查 DNS 解析和服务器网络 ②**防火墙:**`sudo ufw status`(防火墙是否阻挡 80/443?) + 云安全组检查 ③**端口监听:**`sudo ss -tlnp | grep -E ":80|:443"`(nginx 在监听吗?) ④**nginx 状态:**`sudo systemctl status nginx`(nginx 在运行吗?)→如果没运行,`sudo systemctl start nginx` ⑤**SSL 证书:**如果是 HTTPS 且 nginx 运行,检查 SSL 配置(`listen 443 ssl;` + 证书路径是否正确) ⑥**域名 DNS:**`dig coffee.com`(DNS 记录指向正确的服务器 IP 吗?) ⑦如果是刚部署就拒绝连接,等 1-2 分钟(DNS 传播延迟)。**解决矩阵:**nginx 没装→安装;firewall 没放行→ufw allow;服务没监听→start;DNS 指错→更新 DNS 记录;SSL 证书过期→certbot renew。
 >

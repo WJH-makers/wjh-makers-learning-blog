@@ -230,7 +230,7 @@ grep 有个和别的命令不同的脾气:**命中 `$?`=0,没命中=1,出错=2**
 4. `grep -r "TODO" src/` 与 `grep "TODO" src/*` 的关键区别是?
    - A) 完全一样　B) `-r` 递归搜索所有子目录,`*` 只搜索当前层文件　C) `-r` 更快　D) `*` 搜索隐藏文件,`-r` 不搜索
 
-5. `find /var/log -name "*.log" -type f` 中 `-type f` 的作用是?
+5. `find /coffee-lab/var/log -name "*.log" -type f` 中 `-type f` 的作用是?
    - A) 只匹配普通文件(regular file)　B) 只匹配目录　C) 匹配任意类型　D) 按文件大小过滤
 
 6. 关于正则表达式元字符,以下哪个是 `grep` 默认模式下的"任意单个字符"?
@@ -254,7 +254,7 @@ grep 有个和别的命令不同的脾气:**命中 `$?`=0,没命中=1,出错=2**
 
 **Q2 解释:** `grep -r` 与 `find ... -exec grep` 组合的区别?何时必须用后者而非前者?
 
-**Q3 操作:** 在 `/var/log` 目录下,递归查找所有包含 "ERROR" 的 `.log` 文件,并显示匹配行的行号。写出命令。
+**Q3 操作:** 在 `/coffee-lab/var/log` 目录下,递归查找所有包含 "ERROR" 的 `.log` 文件,并显示匹配行的行号。写出命令。
 
 **Q4 排障:** 菜菜执行 `find / -name "nginx.conf"`,命令行卡住很久没有输出。分析可能原因,并给出优化方案。
 
@@ -283,11 +283,11 @@ grep 有个和别的命令不同的脾气:**命中 `$?`=0,没命中=1,出错=2**
 >
 > **Q1** `grep` 按**内容**找——"包含某个关键词的那一行在哪?";`find` 按**属性**找——"叫什么名字/多大/什么时候改过的那个文件在哪?"。**比喻:**`find` 是图书管理员(按书名、出版日期检索图书),`grep` 是在书里做全文检索(找哪个段落写过某句话)。两者组合(`find ... -exec grep ...`)威力无穷。
 >
-> **Q2** `grep -r "ERR" /var/log/` 直接递归搜索所有文件,简洁快速。但当需要**先按条件筛选文件再搜索内容**时,必须用 `find+exec`。例如"找所有 `.log` 文件中大于 100MB 的那几个,然后搜索 ERR":`find /var/log -name "*.log" -size +100M -exec grep "ERR" {} \;`。**举一反三:**`find+exec` 会为每个匹配文件启动一个新 grep 进程;`find ... -exec grep {} +`(注意 `+` 结尾)会把多个文件合并传给 grep,性能更好。
+> **Q2** `grep -r "ERR" /coffee-lab/var/log/` 直接递归搜索所有文件,简洁快速。但当需要**先按条件筛选文件再搜索内容**时,必须用 `find+exec`。例如"找所有 `.log` 文件中大于 100MB 的那几个,然后搜索 ERR":`find /coffee-lab/var/log -name "*.log" -size +100M -exec grep "ERR" {} \;`。**举一反三:**`find+exec` 会为每个匹配文件启动一个新 grep 进程;`find ... -exec grep {} +`(注意 `+` 结尾)会把多个文件合并传给 grep,性能更好。
 >
-> **Q3** 命令:`grep -rn "ERROR" /var/log/ --include="*.log"`。解析:`-r` 递归,`-n` 显示行号,`--include` 限定文件名模式。**举一反三:**也可以用 `find /var/log -name "*.log" -exec grep -nH "ERROR" {} +`;`-H` 确保即使只有一个文件也显示文件名。
+> **Q3** 命令:`grep -rn "ERROR" /coffee-lab/var/log/ --include="*.log"`。解析:`-r` 递归,`-n` 显示行号,`--include` 限定文件名模式。**举一反三:**也可以用 `find /coffee-lab/var/log -name "*.log" -exec grep -nH "ERROR" {} +`;`-H` 确保即使只有一个文件也显示文件名。
 >
-> **Q4** 卡住原因:①`/` 是整个文件系统,文件数量巨大,`find` 需要遍历所有挂载点 ②可能遍历到远程文件系统(NFS)或 `/proc` `/sys` 等虚拟文件系统,速度极慢。**优化方案:**①缩小范围:先猜测配置文件可能在 `/etc/`,用 `find /etc -name "nginx.conf"` ②限制深度:`find / -maxdepth 3 -name "nginx.conf"` ③排除虚拟文件系统:`find / -path /proc -prune -o -path /sys -prune -o -name "nginx.conf" -print` ④用 `locate nginx.conf`(如果已建立索引)。**举一反三:**永远不要在生产服务器上裸跑 `find /`,轻则让硬盘满负载,重则触发 IO timeout 告警。
+> **Q4** 卡住原因:①`/` 是整个文件系统,文件数量巨大,`find` 需要遍历所有挂载点 ②可能遍历到远程文件系统(NFS)或 `/proc` `/sys` 等虚拟文件系统,速度极慢。**优化方案:**①缩小范围:先猜测配置文件可能在 `/coffee-lab/etc/`,用 `find /etc -name "nginx.conf"` ②限制深度:`find / -maxdepth 3 -name "nginx.conf"` ③排除虚拟文件系统:`find / -path /proc -prune -o -path /sys -prune -o -name "nginx.conf" -print` ④用 `locate nginx.conf`(如果已建立索引)。**举一反三:**永远不要在生产服务器上裸跑 `find /`,轻则让硬盘满负载,重则触发 IO timeout 告警。
 >
 > **Q5** 搜索策略:①`grep -rn --include="*.{java,py,js}" -E "FIXME|TODO" ~/project/ --exclude-dir={node_modules,__pycache__}` 一步完成前两步 ②统计:`grep -rn --include="*.java" "TODO\|FIXME" ~/project/ | wc -l` 单类型统计 ③完整脚本:用 `for ext in java py js; do count=$(grep -rn --include="*.$ext" -E "FIXME|TODO" ~/project/ --exclude-dir={node_modules,__pycache__} | wc -l); echo "$ext: $count"; done`。**举一反三:**`-E` 开启扩展正则,支持 `|`(或)操作符;`--exclude-dir` 接受花括号展开,可同时排除多个目录。
 

@@ -87,7 +87,7 @@ tags: [命令速查, Docker, 容器]
 | `docker stats` / `--no-stream` | 实时 / 单次资源 | MEM 分母是容器 limit，没设 limit 时是宿主总内存，看着永远很富裕 |
 | `docker events --since 1h --filter 'event=die'` | daemon 事件流 | 排查「容器半夜自己重启了」的第一手证据 |
 | `docker inspect -f '{{.LogPath}}' web` | 日志文件位置 | 仅 `json-file` 驱动有效；该文件默认**不轮转**，能吃满磁盘 |
-| `docker run --log-opt max-size=10m --log-opt max-file=3 ...` | 单容器日志轮转 | 更该在 `/etc/docker/daemon.json` 的 `log-opts` 里全局设一次 |
+| `docker run --log-opt max-size=10m --log-opt max-file=3 ...` | 单容器日志轮转 | 更该在 `/coffee-lab/etc/docker/daemon.json` 的 `log-opts` 里全局设一次 |
 | `docker system df -v` | 分项磁盘占用 | 回收前先看它，才知道该清镜像、卷还是 build cache |
 | `docker compose logs -f --tail 50 api` | 单服务日志 | 不写服务名就是全栈混排，很难读 |
 
@@ -96,12 +96,12 @@ tags: [命令速查, Docker, 容器]
 | 命令 | 作用 | 备注 / 坑 |
 |------|------|-----------|
 | `docker volume create pgdata` | 建具名卷 | 生产数据一律具名卷，别指望容器可写层 |
-| `docker run -v pgdata:/var/lib/postgresql/data ...` | 挂具名卷 | `-v` 第一段不含 `/` 是卷名，含 `/` 是 bind mount，一字之差行为完全不同 |
-| `docker run -v /opt/conf:/etc/app:ro ...` | 只读 bind mount | 宿主路径必须绝对；写错路径 Docker 会**自动建空目录**而非报错，表现为「配置没加载」 |
+| `docker run -v pgdata:/coffee-lab/var/lib/postgresql/data ...` | 挂具名卷 | `-v` 第一段不含 `/` 是卷名，含 `/` 是 bind mount，一字之差行为完全不同 |
+| `docker run -v /coffee-lab/opt/conf:/coffee-lab/etc/app:ro ...` | 只读 bind mount | 宿主路径必须绝对；写错路径 Docker 会**自动建空目录**而非报错，表现为「配置没加载」 |
 | `docker run --mount type=volume,src=pgdata,dst=/data ...` | `--mount` 显式语法 | 键值写法比 `-v` 的冒号串清晰；换 `type=bind` 时源路径不存在会直接报错，不像 `-v` 那样静默建空目录 |
 | `docker run --tmpfs /tmp:rw,size=64m ...` | 内存临时盘 | 只读根文件系统的容器靠它写临时文件 |
 | `docker volume ls -f dangling=true` | 列无人使用的卷 | 删前先看清单，数据库卷经常混在里面 |
-| `docker volume inspect pgdata` | 查宿主实际路径 | 默认在 `/var/lib/docker/volumes/<name>/_data` |
+| `docker volume inspect pgdata` | 查宿主实际路径 | 默认在 `/coffee-lab/var/lib/docker/volumes/<name>/_data` |
 | `docker run --rm -v pgdata:/from -v "$PWD":/to alpine tar czf /to/pgdata.tgz -C /from .` | 备份卷 | 数据库卷应先停容器或用自带 dump，热拷贝可能拿到不一致快照 |
 | ⚠ `docker volume rm pgdata` | 删卷 | **不可逆**；被容器引用时会拒绝——这层保护是好事，别绕过 |
 | ⚠ `docker volume prune` | 清未使用的卷 | Docker 23.0 起**默认只删匿名卷**，加 `-a` 才连未使用的具名卷一起删；跨版本脚本务必写死参数 |
@@ -128,8 +128,8 @@ tags: [命令速查, Docker, 容器]
 | `WORKDIR /app` | 设工作目录 | 用它代替 `RUN cd /app`——`cd` 只在当前 RUN 内有效 |
 | `COPY --chown=app:app target/app.jar app.jar` | 拷贝并设属主 | 只认构建上下文内路径；`--link` 让该层独立于前序层缓存 |
 | `ADD` | 拷贝 + 解压 tar + 支持 URL | 除「解压本地 tar」外一律用 `COPY`，`ADD` 的隐式行为是经典事故源 |
-| `RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*` | 装依赖 | 必须和 `update` 同层，否则缓存命中旧 index 装到过期包；清缓存也要**同层**，另起一层删不掉体积 |
-| `RUN --mount=type=cache,target=/root/.m2 ./mvnw package` | BuildKit 缓存挂载 | 依赖缓存跨构建复用且不进镜像层，Maven/Gradle/npm 提速最明显 |
+| `RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /coffee-lab/var/lib/apt/lists/*` | 装依赖 | 必须和 `update` 同层，否则缓存命中旧 index 装到过期包；清缓存也要**同层**，另起一层删不掉体积 |
+| `RUN --mount=type=cache,target=/coffee-lab/root/.m2 ./mvnw package` | BuildKit 缓存挂载 | 依赖缓存跨构建复用且不进镜像层，Maven/Gradle/npm 提速最明显 |
 | `RUN --mount=type=secret,id=npmrc ...` | 构建期密钥 | 唯一不写进镜像层的传密钥方式；`ARG`/`ENV` 都会被 `docker history` 看到 |
 | `EXPOSE 8080` | 声明端口 | **纯文档作用**，不发布端口，真正生效的是 `-p` |
 | `USER app` | 切运行用户 | 放在所有需 root 的 RUN 之后，之后的 `COPY` 注意属主 |
@@ -169,9 +169,9 @@ Dockerfile
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /src
 COPY pom.xml .
-RUN --mount=type=cache,target=/root/.m2 mvn -q -B dependency:go-offline
+RUN --mount=type=cache,target=/coffee-lab/root/.m2 mvn -q -B dependency:go-offline
 COPY src src
-RUN --mount=type=cache,target=/root/.m2 mvn -q -B clean package -DskipTests
+RUN --mount=type=cache,target=/coffee-lab/root/.m2 mvn -q -B clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
@@ -252,7 +252,7 @@ services:
 | JVM 感知容器 | `-XX:MaxRAMPercentage=75` | JDK 10+ 默认开 `UseContainerSupport`，但默认堆上限约 25%，不调等于浪费 3/4 内存 |
 | 镜像不可变 | 部署用 `repo/app:1.2.3` 或 `repo/app@sha256:...` | `latest` 让「线上跑的到底是哪份代码」变成悬案 |
 | 优雅停机 | exec 形式 ENTRYPOINT + `stop_grace_period: 30s` | shell 形式启动时 PID 1 是 `sh`，SIGTERM 收不到；必要时 `--init` 挂 tini 收割僵尸进程 |
-| 日志有上限 | `daemon.json` 全局配 `log-driver` + `max-size`/`max-file` | 漏配一次就可能撑满 `/var/lib/docker`，进而拖死整台机器 |
+| 日志有上限 | `daemon.json` 全局配 `log-driver` + `max-size`/`max-file` | 漏配一次就可能撑满 `/coffee-lab/var/lib/docker`，进而拖死整台机器 |
 | 密钥不进镜像 | 运行期挂文件或用编排层 secret，构建期 `RUN --mount=type=secret` | `ENV`/`ARG` 会被 `docker inspect` 和 `docker history` 读到，推到公共仓库即泄露 |
 | 别在容器里存状态 | 数据一律具名卷或外部服务 | 容器应可随时销毁重建，「登进去改一下」的容器迟早被人 `rm` 掉 |
 | 远程操作 | `docker context create prod --docker "host=ssh://user@host"` + `docker context use prod` | 比裸 `-H tcp://` 安全；⚠ 切完 context 后所有命令都打在生产上，动手前先 `docker context ls` 确认星号在哪 |

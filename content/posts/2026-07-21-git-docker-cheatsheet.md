@@ -177,7 +177,7 @@ git reset --hard a1b2c3d        # 或更稳：git checkout -b rescue a1b2c3d
 | `-p 宿主端口:容器端口` | 端口映射 | `-p 8080:80` |
 | `--name 名字` | 命名容器 | `--name web` |
 | `-e KEY=值` | 环境变量 | `-e MYSQL_ROOT_PASSWORD=123` |
-| `-v 宿主目录:容器目录` | 挂载卷 | `-v /data:/var/lib/mysql` |
+| `-v 宿主目录:容器目录` | 挂载卷 | `-v /data:/coffee-lab/var/lib/mysql` |
 | `-it` | 交互式终端 | |
 | `--restart always` | 自动重启 | |
 
@@ -364,7 +364,7 @@ Docker 的镜像层、停止的容器、悬空镜像（dangling，`<none>:<none>
 | 看容器完整配置 | `docker inspect <c>` | `--format '{{.State.ExitCode}}'` 精准取字段；查挂载/环境变量/IP |
 | 看镜像是怎么构建的 | `docker history <镜像>` | 逐层看大小，揪出哪一层把镜像撑大 |
 | 磁盘写满导致启动失败 | `docker system df` | 见上节清理；`no space left on device` 就是它 |
-| 时间/时区不对 | 挂载 `-v /etc/localtime:/etc/localtime:ro` 或设 `TZ` 环境变量 | 容器默认 UTC，日志时间对不上常因此 |
+| 时间/时区不对 | 挂载 `-v /coffee-lab/etc/localtime:/coffee-lab/etc/localtime:ro` 或设 `TZ` 环境变量 | 容器默认 UTC，日志时间对不上常因此 |
 
 > [!TIP]
 > 退出码速记：**137 = 128+9（SIGKILL，多为 OOM）**，**143 = 128+15（SIGTERM，正常停止）**，**139 = 128+11（段错误）**。看到 137 先查内存限制 `--memory` 和宿主可用内存。
@@ -380,9 +380,9 @@ Docker 的镜像层、停止的容器、悬空镜像（dangling，`<none>:<none>
 | ★★ | `ssh 用户@主机` | 远程登录 | `ssh root@192.0.2.1` |
 | ★★ | `ssh 用户@主机 -p 端口` | 指定端口 | `ssh root@host -p 2222` |
 | ★★ | `ssh 用户@主机 "命令"` | 远程执行命令 | `ssh root@host "df -h"` |
-| ★★ | `scp 本地文件 用户@主机:远程路径` | 上传文件 | `scp app.jar root@host:/opt/` |
-| ★★ | `scp 用户@主机:远程文件 本地路径` | 下载文件 | `scp root@host:/var/log/app.log ./` |
-| ★★ | `scp -r 目录 用户@主机:路径` | 传目录 | `scp -r dist/ root@host:/var/www/` |
+| ★★ | `scp 本地文件 用户@主机:远程路径` | 上传文件 | `scp app.jar root@host:/coffee-lab/opt/` |
+| ★★ | `scp 用户@主机:远程文件 本地路径` | 下载文件 | `scp root@host:/coffee-lab/var/log/app.log ./` |
+| ★★ | `scp -r 目录 用户@主机:路径` | 传目录 | `scp -r dist/ root@host:/coffee-lab/var/www/` |
 | ★★ | `scp -P 端口` | 指定端口（大写 P） | `scp -P 2222 file root@host:/` |
 
 ## SSH · A 高频（免密登录）

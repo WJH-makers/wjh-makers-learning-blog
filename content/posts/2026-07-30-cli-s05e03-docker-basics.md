@@ -326,7 +326,7 @@ db 的 `PORTS` 一栏只有 `27017/tcp`、没有箭头——**没临街**,正合
 > **6-B** `up -d`=启动 compose 文件中定义的所有服务(后台);`down`=停止+删除所有相关资源(容器、默认网络、匿名卷)。**举一反三:**`up`(不加 -d)=前台运行(适合调试,按 Ctrl+C 停止);`down -v` 同时删除命名卷(清除数据);`restart` 重启服务;`ps` 查看 compose 项目中的容器状态。
 >
 > **7-B** 容器是无状态的(设计意图):每个新容器从镜像启动,有自己的可写层,容器被删除时可写层也消失。**持久化数据需要 Volume:**
->①Docker Volume:`docker volume create data && docker run -v data:/app/data`(由 Docker 管理,路径在 `/var/lib/docker/volumes/`) ②Bind Mount:`-v /home/user/data:/app/data`(直接挂载主机目录)。**举一反三:**数据库容器务必挂载 volume!`docker-compose` 的 `volumes:` 段是生产必需;无 volume 的数据库容器删除后数据永久丢失。
+>①Docker Volume:`docker volume create data && docker run -v data:/app/data`(由 Docker 管理,路径在 `/coffee-lab/var/lib/docker/volumes/`) ②Bind Mount:`-v /coffee-lab/home/user/data:/app/data`(直接挂载主机目录)。**举一反三:**数据库容器务必挂载 volume!`docker-compose` 的 `volumes:` 段是生产必需;无 volume 的数据库容器删除后数据永久丢失。
 >
 > **8-B** `stop`=SIGTERM(15),给应用 10 秒(默认)优雅退出,超时后 SIGKILL。`kill`=立即 SIGKILL(9),不给清理机会。**举一反三:**与之前学的 `kill` 命令一致——Docker 也只是给容器内进程发信号。`docker stop -t 30`(自定义超时 30 秒);`docker kill -s SIGTERM`(发送 SIGTERM 而非默认的 SIGKILL)。数据库容器务必用 stop。
 >
@@ -346,7 +346,7 @@ COPY coffee-app.jar app.jar
 EXPOSE 8080
 CMD ["java", "-jar", "app.jar"]
 ```
-②`docker build -t coffee-app:latest .`(构建镜像) ③`docker run -d --name coffee -p 8080:8080 -e JAVA_OPTS="-Xmx512m" --restart=unless-stopped coffee-app:latest`(运行容器,自动重启策略) ④`docker logs -f coffee`(查看启动日志) ⑤`docker exec -it coffee bash` 进入容器排查(如 `ls /app`、`ps aux`、`cat /etc/hosts`)。**举一反三:**小优化:用 multi-stage build(Dockerfile 中先编译再打包,最终镜像极小);`docker run --rm` 调试时不残留已停止容器。
+②`docker build -t coffee-app:latest .`(构建镜像) ③`docker run -d --name coffee -p 8080:8080 -e JAVA_OPTS="-Xmx512m" --restart=unless-stopped coffee-app:latest`(运行容器,自动重启策略) ④`docker logs -f coffee`(查看启动日志) ⑤`docker exec -it coffee bash` 进入容器排查(如 `ls /app`、`ps aux`、`cat /coffee-lab/etc/hosts`)。**举一反三:**小优化:用 multi-stage build(Dockerfile 中先编译再打包,最终镜像极小);`docker run --rm` 调试时不残留已停止容器。
 >
 > **Q4** 容器退出可能原因:①主进程(PID 1)执行完就退出了——前台命令如 `echo hello` 执行完容器自然退出,应用应以前台模式运行(如 Java 不要加 `&` 或 `nohup`) ②应用启动失败——日志可能输出到了 stderr(用 `docker logs coffee 2>&1` 捕获) ③CMD/ENTRYPOINT 错误——命令不存在或路径不对,但错误信息可能在 stdout/stderr ④环境变量缺失——如数据库密码未设置,应用检测后直接退出。**排查方法:**①`docker ps -a` 查看退出码(0=正常退出,非 0=错误退出) ②`docker logs coffee` 查看所有输出(包括退出前的错误信息) ③修改 CMD 为 `sleep 3600`(保持容器运行),然后 `docker exec -it coffee bash` 进去手动启动应用排查 ④用 `docker run -it`(不分离,前台运行)直接看启动过程的实时输出。
 >
@@ -359,7 +359,7 @@ services:
       POSTGRES_DB: coffee
       POSTGRES_PASSWORD: ${DB_PASSWORD}  # 从 .env 读
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/coffee-lab/var/lib/postgresql/data
     networks:
       - coffee-net
   redis:

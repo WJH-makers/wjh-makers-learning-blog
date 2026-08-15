@@ -78,7 +78,7 @@ tags: [Git, 命令行, 终端漫画, 版本控制, 阿零与特米]
 
 ```bash
 $ git init
-Initialized empty Git repository in /home/ubuntu/coffee-shop/.git/
+Initialized empty Git repository in /coffee-lab/home/ubuntu/coffee-shop/.git/
 
 $ git config user.name  "azero"          # 报上作者身份(第一次用必设)
 $ git config user.email "azero@example.com"

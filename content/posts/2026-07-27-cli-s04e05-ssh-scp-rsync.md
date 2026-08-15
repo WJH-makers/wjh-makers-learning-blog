@@ -67,8 +67,8 @@ tags: [Linux, 命令行, 终端漫画, ssh, rsync, 阿零与特米]
  密码登录:密码在 SSH 加密传输层内提交，但仍可能被钓鱼或在服务端泄露；密钥登录:私钥不离开你的电脑。
 
  scp / rsync 的方向,看冒号在哪边(冒号 = 远端):
-   scp coffee:/srv/backup/a.tar.gz .        远 → 本(下载)
-   scp app.js coffee:/srv/coffee/           本 → 远(上传)
+   scp coffee:/coffee-lab/srv/backup/a.tar.gz .        远 → 本(下载)
+   scp app.js coffee:/coffee-lab/srv/coffee/           本 → 远(上传)
 
  rsync 为什么聪明:先比对两端(大小/时间/校验和),只传"变了的部分";
  scp 不管三七二十一,每次全量重传。
@@ -83,9 +83,9 @@ tags: [Linux, 命令行, 终端漫画, ssh, rsync, 阿零与特米]
 ```bash
 $ ssh-keygen -t ed25519 -C "azero@laptop"
 Generating public/private ed25519 key pair.
-Enter file in which to save the key (/home/azero/.ssh/id_ed25519):
-Your identification has been saved in /home/azero/.ssh/id_ed25519
-Your public key has been saved in /home/azero/.ssh/id_ed25519.pub
+Enter file in which to save the key (/coffee-lab/home/azero/.ssh/id_ed25519):
+Your identification has been saved in /coffee-lab/home/azero/.ssh/id_ed25519
+Your public key has been saved in /coffee-lab/home/azero/.ssh/id_ed25519.pub
 
 $ ssh-copy-id azero@203.0.113.10        # 把公钥追加进服务器的 authorized_keys
 Number of key(s) added: 1
@@ -105,16 +105,16 @@ Host coffee
 从此 `ssh coffee` 一个词登录,scp/rsync 也认这个别名。搬文件:
 
 ```bash
-$ scp coffee:/srv/backup/coffee_2026-10-09.tar.gz .     # 下载:冒号在源那边
+$ scp coffee:/coffee-lab/srv/backup/coffee_2026-10-09.tar.gz .     # 下载:冒号在源那边
 coffee_2026-10-09.tar.gz              100% 1246KB   2.1MB/s   00:00
 
-$ rsync -avz dist/ coffee:/srv/coffee/dist/             # 上传:增量同步构建产物
+$ rsync -avz dist/ coffee:/coffee-lab/srv/coffee/dist/             # 上传:增量同步构建产物
 sending incremental file list
 index.html
 assets/app.js
 sent 48,231 bytes  received 87 bytes  32,212.00 bytes/sec
 
-$ rsync -avzn --delete dist/ coffee:/srv/coffee/dist/   # -n = --dry-run,动剪刀前先彩排
+$ rsync -avzn --delete dist/ coffee:/coffee-lab/srv/coffee/dist/   # -n = --dry-run,动剪刀前先彩排
 ```
 
 > **特米旁白**:`-a` 归档(保留权限/时间戳,含递归)、`-v` 话多、`-z` 压缩着传。第二次 rsync 你会发现几乎瞬间完成——没差异就不传,这就是它比 scp 聪明的地方。
@@ -127,14 +127,14 @@ $ rsync -avzn --delete dist/ coffee:/srv/coffee/dist/   # -n = --dry-run,动剪�
 
 ```bash
 $ ls -l ~/.ssh/id_ed25519
--rw-r--r-- 1 azero azero 411 Oct  9 10:02 /home/azero/.ssh/id_ed25519
+-rw-r--r-- 1 azero azero 411 Oct  9 10:02 /coffee-lab/home/azero/.ssh/id_ed25519
 $ ssh coffee
 ```
 
-修好之后上传代码,他想更新服务器上的 `/srv/coffee/dist`,顺手敲:
+修好之后上传代码,他想更新服务器上的 `/coffee-lab/srv/coffee/dist`,顺手敲:
 
 ```bash
-$ rsync -avz dist coffee:/srv/coffee/dist     # 源没带尾斜杠
+$ rsync -avz dist coffee:/coffee-lab/srv/coffee/dist     # 源没带尾斜杠
 ```
 
 ---
@@ -147,10 +147,10 @@ $ rsync -avz dist coffee:/srv/coffee/dist     # 源没带尾斜杠
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @         WARNING: UNPROTECTED PRIVATE KEY FILE!          @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-Permissions 0644 for '/home/azero/.ssh/id_ed25519' are too open.
+Permissions 0644 for '/coffee-lab/home/azero/.ssh/id_ed25519' are too open.
 It is required that your private key files are NOT accessible by others.
 This private key will be ignored.
-Load key "/home/azero/.ssh/id_ed25519": bad permissions
+Load key "/coffee-lab/home/azero/.ssh/id_ed25519": bad permissions
 azero@203.0.113.10: Permission denied (publickey).
 ```
 
@@ -165,11 +165,11 @@ $ chmod 600 ~/.ssh/authorized_keys    # 常用安全权限；关键是它及父�
 **坑二**,rsync 套娃。上传完检查:
 
 ```bash
-$ ssh coffee ls /srv/coffee/dist
+$ ssh coffee ls /coffee-lab/srv/coffee/dist
 dist                                   # ?!目录里又一个 dist
 ```
 
-根因:rsync 的语义差——源写 `dist`(不带尾斜杠)是「把**目录本身**搬进目标」,结果成了 `/srv/coffee/dist/dist/…`;源写 `dist/`(带尾斜杠)才是「把**目录内容**倒进目标」。修法:删掉套娃层,改用 `dist/`。特米追加一条保命令:这种时刻**千万别**顺手加 `--delete` 去"清理"——斜杠搞错时它会按错误的对照关系把目标里不该删的文件全剪掉,**先 `--dry-run` 看清单,再动真格**(目标端只有 rsync 自己传过去的东西时才考虑镜像)。
+根因:rsync 的语义差——源写 `dist`(不带尾斜杠)是「把**目录本身**搬进目标」,结果成了 `/coffee-lab/srv/coffee/dist/dist/…`;源写 `dist/`(带尾斜杠)才是「把**目录内容**倒进目标」。修法:删掉套娃层,改用 `dist/`。特米追加一条保命令:这种时刻**千万别**顺手加 `--delete` 去"清理"——斜杠搞错时它会按错误的对照关系把目标里不该删的文件全剪掉,**先 `--dry-run` 看清单,再动真格**(目标端只有 rsync 自己传过去的东西时才考虑镜像)。
 
 > **🪟 双系统对照 · Windows 也内置了 OpenSSH**
 
@@ -177,9 +177,9 @@ dist                                   # ?!目录里又一个 dist
 |---|---|---|---|
 | 造钥匙 | `ssh-keygen -t ed25519` | 同一条命令(Win10+ 内置 OpenSSH 客户端) | 一致,难得的大团圆 |
 | 私钥权限 | `chmod 600 ~/.ssh/id_ed25519` | `icacls $env:USERPROFILE\.ssh\id_ed25519 /inheritance:r /grant:r "$env:USERNAME:R"` | Windows 没有 rwx 九宫格,用 **ACL 对象**;OpenSSH 同样会嫌钥匙"太开放" |
-| 别名配置 | `~/.ssh/config` | 同款语法,路径 `C:\Users\你\.ssh\config` | 一致 |
+| 别名配置 | `~/.ssh/config` | 同款语法,路径 `~\.ssh\config` | 一致 |
 | 增量同步 | `rsync -avz` | 无原生 rsync:`robocopy src dst /MIR` 或进 WSL 用 rsync | `/MIR` = `--delete` 同款剪刀,一样会删目标多余文件,一样先彩排(`/L` 只列不做) |
-| 公钥装到 Windows 服务器 | 追加进 `~/.ssh/authorized_keys` | 管理员组用户要写进 `C:\ProgramData\ssh\administrators_authorized_keys` | Windows 的著名特例,坑过无数人 |
+| 公钥装到 Windows 服务器 | 追加进 `~/.ssh/authorized_keys` | 管理员组用户要写进 `<ProgramData>\ssh\administrators_authorized_keys` | Windows 的著名特例,坑过无数人 |
 
 > **🎯 面试直击**:ssh 密钥登录为什么比密码安全?scp 和 rsync 怎么选?
 > 密钥:私钥**从不离开本机**,登录走"服务器公钥出题 → 私钥签名 → 公钥验签"的挑战应答,网线上没有可窃取、可重放的秘密;还能在服务器关掉 `PasswordAuthentication`,爆破直接无门。scp vs rsync:scp 简单粗暴全量拷,单个小文件够用;rsync 增量比对只传差异、`-a` 保留属性、可断点续、可 `--delete` 做镜像——目录同步和反复部署一律 rsync。追问点:`authorized_keys` 权限要求、`--delete` 的风险控制(`--dry-run`)。
@@ -192,11 +192,11 @@ dist                                   # ?!目录里又一个 dist
 $ ssh coffee 'echo ok'                 # 别名 + 免密,一个词直达
 ok
 $ ls -l ~/.ssh/id_ed25519
--rw------- 1 azero azero 411 Oct  9 10:12 /home/azero/.ssh/id_ed25519
-$ md5sum coffee_2026-10-09.tar.gz && ssh coffee md5sum /srv/backup/coffee_2026-10-09.tar.gz
+-rw------- 1 azero azero 411 Oct  9 10:12 /coffee-lab/home/azero/.ssh/id_ed25519
+$ md5sum coffee_2026-10-09.tar.gz && ssh coffee md5sum /coffee-lab/srv/backup/coffee_2026-10-09.tar.gz
 7c9e01f3b2…  coffee_2026-10-09.tar.gz          # 两端指纹一致,搬运没伤着
-7c9e01f3b2…  /srv/backup/coffee_2026-10-09.tar.gz
-$ rsync -avzn dist/ coffee:/srv/coffee/dist/ | tail -2
+7c9e01f3b2…  /coffee-lab/srv/backup/coffee_2026-10-09.tar.gz
+$ rsync -avzn dist/ coffee:/coffee-lab/srv/coffee/dist/ | tail -2
 sent 1,024 bytes  received 19 bytes  695.33 bytes/sec   # 彩排显示无差异可传 = 已同步
 ```
 
@@ -273,7 +273,7 @@ Host coffee
 9. 关于 SSH 密钥对,以下说法**正确**的是?
    - A) 私钥放在服务器,公钥放在本地　B) 私钥是锁(public),公钥是钥匙(private)　C) 私钥是**身份证明**(绝不能泄露),公钥是"锁"(放在要登录的服务器上)　D) 公钥和私钥可以互换使用
 
-10. 用户执行 `scp root@server:/etc/nginx/nginx.conf ./`,以下哪种冒号方向的解读是**正确**的?
+10. 用户执行 `scp root@server:/coffee-lab/etc/nginx/nginx.conf ./`,以下哪种冒号方向的解读是**正确**的?
    - A) 冒号后的路径是本地路径　B) `server:` = 在 host:path 中,冒号标识远程路径(从远程**下载**)　C) 冒号开头的路径表示绝对路径　D) 冒号是注释符号
 
 ### 解答题(5 道)
@@ -317,7 +317,7 @@ Host coffee
 >
 > **Q4** 可能原因:①公钥没有正确添加到服务器的 `~/.ssh/authorized_keys`(拼写错误、没重启 sshd 虽不需但建议确认、文件权限不是 600) ②服务器上 `.ssh` 目录或 `authorized_keys` 文件权限过于宽松(必须 700/600,否则 sshd 忽略) ③客户端私钥路径不对(如果用了非默认路径,需要在 ssh 命令中 `-i` 或在 config 中 `IdentityFile` 指定) ④服务器 `sshd_config` 禁用了 pubkey 认证(`PubkeyAuthentication no`) ⑤使用了错误的用户名(公钥装在 userA 的 authorized_keys,但用 userB ssh 连接) ⑥`known_hosts` 中该服务器的旧密钥与新服务器不匹配(重装过服务器)。**排查:**`ssh -vvv user@server` 看详细输出,搜索 "Authentication" 和 "publickey" 关键字。
 >
-> **Q5** 方案:①创建 `~/.ssh/config`:`Host coffee-prod`、`HostName 192.0.2.5`、`User deploy`、`IdentityFile ~/.ssh/coffee_prod_ed25519` ②试运行:`rsync -avzn --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/`(`-n` dry-run 预览) ③确认无误后去掉 `-n` 正式同步:`rsync -avz --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/`(不加 `--delete`,upload 不会被删除) ④同步后远程执行重载:`rsync ... && ssh coffee-prod "sudo systemctl reload nginx"` ⑤写成脚本 `deploy.sh` 方便复用:`#!/bin/bash; set -e; rsync -avz --exclude=... ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/; ssh coffee-prod "sudo systemctl reload nginx"; echo "Deploy OK"`。**举一反三:**生产级部署还应考虑:同步前先备份、记录部署历史(Git commit hash)、支持回滚(`rsync -avz /backups/old-version/ deploy@coffee-prod:/var/www/coffee/`)、用 `--link-dest` 去重节省备份空间。
+> **Q5** 方案:①创建 `~/.ssh/config`:`Host coffee-prod`、`HostName 192.0.2.5`、`User deploy`、`IdentityFile ~/.ssh/coffee_prod_ed25519` ②试运行:`rsync -avzn --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/coffee-lab/var/www/coffee/`(`-n` dry-run 预览) ③确认无误后去掉 `-n` 正式同步:`rsync -avz --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/coffee-lab/var/www/coffee/`(不加 `--delete`,upload 不会被删除) ④同步后远程执行重载:`rsync ... && ssh coffee-prod "sudo systemctl reload nginx"` ⑤写成脚本 `deploy.sh` 方便复用:`#!/bin/bash; set -e; rsync -avz --exclude=... ~/coffee-app/ deploy@coffee-prod:/coffee-lab/var/www/coffee/; ssh coffee-prod "sudo systemctl reload nginx"; echo "Deploy OK"`。**举一反三:**生产级部署还应考虑:同步前先备份、记录部署历史(Git commit hash)、支持回滚(`rsync -avz /backups/old-version/ deploy@coffee-prod:/coffee-lab/var/www/coffee/`)、用 `--link-dest` 去重节省备份空间。
 
 ## 运行前边界、回滚与验证
 
