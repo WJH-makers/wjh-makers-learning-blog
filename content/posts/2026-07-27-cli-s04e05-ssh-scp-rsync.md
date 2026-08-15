@@ -261,11 +261,11 @@ rsync 把最新代码送上服务器,`systemctl restart coffee`,journalctl 里�
 7. `~/.ssh/config` 中配置以下内容:
 ```
 Host coffee
-  HostName 10.0.0.5
+  HostName 192.0.2.5
   User deploy
 ```
 配置后,以下哪条命令可以连接该服务器?
-   - A) `ssh coffee`　B) `ssh 10.0.0.5`　C) `ssh deploy@coffee`　D) 以上都可以,A 最简洁
+   - A) `ssh coffee`　B) `ssh 192.0.2.5`　C) `ssh deploy@coffee`　D) 以上都可以,A 最简洁
 
 8. `rsync -avz --delete source/ dest/` 中 `--delete` 的作用是什么?
    - A) 删除源目录　B) 删除目标目录中多余的文件(使 dest 成为 source 的**精确镜像**)　C) 删除所有文件后同步　D) 删除源和目标中不同的文件
@@ -301,7 +301,7 @@ Host coffee
 >
 > **6-B** rsync 的增量传输算法:首次传输全量,后续只传输**变化的块**(文件变更的部分),极大节省时间和带宽。`scp` 每次都全量复制。rsync 还支持:`--partial` 断点续传、`--exclude` 排除、`--delete` 同步删除。**举一反三:**大文件/频繁同步用 rsync;临时搬一个小文件用 scp 更快(无需计算差异)。
 >
-> **7-D** `ssh coffee`(利用 config 别名)、`ssh 10.0.0.5`(IP 直连但需手动指定用户)、`ssh deploy@coffee`(别名已配置用户,手动再指定也不冲突)。**举一反三:**`~/.ssh/config` 可以定义端口:`Port 2222`;指定密钥:`IdentityFile ~/.ssh/coffee_key`;配置代理跳板:`ProxyJump bastion`。这是效率神器——再也不需要记住 `ssh -i ~/.ssh/special_key -p 2222 user@10.0.1.50`。
+> **7-D** `ssh coffee`(利用 config 别名)、`ssh 192.0.2.5`(IP 直连但需手动指定用户)、`ssh deploy@coffee`(别名已配置用户,手动再指定也不冲突)。**举一反三:**`~/.ssh/config` 可以定义端口:`Port 2222`;指定密钥:`IdentityFile ~/.ssh/coffee_key`;配置代理跳板:`ProxyJump bastion`。这是效率神器——再也不需要记住 `ssh -i ~/.ssh/special_key -p 2222 user@192.0.2.50`。
 >
 > **8-B** `--delete` 使目标成为源的**精确镜像**——目标目录中如果有源目录没有的文件,会被删除。**举一反三:**`--delete` 很强大也很危险,建议先用 `--dry-run` 预览会删除哪些文件。结合 `--exclude` 可以保护目标中的特定目录(如 `--exclude='uploads/' --delete` 删除其他多余文件但保留 uploads)。
 >
@@ -313,11 +313,11 @@ Host coffee
 >
 > **Q2** scp:基于 SSH 的简单文件拷贝,每次传输全量文件,没有差异计算。适用场景:临时传一个配置文件、下载一个日志文件、小文件一次性传输。**rsync:**增量传输(只传差异)+ 丰富的同步策略(保属性/排除/删除/断点续传)。适用场景:代码部署(只上传变更)、定期备份(只备份新增/修改)、大文件同步(断点续传)、镜像同步(`--delete` 保证两边完全一致)。**为什么 rsync 更适合备份:**增量传输节省带宽和时间、`-a` 保留所有元数据(权限/时间/所有者)、`--link-dest` 可以基于上次备份硬链接去重(节省磁盘)、`--partial` 支持断点续传。
 >
-> **Q3** 完整流程:①`ssh-keygen -t ed25519 -C "coffee-server-key"` 生成密钥对(一路回车,不设密码可直接使用) ②`ssh-copy-id -i ~/.ssh/id_ed25519.pub deploy@coffee-server` 分发公钥(或手动 `cat ~/.ssh/id_ed25519.pub | ssh user@server "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"`) ③`vim ~/.ssh/config` 添加:`Host coffee`、`HostName 192.168.1.100`、`User deploy`、`IdentityFile ~/.ssh/id_ed25519` ④测试:`ssh coffee` 应该直接登录(免密) ⑤服务器端确认权限:`chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`。**举一反三:**可以给不同服务器生成不同密钥:`ssh-keygen -t ed25519 -f ~/.ssh/coffee_key`,在 config 中 `IdentityFile ~/.ssh/coffee_key`。
+> **Q3** 完整流程:①`ssh-keygen -t ed25519 -C "coffee-server-key"` 生成密钥对(一路回车,不设密码可直接使用) ②`ssh-copy-id -i ~/.ssh/id_ed25519.pub deploy@coffee-server` 分发公钥(或手动 `cat ~/.ssh/id_ed25519.pub | ssh user@server "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"`) ③`vim ~/.ssh/config` 添加:`Host coffee`、`HostName 192.0.2.100`、`User deploy`、`IdentityFile ~/.ssh/id_ed25519` ④测试:`ssh coffee` 应该直接登录(免密) ⑤服务器端确认权限:`chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`。**举一反三:**可以给不同服务器生成不同密钥:`ssh-keygen -t ed25519 -f ~/.ssh/coffee_key`,在 config 中 `IdentityFile ~/.ssh/coffee_key`。
 >
 > **Q4** 可能原因:①公钥没有正确添加到服务器的 `~/.ssh/authorized_keys`(拼写错误、没重启 sshd 虽不需但建议确认、文件权限不是 600) ②服务器上 `.ssh` 目录或 `authorized_keys` 文件权限过于宽松(必须 700/600,否则 sshd 忽略) ③客户端私钥路径不对(如果用了非默认路径,需要在 ssh 命令中 `-i` 或在 config 中 `IdentityFile` 指定) ④服务器 `sshd_config` 禁用了 pubkey 认证(`PubkeyAuthentication no`) ⑤使用了错误的用户名(公钥装在 userA 的 authorized_keys,但用 userB ssh 连接) ⑥`known_hosts` 中该服务器的旧密钥与新服务器不匹配(重装过服务器)。**排查:**`ssh -vvv user@server` 看详细输出,搜索 "Authentication" 和 "publickey" 关键字。
 >
-> **Q5** 方案:①创建 `~/.ssh/config`:`Host coffee-prod`、`HostName 10.0.0.5`、`User deploy`、`IdentityFile ~/.ssh/coffee_prod_ed25519` ②试运行:`rsync -avzn --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/`(`-n` dry-run 预览) ③确认无误后去掉 `-n` 正式同步:`rsync -avz --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/`(不加 `--delete`,upload 不会被删除) ④同步后远程执行重载:`rsync ... && ssh coffee-prod "sudo systemctl reload nginx"` ⑤写成脚本 `deploy.sh` 方便复用:`#!/bin/bash; set -e; rsync -avz --exclude=... ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/; ssh coffee-prod "sudo systemctl reload nginx"; echo "Deploy OK"`。**举一反三:**生产级部署还应考虑:同步前先备份、记录部署历史(Git commit hash)、支持回滚(`rsync -avz /backups/old-version/ deploy@coffee-prod:/var/www/coffee/`)、用 `--link-dest` 去重节省备份空间。
+> **Q5** 方案:①创建 `~/.ssh/config`:`Host coffee-prod`、`HostName 192.0.2.5`、`User deploy`、`IdentityFile ~/.ssh/coffee_prod_ed25519` ②试运行:`rsync -avzn --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/`(`-n` dry-run 预览) ③确认无误后去掉 `-n` 正式同步:`rsync -avz --exclude='.git' --exclude='node_modules' --exclude='*.log' --exclude='uploads/' ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/`(不加 `--delete`,upload 不会被删除) ④同步后远程执行重载:`rsync ... && ssh coffee-prod "sudo systemctl reload nginx"` ⑤写成脚本 `deploy.sh` 方便复用:`#!/bin/bash; set -e; rsync -avz --exclude=... ~/coffee-app/ deploy@coffee-prod:/var/www/coffee/; ssh coffee-prod "sudo systemctl reload nginx"; echo "Deploy OK"`。**举一反三:**生产级部署还应考虑:同步前先备份、记录部署历史(Git commit hash)、支持回滚(`rsync -avz /backups/old-version/ deploy@coffee-prod:/var/www/coffee/`)、用 `--link-dest` 去重节省备份空间。
 
 ## 运行前边界、回滚与验证
 

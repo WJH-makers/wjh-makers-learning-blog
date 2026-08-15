@@ -81,7 +81,7 @@ $ git init
 Initialized empty Git repository in /home/ubuntu/coffee-shop/.git/
 
 $ git config user.name  "azero"          # 报上作者身份(第一次用必设)
-$ git config user.email "azero@coffee.dev"
+$ git config user.email "azero@example.com"
 
 # 工作区新建一个菜单文件
 $ printf 'name = 豆豆咖啡站\nprice = 18\n' > menu.txt

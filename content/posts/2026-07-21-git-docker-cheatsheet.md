@@ -377,7 +377,7 @@ Docker 的镜像层、停止的容器、悬空镜像（dangling，`<none>:<none>
 
 | 难度 | 命令 | 作用 | 示例 |
 |:----:|------|------|------|
-| ★★ | `ssh 用户@主机` | 远程登录 | `ssh root@192.168.1.1` |
+| ★★ | `ssh 用户@主机` | 远程登录 | `ssh root@192.0.2.1` |
 | ★★ | `ssh 用户@主机 -p 端口` | 指定端口 | `ssh root@host -p 2222` |
 | ★★ | `ssh 用户@主机 "命令"` | 远程执行命令 | `ssh root@host "df -h"` |
 | ★★ | `scp 本地文件 用户@主机:远程路径` | 上传文件 | `scp app.jar root@host:/opt/` |
@@ -413,7 +413,7 @@ Host jump
   User zhangsan
   IdentityFile ~/.ssh/id_ed25519
 Host prod-api
-  HostName 10.0.2.15
+  HostName 192.0.2.15
   User app
   ProxyJump jump
 ```
