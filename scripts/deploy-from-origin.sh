@@ -170,8 +170,12 @@ readonly TARGET_COMMIT="$(git rev-parse "$DEPLOY_REF")"
 readonly CURRENT_COMMIT="$(git rev-parse HEAD)"
 readonly LAST_SUCCESSFUL_COMMIT="$(cat "$STATE_FILE" 2>/dev/null || true)"
 
+# production 是 CI 强推的「已测试发布指针」,不是一条只增不减的开发分支。
+# 在工作树已确认干净后,必须精确对齐它而非 merge --ff-only：
+# 强推会让旧服务器 HEAD 与新引用分叉,ff-only 会永久拒绝发布；
+# reset 只丢弃服务器上未进入发布引用的旧**提交**,绝不覆盖未提交人工改动(159 行已拒绝)。
 if [[ "$CURRENT_COMMIT" != "$TARGET_COMMIT" ]]; then
-  git -c core.hooksPath=/dev/null merge --ff-only "$DEPLOY_REF"
+  git reset --hard "$DEPLOY_REF"
 fi
 
 if [[ "$LAST_SUCCESSFUL_COMMIT" == "$TARGET_COMMIT" ]]; then

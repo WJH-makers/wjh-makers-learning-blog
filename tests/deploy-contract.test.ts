@@ -99,6 +99,18 @@ test("production ref fetches cannot hold the deploy lock indefinitely", () => {
   // 否则第一次 force-push 后 git fetch 会 non-fast-forward 拒绝，timer 永远卡在旧提交。
   assert.match(deploy, /\+refs\/heads\/production:refs\/remotes\/origin\/production/);
   assert.doesNotMatch(deploy, /\n\s+refs\/heads\/production:refs\/remotes\/origin\/production; then/);
+
+  // 同理，对齐工作树也不能用 ff-only：强推后服务器 HEAD 会与发布引用分叉，
+  // ff-only 直接 fatal 退出，发布永久卡死。必须精确对齐已测试的发布指针。
+  assert.match(deploy, /git reset --hard "\$DEPLOY_REF"/);
+  // 只禁真实调用，不禁注释里的字面量（说明为什么不用它，本身是有价值的注释）。
+  assert.doesNotMatch(deploy, /^[^#\n]*\bgit\b[^\n]*merge --ff-only/m);
+
+  // 但对齐前必须先确认工作树干净，否则 reset 会吃掉服务器上的人工改动。
+  assert.ok(
+    deploy.indexOf("Refusing deployment") < deploy.indexOf('git reset --hard "$DEPLOY_REF"'),
+    "必须先拒绝脏工作树，再对齐发布引用",
+  );
   assert.match(workflow, /for attempt in \$\(seq 1 96\)/);
   assert.match(workflow, /within 16 minutes/);
 });
