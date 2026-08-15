@@ -22,6 +22,12 @@ readonly PRUNE_OLDER_THAN=168h
 readonly FETCH_TIMEOUT=180
 readonly FETCH_ATTEMPTS=2
 
+# 该值仅传给本次 docker compose 命令，绝不落入 .env、state 文件或日志。
+# 3001 只绑定宿主回环，随机 token 再提供第二道授权：即使未来端口错误暴露，
+# 不持有这次启动的 token 也读不到内部 commit SHA。
+DEPLOY_VERIFICATION_TOKEN="$(od -vAn -N32 -tx1 /dev/urandom | tr -d ' \n')"
+readonly DEPLOY_VERIFICATION_TOKEN
+
 cd "$REPOSITORY"
 
 fetch_production_ref() {
@@ -183,13 +189,15 @@ if [[ "$LAST_SUCCESSFUL_COMMIT" == "$TARGET_COMMIT" ]]; then
   exit 0
 fi
 
-APP_GIT_SHA="$TARGET_COMMIT" docker compose up -d --build
+APP_GIT_SHA="$TARGET_COMMIT" DEPLOY_VERIFICATION_TOKEN="$DEPLOY_VERIFICATION_TOKEN" docker compose up -d --build
 
 for attempt in $(seq 1 24); do
   health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' blog 2>/dev/null || true)"
   if [[ "$health" == "healthy" ]]; then
     curl --fail --silent --show-error --max-time 15 http://127.0.0.1:3001/ >/dev/null
-    deployed_commit="$(curl --fail --silent --show-error --max-time 15 http://127.0.0.1:3001/api/version \
+    deployed_commit="$(curl --fail --silent --show-error --max-time 15 \
+      -H "X-Deploy-Verification-Token: $DEPLOY_VERIFICATION_TOKEN" \
+      http://127.0.0.1:3001/api/version \
       | sed -n 's/.*"commit":"\([0-9a-f]\{40\}\)".*/\1/p')"
     if [[ "$deployed_commit" != "$TARGET_COMMIT" ]]; then
       echo "Container commit mismatch: expected ${TARGET_COMMIT:0:12}, got ${deployed_commit:-missing}." >&2

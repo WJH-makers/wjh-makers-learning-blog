@@ -35,6 +35,9 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
       PORT: 3001
       NETDATA_URL: http://host.docker.internal:19999
+      # 仅部署脚本临时注入;它是读取 /api/version 中 commit 的一次性授权,
+      # 不写入 .env,也不向公网发送。空值时端点永远只返回 healthy。
+      DEPLOY_VERIFICATION_TOKEN: ${DEPLOY_VERIFICATION_TOKEN:-}
       # R2 is used only as a public read origin by the web process. The S3
       # write credentials belong to the host-side sync helper, not this app.
       R2_ACCOUNT_ID: ""

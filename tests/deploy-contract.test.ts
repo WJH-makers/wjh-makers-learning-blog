@@ -11,14 +11,19 @@ test("tested production ref is verified against the deployed commit", () => {
   const deploy = read("scripts/deploy-from-origin.sh");
   const compose = read("docker-compose.yml");
   const dockerfile = read("Dockerfile");
+  const docs = read("docs/txcloud-pull-deploy.md");
 
   assert.ok(workflow.indexOf("npm test") < workflow.indexOf("refs/heads/production"));
   assert.match(workflow, /api\/version/);
   assert.match(workflow, /EXPECTED_SHA/);
-  assert.match(deploy, /APP_GIT_SHA="\$TARGET_COMMIT" docker compose/);
-  assert.match(compose, /APP_GIT_SHA: \$\{APP_GIT_SHA:-unknown\}/);
+  assert.match(deploy, /APP_GIT_SHA="\$TARGET_COMMIT" DEPLOY_VERIFICATION_TOKEN="\$DEPLOY_VERIFICATION_TOKEN" docker compose/);
+  assert.match(deploy, /X-Deploy-Verification-Token: \$DEPLOY_VERIFICATION_TOKEN/);
+  assert.match(deploy, /od -vAn -N32 -tx1 \/dev\/urandom/);
+  assert.match(compose, /DEPLOY_VERIFICATION_TOKEN: \$\{DEPLOY_VERIFICATION_TOKEN:-\}/);
   assert.match(dockerfile, /ARG APP_GIT_SHA/);
   assert.match(dockerfile, /APP_GIT_SHA=\$\{APP_GIT_SHA\}/);
+  assert.match(docs, /随机授权 token/);
+  assert.doesNotMatch(docs, /仅快进到 `origin\/production`/);
 });
 
 test("IndexNow submission is best-effort and only fires after the deploy is accepted", () => {
@@ -58,16 +63,15 @@ test("the authoritative deploy check runs on the server, not through the public 
   assert.doesNotMatch(workflow, /jq -r '\.commit \/\/ empty'/);
 });
 
-test("the version endpoint only reveals the commit to loopback callers", () => {
+test("the version endpoint only reveals the commit to authorized deploy probes", () => {
   const route = read("app/api/version/route.ts");
 
   // 公网必须只看到存活状态;commit 泄漏会暴露部署时间线与可检索的源码版本。
   assert.match(route, /APP_GIT_SHA/);
-  assert.match(route, /127\.0\.0\.1/);
-  assert.match(route, /cf-connecting-ip/);
-  assert.match(route, /x-forwarded-for/);
+  assert.match(route, /DEPLOY_VERIFICATION_TOKEN/);
+  assert.match(route, /x-deploy-verification-token/);
 
-  // 同一 URL 对回环与公网返回不同内容,必须按 Host 分缓存。
+  // 同一 URL 对已授权部署探针与公网返回不同内容,必须按授权头分缓存。
   assert.match(route, /Vary/);
   assert.match(route, /no-store/);
 

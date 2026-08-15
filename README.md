@@ -162,8 +162,8 @@ tags: Java, Git, MySQL
 1. `main` 上的类型检查、测试、生产构建和依赖审计全部通过。
 2. Actions 将该提交发布为 `production` 引用。
 3. 服务器上的 `txcloud-blog-pull.timer` 拉取该引用并构建 Docker 镜像。
-4. 容器健康检查和 `/api/version` 提交号核对通过后才记录发布成功。
-5. Actions 再从公网核对同一个提交号，避免“CI 绿了但线上没更新”。
+4. 容器健康检查和经临时授权的本地 `/api/version` 提交号核对通过后才记录发布成功。
+5. Actions 再从公网确认生产边缘健康且不暴露内部提交号，避免“CI 绿了但线上不可用”。
 
 服务器安装、systemd 状态检查和 Cloudflare 失效策略见 [`docs/txcloud-pull-deploy.md`](docs/txcloud-pull-deploy.md)。Vercel 仍可作为兼容的预览部署面，但不是当前生产发布链路。
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { safeCompare } from "@/lib/safe-compare";
 
 export const dynamic = "force-dynamic";
 
@@ -9,28 +10,25 @@ const COMMIT_PATTERN = /^[0-9a-f]{40}$/;
  * 发布校验需要知道容器跑的是哪个 commit，但公网不应看到它 ——
  * 公开 SHA 会暴露部署时间线，并让攻击者精确检索到对应源码版本。
  *
- * 因此只对**同机回环**调用方返回 commit：
- * `scripts/deploy-from-origin.sh` 在服务器上问 `http://127.0.0.1:3001/api/version`，
- * 权威校验因此仍然成立；经 Cloudflare 到达的公网请求只会拿到存活状态。
+ * 不能根据 Host 或 X-Forwarded-For 判定「本机」：Next 会给直连请求自动补
+ * X-Forwarded-For，结果真正的部署探针也会被误认为经代理的公网请求。
+ *
+ * 部署脚本为每一次 compose 启动生成仅存在于容器运行环境中的随机 token，并且只通过
+ * 绑定到宿主回环的 3001 端口提交它。持有该 token 才能读取 commit；没有 token 的
+ * 公网请求始终只得到存活状态。
  */
-async function isLoopbackCaller(): Promise<boolean> {
+async function isAuthorizedDeployProbe(): Promise<boolean> {
   const h = await headers();
-  // 有任何转发链痕迹就说明请求经过了代理/边缘，不能视为本机直连。
-  if (h.get("x-forwarded-for") || h.get("cf-connecting-ip") || h.get("x-real-ip")) {
-    return false;
-  }
-  const host = h.get("host")?.trim().toLowerCase();
-  if (!host) return false;
-  const hostname = host.startsWith("[")
-    ? host.slice(1, host.indexOf("]"))
-    : host.split(":")[0];
-  return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1";
+  const expected = process.env.DEPLOY_VERIFICATION_TOKEN?.trim();
+  const provided = h.get("x-deploy-verification-token")?.trim();
+
+  return Boolean(expected && provided && safeCompare(provided, expected));
 }
 
 export async function GET() {
   const body: { healthy: true; commit?: string } = { healthy: true };
 
-  if (await isLoopbackCaller()) {
+  if (await isAuthorizedDeployProbe()) {
     const commit = process.env.APP_GIT_SHA?.trim();
     // 只回传形状正确的 SHA；构建未注入时(`unknown`)不伪造字段，让校验方明确失败而不是误判通过。
     if (commit && COMMIT_PATTERN.test(commit)) {
@@ -41,8 +39,8 @@ export async function GET() {
   return NextResponse.json(body, {
     headers: {
       "Cache-Control": "no-store",
-      // 同一 URL 对回环与公网返回不同内容，必须让任何中间缓存按 Host 区分。
-      Vary: "Host",
+      // 同一 URL 对已授权部署探针与普通请求返回不同内容，禁止共享缓存复用响应。
+      Vary: "X-Deploy-Verification-Token",
     },
   });
 }
