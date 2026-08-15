@@ -33,7 +33,7 @@ sudo journalctl -u txcloud-blog-pull.service -n 100 --no-pager
 
 ## 从本地查看服务器状态
 
-`scripts/txcloud.sh` 把多条命令合并进一次 SSH 会话：
+`scripts/txcloud.sh` 把多条命令合并进一次 SSH 会话；`deploy` 优先启动 systemd 服务，若必须退回直跑，也会取得与服务相同的 `flock` 锁，绝不与 timer 并发执行两个 `docker compose`：
 
 ```bash
 scripts/txcloud.sh status            # 主机 / 磁盘 / 内存 / 容器 / 部署版本 / 定时器

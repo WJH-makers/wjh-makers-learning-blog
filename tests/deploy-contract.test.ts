@@ -27,6 +27,7 @@ test("tested production ref is verified against the deployed commit", () => {
   assert.match(dockerfile, /APP_GIT_SHA=\$\{APP_GIT_SHA\}/);
   assert.match(docs, /随机授权 token/);
   assert.match(docs, /下一次拉取会复用暂存 token/);
+  assert.match(docs, /相同的 `flock` 锁/);
   assert.doesNotMatch(docs, /仅快进到 `origin\/production`/);
 });
 
@@ -53,6 +54,7 @@ test("IndexNow submission is best-effort and only fires after the deploy is acce
 test("the authoritative deploy check runs on the server, not through the public edge", () => {
   const workflow = read(".github/workflows/ci.yml");
   const deploy = read("scripts/deploy-from-origin.sh");
+  const helper = read("scripts/txcloud.sh");
 
   // 权威验证必须在服务器上直接问容器 —— 它是唯一不受边缘策略影响的来源。
   assert.match(deploy, /127\.0\.0\.1:3001\/api\/version/);
@@ -61,8 +63,9 @@ test("the authoritative deploy check runs on the server, not through the public 
   // Cloudflare 对 runner 数据中心 IP 的人机挑战不是部署故障,不能让 CI 假红。
   assert.match(workflow, /challenge-platform/);
   assert.match(workflow, /Production did not reach/);
+  assert.match(helper, /flock -n \/home\/ubuntu\/\.local\/state\/wjh-blog-deploy\/deploy\.lock/);
 
-  // 公网探针只能验存活:commit 只对回环返回,拿它当 SHA 门禁会空转到超时假红。
+  // 公网探针只能验存活:commit 只对授权部署探针返回,拿它当 SHA 门禁会空转到超时假红。
   assert.match(workflow, /\.healthy \/\/ empty/);
   assert.doesNotMatch(workflow, /jq -r '\.commit \/\/ empty'/);
 });

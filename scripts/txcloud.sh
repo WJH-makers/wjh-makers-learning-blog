@@ -70,9 +70,12 @@ REMOTE
 cmd_deploy() {
   echo "触发部署(服务器会自行校验容器 commit,不符会拒绝)…"
   remote << 'REMOTE'
+# system service 已用同一把 flock 锁；无 sudo / user systemd 不可用时的直跑回退也必须拿它，
+# 否则恰逢 timer 发布时会有两个 compose 同时 Recreate，同名容器必然冲突。
 sudo systemctl start txcloud-blog-pull.service 2>/dev/null \
   || systemctl --user start txcloud-blog-pull.service 2>/dev/null \
-  || bash /home/ubuntu/blog/scripts/deploy-from-origin.sh
+  || flock -n /home/ubuntu/.local/state/wjh-blog-deploy/deploy.lock \
+    /bin/bash /home/ubuntu/blog/scripts/deploy-from-origin.sh
 REMOTE
 }
 
