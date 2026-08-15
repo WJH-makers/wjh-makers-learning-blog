@@ -79,6 +79,10 @@ const nextConfig: NextConfig = {
         { key: "X-Robots-Tag", value: "noarchive" },
         // 全站生效(原先只挂在 /api 下,HTML 与静态资源反而没保护)。
         { key: "X-Content-Type-Options", value: "nosniff" },
+        // 防止点击劫持攻击
+        { key: "X-Frame-Options", value: "DENY" },
+        // 启用浏览器内置的 XSS 防护
+        { key: "X-XSS-Protection", value: "1; mode=block" },
         // 站点没有任何需要这些硬件/API 的功能,一律关掉,缩小第三方脚本的可乘之机。
         {
           key: "Permissions-Policy",

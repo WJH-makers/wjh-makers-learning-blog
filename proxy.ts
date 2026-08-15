@@ -30,6 +30,25 @@ export function proxy(request: NextRequest) {
   }
 
   const response = NextResponse.next();
+
+  // 修复 Cookie SameSite 属性配置不合理的问题
+  // 为所有 cookie 设置安全属性
+  const cookies = response.cookies.getAll();
+  cookies.forEach((cookie) => {
+    response.cookies.set({
+      name: cookie.name,
+      value: cookie.value,
+      httpOnly: cookie.name !== "blog_admin_token" ? true : cookie.name === "blog_admin_token",
+      secure: true,
+      sameSite: "lax", // 推荐值: lax 在大多数场景下安全且兼容
+      path: "/",
+    });
+  });
+
+  // 移除可能泄漏服务器信息的头
+  response.headers.delete("Server");
+  response.headers.delete("X-Powered-By");
+
   if (isContentPage) {
     // 反向代理会把内部地址作为 request.url 传入；发现链接必须始终使用公网规范域名。
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online";
@@ -43,5 +62,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/posts/:path*", "/write"],
+  matcher: [
+    // 匹配所有路径,除了静态资源
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2)$).*)",
+  ],
 };
