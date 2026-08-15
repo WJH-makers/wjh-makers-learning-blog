@@ -6,13 +6,12 @@ import { blogSessionTokenEdge, safeCompareEdge } from "@/lib/blog-auth-token-edg
  * Host 白名单：只允许正式域名与本地/内网访问。
  *
  * 背景：Vercel 副站域名(wjh-makers-learning-blog.vercel.app)绕过 Cloudflare
- * WAF 直达应用，作为第二攻击面。这里在应用层兜底拦截非法 Host，
- * 无需在 Vercel 控制台做任何配置。
- *
- * 允许清单：
- * - wwjjhh.online / www.wwjjhh.online（正式域名，经 Cloudflare Tunnel 回源）
- * - localhost / 127.0.0.1 / *.internal（本机与 Docker 健康检查）
+ * WAF 直达应用。Host 头本身可被客户端伪造（直连 Vercel 时伪造
+ * Host: wwjjhh.online 即可骗过白名单），因此在 Vercel 运行时一律 403，
+ * 从环境层封死整条链路，无需依赖 Host 头判断。
  */
+const ON_VERCEL = process.env.VERCEL === "1";
+
 const ALLOWED_HOSTS = new Set(["wwjjhh.online", "www.wwjjhh.online"]);
 
 function isLocalHost(host: string): boolean {
@@ -26,6 +25,13 @@ function isLocalHost(host: string): boolean {
 }
 
 export async function proxy(request: NextRequest) {
+  if (ON_VERCEL) {
+    return new NextResponse("403 Forbidden: vercel runtime disabled", {
+      status: 403,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
+
   const rawHost = request.headers.get("host")?.trim().toLowerCase() ?? "";
   const host = rawHost.replace(/:\d+$/, "");
 
@@ -64,7 +70,6 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-// Host 白名单需要覆盖全部路径；排除构建产物静态资源即可。
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
