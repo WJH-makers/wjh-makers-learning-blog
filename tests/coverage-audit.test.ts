@@ -66,8 +66,8 @@ test("内容覆盖审计按公开、排期与蓝图完整分区", () => {
     summary.currentPublicEpisodes + summary.scheduledEpisodes + summary.standalonePosts,
   );
   assert.ok(summary.comicSources > 0);
-  assert.ok(summary.currentPublicWithoutVisual <= summary.currentPublicEpisodes);
-  assert.ok(summary.comicChaptersWithoutVisual <= summary.currentPublicWithoutVisual);
+  assert.equal(summary.currentPublicWithoutVisual, 0);
+  assert.equal(summary.comicChaptersWithoutVisual, 0);
   assert.equal(summary.registeredWithoutPost, 0);
   assert.equal(summary.orphanComics, 0);
 });

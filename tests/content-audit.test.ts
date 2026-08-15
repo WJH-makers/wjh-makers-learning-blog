@@ -24,7 +24,7 @@ test("公开 Java/CLI 审计清单覆盖当前全部系列文章", () => {
   }
 });
 
-test("每篇 Java/JVM 公开文章都有可访问的首图或漫画资源", () => {
+test("每篇 Java/JVM 公开文章都在正文内引用可访问的逐话视觉资源", () => {
   for (const post of [...javaPosts, ...jvmPosts]) {
     const references = [...post.content.matchAll(/!\[[^\]]*\]\((\/(?:comics|images)\/[^)]+)\)/g)].map((match) => match[1]);
     assert.ok(references.length > 0, `${post.name} is missing a lead visual`);
@@ -32,6 +32,14 @@ test("每篇 Java/JVM 公开文章都有可访问的首图或漫画资源", () =
       const assetPath = path.join(root, "public", reference.slice(1).replaceAll("/", path.sep));
       assert.equal(fs.existsSync(assetPath), true, `${post.name} references missing visual ${reference}`);
     }
+  }
+});
+
+test("同一篇文章不重复嵌入同一漫画的不同编码格式", () => {
+  for (const post of posts) {
+    const stems = [...post.content.matchAll(/!\[[^\]]*\]\((\/(?:comics|images)\/[^)\s]+)\)/g)]
+      .map((match) => match[1].replace(/-512(?=\.(?:png|webp|avif)$)/, "").replace(/\.(?:png|webp|avif)$/, ""));
+    assert.equal(new Set(stems).size, stems.length, `${post.name} embeds the same visual more than once`);
   }
 });
 

@@ -59,7 +59,7 @@
 .editor-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-  gap: 16px;
+  gap: var(--gap-card);
 }
 .editor-form {
   display: grid;
@@ -99,7 +99,8 @@
   text-transform: uppercase;
 }
 .editor-note li span { padding: 10px 12px; color: var(--neutral-600); }
-.editor-note p:last-child { text-align: justify; }
+/* 侧栏只有 280~340px 宽,justify 会把每行拉出参差的字间距 —— 窄栏一律左对齐 */
+.editor-note p:last-child { text-align: left; }
 .form-grid { display: grid; grid-template-columns: 190px 1fr; gap: 16px; }
 .editor-form label { display: grid; gap: 7px; }
 /* 自 globals.css 迁入:编辑器大文本框专属(原全局 textarea 规则泄漏进评论区,评论框回落 44px 基线) */
@@ -355,7 +356,9 @@
   border: 1px solid var(--border);
   background: rgba(var(--paper-rgb),0.94);
   backdrop-filter: blur(10px);
-  box-shadow: 5px 5px 0 rgba(var(--ink-rgb),0.12);
+  /* 粘性栏是真正浮在内容之上的层,用柔和投影而不是"盖章"硬投影 ——
+     硬投影表达的是"纸片贴在桌面上",与 sticky 的悬浮语义相反。 */
+  box-shadow: var(--shadow-float);
 }
 
 /* ===== Tablet ===== */

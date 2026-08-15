@@ -154,7 +154,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="footer-col">
             <p className="footer-head">关于与订阅</p>
             <Link href="/projects">项目集</Link>
-            <a href="https://arc.wwjjhh.online" target="_blank" rel="noopener noreferrer">ARC Lab</a>
             <Link href="/career">工程师航线</Link>
             <Link href="/now">现在在做</Link>
             <Link href="/stats">站点数据</Link>

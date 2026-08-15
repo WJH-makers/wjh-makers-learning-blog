@@ -22,6 +22,12 @@ export const CAFE_SERIES_META = {
     "一家快关门的咖啡站,一台记性太好的小机器人,和一个想证明自己的程序员——每一次技术升级,都在重新定义人与人、人与系统的距离。",
   project: "把一家快倒闭的小店,变成能温暖整座城市、又不弄丢任何一个人的系统",
   storageKey: "cafe-academy:completed",
+  comicCast: {
+    title: "阿零与豆豆 · 雨夜重启",
+    description: "系列共用封面:一家快熄灯的老店、一个重新出发的程序员,以及始终记得客人的咖啡机器人。",
+    image: "/comics/cafe/series-cover",
+    alt: "雨夜咖啡站里,阿零与豆豆一起重新整理柜台、准备开店",
+  },
 } as const;
 
 /** 咖啡站从一盏快熄的灯,长成一座城市温度的时间线(贯穿全系列的暗线)。 */

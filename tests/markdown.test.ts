@@ -48,7 +48,16 @@ test("所有连载目录下的漫画都使用 AVIF/WebP 响应式变体", async 
   assert.ok(!html.includes('.png"'), html);
 });
 
-// ---------- 链接(诊断 #7 括号截断 / #9 白名单绕过) ----------
+test("图片和链接属性会转义引号，不能闭合属性注入事件处理器", async () => {
+  const image = await markdownToHtml('![x&quot; onerror=&quot;alert(1)](https://example.com/a.png)');
+  assert.ok(image.includes('alt="x&amp;amp;quot; onerror=&amp;amp;quot;alert(1)"'), image);
+  assert.ok(!image.includes(' onerror="'), image);
+
+  const link = await markdownToHtml('[x](https://example.com/?q=&quot;onmouseover=&quot;alert(1))');
+  assert.ok(link.includes('&amp;amp;quot;'), link);
+  assert.ok(!link.includes(' onmouseover="'), link);
+});
+
 
 test("URL 内平衡括号完整保留,无游离 )", async () => {
   const html = await markdownToHtml("[Foo](https://en.wikipedia.org/wiki/Foo_(bar))");

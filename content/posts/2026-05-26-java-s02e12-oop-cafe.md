@@ -22,8 +22,6 @@ tags: [Java, Java漫画, 项目实战, 重构, 阿零与豆豆]
 
 ![《从零开始学 Java》24 · 面向对象咖啡站——阿零与豆豆六格漫画](/comics/java/s02e12-oop-cafe.png)
 
-![《从零开始学 Java》24 · 面向对象版咖啡站 —— 阿零与豆豆六格漫画](/comics/java/s02e12-oop-cafe.webp)
-
 > **〔1〕** 阿零把第一季那台缠满电线、`MENU[]`/`PRICES[]` 贴满补丁的老机器整个拆开,零件按类归位:咖啡归 `Coffee`,菜单归 `Menu`,付款归 `PaymentMethod`。
 > 豆豆:「同样的功能,现在每一块各司其职——这就是重构。」
 

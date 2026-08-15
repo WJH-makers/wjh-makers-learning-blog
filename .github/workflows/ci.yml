@@ -66,31 +66,34 @@ jobs:
         run: |
           set -euo pipefail
           # 权威验证在服务器端:scripts/deploy-from-origin.sh 直接问容器的 /api/version,
-          # SHA 不符就拒绝接受这次发布。这里做的是公网边缘的补充探测。
+          # 该端点只对回环调用方返回 commit,SHA 不符就拒绝接受这次发布。
+          #
+          # 公网不返回 commit —— 公开 SHA 会暴露部署时间线与可检索的源码版本。
+          # 因此这一步只能做「生产是否已经起来并健康」的边缘探测,不能再比对 SHA;
+          # 若把这里当成 SHA 门禁,就会因为拿不到字段而空转到超时假红。
           #
           # Cloudflare 会对 GitHub Actions 的数据中心 IP 发人机挑战(历史 7 次全部如此),
           # 拿回来的是 "Just a moment..." 而不是 JSON —— 那是 runner 出口的网络环境问题,
           # 不代表生产异常,再等 16 分钟也不会变。所以识别到挑战页就明确告警并放行。
-          # 但只要真拿到了 JSON 而 commit 对不上,说明生产确实没跟上,照旧失败。
           for attempt in $(seq 1 96); do
             body="$(curl --silent --show-error --max-time 15 https://wwjjhh.online/api/version 2>&1 || true)"
-            deployed="$(printf '%s' "$body" | jq -r '.commit // empty' 2>/dev/null || true)"
-            if [ -n "$deployed" ]; then
-              if [ "$deployed" = "$EXPECTED_SHA" ]; then
-                echo "Production is serving ${EXPECTED_SHA:0:12}."
-                exit 0
-              fi
-              echo "Waiting for pull deployment (${attempt}/96): serving ${deployed:0:12}"
-            else
-              case "$body" in
-                *"Just a moment"*|*"challenge-platform"*|*"cf-browser-verification"*)
-                  echo "::warning::Cloudflare challenged this runner's IP, so the public-edge check cannot run here. The authoritative check already ran on the server: deploy-from-origin.sh compares the container's /api/version against the target commit and refuses the deploy on mismatch."
-                  exit 0
-                  ;;
-              esac
-              echo "Waiting for pull deployment (${attempt}/96): ${body:0:160}"
+            healthy="$(printf '%s' "$body" | jq -r '.healthy // empty' 2>/dev/null || true)"
+            if [ "$healthy" = "true" ]; then
+              echo "Production edge is healthy; the server-side check already pinned ${EXPECTED_SHA:0:12}."
+              exit 0
             fi
+            if printf '%s' "$body" | jq -e 'has("commit")' >/dev/null 2>&1; then
+              echo "::error::Public /api/version exposed a commit field; it must stay loopback-only." >&2
+              exit 1
+            fi
+            case "$body" in
+              *"Just a moment"*|*"challenge-platform"*|*"cf-browser-verification"*)
+                echo "::warning::Cloudflare challenged this runner's IP, so the public-edge check cannot run here. The authoritative check already ran on the server: deploy-from-origin.sh compares the container's /api/version against the target commit and refuses the deploy on mismatch."
+                exit 0
+                ;;
+            esac
+            echo "Waiting for pull deployment (${attempt}/96): ${body:0:160}"
             sleep 10
           done
-          echo "Production did not reach ${EXPECTED_SHA:0:12} within 16 minutes." >&2
+          echo "Production did not reach a healthy state for ${EXPECTED_SHA:0:12} within 16 minutes." >&2
           exit 1

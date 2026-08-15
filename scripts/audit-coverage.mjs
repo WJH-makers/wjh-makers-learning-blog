@@ -79,7 +79,8 @@ const episodes = [];
 
 for (const file of seriesFiles) {
   const content = await fs.readFile(path.join(root, "lib", file), "utf8");
-  episodes.push(...extractEpisodes(content, file));
+  const seriesVisual = content.match(/comicCast:\s*\{[\s\S]*?image:\s*"([^"]+)"/)?.[1];
+  episodes.push(...extractEpisodes(content, file).map((episode) => ({ ...episode, seriesVisual })));
 }
 
 const registeredBySlug = new Map(episodes.filter(({ slug }) => slug).map((episode) => [episode.slug, episode]));
@@ -89,7 +90,9 @@ const scheduled = published.filter(({ slug }) => slug.slice(0, 10) > boundaryDat
 const planned = episodes.filter(({ status }) => status !== "published");
 
 const currentWithoutVisual = currentPublic
-  .filter(({ slug }) => postSlugs.has(slug) && (postVisuals.get(slug)?.length ?? 0) === 0);
+  .filter(({ slug, seriesVisual }) => postSlugs.has(slug)
+    && (postVisuals.get(slug)?.length ?? 0) === 0
+    && !seriesVisual);
 const comicChaptersWithoutVisual = currentWithoutVisual.filter(({ chapterType }) => chapterType === "comic");
 const registeredWithoutPost = published.filter(({ slug }) => !postSlugs.has(slug));
 const standalonePosts = [...postSlugs].filter((slug) => !registeredBySlug.has(slug));

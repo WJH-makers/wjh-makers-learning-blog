@@ -195,6 +195,44 @@ function slugify(input: string): string {
     .slice(0, 120);
 }
 
+const MAX_POST_TITLE_LENGTH = 200;
+const MAX_POST_SUMMARY_LENGTH = 1_000;
+const MAX_POST_CONTENT_LENGTH = 200_000;
+const MAX_TAGS = 20;
+const MAX_TAG_LENGTH = 64;
+const MAX_POST_SLUG_LENGTH = 180;
+
+function assertPostSlug(slug: string): string {
+  const normalized = slug.normalize("NFKC").trim();
+  if (!/^[\p{Letter}\p{Number}]+(?:-[\p{Letter}\p{Number}]+)*$/u.test(normalized) || normalized.length > MAX_POST_SLUG_LENGTH) {
+    throw new Error("文章标识无效。");
+  }
+  return normalized;
+}
+
+function validatePostFields(input: NewDatabasePost | DatabasePostEdit): {
+  title: string;
+  content: string;
+  summary: string;
+  tags: string[];
+} {
+  const title = input.title.normalize("NFKC").trim();
+  const content = input.content.trim();
+  const summary = input.summary.trim() || content.slice(0, 120);
+  const tags = [...new Set(input.tags.map((tag) => tag.normalize("NFKC").trim()).filter(Boolean))];
+
+  if (!title) throw new Error("标题不能为空。");
+  if (!content) throw new Error("正文不能为空。");
+  if (title.length > MAX_POST_TITLE_LENGTH) throw new Error("标题不能超过 200 个字符。");
+  if (summary.length > MAX_POST_SUMMARY_LENGTH) throw new Error("摘要不能超过 1000 个字符。");
+  if (content.length > MAX_POST_CONTENT_LENGTH) throw new Error("正文不能超过 200000 个字符。");
+  if (tags.length > MAX_TAGS || tags.some((tag) => tag.length > MAX_TAG_LENGTH)) {
+    throw new Error("标签数量或长度超出限制。");
+  }
+
+  return { title, content, summary, tags };
+}
+
 /**
  * 取一个未被占用的 slug。
  * 不能用 countDocuments 推后缀:库里同时有 base 与 base-3 时 count=2 会推出必然撞唯一索引的 base-3。
@@ -225,14 +263,8 @@ export async function createDatabasePost(input: NewDatabasePost): Promise<Post> 
     throw new Error("当前博客没有 MongoDB Atlas 配置，不能从网页写入。请先设置 MONGODB_URI（或 DATABASE_URL）。");
   }
 
-  const title = input.title.trim();
-  const content = input.content.trim();
-  const summary = input.summary.trim() || content.slice(0, 120);
+  const { title, content, summary, tags } = validatePostFields(input);
   const date = input.date.trim() || shanghaiDate();
-  const tags = input.tags.map((tag) => tag.trim()).filter(Boolean);
-
-  if (!title) throw new Error("标题不能为空。");
-  if (!content) throw new Error("正文不能为空。");
 
   await ensureSchema();
   const collection = await postsCollection();
@@ -276,20 +308,15 @@ export async function updateDatabasePost(slug: string, input: DatabasePostEdit):
     throw new Error("当前博客没有 MongoDB Atlas 配置，不能从网页写入。请先设置 MONGODB_URI（或 DATABASE_URL）。");
   }
 
-  const title = input.title.trim();
-  const content = input.content.trim();
-  const summary = input.summary.trim() || content.slice(0, 120);
-  const tags = input.tags.map((tag) => tag.trim()).filter(Boolean);
-
-  if (!title) throw new Error("标题不能为空。");
-  if (!content) throw new Error("正文不能为空。");
+  const safeSlug = assertPostSlug(slug);
+  const { title, content, summary, tags } = validatePostFields(input);
 
   await ensureSchema();
   const collection = await postsCollection();
   const now = new Date();
 
   const result = await collection.updateOne(
-    { slug },
+    { slug: safeSlug },
     { $set: { title, summary, tags, content, updatedAt: now } },
   );
 
@@ -297,7 +324,7 @@ export async function updateDatabasePost(slug: string, input: DatabasePostEdit):
     throw new Error("找不到要更新的文章，可能已被删除，或它是内置 Markdown 文章而不在数据库中。");
   }
 
-  const updated = await getDatabasePost(slug);
+  const updated = await getDatabasePost(safeSlug);
   if (!updated) {
     throw new Error("更新成功但无法读取最新文章内容。");
   }
@@ -309,9 +336,10 @@ export async function deleteDatabasePost(slug: string): Promise<void> {
     throw new Error("当前博客没有 MongoDB Atlas 配置，不能从网页删除。请先设置 MONGODB_URI（或 DATABASE_URL）。");
   }
 
+  const safeSlug = assertPostSlug(slug);
   await ensureSchema();
   const collection = await postsCollection();
-  const result = await collection.deleteOne({ slug });
+  const result = await collection.deleteOne({ slug: safeSlug });
 
   if (result.deletedCount === 0) {
     throw new Error("找不到要删除的文章，可能已被删除，或它是内置 Markdown 文章而不在数据库中。");

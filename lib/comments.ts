@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { Collection } from "mongodb";
 import { getDb, hasDatabaseConfig } from "@/lib/db";
+import { getPublishedPost } from "@/lib/posts";
 
 // 免登录评论:昵称 + 内容,不收集邮箱,不存原始 IP(仅存 salted hash 用于限流)。
 // 反垃圾多层防线:蜜罐 → 内容校验/敏感词 → Cloudflare Turnstile 人机验证 → 同 IP 限流。
@@ -137,7 +138,9 @@ export type SubmitResult = { ok: true; comment: Comment } | { ok: false; error: 
 export async function submitComment(input: SubmitInput): Promise<SubmitResult> {
   if (!isCommentingEnabled()) return { ok: false, error: "评论功能暂未开放。" };
   if (!hasDatabaseConfig()) return { ok: false, error: "评论功能暂未启用。" };
-  if (!input.slug || input.slug.length > 200) return { ok: false, error: "非法的文章标识。" };
+  if (!/^[\p{Letter}\p{Number}]+(?:-[\p{Letter}\p{Number}]+)*$/u.test(input.slug) || input.slug.length > 180) {
+    return { ok: false, error: "非法的文章标识。" };
+  }
 
   // 1) 蜜罐:机器人往往会填满所有字段,填了就静默丢弃、伪装成功
   if (input.honeypot.trim()) {
@@ -177,7 +180,11 @@ export async function submitComment(input: SubmitInput): Promise<SubmitResult> {
     // 4c) 5 分钟内不允许相同内容(防刷屏)
     const dup = await col.findOne({ ipHash, body, createdAt: { $gte: new Date(Date.now() - 300_000) } });
     if (dup) return { ok: false, error: "请勿重复发送相同内容。" };
-    // 4d) 每篇文章评论上限,防止单页无限膨胀占用存储
+    // 4d) 仅允许公开文章接收评论，避免垃圾数据占用任意不存在或未到发布日期的 slug。
+    if (!(await getPublishedPost(input.slug))) {
+      return { ok: false, error: "文章不存在或暂不可评论。" };
+    }
+    // 4e) 每篇文章评论上限,防止单页无限膨胀占用存储
     const perPost = await col.countDocuments({ slug: input.slug });
     if (perPost >= MAX_COMMENTS_PER_POST) return { ok: false, error: "本文评论已达上限。" };
 

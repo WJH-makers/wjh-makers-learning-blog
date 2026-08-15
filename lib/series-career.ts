@@ -27,6 +27,12 @@ export const CAREER_SERIES_META = {
   tagline: "纯技术之外,工程师真正拉开差距的部分——沟通、协作、影响力、成长与选择。领姐飞在最前面破风,带阿零从'只会写代码'长成'能带着团队把事做成'。每一话都给可执行动作,绝不喂鸡汤。",
   project: "阿零从只会写代码,到带着咖啡站团队把事做成",
   storageKey: "career-academy:completed",
+  comicCast: {
+    title: "工程能力 · 变成证据",
+    description: "系列共用视觉:把项目链路、交付节奏、复盘材料和成长路线放到同一张可验证的工程地图上。",
+    image: "/comics/career/series-cover",
+    alt: "阿零与豆豆整理项目文件、系统链路、交付节奏和工程成长路线图",
+  },
 } as const;
 
 export const CAREER_SEASONS: JavaSeason[] = [

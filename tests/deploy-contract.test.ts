@@ -49,10 +49,30 @@ test("the authoritative deploy check runs on the server, not through the public 
   assert.match(deploy, /127\.0\.0\.1:3001\/api\/version/);
   assert.match(deploy, /Container commit mismatch/);
 
-  // Cloudflare 对 runner 数据中心 IP 的人机挑战不是部署故障,不能让 CI 假红;
-  // 但拿到真 JSON 而 commit 不符时仍必须失败,否则这一步就退化成了摆设。
+  // Cloudflare 对 runner 数据中心 IP 的人机挑战不是部署故障,不能让 CI 假红。
   assert.match(workflow, /challenge-platform/);
   assert.match(workflow, /Production did not reach/);
+
+  // 公网探针只能验存活:commit 只对回环返回,拿它当 SHA 门禁会空转到超时假红。
+  assert.match(workflow, /\.healthy \/\/ empty/);
+  assert.doesNotMatch(workflow, /jq -r '\.commit \/\/ empty'/);
+});
+
+test("the version endpoint only reveals the commit to loopback callers", () => {
+  const route = read("app/api/version/route.ts");
+
+  // 公网必须只看到存活状态;commit 泄漏会暴露部署时间线与可检索的源码版本。
+  assert.match(route, /APP_GIT_SHA/);
+  assert.match(route, /127\.0\.0\.1/);
+  assert.match(route, /cf-connecting-ip/);
+  assert.match(route, /x-forwarded-for/);
+
+  // 同一 URL 对回环与公网返回不同内容,必须按 Host 分缓存。
+  assert.match(route, /Vary/);
+  assert.match(route, /no-store/);
+
+  // 构建未注入 SHA 时不能伪造字段,否则校验方会把 `unknown` 当成通过。
+  assert.match(route, /\[0-9a-f\]\{40\}/);
 });
 
 test("successful deploys bound old build cache without touching active images or volumes", () => {

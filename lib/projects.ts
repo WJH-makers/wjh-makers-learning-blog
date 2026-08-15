@@ -31,20 +31,6 @@ export const STATUS_LABEL: Record<ProjectStatus, string> = {
 
 export const PROJECTS: Project[] = [
   {
-    name: "ARC Lab · ARC-AGI-2/3 评测台",
-    lead: "把模型的网格推理与交互决策变成可复现、可视化的评测轨迹。",
-    detail:
-      "直接使用 ARC Prize 官方 ARC-AGI-2 prompt/parser/exact scorer 与 ARC-AGI-3 官方 toolkit,将模型输出解析、动作轨迹和得分放在同一个评测台中。公网入口由 Cloudflare Access 保护,只向授权用户开放。",
-    stack: ["ARC-AGI-2", "ARC-AGI-3", "Anthropic Messages", "Cloudflare Access"],
-    status: "active",
-    url: "https://arc.wwjjhh.online",
-    highlights: [
-      "ARC-AGI-2 官方 prompt/parser 与 exact scorer",
-      "ARC-AGI-3 官方 toolkit 逐步动作与官方 scorecard",
-      "公网 HTTPS 入口与 Access 身份策略",
-    ],
-  },
-  {
     name: "咖啡站技术志",
     lead: "一个把技术教程写成漫画连载的学习站。",
     detail:

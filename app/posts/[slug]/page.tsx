@@ -16,6 +16,7 @@ import BookReader from "./BookReader";
 import JavaLab from "./JavaLab";
 import { getComments, isCommentingEnabled } from "@/lib/comments";
 import { jsonLdSafe, publisherRef } from "@/lib/jsonld";
+import { publicAssetUrl } from "@/lib/assets";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -82,6 +83,12 @@ export default async function PostPage({ params }: Props) {
   const episode = info?.episode;
   const season = info?.season;
   const commentsEnabled = isCommentingEnabled();
+  // 正文已有逐话漫画时保持原样；尚未制作逐话位图的连载使用明确标注的系列共用封面，
+  // 页面不会再出现“chapterType=comic 但实际零视觉”的断层，也不冒充逐话漫画。
+  const seriesLeadVisual = info?.series.comicCast
+    && !/!\[[^\]]*\]\(\/(?:comics|images)\//.test(post.content)
+    ? info.series.comicCast
+    : undefined;
 
   const url = `${siteUrl()}/posts/${post.slug}`;
   const isoDate = outboundDate(post.date).toISOString();
@@ -229,6 +236,32 @@ export default async function PostPage({ params }: Props) {
             第 29 话会完整配置 Maven、JUnit 依赖和 <code>src/test/java</code> 目录；在那之前，可先阅读断言的含义，或在已配置 JUnit 的 IDE 项目中运行。
           </p>
         </aside>
+      )}
+
+      {seriesLeadVisual && (
+        <figure className="article-series-visual">
+          <picture>
+            <source
+              type="image/avif"
+              srcSet={`${publicAssetUrl(`${seriesLeadVisual.image}-512.avif`)} 512w, ${publicAssetUrl(`${seriesLeadVisual.image}.avif`)} 1024w`}
+              sizes="(max-width: 760px) calc(100vw - 32px), 720px"
+            />
+            <source
+              type="image/webp"
+              srcSet={`${publicAssetUrl(`${seriesLeadVisual.image}-512.webp`)} 512w, ${publicAssetUrl(`${seriesLeadVisual.image}.webp`)} 1024w`}
+              sizes="(max-width: 760px) calc(100vw - 32px), 720px"
+            />
+            <img
+              src={publicAssetUrl(`${seriesLeadVisual.image}.webp`)}
+              alt={seriesLeadVisual.alt}
+              width={1024}
+              height={1536}
+              loading="eager"
+              decoding="async"
+            />
+          </picture>
+          <figcaption>系列共用视觉 · {seriesLeadVisual.title}</figcaption>
+        </figure>
       )}
 
       {tocItems.length > 1 && (

@@ -33,10 +33,14 @@ function parseTags(value: FormDataEntryValue | null): string[] {
 
 function safeErrorForUrl(error: unknown): string {
   const raw = error instanceof Error ? error.message : "unknown-error";
-  return raw
+  const sanitized = raw
     .replace(/mongodb(\+srv)?:\/\/[^@\s]+@/gi, "mongodb$1://<redacted>@")
     .replace(/(password=)[^&\s]+/gi, "$1<redacted>")
     .slice(0, 180);
+  // 不把数据库驱动、网络拓扑或实现异常回显到地址栏；其余明确的校验错误仍可提示作者修正输入。
+  return /^(标题不能为空|正文不能为空|找不到要(?:更新|删除)的文章)/.test(sanitized)
+    ? sanitized
+    : "保存失败，请检查输入或稍后重试。";
 }
 
 function revalidateBlog(slug?: string) {

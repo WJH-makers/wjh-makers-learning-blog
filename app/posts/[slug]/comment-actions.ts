@@ -4,10 +4,15 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { submitComment, type SubmitResult } from "@/lib/comments";
 import { clientIp } from "@/lib/client-ip";
+import { isSameOriginRequest } from "@/lib/request-origin";
 
 // 免登录评论提交。IP 从 Cloudflare/代理头取(生产经 Cloudflare Tunnel),仅用于 salted hash 限流。
 export async function postComment(_prev: SubmitResult | null, formData: FormData): Promise<SubmitResult> {
   const h = await headers();
+  if (!isSameOriginRequest(h)) {
+    return { ok: false, error: "请求来源不受信任。" };
+  }
+
   const ip = clientIp(h);
   const slug = String(formData.get("slug") ?? "");
 

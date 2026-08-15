@@ -1,4 +1,16 @@
 {
+  "cafe/series-cover": {
+    "w": 1024,
+    "h": 1536
+  },
+  "career/series-cover": {
+    "w": 1024,
+    "h": 1536
+  },
+  "cli/series-cover": {
+    "w": 1024,
+    "h": 1536
+  },
   "java/alings-and-doudou-character-sheet": {
     "w": 1055,
     "h": 1491

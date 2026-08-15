@@ -20,6 +20,12 @@ export const CLI_SERIES_META = {
   tagline: "没有鼠标、没有图标,只有一个闪烁的光标。跟着阿零和特米,把一台裸服务器驯服成豆豆咖啡站的家。",
   project: "把咖啡站部署上真实服务器",
   storageKey: "cli-academy:completed",
+  comicCast: {
+    title: "阿零与特米 · 终端大陆",
+    description: "系列共用封面:阿零第一次走进只有光标、目录和服务器灯光的世界,企鹅机器人特米在旁领路。",
+    image: "/comics/cli/series-cover",
+    alt: "阿零和企鹅终端机器人特米站在服务器与文件系统路径构成的终端世界里",
+  },
 } as const;
 
 export const CLI_SEASONS: JavaSeason[] = [

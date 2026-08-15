@@ -11,7 +11,6 @@ export const SITE_NAV_ITEMS: readonly SiteNavItem[] = [
   { href: "/series", label: "连载", matches: ["/series", "/posts", "/java", "/cli", "/cafe", "/career"] },
   { href: "/coffee-station", label: "咖啡站", matches: ["/coffee-station"] },
   { href: "/projects", label: "项目", matches: ["/projects"] },
-  { href: "https://arc.wwjjhh.online", label: "ARC Lab", matches: [], external: true },
 ];
 
 function isPathWithin(pathname: string, prefix: string): boolean {

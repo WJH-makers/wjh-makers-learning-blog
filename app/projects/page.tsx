@@ -77,14 +77,6 @@ export default function ProjectsPage() {
               ))}
             </div>
 
-            {project.url && (
-              <div className="project-links">
-                <a href={project.url} target="_blank" rel="noopener noreferrer">
-                  打开 ARC Lab ↗
-                </a>
-              </div>
-            )}
-
           </article>
         ))}
       </div>

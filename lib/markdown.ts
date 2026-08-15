@@ -60,7 +60,7 @@ function inlineMarkdown(value: string): string {
       return stash(`<code>${inner}</code>`);
     })
     .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (_m, alt: string, src: string) =>
-      stash(`<img class="post-image" src="${publicAssetUrl(src)}" alt="${alt}" loading="lazy" decoding="async" />`))
+      stash(`<img class="post-image" src="${publicAssetUrl(src)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />`))
     .replace(/!\[([^\]]*)\]\((\/comics\/([A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\.png)\)/g, (_m, alt: string, _src: string, assetKey: string) => {
       // AVIF 优先、512w 移动变体、webp 兜底(png 原档不再进 serve 路径,现代覆盖率已 ~100%);
       // 尺寸取 manifest 真实值(源图有 1055x1491/887x1774/1024x1536 三种,写死会让占位比例失真)。
@@ -72,18 +72,18 @@ function inlineMarkdown(value: string): string {
         `<picture>` +
         `<source type="image/avif" srcset="${base}-512.avif 512w, ${base}.avif ${w}w" sizes="${sizes}" />` +
         `<source type="image/webp" srcset="${base}-512.webp 512w, ${base}.webp ${w}w" sizes="${sizes}" />` +
-        `<img class="post-image comic-image" src="${base}.webp" alt="${alt}" width="${w}" height="${h}" loading="lazy" decoding="async" />` +
+        `<img class="post-image comic-image" src="${base}.webp" alt="${escapeHtml(alt)}" width="${w}" height="${h}" loading="lazy" decoding="async" />` +
         `</picture>`);
     })
     .replace(/!\[([^\]]*)\]\((\/(?!\/)[A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\)/g, (_m, alt: string, src: string) =>
-      stash(`<img class="post-image" src="${publicAssetUrl(src)}" alt="${alt}" loading="lazy" decoding="async" />`))
+      stash(`<img class="post-image" src="${publicAssetUrl(src)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />`))
     // URL 支持一层平衡括号(维基/MDN 的 /Foo_(bar) 不再截断)
     .replace(/\[([^\]]+)\]\((https?:\/\/(?:\([^\s()]*\)|[^\s()])+)\)/g, (_m, text: string, url: string) =>
-      stash(`<a href="${url}" target="_blank" rel="noreferrer">${emphasize(text)}</a>`))
+      stash(`<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${emphasize(text)}</a>`))
     .replace(/\[([^\]]+)\]\((?!https?:)([^\s)]+)\)/g, (_m, text: string, url: string) => {
       // 站内白名单:# / mailto: / 单斜杠绝对路径;排除 // 与 /\(协议相对 URL 会跳站外)
       const safe = /^(#|mailto:)/i.test(url) || (url.startsWith("/") && !/^\/[\\/]/.test(url));
-      return safe ? stash(`<a href="${url}" rel="noreferrer">${emphasize(text)}</a>`) : text;
+      return safe ? stash(`<a href="${escapeHtml(url)}" rel="noreferrer">${emphasize(text)}</a>`) : text;
     });
 
   out = emphasize(out);

@@ -17,6 +17,13 @@ test("cross-origin and null origins are rejected", () => {
   assert.equal(isSameOriginRequest(new Headers({ origin: "null", host: "wwjjhh.online" })), false);
 });
 
+test("客户端伪造 x-forwarded-host 不能单独扩大允许来源", () => {
+  assert.equal(isSameOriginRequest(new Headers({
+    origin: "https://evil.example",
+    host: "127.0.0.1:3000",
+    "x-forwarded-host": "evil.example",
+  }), "https://wwjjhh.online"), false);
+});
 test("missing Origin remains compatible with authenticated non-browser clients", () => {
   assert.equal(isSameOriginRequest(new Headers({ host: "wwjjhh.online" })), true);
 });

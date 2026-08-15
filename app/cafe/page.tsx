@@ -7,6 +7,7 @@ import { staticPageMetadata } from "@/lib/og-base";
 import JavaProgress from "../java/JavaProgress";
 import SeriesMap from "../java/SeriesMap";
 import { isReleasedSlug } from "@/lib/publication";
+import { publicAssetUrl } from "@/lib/assets";
 
 export const revalidate = 3600;
 export const runtime = "nodejs";
@@ -90,6 +91,19 @@ export default function CafeSeriesPage() {
             长期项目:{CAFE_SERIES_META.project} · 删掉所有技术名词,这一话仍然值得阅读
           </p>
         </div>
+      </section>
+
+      <section className="comic-intro" aria-labelledby="cafe-comic-cast-title">
+        <div>
+          <p className="eyebrow">Comic Cover · 系列视觉</p>
+          <h2 id="cafe-comic-cast-title">{CAFE_SERIES_META.comicCast.title}</h2>
+          <p>{CAFE_SERIES_META.comicCast.description}</p>
+        </div>
+        <picture>
+          <source type="image/avif" srcSet={`${publicAssetUrl(`${CAFE_SERIES_META.comicCast.image}-512.avif`)} 512w, ${publicAssetUrl(`${CAFE_SERIES_META.comicCast.image}.avif`)} 1024w`} sizes="(max-width: 760px) calc(100vw - 32px), 420px" />
+          <source type="image/webp" srcSet={`${publicAssetUrl(`${CAFE_SERIES_META.comicCast.image}-512.webp`)} 512w, ${publicAssetUrl(`${CAFE_SERIES_META.comicCast.image}.webp`)} 1024w`} sizes="(max-width: 760px) calc(100vw - 32px), 420px" />
+          <img src={publicAssetUrl(`${CAFE_SERIES_META.comicCast.image}.webp`)} alt={CAFE_SERIES_META.comicCast.alt} width={1024} height={1536} loading="eager" decoding="async" />
+        </picture>
       </section>
 
       {progressSeasons.length > 0 && (

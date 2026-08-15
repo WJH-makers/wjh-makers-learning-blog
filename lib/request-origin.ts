@@ -23,7 +23,6 @@ export function isSameOriginRequest(
 
   if (originUrl.protocol !== "http:" && originUrl.protocol !== "https:") return false;
 
-  const forwardedHost = headers.get("x-forwarded-host")?.split(",", 1)[0]?.trim();
   const requestHost = headers.get("host")?.trim();
   const configuredHost = (() => {
     const configured = configuredSiteUrl;
@@ -35,6 +34,9 @@ export function isSameOriginRequest(
     }
   })();
 
-  const allowedHosts = new Set([requestHost, forwardedHost, configuredHost].filter(Boolean));
+  // 不把客户端可伪造的 x-forwarded-host 单独列为允许来源。
+  // 反向代理若把 Host 改成内部地址,由 NEXT_PUBLIC_SITE_URL 提供固定的公网主机名；
+  // 否则攻击者可同时伪造 x-forwarded-host 与 Origin,绕过这层额外 CSRF 检查。
+  const allowedHosts = new Set([requestHost, configuredHost].filter(Boolean));
   return allowedHosts.has(originUrl.host);
 }

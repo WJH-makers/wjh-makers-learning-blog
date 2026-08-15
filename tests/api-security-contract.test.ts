@@ -17,6 +17,7 @@ test("写入型与高成本端点都做同源校验", async () => {
     "app/api/auth/route.ts",
     "app/api/java/run/route.ts",
     "app/api/monitor-auth/route.ts",
+    "app/posts/[slug]/comment-actions.ts",
   ];
   const missing: string[] = [];
   for (const file of guarded) {
