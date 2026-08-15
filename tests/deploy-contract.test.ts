@@ -16,7 +16,7 @@ test("tested production ref is verified against the deployed commit", () => {
   assert.ok(workflow.indexOf("npm test") < workflow.indexOf("refs/heads/production"));
   assert.match(workflow, /api\/version/);
   assert.match(workflow, /EXPECTED_SHA/);
-  assert.match(deploy, /APP_GIT_SHA="\$TARGET_COMMIT" DEPLOY_VERIFICATION_TOKEN="\$DEPLOY_VERIFICATION_TOKEN" docker compose/);
+  assert.match(deploy, /APP_GIT_SHA="\$TARGET_COMMIT" env DEPLOY_VERIFICATION_TOKEN="\$DEPLOY_VERIFICATION_TOKEN" docker compose/);
   assert.match(deploy, /X-Deploy-Verification-Token: \$DEPLOY_VERIFICATION_TOKEN/);
   assert.match(deploy, /od -vAn -N32 -tx1 \/dev\/urandom/);
   assert.match(deploy, /current-deploy-verification-token/);

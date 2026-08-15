@@ -198,7 +198,7 @@ fi
 printf '%s\n' "$DEPLOY_VERIFICATION_TOKEN" > "$DEPLOY_TOKEN_FILE"
 chmod 600 "$DEPLOY_TOKEN_FILE"
 
-APP_GIT_SHA="$TARGET_COMMIT" DEPLOY_VERIFICATION_TOKEN="$DEPLOY_VERIFICATION_TOKEN" docker compose up -d --build
+APP_GIT_SHA="$TARGET_COMMIT" env DEPLOY_VERIFICATION_TOKEN="$DEPLOY_VERIFICATION_TOKEN" docker compose up -d --build
 
 for attempt in $(seq 1 24); do
   health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}' blog 2>/dev/null || true)"
