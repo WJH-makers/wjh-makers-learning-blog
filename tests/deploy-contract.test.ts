@@ -19,10 +19,14 @@ test("tested production ref is verified against the deployed commit", () => {
   assert.match(deploy, /APP_GIT_SHA="\$TARGET_COMMIT" DEPLOY_VERIFICATION_TOKEN="\$DEPLOY_VERIFICATION_TOKEN" docker compose/);
   assert.match(deploy, /X-Deploy-Verification-Token: \$DEPLOY_VERIFICATION_TOKEN/);
   assert.match(deploy, /od -vAn -N32 -tx1 \/dev\/urandom/);
+  assert.match(deploy, /current-deploy-verification-token/);
+  assert.match(deploy, /printf '%s\\n' "\$DEPLOY_VERIFICATION_TOKEN" > "\$DEPLOY_TOKEN_FILE"/);
+  assert.match(deploy, /rm -f "\$DEPLOY_TOKEN_FILE"/);
   assert.match(compose, /DEPLOY_VERIFICATION_TOKEN: \$\{DEPLOY_VERIFICATION_TOKEN:-\}/);
   assert.match(dockerfile, /ARG APP_GIT_SHA/);
   assert.match(dockerfile, /APP_GIT_SHA=\$\{APP_GIT_SHA\}/);
   assert.match(docs, /随机授权 token/);
+  assert.match(docs, /下一次拉取会复用暂存 token/);
   assert.doesNotMatch(docs, /仅快进到 `origin\/production`/);
 });
 

@@ -6,7 +6,7 @@ GitHub Actions 只验证 `main`。类型检查、测试、生产构建和依赖�
 
 1. 工作区有未提交改动时拒绝发布，不 stash、reset 或覆盖人工工作。
 2. 精确对齐 CI 强推的 `origin/production` 发布引用；失败的 CI 提交不会进入生产环境。
-3. 把目标 Git SHA 写入镜像，运行 `docker compose up -d --build`，等待容器健康检查，并用本次容器启动时生成的随机授权 token 向仅绑定宿主回环的 `/api/version` 核对 SHA。
+3. 把目标 Git SHA 写入镜像，先把本次随机授权 token 安全地暂存到仅部署用户可读的 state 目录，再运行 `docker compose up -d --build`。容器健康后，以该 token 向仅绑定宿主回环的 `/api/version` 核对 SHA；接受发布后立即删除 token。若服务恰好在容器启动后中断，下一次拉取会复用暂存 token 完成同一容器的校验，而不会进入无法校验的失败循环。
 4. 发布成功后按本次变更精确失效 Cloudflare URL；非文章代码变更回退为全量失效。
 5. GitHub Actions 轮询公网 `/api/version`，只确认生产边缘健康且没有泄漏内部 commit。
 

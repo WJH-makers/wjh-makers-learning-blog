@@ -21,11 +21,15 @@ readonly BUILD_CACHE_LIMIT=8gb
 readonly PRUNE_OLDER_THAN=168h
 readonly FETCH_TIMEOUT=180
 readonly FETCH_ATTEMPTS=2
+readonly DEPLOY_TOKEN_FILE="${STATE_DIR}/current-deploy-verification-token"
 
-# 该值仅传给本次 docker compose 命令，绝不落入 .env、state 文件或日志。
-# 3001 只绑定宿主回环，随机 token 再提供第二道授权：即使未来端口错误暴露，
-# 不持有这次启动的 token 也读不到内部 commit SHA。
-DEPLOY_VERIFICATION_TOKEN="$(od -vAn -N32 -tx1 /dev/urandom | tr -d ' \n')"
+# token 不进入 .env 或日志。把它放在 0700 state 目录里只保留到下次发布：
+# compose 已启动而脚本/服务被中断时，后续重试仍能验证当前健康容器，而不是因新 token
+# 与容器启动时的 token 不同而形成永久失败循环。
+DEPLOY_VERIFICATION_TOKEN="$(cat "$DEPLOY_TOKEN_FILE" 2>/dev/null || true)"
+if [[ ! "$DEPLOY_VERIFICATION_TOKEN" =~ ^[0-9a-f]{64}$ ]]; then
+  DEPLOY_VERIFICATION_TOKEN="$(od -vAn -N32 -tx1 /dev/urandom | tr -d ' \n')"
+fi
 readonly DEPLOY_VERIFICATION_TOKEN
 
 cd "$REPOSITORY"
@@ -189,6 +193,11 @@ if [[ "$LAST_SUCCESSFUL_COMMIT" == "$TARGET_COMMIT" ]]; then
   exit 0
 fi
 
+# 先持久化再启动容器，避免 systemd 超时/连接中断恰好发生在 compose 成功之后时
+# 令牌丢失；权限由 STATE_DIR 的 0700 继承，并在接受发布后立即删除。
+printf '%s\n' "$DEPLOY_VERIFICATION_TOKEN" > "$DEPLOY_TOKEN_FILE"
+chmod 600 "$DEPLOY_TOKEN_FILE"
+
 APP_GIT_SHA="$TARGET_COMMIT" DEPLOY_VERIFICATION_TOKEN="$DEPLOY_VERIFICATION_TOKEN" docker compose up -d --build
 
 for attempt in $(seq 1 24); do
@@ -205,6 +214,7 @@ for attempt in $(seq 1 24); do
     fi
     install -d -m 700 "$STATE_DIR"
     printf '%s\n' "$TARGET_COMMIT" > "$STATE_FILE"
+    rm -f "$DEPLOY_TOKEN_FILE"
     purge_cloudflare_cache \
       || echo "Deployed ${TARGET_COMMIT:0:12} but the Cloudflare purge failed; purge manually." >&2
     submit_indexnow \
