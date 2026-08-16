@@ -69,7 +69,10 @@
 .editor-note {
   align-self: start;
   padding: clamp(16px, 2vw, 22px);
-  background: rgba(245,245,245,0.92);
+  /* 原值是硬编码的 rgba(245,245,245,0.92):同族的 .auth-status 与 textarea 都在
+     下面的暗色块里做了覆盖,唯独这条漏了 —— 暗色下浅灰底配 --foreground 浅字,
+     实测 1.19:1,整块侧栏不可读。换成随主题走的沉降面,不再需要暗色补丁。 */
+  background: var(--surface-sunken);
 }
 .editor-note h2 {
   margin-bottom: 20px;

@@ -1,0 +1,159 @@
+/* 仅 /learning 使用。此前这一整族类名(learning-summary / learning-review-grid /
+   learning-review-card / learning-tags / learning-empty / learning-privacy /
+   learning-section / learning-hero)在三份样式表里零定义 —— 页面靠复用 .hero、
+   .section-head、.button 撑住骨架,自己的部分全部裸奔:三个统计块塌成竖排文本行、
+   空态没有容器、隐私区与上一节贴死。这里补齐,并沿用站点既有的视觉语言
+   (1px 网格线、mono 微标签、直角纸面),不引入新的形状词汇。 */
+
+/* 区块节奏统一挂在页面作用域,各区块只管自己的内部排版 */
+.learning-page > * + * { margin-top: var(--gap-section); }
+/* 统计条是 hero 的读数延伸,贴得比常规区块近 */
+.learning-page > .learning-summary { margin-top: var(--gap-block); }
+.learning-section > .section-head { margin-top: 0; }
+
+/* hero 右栏读数:全局 .hero-panel strong 是 display:block,在这里会把 "0" 和
+   "/ 12 个实验已自报本地运行" 拆成两行,读起来像两个互不相干的数。 */
+.learning-hero .hero-panel strong {
+  display: inline;
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 1.9rem);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 概览三格 ──
+   用 1px gap 露出底色当分隔线(与 /stats 的 .stat-tiles 同一手法),
+   而不是给每格描边 —— 后者在相邻边会叠成 2px。 */
+.learning-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  border: 1px solid var(--border);
+  background: var(--border);
+}
+.learning-summary article {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: 18px 16px;
+  background: var(--background);
+}
+.learning-summary span {
+  color: var(--neutral-500);
+  font-family: var(--font-mono);
+  font-size: var(--label-xs);
+  font-weight: 800;
+  letter-spacing: var(--track-tight);
+  text-transform: uppercase;
+}
+.learning-summary strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3.4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  /* 数值会在读取本机记录后由 — 跳成真实数字,不锁等宽整格会左右抖动 */
+  font-variant-numeric: tabular-nums;
+}
+.learning-summary small {
+  color: var(--neutral-600);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* ── 待复习卡片 ── */
+.learning-review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+  gap: var(--gap-card);
+  margin-top: var(--sp-4);
+}
+.learning-review-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: clamp(16px, 2.5vw, 22px);
+  border: 1px solid var(--border);
+  /* 左边线用强调色:这些卡片是"该动手了"的行动项,不是普通信息卡 */
+  border-left: 3px solid var(--accent);
+  background: var(--surface-2);
+}
+.learning-review-card .eyebrow { margin: 0; }
+.learning-review-card h3 { margin: 0; font-size: 1.05rem; line-height: 1.35; }
+.learning-review-card p { margin: 0; color: var(--neutral-700); font-size: 0.88rem; line-height: 1.65; }
+/* 按钮贴底对齐:卡片高度由同行最长的一张决定,入口不该跟着文字长短上下浮动 */
+.learning-review-card .button { margin-top: auto; align-self: flex-start; }
+/* 全局 .muted 是「mono + 800 + 大写 + 宽字距」的微标签样式(与 .eyebrow/.date 同一条
+   规则)。卡片里这句是给人读的整句说明,套上去会把 java.operators 顶成
+   JAVA.OPERATORS,整行读起来像常量表。收回正文字形,只留"次要"的颜色语义。 */
+.learning-review-card .muted {
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ── 易错点标签 ── */
+.learning-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+.learning-tags span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--neutral-700);
+  font-family: var(--font-mono);
+  font-size: var(--label-xs);
+  font-variant-numeric: tabular-nums;
+}
+/* 芯片内的 code 要卸掉全局 code 的描边与底色,否则是"框里再套一个框" */
+.learning-tags code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-ink);
+  font-size: inherit;
+}
+
+/* ── 空态 ──
+   两种用法共用:纯提示时是 <p>,带行动入口时是 <div><p>+<a>。 */
+.learning-empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-3);
+  margin: var(--sp-4) 0 0;
+  padding: clamp(18px, 3vw, 26px);
+  /* 虚线框 = 这里本该有内容但还没有,与实线的信息卡区分开 */
+  border: 1px dashed var(--border);
+  background: var(--surface-1);
+  color: var(--neutral-600);
+  line-height: 1.7;
+}
+.learning-empty p { margin: 0; }
+
+/* ── 本机数据管理 ── */
+.learning-privacy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  padding: clamp(20px, 3vw, 28px);
+  border: var(--rule-strong);
+  background: var(--surface-sunken);
+}
+.learning-privacy > div:first-child { max-width: 62ch; }
+.learning-privacy .eyebrow { margin: 0 0 6px; }
+.learning-privacy h2 { margin: 0 0 8px; font-size: clamp(1.15rem, 2.4vw, 1.4rem); }
+.learning-privacy p { margin: 0; color: var(--neutral-600); line-height: 1.7; }
+/* 全局 .hero-actions 带 32px 上边距,在这个横向布局里会把按钮压偏 */
+.learning-privacy .hero-actions { margin-top: 0; }
+
+@media (max-width: 640px) {
+  .learning-privacy { align-items: flex-start; flex-direction: column; }
+}

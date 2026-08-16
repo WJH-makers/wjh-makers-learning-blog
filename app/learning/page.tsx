@@ -1,3 +1,4 @@
+import "./learning.css";
 import type { Metadata } from "next";
 import LearningDashboard from "./LearningDashboard";
 import { JAVA_LABS } from "@/lib/java-labs";
