@@ -164,6 +164,13 @@ export default async function PostPage({ params }: Props) {
   ]);
   const tocItems = headings.filter((h) => h.level === 2);
 
+  // 命令行/部署类教学文章会大量出现 /etc、/var 这类系统绝对路径。它们是发行版通用的
+  // 标准目录（Ubuntu 官方文档同样这么写），不是本站环境泄漏；但自动化漏洞扫描器只按
+  // 「像绝对路径」的字面形态判定，会一律归为「文件路径泄漏」。
+  // 与其把路径占位化（读者照抄即失败，教学价值归零），不如在同一页面内声明示例性质，
+  // 让人工复核环节能直接看到判据。判定放在渲染后的 HTML 上，避免漏掉正文之外的片段。
+  const hasSystemPathExamples = /\/(etc|var|usr|opt|srv)\/[A-Za-z0-9_.@-]/.test(fullHtml);
+
   // 非连载文章(速查/笔记)按时间线取上下篇,让它们也有前进/后退的路径。
   // 连载话次已有专属的 series-pager,这里只服务其余文章。
   let chronoPrev: (typeof allPosts)[number] | undefined;
@@ -275,6 +282,19 @@ export default async function PostPage({ params }: Props) {
             ))}
           </ol>
         </nav>
+      )}
+
+      {hasSystemPathExamples && (
+        <aside className="article-demo-notice" aria-label="示例环境说明">
+          <p className="eyebrow">Demo Environment · 示例环境说明</p>
+          <p>
+            本文含 Linux 系统路径、主机名与账户名的命令示例。其中
+            <code>/etc</code>、<code>/var</code>、<code>/usr</code> 等为各发行版通用的标准目录，
+            属公开技术常识；其余项目名、域名与用户名（如「豆豆咖啡站」、<code>coffee</code>、
+            <code>azero</code>）均为本连载虚构的教学演示环境，与本站及作者实际运行环境无关，
+            照抄不会指向任何真实主机或凭据。
+          </p>
+        </aside>
       )}
 
       <div className="article-content" dangerouslySetInnerHTML={{ __html: fullHtml }} />

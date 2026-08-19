@@ -1473,6 +1473,10 @@ pre:hover .code-copy,
 .article-rights { margin: var(--gap-block) 0 0; padding: var(--sp-3) var(--sp-4); border-left: 3px solid var(--accent); background: var(--surface-sunken); }
 .article-rights .eyebrow { margin: 0 0 5px; color: var(--accent-ink); }
 .article-rights p:last-child { margin: 0; color: var(--neutral-600); font-size: .82rem; line-height: 1.65; }
+/* 示例环境声明：置于正文之前，与版权说明同一视觉语言但用中性色，不抢正文注意力 */
+.article-demo-notice { margin: 0 0 var(--gap-block); padding: var(--sp-3) var(--sp-4); border-left: 3px solid var(--neutral-400); background: var(--surface-sunken); }
+.article-demo-notice .eyebrow { margin: 0 0 5px; color: var(--neutral-600); }
+.article-demo-notice p:last-child { margin: 0; color: var(--neutral-600); font-size: .82rem; line-height: 1.65; }
 .follow-card .eyebrow { margin-bottom: 6px; }
 .follow-text { margin: 0 0 14px; color: var(--neutral-700); }
 .follow-links { display: flex; gap: 10px; flex-wrap: wrap; }
