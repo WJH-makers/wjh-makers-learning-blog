@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { siteUrl } from "@/lib/posts";
+import { SITE_NAME, siteUrl } from "@/lib/site-config";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 
@@ -40,7 +40,7 @@ export default function NowPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    name: "现在 · 咖啡站技术志",
+    name: `现在 · ${SITE_NAME}`,
     url: `${siteUrl()}/now`,
     dateModified: UPDATED,
     inLanguage: "zh-CN",

@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, type ReactNode } from "rea
 import Script from "next/script";
 import { postComment } from "./comment-actions";
 import type { Comment, SubmitResult } from "@/lib/comments";
+import { turnstileSiteKey } from "@/lib/turnstile-config";
 
 const AVATAR_BG = ["#111111", "#cc0000", "#444444"];
 function avatarColor(name: string): string {
@@ -56,7 +57,9 @@ function renderBody(body: string): ReactNode[] {
 const PREVIEW = 5;
 
 export default function Comments({ slug, initial, enabled }: { slug: string; initial: Comment[]; enabled: boolean }) {
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  // 与服务端 isCommentingEnabled() 共用同一个读取入口。收敛前这里不带 .trim()，
+  // 而服务端带 —— env 末尾多一个空格就会「服务端认为已启用、这里的 widget 静默不渲染」。
+  const siteKey = turnstileSiteKey();
   const commentingEnabled = enabled && Boolean(siteKey);
   const [state, action, pending] = useActionState<SubmitResult | null, FormData>(postComment, null);
   const [list, setList] = useState<Comment[]>(initial);

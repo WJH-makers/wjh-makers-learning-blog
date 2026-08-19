@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getAllPublishedTags, getPublishedPostsByTag, siteUrl } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
+import { getAllPublishedTags, getPublishedPostsByTag } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 

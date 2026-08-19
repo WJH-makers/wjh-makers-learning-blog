@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { blogAdminSecret } from "@/lib/auth-secrets";
 import { blogSessionTokenEdge, safeCompareEdge } from "@/lib/blog-auth-token-edge";
+import { ALLOWED_HOSTS, SITE_URL } from "@/lib/site-config";
 
 /**
- * Host 白名单：只允许正式域名与本地/内网访问。
+ * Host 白名单：只允许正式域名与本地/内网访问。白名单本体在 lib/site-config.ts，
+ * 由 PRIMARY_HOST 派生 —— 它是字面常量而非环境变量，改一个 env 不能扩大可信来源。
  *
  * 背景：Vercel 副站域名(wjh-makers-learning-blog.vercel.app)绕过 Cloudflare
  * WAF 直达应用。Host 头本身可被客户端伪造（直连 Vercel 时伪造
@@ -11,8 +14,6 @@ import { blogSessionTokenEdge, safeCompareEdge } from "@/lib/blog-auth-token-edg
  * 从环境层封死整条链路，无需依赖 Host 头判断。
  */
 const ON_VERCEL = process.env.VERCEL === "1";
-
-const ALLOWED_HOSTS = new Set(["wwjjhh.online", "www.wwjjhh.online"]);
 
 function isLocalHost(host: string): boolean {
   return (
@@ -46,7 +47,7 @@ export async function proxy(request: NextRequest) {
   const isContentPage = pathname === "/" || pathname === "/posts" || /^\/posts\/[^/]+$/.test(pathname);
 
   if (pathname === "/write" && request.method === "POST") {
-    const expected = process.env.BLOG_ADMIN_TOKEN?.trim();
+    const expected = blogAdminSecret();
     if (!expected) {
       return new NextResponse("Not Found", { status: 404 });
     }
@@ -60,10 +61,9 @@ export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
 
   if (isContentPage) {
-    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online";
     const links = [
-      `<${origin}/sitemap.xml>; rel="sitemap"; type="application/xml"`,
-      `<${origin}/rss.xml>; rel="alternate"; type="application/rss+xml"`,
+      `<${SITE_URL}/sitemap.xml>; rel="sitemap"; type="application/xml"`,
+      `<${SITE_URL}/rss.xml>; rel="alternate"; type="application/rss+xml"`,
     ];
     response.headers.set("Link", links.join(", "));
   }

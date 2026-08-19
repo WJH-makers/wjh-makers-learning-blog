@@ -8,9 +8,9 @@ import {
   publishedEpisodes,
   seasonPublishedSlugs,
 } from "@/lib/series";
-import { siteUrl } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
 import { publicAssetUrl } from "@/lib/assets";
-import { jsonLdSafe } from "@/lib/jsonld";
+import { jsonLdSafe, publisherRef } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 import JavaProgress from "./JavaProgress";
 import SeriesMap from "./SeriesMap";
@@ -44,11 +44,8 @@ export default function JavaSeriesPage() {
     url: `${siteUrl()}/java`,
     description: SERIES_META.tagline,
     inLanguage: "zh-CN",
-    author: {
-      "@type": "Person",
-      name: "咖啡站技术志",
-      url: siteUrl(),
-    },
+    // 与 layout 的 publisherNode 同一实体（见 app/posts/[slug]/page.tsx 的同款用法）。
+    author: publisherRef(siteUrl()),
     hasPart: publishedEpisodes().map((ep, i) => ({
       "@type": "BlogPosting",
       position: i + 1,

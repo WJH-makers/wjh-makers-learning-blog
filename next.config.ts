@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 import { LEGACY_POST_SLUG_REDIRECTS } from "./lib/legacy-slug-redirects";
+import { IMMUTABLE_ASSET_CACHE_CONTROL, NO_STORE_CACHE_CONTROL } from "./lib/cache-policy";
+import { STATIC_ASSET_CORS_HEADERS, securityHeaders } from "./lib/security-headers";
 
 // 国内访问会被 Cloudflare 调度到西雅图(实测 colo=SEA，首页 1461–5166ms)，而源站在
 // 上海、直连 RTT 只有 43–104ms。因此把 HTML 交给源站直连拿延迟，把 /_next/static/ 下
@@ -8,9 +10,8 @@ import { LEGACY_POST_SLUG_REDIRECTS } from "./lib/legacy-slug-redirects";
 //
 // 空值 = 关闭(与改造前完全一致)。DNS 与 Tunnel 就绪后才在构建期注入，
 // 出问题把变量拿掉重新 build 即可回退。
+// CSP 白名单要跟着一起放行；由 lib/security-headers.ts 的 contentSecurityPolicy(assetPrefix) 处理。
 const assetPrefix = process.env.NEXT_PUBLIC_ASSET_PREFIX?.trim() || "";
-// CSP 是白名单：资源换了域名就必须同步放行，否则整站脚本样式字体全被拦掉。
-const assetOrigin = assetPrefix ? ` ${assetPrefix}` : "";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -46,83 +47,32 @@ const nextConfig: NextConfig = {
       permanent: true,
     })),
   ],
+  // 头与缓存的**值**都定义在 lib/security-headers.ts 与 lib/cache-policy.ts，
+  // 这里只负责把它们挂到路径上。契约测试因此能直接 import 那两个模块断言结构，
+  // 不必再拿正则去扒本文件的文本（那种断言会被本文件的注释绊倒，有过前例）。
   headers: async () => [
     {
       source: "/(.*)",
-      headers: [
-        {
-          key: "Content-Security-Policy",
-          value: [
-            "default-src 'self'",
-            // clarity.ms 已移除:实测国内读者 100% 加载失败(curl http=000、浏览器
-            // ERR_CONNECTION_CLOSED),数据一条收不到,只换来每页两个控制台错误。
-            // cloudflareinsights 仍保留 —— beacon 是 CF 边缘自动注入的,在 Dashboard
-            // 关掉 Web Analytics 之前先留着白名单:删了它拦不住注入,只会把网络错误
-            // 变成 CSP violation,页面上照样报错。
-            `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com${assetOrigin}`,
-            `style-src 'self' 'unsafe-inline'${assetOrigin}`,
-            "img-src 'self' data: https:",
-            `font-src 'self' data:${assetOrigin}`,
-            `connect-src 'self' https://challenges.cloudflare.com https://cloudflareinsights.com${assetOrigin}`,
-            "frame-src https://challenges.cloudflare.com",
-            "object-src 'none'",
-            "base-uri 'none'",
-            "frame-ancestors 'none'",
-            // 表单只能提交回本站:即便某处被注入了 <form action="//evil">,浏览器也会拦下,
-            // 这是 CSP 里少数能挡住「数据外带」而非「脚本执行」的指令。
-            "form-action 'self'",
-            "upgrade-insecure-requests",
-          ].join("; "),
-        },
-        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        // 不要求搜索引擎保留可直接访问的历史快照；不影响正常索引，但不是反爬安全边界。
-        { key: "X-Robots-Tag", value: "noarchive" },
-        // 全站生效(原先只挂在 /api 下,HTML 与静态资源反而没保护)。
-        { key: "X-Content-Type-Options", value: "nosniff" },
-        // 防止点击劫持攻击
-        { key: "X-Frame-Options", value: "DENY" },
-        // 启用浏览器内置的 XSS 防护
-        { key: "X-XSS-Protection", value: "1; mode=block" },
-        // 站点没有任何需要这些硬件/API 的功能,一律关掉,缩小第三方脚本的可乘之机。
-        {
-          key: "Permissions-Policy",
-          value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
-        },
-        // 源站自己也声明 HSTS,不把「只走 HTTPS」这件事全押在 CF 配置不被改上。
-        { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-      ],
+      headers: securityHeaders(assetPrefix),
     },
     {
-      // 静态产物一旦搬到 cdn 子域，字体与 module 脚本就成了跨域请求 —— 浏览器会因为
-      // 缺 CORS 头直接拒绝加载(字体尤其静默失败，只表现为字体回退)。这些文件带 hash、
-      // 内容公开且不含凭据，放行任意来源是安全的。
       source: "/_next/static/:path*",
-      headers: [
-        { key: "Access-Control-Allow-Origin", value: "*" },
-        { key: "Timing-Allow-Origin", value: "*" },
-      ],
+      headers: [...STATIC_ASSET_CORS_HEADERS],
     },
     {
-      // 漫画文件名为稳定版本名，正文引用变更时才会换 URL；允许 CDN 与浏览器长期复用。
-      // 注:/_next/static 不在这里 —— Next 自己就发 immutable 长缓存,再自定义一遍是冗余,
-      // 且会触发「Custom Cache-Control can break Next.js development behavior」告警。
+      // 漫画与本地回退图都用稳定版本名作文件名，正文引用变更时才会换 URL。
       source: "/comics/:path*",
-      headers: [
-        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
-      ],
+      headers: [{ key: "Cache-Control", value: IMMUTABLE_ASSET_CACHE_CONTROL }],
     },
     {
-      // R2 迁移前后的本地回退图也使用稳定文件名,保持与漫画资源相同的缓存策略。
       source: "/images/:path*",
-      headers: [
-        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
-      ],
+      headers: [{ key: "Cache-Control", value: IMMUTABLE_ASSET_CACHE_CONTROL }],
     },
     {
       source: "/api/:path*",
       headers: [
         // nosniff 已由上面的全站规则覆盖,这里只补接口特有的「永不缓存」。
-        { key: "Cache-Control", value: "no-store" },
+        { key: "Cache-Control", value: NO_STORE_CACHE_CONTROL },
       ],
     },
   ],

@@ -1,9 +1,10 @@
 import { ImageResponse } from "next/og";
+import { SITE_NAME } from "@/lib/site-config";
 
 // 全站默认社交分享图(Open Graph / Twitter Card)。
 // 纯排版品牌卡,工程报纸风:黑白纸底 + 红强调 + 硬边框。
 // 刻意不含头像/真名/联系方式 —— 干净、无隐私、无外部图片依赖。
-export const alt = "咖啡站技术志 · 原创技术漫画与工程学习";
+export const alt = `${SITE_NAME} · 原创技术漫画与工程学习`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

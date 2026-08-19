@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
-import { getAllPublishedPosts, siteUrl } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
+import { getAllPublishedPosts } from "@/lib/posts";
 import { SERIES_META, publishedEpisodes } from "@/lib/series";
 import { seriesByRoute, seriesProgress } from "@/lib/series-registry";
 import { availabilityOf } from "@/lib/universe";

@@ -5,6 +5,7 @@ import ServerCards, { type Srv } from "./ServerCards";
 import TraficCharts, { type CfStats } from "./TraficCharts";
 import MonitorLogin from "./MonitorLogin";
 import { isMonitorAuthed } from "@/lib/monitor-auth";
+import { INTERNAL_ORIGIN, OPS_SUBDOMAINS } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,9 +18,8 @@ export const metadata = {
 
 async function get<T>(path: string): Promise<T | null> {
   try {
-    const base = process.env.NODE_ENV === "production" ? "http://127.0.0.1:3001" : "http://localhost:3000";
     const token = (await cookies()).get("monitor_token")?.value;
-    const r = await fetch(`${base}${path}`, {
+    const r = await fetch(`${INTERNAL_ORIGIN}${path}`, {
       cache: "no-store",
       headers: token ? { cookie: `monitor_token=${token}` } : undefined,
     });
@@ -85,8 +85,8 @@ export default async function MonitorPage() {
               </h1>
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-              <a href="https://monitor.wwjjhh.online" target="_blank" rel="noreferrer" className="button" style={{ fontSize: ".7rem", padding: "3px 10px", minHeight: 32 }}>Netdata</a>
-              <a href="https://status.wwjjhh.online" target="_blank" rel="noreferrer" className="button" style={{ fontSize: ".7rem", padding: "3px 10px", minHeight: 32 }}>Kuma</a>
+              <a href={OPS_SUBDOMAINS.netdata} target="_blank" rel="noreferrer" className="button" style={{ fontSize: ".7rem", padding: "3px 10px", minHeight: 32 }}>Netdata</a>
+              <a href={OPS_SUBDOMAINS.uptimeKuma} target="_blank" rel="noreferrer" className="button" style={{ fontSize: ".7rem", padding: "3px 10px", minHeight: 32 }}>Kuma</a>
             </div>
           </div>
           {srv && (

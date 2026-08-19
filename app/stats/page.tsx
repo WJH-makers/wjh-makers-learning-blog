@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getAllPublishedPosts, getAllPublishedTags, siteUrl, type Post } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
+import { getAllPublishedPosts, getAllPublishedTags, type Post } from "@/lib/posts";
 import { SERIES_LIST, seriesProgress, allSeriesProgress, findEpisodeInfo } from "@/lib/series-registry";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";

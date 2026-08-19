@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PROJECTS, STATUS_LABEL } from "@/lib/projects";
-import { siteUrl } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 

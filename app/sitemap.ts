@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { getAllPublishedTags, getPublishedPostIndex, outboundDate, siteUrl } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
+import { getAllPublishedTags, getPublishedPostIndex, outboundDate } from "@/lib/posts";
 import { publishedEpisodesOf, SERIES_LIST } from "@/lib/series-registry";
 import type { JavaEpisode } from "@/lib/series";
 import { STATIC_SITEMAP_ROUTES } from "@/lib/sitemap-routes";

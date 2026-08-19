@@ -2,7 +2,7 @@ import "./learning.css";
 import type { Metadata } from "next";
 import LearningDashboard from "./LearningDashboard";
 import { JAVA_LABS } from "@/lib/java-labs";
-import { siteUrl } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
 
 export const metadata: Metadata = {
   title: "学习档案 · 本机复习与成果记录",

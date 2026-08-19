@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getAllPublishedPosts, renderMarkdown, siteUrl, type Post } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
+import { getAllPublishedPosts, renderMarkdown, type Post } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 

@@ -3,6 +3,7 @@
  * 一是首屏零外部依赖,二是「这个项目解决了什么」只有人写得出来。
  * 新增项目 = 往下面数组加一条。
  */
+import { SITE_NAME } from "@/lib/site-config";
 
 export type ProjectStatus = "active" | "shipped" | "research" | "paused";
 
@@ -31,7 +32,9 @@ export const STATUS_LABEL: Record<ProjectStatus, string> = {
 
 export const PROJECTS: Project[] = [
   {
-    name: "咖啡站技术志",
+    // 这个条目描述的就是本站，站点改名它必须跟着改 —— 不是「恰好同名的两个值」。
+    // 它会进 /projects 的 JSON-LD 作 CreativeWork.name，而那个 CreativeWork 即本站。
+    name: SITE_NAME,
     lead: "一个把技术教程写成漫画连载的学习站。",
     detail:
       "Next.js App Router 单体,没有独立后端 —— 写入直接走 Server Action 打 MongoDB Atlas,内容由本地 Markdown 与数据库按 slug 合并(数据库优先,连不上就降级读 md,所以断网也能构建)。Markdown 渲染器是自己写的纯函数模块,零第三方依赖:代码高亮走 Shiki 构建期完成,客户端不背任何高亮 JS。全站手写 CSS,没有 Tailwind 也没有 UI 库。",

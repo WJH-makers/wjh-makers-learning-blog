@@ -6,11 +6,12 @@ import { join } from "node:path";
 import { LEGACY_POST_SLUG_REDIRECTS } from "@/lib/legacy-slug-redirects";
 import { getPublishedPost } from "@/lib/posts";
 import { findEpisodeInfo } from "@/lib/series-registry";
+import { SITE_NAME } from "@/lib/site-config";
 
 // 文章级社交分享图:报纸风 + 卷话信息 + 中文标题。
 // 中文字体用本地思源黑体子集(satori 不支持 woff2,故用子集 ttf)。
 // 系列信息走多连载注册表:Java / CLI / Cafe 三条线统一取系列名+卷次。
-export const alt = "咖啡站技术志 · 连载与笔记";
+export const alt = `${SITE_NAME} · 连载与笔记`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

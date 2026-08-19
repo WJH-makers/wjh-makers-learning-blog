@@ -1,10 +1,12 @@
 import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { blogAdminSecret } from "@/lib/auth-secrets";
 import { BLOG_COOKIE, blogSessionToken, isBlogAuthed } from "@/lib/blog-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/client-ip";
 import { isSameOriginRequest } from "@/lib/request-origin";
 import { safeCompare } from "@/lib/safe-compare";
+import { adminSessionCookieOptions } from "@/lib/session-cookie";
 
 export async function GET() {
   return NextResponse.json({ authed: await isBlogAuthed() });
@@ -29,20 +31,14 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
-  const expected = process.env.BLOG_ADMIN_TOKEN?.trim();
+  const expected = blogAdminSecret();
 
   if (!expected || typeof token !== "string" || !safeCompare(token, expected)) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(BLOG_COOKIE, blogSessionToken(expected), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
-    path: "/",
-  });
+  cookieStore.set(BLOG_COOKIE, blogSessionToken(expected), adminSessionCookieOptions());
 
   return NextResponse.json({ ok: true });
 }

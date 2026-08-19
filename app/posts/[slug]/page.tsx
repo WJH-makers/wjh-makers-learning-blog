@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPublishedPost, getPublishedPostIndex, getRelatedPosts, outboundDate, renderMarkdown, siteUrl } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
+import { getPublishedPost, getPublishedPostIndex, getRelatedPosts, outboundDate, renderMarkdown } from "@/lib/posts";
 import { CHAPTER_TYPE_LABEL } from "@/lib/series";
 import { findEpisodeInfo } from "@/lib/series-registry";
 import { findJavaLab } from "@/lib/java-labs";
@@ -16,6 +17,7 @@ import BookReader from "./BookReader";
 import JavaLab from "./JavaLab";
 import { getComments, isCommentingEnabled } from "@/lib/comments";
 import { jsonLdSafe, publisherRef } from "@/lib/jsonld";
+import { OG_BASE } from "@/lib/og-base";
 import { publicAssetUrl } from "@/lib/assets";
 
 type Props = {
@@ -53,9 +55,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: post.summary,
     alternates: { canonical: url },
     openGraph: {
-      // Next 对 openGraph 是整体替换而非深合并:siteName/locale 需在页面级补齐,否则丢失
-      siteName: "咖啡站技术志",
-      locale: "zh_CN",
+      // Next 对 openGraph 是整体替换而非深合并:siteName/locale 需在页面级补齐,否则丢失。
+      // OG_BASE 就是为此存在的（见 lib/og-base.ts 注释），这里原先内联了一份同值副本。
+      ...OG_BASE,
       title: post.title,
       description: post.summary,
       url,

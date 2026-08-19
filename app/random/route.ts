@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getPublishedPostIndex, siteUrl } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
+import { getPublishedPostIndex } from "@/lib/posts";
 
 // 每次请求都要换一篇,不能被任何一层缓存住。
 export const dynamic = "force-dynamic";

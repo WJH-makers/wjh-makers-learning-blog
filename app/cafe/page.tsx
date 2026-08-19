@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
 import { CAFE_SEASONS, CAFE_SERIES_META, CAFE_STAGES, cafePublishedEpisodes } from "@/lib/series-cafe";
-import { siteUrl } from "@/lib/posts";
-import { jsonLdSafe } from "@/lib/jsonld";
+import { siteUrl } from "@/lib/site-config";
+import { jsonLdSafe, publisherRef } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 import JavaProgress from "../java/JavaProgress";
 import SeriesMap from "../java/SeriesMap";
@@ -51,11 +51,10 @@ export default function CafeSeriesPage() {
     url: `${siteUrl()}/cafe`,
     description: CAFE_SERIES_META.tagline,
     inLanguage: "zh-CN",
-    author: {
-      "@type": "Person",
-      name: "咖啡站技术志",
-      url: siteUrl(),
-    },
+    // 引用 layout 里 publisherNode 定义的同一出版实体，不再各页复制一份匿名节点。
+    // 原先写成 "@type": "Person" 且名字是刊物名 —— 刊物不是自然人，与 layout 的
+    // Organization 同 @id 却异 @type，是结构化数据层面的自相矛盾。
+    author: publisherRef(siteUrl()),
     hasPart: cafePublishedEpisodes().map((ep, i) => ({
       "@type": "BlogPosting",
       position: i + 1,

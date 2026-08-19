@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { jsonLdSafe, publisherNode, publisherId, websiteId } from "@/lib/jsonld";
 import { SERIES_LIST, seriesProgress } from "@/lib/series-registry";
+import { SITE_NAME, SITE_URL } from "@/lib/site-config";
 import SiteNav from "./_components/SiteNav";
 
 // 斜体全站仅 2 处且均为装饰性(blockquote/署名),浏览器合成斜体足够——
@@ -43,8 +44,10 @@ const jetbrainsMono = localFont({
 });
 const fontVars = `${playfair.variable} ${lora.variable} ${inter.variable} ${jetbrainsMono.variable}`;
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online";
-const SITE_NAME = "咖啡站技术志";
+// 站点根地址与出版实体名来自 lib/site-config.ts 的单一事实源。
+// SITE_URL 比原先的本地常量多剥一个末尾斜杠，避免 `${SITE}/path` 拼出双斜杠。
+// 以下三项只在本文件出现一次，是文案不是配置，留在使用处更好读。
+const SITE = SITE_URL;
 const SITE_TAGLINE = "把工程知识写成故事";
 const SITE_DESC = "原创编程漫画与可验证的工程学习记录：从 Java 基础、工程化到系统实践。";
 const SITE_AUTHOR = "咖啡站编辑部";

@@ -1,5 +1,6 @@
 import "./write.css";
 import type { Route } from "next";
+import { blogAdminSecret } from "@/lib/auth-secrets";
 import { redirect } from "next/navigation";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies, headers } from "next/headers";
@@ -9,6 +10,7 @@ import { getPublishedPost, PUBLIC_POSTS_CACHE_TAG } from "@/lib/posts";
 import WriteEditorClient from "./WriteEditorClient";
 import { isSameOriginRequest } from "@/lib/request-origin";
 import { safeCompare } from "@/lib/safe-compare";
+import { adminSessionCookieOptions } from "@/lib/session-cookie";
 import { shanghaiDate } from "@/lib/publication";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +64,7 @@ async function requireAdminOrRedirect(formData: FormData): Promise<void> {
     redirect("/write?error=bad-origin" as Route);
   }
 
-  const expectedToken = process.env.BLOG_ADMIN_TOKEN?.trim();
+  const expectedToken = blogAdminSecret();
   const cookieStore = await cookies();
   const cookieToken = cookieStore.get(BLOG_COOKIE)?.value ?? "";
   const formToken = String(formData.get("token") ?? "").trim();
@@ -78,13 +80,7 @@ async function requireAdminOrRedirect(formData: FormData): Promise<void> {
   }
 
   if (!cookieAuthed) {
-    cookieStore.set(BLOG_COOKIE, blogSessionToken(expectedToken), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
-      path: "/",
-    });
+    cookieStore.set(BLOG_COOKIE, blogSessionToken(expectedToken), adminSessionCookieOptions());
   }
 }
 
@@ -162,7 +158,7 @@ export default async function WritePage({ searchParams }: Props) {
   const { error, slug } = await searchParams;
   const today = shanghaiDate();
   const dbReady = hasDatabaseConfig();
-  const tokenReady = Boolean(process.env.BLOG_ADMIN_TOKEN?.trim());
+  const tokenReady = Boolean(blogAdminSecret());
   const publishingReady = dbReady && tokenReady;
   const message = errorMessage(error);
   const isAuthenticated = await checkAuth();

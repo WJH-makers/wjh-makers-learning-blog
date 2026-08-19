@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
+import { monitorCredentials } from "@/lib/auth-secrets";
 import { safeCompare } from "@/lib/safe-compare";
 
 export const MONITOR_COOKIE = "monitor_token";
@@ -24,8 +25,7 @@ export function monitorToken(user: string, pass: string): string {
  * 口令未配置 => 恒为 false(fail-closed),与登录接口一致。
  */
 export async function isMonitorAuthed(): Promise<boolean> {
-  const user = process.env.MONITOR_USER ?? "";
-  const pass = process.env.MONITOR_PASS ?? "";
+  const { user, pass } = monitorCredentials();
   if (!user || !pass) return false;
 
   const cookieStore = await cookies();

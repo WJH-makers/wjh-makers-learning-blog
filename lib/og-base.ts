@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { siteUrl } from "@/lib/posts";
+import { SITE_NAME, siteUrl } from "@/lib/site-config";
 
 // Next 的 metadata 合并对 openGraph 是整体替换而非深合并:页面一旦自定义 openGraph,
 // layout 里的 siteName/locale 就会丢失。凡自定义 openGraph 的页面用 `...OG_BASE` 展开补齐。
 export const OG_BASE = {
-  siteName: "咖啡站技术志",
+  siteName: SITE_NAME,
   locale: "zh_CN",
 } as const;
 
@@ -17,7 +17,7 @@ export function socialMetadata(input: {
     url: `${siteUrl()}/opengraph-image`,
     width: 1200,
     height: 630,
-    alt: "咖啡站技术志 · 原创技术漫画与工程学习",
+    alt: `${SITE_NAME} · 原创技术漫画与工程学习`,
   };
 
   return {

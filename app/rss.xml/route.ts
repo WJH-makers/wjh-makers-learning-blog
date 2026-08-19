@@ -1,4 +1,5 @@
-import { getAllPublishedPosts, outboundDate, siteUrl } from "@/lib/posts";
+import { siteUrl } from "@/lib/site-config";
+import { getAllPublishedPosts, outboundDate } from "@/lib/posts";
 
 // RSS 变化频率低(仅发文时),用 ISR 缓存;write 发布会 revalidatePath('/rss.xml') 主动刷新。
 export const revalidate = 3600;

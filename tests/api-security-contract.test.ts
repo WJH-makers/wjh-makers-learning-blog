@@ -6,6 +6,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { blogSessionToken } from "../lib/blog-auth-token.ts";
 import { safeCompare } from "../lib/safe-compare.ts";
+import { adminSessionCookieOptions, monitorSessionCookieOptions } from "../lib/session-cookie.ts";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 
@@ -57,11 +58,44 @@ test("会话 cookie 是 HMAC 派生值，不是原始密钥", () => {
   assert.notEqual(session, blogSessionToken(`${secret}x`));
 });
 
-test("会话 cookie 带齐 HttpOnly / SameSite，且生产环境要求 Secure", async () => {
-  const source = await read("app/api/auth/route.ts");
-  assert.ok(source.includes("httpOnly: true"), "缺 httpOnly 会让 XSS 能读走会话");
-  assert.ok(/sameSite:\s*"(lax|strict)"/.test(source), "缺 SameSite 会放大 CSRF 面");
-  assert.ok(source.includes('process.env.NODE_ENV === "production"'), "生产环境必须要求 Secure");
+test("会话 cookie 带齐 HttpOnly / SameSite，且生产环境要求 Secure", () => {
+  // 断言共享模块的返回值本身，而不是扒某个路由文件的源码文本 ——
+  // 后者只能证明「那一处写了」，证明不了另外两处也写了。
+  for (const [label, options] of [
+    ["admin", adminSessionCookieOptions()],
+    ["monitor", monitorSessionCookieOptions()],
+  ] as const) {
+    assert.equal(options.httpOnly, true, `${label}: 缺 httpOnly 会让 XSS 能读走会话`);
+    assert.equal(options.sameSite, "lax", `${label}: 缺 SameSite 会放大 CSRF 面`);
+    assert.equal(options.path, "/", `${label}: path 必须覆盖全站，否则跳转后会话丢失`);
+    assert.ok(options.maxAge > 0, `${label}: maxAge 必须为正`);
+  }
+});
+
+test("secure 属性由 NODE_ENV 决定：生产必开，本地 http 必关", () => {
+  const original = process.env.NODE_ENV;
+  try {
+    // @ts-expect-error NODE_ENV 在类型上是只读联合，测试里需要临时改写。
+    process.env.NODE_ENV = "production";
+    assert.equal(adminSessionCookieOptions().secure, true, "生产环境必须要求 Secure");
+    assert.equal(monitorSessionCookieOptions().secure, true, "生产环境必须要求 Secure");
+    // @ts-expect-error 同上。
+    process.env.NODE_ENV = "development";
+    // 本地 http://localhost 若强制 secure，浏览器直接不存 cookie => 登不上。
+    assert.equal(adminSessionCookieOptions().secure, false);
+  } finally {
+    // @ts-expect-error 同上。
+    process.env.NODE_ENV = original;
+  }
+});
+
+test("三处设置会话 cookie 的地方都走共享模块，不再各写一份属性", async () => {
+  // 任一处漏掉 httpOnly 都是可利用的 XSS 会话窃取，而其余两处仍正确 —— 评审极难发现。
+  for (const file of ["app/api/auth/route.ts", "app/write/page.tsx", "app/api/monitor-auth/route.ts"]) {
+    const source = await read(file);
+    assert.match(source, /SessionCookieOptions\(\)/, `${file} 必须调用共享的 cookie 选项工厂`);
+    assert.doesNotMatch(source, /httpOnly:\s*true/, `${file} 不应再内联 cookie 安全属性`);
+  }
 });
 
 test("safeCompare 长度不同直接 false，等长内容不同也 false", () => {

@@ -244,6 +244,39 @@ x-frame-options: DENY
 （无 Server 行）
 ```
 
+### 逐层定位：头到底在哪一层被改（2026-08-19 复测）
+
+三层各自实测，同一个请求路径分三处取样。**必须带正确的 Host 取样** ——
+用错 Host 会打到 `server_name _` 兜底块，那个块不 proxy 到应用，量出来的
+「nginx 丢了 6 个头」是取样错误，不是真实行为（本轮就先踩了这个坑）。
+
+| 层 | 取样命令 | 结果 |
+|----|---------|------|
+| Next.js 源站 | `curl -sI http://127.0.0.1:3001/` | 8 个头全发，值与 `lib/security-headers.ts` 一致 |
+| nginx :80 | `curl -sI -H 'Host: wwjjhh.online' http://127.0.0.1/` | **8 个头全部透传，不增不改** |
+| nginx :443 | `curl -sIk --resolve wwjjhh.online:443:127.0.0.1 https://wwjjhh.online/` | 同上，8 个头全部透传 |
+| Cloudflare 边缘 | `curl -sI https://wwjjhh.online/` | HSTS / X-Frame-Options / Referrer-Policy 三项被覆写 |
+
+**结论**：nginx 不参与安全头，`/etc/nginx/sites-enabled/wwjjhh.online` 里没有任何
+涉及安全头的 `add_header`（它的 `add_header` 只管 `Cache-Control`、`X-Cache-Status`、
+`Link`）。因此源站与边缘是**两个**声明点，不是三个 —— 要消除分歧只需关掉 CF 的
+Managed Transform，无需改 nginx。
+
+### 单一事实源位置（2026-08-19 收敛后）
+
+源站侧的头不再写在 `next.config.ts` 里：
+
+| 内容 | 定义处 |
+|------|--------|
+| 8 个安全头 + CSP | `lib/security-headers.ts` |
+| Cache-Control 各档 | `lib/cache-policy.ts` |
+| 域名 / Host 白名单 / 出版实体名 | `lib/site-config.ts` |
+| 会话 cookie 安全属性 | `lib/session-cookie.ts` |
+
+`next.config.ts` 只负责把这些值挂到路径上。契约测试 `tests/config-convergence.test.ts`
+断言「没有第二处定义」，包括 `ops/sync-r2-assets.py` 的 `CACHE_CONTROL` 与 TS 常量
+逐字节一致（Python 不能 import TS，跨语言一致性只能靠测试比对）。
+
 ### 第三方评估
 
 - https://securityheaders.com/?q=https://wwjjhh.online

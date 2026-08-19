@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
+import { PUBLIC_POSTS_REVALIDATE_SECONDS } from "@/lib/cache-policy";
 import { getDatabasePost, getDatabasePostIndex, getDatabasePosts } from "@/lib/db";
 import { estimateReadingMinutes } from "@/lib/text";
 import { isReleasedDate, shanghaiDate } from "@/lib/publication";
@@ -106,19 +107,19 @@ export function getPost(slug: string): Post | undefined {
 const getCachedDatabasePosts = unstable_cache(
   async (): Promise<Post[]> => getDatabasePosts(),
   ["published-database-posts-v1"],
-  { revalidate: 300, tags: [PUBLIC_POSTS_CACHE_TAG] },
+  { revalidate: PUBLIC_POSTS_REVALIDATE_SECONDS, tags: [PUBLIC_POSTS_CACHE_TAG] },
 );
 
 const getCachedDatabasePostIndex = unstable_cache(
   async (): Promise<PostIndexEntry[]> => getDatabasePostIndex(),
   ["published-database-post-index-v1"],
-  { revalidate: 300, tags: [PUBLIC_POSTS_CACHE_TAG] },
+  { revalidate: PUBLIC_POSTS_REVALIDATE_SECONDS, tags: [PUBLIC_POSTS_CACHE_TAG] },
 );
 
 const getCachedDatabasePost = unstable_cache(
   async (slug: string): Promise<Post | undefined> => getDatabasePost(slug),
   ["published-database-post-by-slug-v1"],
-  { revalidate: 300, tags: [PUBLIC_POSTS_CACHE_TAG] },
+  { revalidate: PUBLIC_POSTS_REVALIDATE_SECONDS, tags: [PUBLIC_POSTS_CACHE_TAG] },
 );
 
 // React cache():同一次请求/再生内去重(generateMetadata 与页面组件各查一次 → 只打一次 DB)。
@@ -210,6 +211,3 @@ export async function getRelatedPosts(slug: string, tags: string[], limit = 4): 
     .map((x) => x.post);
 }
 
-export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://wwjjhh.online").replace(/\/$/, "");
-}

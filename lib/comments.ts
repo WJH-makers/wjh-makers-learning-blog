@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Collection } from "mongodb";
 import { getDb, hasDatabaseConfig } from "@/lib/db";
 import { getPublishedPost } from "@/lib/posts";
+import { turnstileSiteKey } from "@/lib/turnstile-config";
 
 // 免登录评论:昵称 + 内容,不收集邮箱,不存原始 IP(仅存 salted hash 用于限流)。
 // 反垃圾多层防线:蜜罐 → 内容校验/敏感词 → Cloudflare Turnstile 人机验证 → 同 IP 限流。
@@ -84,7 +85,7 @@ export function isCommentingEnabled(): boolean {
   return hasDatabaseConfig()
     && process.env.COMMENTS_ENABLED === "true"
     && Boolean(process.env.TURNSTILE_SECRET_KEY?.trim())
-    && Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim());
+    && Boolean(turnstileSiteKey());
 }
 
 /** Cloudflare Turnstile 服务端校验。未配置或无 token 一律拒绝。 */
@@ -95,7 +96,7 @@ async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
     // secret 配了、site key 没配 = 典型的半截配置:前端压根不渲染 widget,于是每条评论
     // 都缺 token 被拒,而用户只看到「请重试」——重试一万次也没用。这里把根因写进日志,
     // 免得下次又从前端一路查到 CF。仍然拒绝(fail-closed),但要让运维一眼看见为什么。
-    if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()) {
+    if (!turnstileSiteKey()) {
       console.error(
         "[comments] 配置不一致:TURNSTILE_SECRET_KEY 已设,但 NEXT_PUBLIC_TURNSTILE_SITE_KEY 缺失。" +
         "后者是构建期内联的前端变量,须通过 docker compose build args 传入,否则评论会被全部拒绝。",
