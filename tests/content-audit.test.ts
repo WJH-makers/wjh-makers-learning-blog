@@ -64,6 +64,13 @@ test("公开站点不暴露作者账户或仓库标识", () => {
   for (const directory of publicRoots) visit(path.join(root, directory));
 });
 
+test("robots.txt 不把受保护或不存在的路由作为公开目录清单", () => {
+  const robots = fs.readFileSync(path.join(root, "app", "robots.ts"), "utf8");
+  assert.doesNotMatch(robots, /disallow\s*:/i);
+  assert.match(robots, /userAgent:\s*"\*"/);
+  assert.match(robots, /allow:\s*"\/"/);
+});
+
 test("公开内容不提供全文批量导出，评论写入默认必须通过人机验证", () => {
   assert.equal(fs.existsSync(path.join(root, "app", "agent", "markdown", "route.ts")), false);
   assert.equal(fs.existsSync(path.join(root, "app", "llms.txt", "route.ts")), false);
