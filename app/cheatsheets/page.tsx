@@ -4,8 +4,6 @@ import { getAllPublishedPosts, renderMarkdown, type Post } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 const TITLE = "速查手册";
 const DESC = "命令与语法速查总台 —— CMD / PowerShell / Git / Docker / Node / Python / Java 构建 / WSL / Neovim / VS Code / Vue / AI CLI,按「全生命周期」编排,查得到、抄得走。";

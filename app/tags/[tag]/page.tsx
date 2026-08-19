@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { siteUrl } from "@/lib/site-config";
 import { getAllPublishedTags, getPublishedPostsByTag } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
@@ -16,11 +17,6 @@ export async function generateStaticParams() {
     .map(({ tag }) => ({ tag }));
 }
 
-export const runtime = "nodejs";
-export const revalidate = 3600;
-// Tags are generated from published content. Reject arbitrary dynamic params
-// so scanners cannot make Next create unbounded ISR cache paths.
-export const dynamicParams = false;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tag } = await params;
@@ -40,6 +36,13 @@ export default async function TagPage({ params }: Props) {
   const { tag } = await params;
   const decoded = decodeURIComponent(tag);
   const posts = await getPublishedPostsByTag(decoded);
+
+  // 替代原先的 dynamicParams = false（cacheComponents 不支持该配置）。
+  // 那条配置的用途写在原注释里：拒绝任意参数，免得扫描器让 Next 建出无界 ISR 缓存路径。
+  // 官方给的等价做法就是「参数解析不到真实数据时调 notFound()」——
+  // 空标签一律 404，不落缓存条目，安全属性与删除前一致。
+  if (posts.length === 0) notFound();
+
   const url = `${siteUrl()}/tags/${encodeURIComponent(decoded)}`;
 
   // 收集本标签下所有文章中出现频率最高的关联标签

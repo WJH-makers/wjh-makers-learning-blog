@@ -3,8 +3,6 @@ import { getAllPublishedPosts, type Post } from "@/lib/posts";
 import { findEpisodeInfo } from "@/lib/series-registry";
 import { staticPageMetadata } from "@/lib/og-base";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 const TITLE = "全量归档";
 const DESC = "站内每一篇文章的完整时间线 —— 连载话次、速查手册、学习笔记,按年月倒序,一页看尽。";

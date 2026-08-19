@@ -8,8 +8,6 @@ export const metadata = staticPageMetadata({
   path: "/tags",
 });
 
-export const runtime = "nodejs";
-export const revalidate = 3600;
 
 // 语义聚类:标签是专有名词,手动按「知识领域」分组比自动算法准且可控。
 // 主轴 = 学习轨道,顺序对齐连载季线(基础→OOP→集合→异常IO→函数式→工程→JVM→Spring→

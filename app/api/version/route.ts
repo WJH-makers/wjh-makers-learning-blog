@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { safeCompare } from "@/lib/safe-compare";
 
-export const dynamic = "force-dynamic";
 
 const COMMIT_PATTERN = /^[0-9a-f]{40}$/;
 

@@ -2,8 +2,6 @@ import Link from "next/link";
 import { CHARACTERS } from "@/lib/universe";
 import { staticPageMetadata } from "@/lib/og-base";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 export const metadata = staticPageMetadata({
   title: "咖啡站角色档案",

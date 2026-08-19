@@ -2,8 +2,6 @@ import Link from "next/link";
 import { READING_PATHS, availabilityOf } from "@/lib/universe";
 import { staticPageMetadata } from "@/lib/og-base";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 export const metadata = staticPageMetadata({
   title: "从这里开始",

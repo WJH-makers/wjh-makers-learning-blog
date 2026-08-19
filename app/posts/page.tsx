@@ -3,8 +3,6 @@ import { getAllPublishedPosts, type Post } from "@/lib/posts";
 import { staticPageMetadata } from "@/lib/og-base";
 import { SERIES_LIST, findEpisodeInfo, seriesProgress } from "@/lib/series-registry";
 
-export const revalidate = 604800;
-export const runtime = "nodejs";
 
 export const metadata = staticPageMetadata({
   title: "文章精选 · 速查与笔记",

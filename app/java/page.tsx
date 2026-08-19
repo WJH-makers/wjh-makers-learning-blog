@@ -15,8 +15,6 @@ import { staticPageMetadata } from "@/lib/og-base";
 import JavaProgress from "./JavaProgress";
 import SeriesMap from "./SeriesMap";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 export const metadata = staticPageMetadata({
   title: "从零开始学 Java · 阿零与豆豆生态学院",

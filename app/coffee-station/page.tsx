@@ -2,8 +2,6 @@ import Link from "next/link";
 import { COFFEE_PROJECT_STAGES, availabilityOf } from "@/lib/universe";
 import { staticPageMetadata } from "@/lib/og-base";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 export const metadata = staticPageMetadata({
   title: "豆豆咖啡站项目线",

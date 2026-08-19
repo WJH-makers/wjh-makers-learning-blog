@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { isMonitorAuthed } from "@/lib/monitor-auth";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 const CACHE = new Map<string, { data: unknown; ts: number }>();
 const CACHE_TTL = 300_000;

@@ -44,6 +44,20 @@ const jetbrainsMono = localFont({
 });
 const fontVars = `${playfair.variable} ${lora.variable} ${inter.variable} ${jetbrainsMono.variable}`;
 
+/**
+ * 页脚版权年，构建期求值。
+ *
+ * 原本写 `new Date().getFullYear()`。开启 cacheComponents 后它是硬错误：
+ * prerender 期读当前时间无法静态化，`instant = false` 也清不掉
+ * （Route "/_not-found" used `new Date()` before accessing … Request data）。
+ *
+ * 官方给三条路：挪进客户端组件、包 <Suspense> 并先调 connection()、或构建期定值。
+ * 选第三条 —— 本站刻意不为装饰性内容下发客户端 JS，而版权年既不需要按请求精确，
+ * 也不值得为它引一个 Suspense 边界。发布时机由部署决定：每次 push 都会重新构建，
+ * 跨年后首次部署即更新。
+ */
+const COPYRIGHT_YEAR = new Date().getFullYear();
+
 // 站点根地址与出版实体名来自 lib/site-config.ts 的单一事实源。
 // SITE_URL 比原先的本地常量多剥一个末尾斜杠，避免 `${SITE}/path` 拼出双斜杠。
 // 以下三项只在本文件出现一次，是文案不是配置，留在使用处更好读。
@@ -164,7 +178,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           </div>
           <div className="footer-bar">
             <span>咖啡站技术志 · 原创技术故事</span>
-            <span>&copy; {new Date().getFullYear()} All Rights Reserved</span>
+            <span>&copy; {COPYRIGHT_YEAR} All Rights Reserved</span>
             <a className="beian" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">鄂ICP备2026036494号-1</a>
           </div>
         </footer>

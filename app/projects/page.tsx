@@ -4,8 +4,6 @@ import { siteUrl } from "@/lib/site-config";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 
-export const revalidate = 86400;
-export const runtime = "nodejs";
 
 const TITLE = "项目集";
 const DESC = "课程平台与漫画连载的公开内容索引。";

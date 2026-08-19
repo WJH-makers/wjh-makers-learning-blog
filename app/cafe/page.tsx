@@ -9,8 +9,6 @@ import SeriesMap from "../java/SeriesMap";
 import { isReleasedSlug } from "@/lib/publication";
 import { publicAssetUrl } from "@/lib/assets";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 export const metadata = staticPageMetadata({
   title: "豆豆咖啡站 · 温情工程物语",

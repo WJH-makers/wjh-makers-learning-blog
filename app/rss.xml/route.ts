@@ -1,9 +1,6 @@
 import { siteUrl } from "@/lib/site-config";
 import { getAllPublishedPosts, outboundDate } from "@/lib/posts";
 
-// RSS 变化频率低(仅发文时),用 ISR 缓存;write 发布会 revalidatePath('/rss.xml') 主动刷新。
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 // title/summary 是未经渲染器的原始字段;含 ]]> 会提前闭合 CDATA,把其后内容注入成 feed 裸标记。
 // 标准中和写法:]]> → ]]]]><![CDATA[>(markdownToHtml 的输出每个 > 均已转义,无需处理)。

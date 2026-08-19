@@ -11,7 +11,6 @@ import {
   type JavaRunResult,
 } from "@/lib/java-runner";
 
-export const runtime = "nodejs";
 
 function runnerConfig(): { url: URL; languageId: number; token?: string } | undefined {
   const url = judge0SubmissionUrl(process.env.JAVA_JUDGE0_URL?.trim() ?? "");

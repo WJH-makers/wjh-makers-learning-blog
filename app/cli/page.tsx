@@ -9,8 +9,6 @@ import SeriesMap from "../java/SeriesMap";
 import { isReleasedSlug } from "@/lib/publication";
 import { publicAssetUrl } from "@/lib/assets";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 export const metadata = staticPageMetadata({
   title: "从零开始玩命令行 · 阿零与特米终端大陆",

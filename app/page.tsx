@@ -8,8 +8,6 @@ import { seriesByRoute, seriesProgress } from "@/lib/series-registry";
 import { availabilityOf } from "@/lib/universe";
 import SkillMapPhysics from "@/app/_components/SkillMapPhysics";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 // title/description/OG 沿用 layout 默认;首页只需补 canonical 这一环。
 export const metadata: Metadata = {

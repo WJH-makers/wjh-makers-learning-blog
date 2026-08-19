@@ -3,8 +3,6 @@ import { seriesByRoute } from "@/lib/series-registry";
 
 const series = seriesByRoute("/jvm");
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 export const metadata = seriesLandingMetadata(series);
 
 export default function JvmSeriesPage() {

@@ -5,8 +5,6 @@ import { publishedEpisodesOf, SERIES_LIST } from "@/lib/series-registry";
 import type { JavaEpisode } from "@/lib/series";
 import { STATIC_SITEMAP_ROUTES } from "@/lib/sitemap-routes";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 /** 系列最新一话的日期(slug 前 10 位即 YYYY-MM-DD),避免全站任何更新都虚报到每个连载页。 */
 function latestEpisodeDate(episodes: JavaEpisode[], fallback: Date): Date {

@@ -37,8 +37,6 @@ export async function generateStaticParams() {
   return posts.map((post) => ({ slug: post.slug }));
 }
 
-export const revalidate = 604800;
-export const runtime = "nodejs";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

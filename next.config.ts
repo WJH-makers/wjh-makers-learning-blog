@@ -15,6 +15,20 @@ const assetPrefix = process.env.NEXT_PUBLIC_ASSET_PREFIX?.trim() || "";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // 迁移中（feat/cache-components-migration）：开启后路由段的 dynamic/revalidate/fetchCache
+  // 一律报错，缓存改由 'use cache' + cacheLife 表达。档位集中定义在下面的 cacheLife 里 ——
+  // 这正是 lib/cache-policy.ts 的 REVALIDATE_TIERS 想做而做不到的事（路由段配置必须是
+  // 字面量，不能 import 常量）。
+  cacheComponents: true,
+  cacheLife: {
+    // 与 lib/cache-policy.ts 的 REVALIDATE_TIERS 一一对应，命名保持一致便于对照。
+    // stale = 客户端不回源的时长；revalidate = 服务端刷新频率；expire = 超过即转动态。
+    content: { stale: 3600, revalidate: 3600, expire: 86400 },
+    article: { stale: 3600, revalidate: 604800, expire: 2592000 },
+    nearStatic: { stale: 3600, revalidate: 86400, expire: 604800 },
+    // 数据库文章的共享窗口，对应 PUBLIC_POSTS_REVALIDATE_SECONDS。
+    publicPosts: { stale: 60, revalidate: 300, expire: 3600 },
+  },
   typedRoutes: true,
   poweredByHeader: false,
   compress: true,

@@ -7,8 +7,6 @@ import MonitorLogin from "./MonitorLogin";
 import { isMonitorAuthed } from "@/lib/monitor-auth";
 import { INTERNAL_ORIGIN, OPS_SUBDOMAINS } from "@/lib/site-config";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 export const metadata = {
   title: "站点监控",

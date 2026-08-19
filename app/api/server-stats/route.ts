@@ -6,8 +6,6 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 
 const execFileAsync = promisify(execFile);
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 const DATA_FILE = "/tmp/monitor-history.json";
 

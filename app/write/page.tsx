@@ -13,8 +13,6 @@ import { safeCompare } from "@/lib/safe-compare";
 import { adminSessionCookieOptions } from "@/lib/session-cookie";
 import { shanghaiDate } from "@/lib/publication";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 export const metadata = {
   title: "写今日心得",

@@ -3,8 +3,6 @@ import { SITE_NAME, siteUrl } from "@/lib/site-config";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 
-export const revalidate = 86400;
-export const runtime = "nodejs";
 
 // /now 页:一份手写的「此刻在忙什么」快照。改动只需编辑这里。
 // 快照日期硬编码,提醒自己定期更新(过期的 /now 比没有更糟)。

@@ -4,8 +4,6 @@ import { siteUrl } from "@/lib/site-config";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 const TITLE = "全部连载";
 const DESC = "咖啡站宇宙的全部漫画连载 —— 从第一行 Java 到 JVM、构建、微服务、网络、操作系统、数据库、分布式、云原生、安全、算法、AI 与前端,每一条线都有自己的导师和长期项目。";

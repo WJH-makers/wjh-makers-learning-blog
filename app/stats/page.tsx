@@ -5,8 +5,6 @@ import { SERIES_LIST, seriesProgress, allSeriesProgress, findEpisodeInfo } from 
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 
-export const revalidate = 3600;
-export const runtime = "nodejs";
 
 const TITLE = "站点数据";
 const DESC = "这个博客的公开数据面:文章总数与总字数、各连载进度、按月更新节奏、标签分布与长短篇极值 —— 全部实时从内容算出来,不接任何统计脚本。";
