@@ -21,6 +21,11 @@ async function loadPlaywright() {
 }
 
 const { chromium } = await loadPlaywright();
+// 与 audit-book-reader.mjs 同一个出口：playwright 模块要的 chromium 版本与本机缓存
+// 不一致时（升级后常见），launch 会直接报 "Executable doesn't exist"。
+// PLAYWRIGHT_CHROME 指向系统已装的 Chrome/Edge 即可，两个审计的口径保持一致。
+const browserExecutable = process.env.PLAYWRIGHT_CHROME?.trim();
+const launchOptions = { headless: true, ...(browserExecutable ? { executablePath: browserExecutable } : {}) };
 const baseUrl = process.env.BROWSER_AUDIT_URL ?? "http://localhost:3021";
 const baseOrigin = new URL(baseUrl).origin;
 // 审计产物是一次性排查材料，不属于源码：默认落系统临时目录，别在仓库里长出 .omx/ 这种
@@ -54,7 +59,7 @@ const viewports = [
 const fullPageRoutes = new Set(["/", "/cheatsheets", "/posts", articleRoute]);
 
 await fs.mkdir(outputDir, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch(launchOptions);
 const results = [];
 const internalLinks = new Set();
 

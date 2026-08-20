@@ -34,7 +34,12 @@ test("every public Java lab compiles and starts on the Java 17 baseline", { time
 
       // --release 17 prevents the host JDK from accepting newer APIs by accident.
       await run("javac", ["--release", "17", "-encoding", "UTF-8", "Main.java"], directory);
-      const result = await run("java", ["Main"], directory, lab.stdin);
+      // stdout.encoding 必须显式钉成 UTF-8。JVM 默认按平台字符集写 stdout：
+      // Linux CI 上是 UTF-8 所以一直通过，但中文 Windows 上 native.encoding=GBK，
+      // 实验里的中文输出会被写成 GBK 字节、再被 Node 按 UTF-8 读成乱码 ——
+      // 表现为「did not produce its primary expected output」这种指向错误的假红。
+      // 被测对象是实验代码本身，不该由开发机的控制台字符集决定成败。
+      const result = await run("java", ["-Dstdout.encoding=UTF-8", "Main"], directory, lab.stdin);
       const expected = lab.assertions[0]?.expectedOutput;
       if (expected) {
         assert.ok(

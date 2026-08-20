@@ -15,6 +15,12 @@ async function loadPlaywright() {
 }
 
 const { chromium } = await loadPlaywright();
+// Playwright 自带的 chromium 版本号与本机缓存可能不一致（升级 playwright 后常见：
+// 模块要 chromium_headless_shell-1228，缓存里只有 1234），此时 launch 直接报
+// "Executable doesn't exist" 而不是回退。给一个显式出口：指向系统已装的 Chrome/Edge。
+// 与 PLAYWRIGHT_MODULE 同一套思路 —— 审计脚本不该因为浏览器下载状态而跑不起来。
+const browserExecutable = process.env.PLAYWRIGHT_CHROME?.trim();
+const launchOptions = { headless: true, ...(browserExecutable ? { executablePath: browserExecutable } : {}) };
 const baseUrl = process.env.BROWSER_AUDIT_URL ?? "http://localhost:3021";
 // 审计产物是一次性排查材料，不属于源码：默认落系统临时目录，别在仓库里长出 .omx/ 这种
 // 既不该提交、又会被反复忘记清理的目录（上一版默认 ".omx/artifacts/…" 攒到了 42MB）。
@@ -25,7 +31,7 @@ const startRoute = "/posts/2026-05-03-java-s01e01-hello";
 const nextRoute = "/posts/2026-05-04-java-s01e02-variables";
 
 await fs.mkdir(outputDir, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch(launchOptions);
 const failures = [];
 
 async function newPage(options) {
