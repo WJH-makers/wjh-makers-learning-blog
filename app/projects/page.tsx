@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { PROJECTS, STATUS_LABEL } from "@/lib/projects";
 import { siteUrl } from "@/lib/site-config";
 import { jsonLdSafe } from "@/lib/jsonld";
@@ -14,7 +15,10 @@ export const metadata = staticPageMetadata({
   path: "/projects",
 });
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  "use cache";
+  cacheLife("nearStatic");
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",

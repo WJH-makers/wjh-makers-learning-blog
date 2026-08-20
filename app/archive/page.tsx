@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { getAllPublishedPosts, type Post } from "@/lib/posts";
 import { findEpisodeInfo } from "@/lib/series-registry";
 import { staticPageMetadata } from "@/lib/og-base";
@@ -34,6 +35,9 @@ function groupByMonth(posts: Post[]): Group[] {
 }
 
 export default async function ArchivePage() {
+  "use cache";
+  cacheLife("content");
+
   const posts = await getAllPublishedPosts();
   const groups = groupByMonth(posts);
   const years = [...new Set(groups.map((g) => g.year))];

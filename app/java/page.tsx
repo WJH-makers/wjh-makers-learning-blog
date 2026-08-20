@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import {
   SERIES_META,
   SEASONS,
@@ -22,7 +23,10 @@ export const metadata = staticPageMetadata({
   path: "/java",
 });
 
-export default function JavaSeriesPage() {
+export default async function JavaSeriesPage() {
+  "use cache";
+  cacheLife("content");
+
   const done = publishedEpisodes().length;
   const progressSeasons = SEASONS.map((s) => ({
     code: s.code,

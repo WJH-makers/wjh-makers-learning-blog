@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
 import { CAFE_SEASONS, CAFE_SERIES_META, CAFE_STAGES, cafePublishedEpisodes } from "@/lib/series-cafe";
 import { siteUrl } from "@/lib/site-config";
@@ -18,13 +19,28 @@ export const metadata = staticPageMetadata({
   robots: cafePublishedEpisodes().length === 0 ? { index: false, follow: true } : undefined,
 });
 
-export default function CafeSeriesPage() {
+export default async function CafeSeriesPage() {
+  "use cache";
+  cacheLife("content");
+
   const done = cafePublishedEpisodes().length;
   const progressSeasons = CAFE_SEASONS.map((s) => ({
     code: s.code,
     title: s.title,
     slugs: seasonPublishedSlugs(s),
   })).filter((s) => s.slugs.length > 0);
+
+  // 发布过滤在服务端做一次，地图与正文列表共用。
+  // 收敛前：这里把未过滤的 CAFE_SEASONS 交给 SeriesMap，由那个客户端组件自己再判一遍
+  // isReleasedSlug —— 等于把「这话发了没」的判定复制到浏览器。cacheComponents 下它直接
+  // 是构建错误（客户端组件读当前时间且上方无 Suspense），而正文列表本来就在下面
+  // 用同样的条件过滤了一遍，两处重复。
+  const visibleSeasons = CAFE_SEASONS
+    .map((season) => ({
+      ...season,
+      episodes: season.episodes.filter((episode) => episode.status === "published" && isReleasedSlug(episode.slug)),
+    }))
+    .filter((season) => season.episodes.length > 0);
 
   if (done === 0) {
     return (
@@ -115,12 +131,12 @@ export default function CafeSeriesPage() {
         <span className="muted">点节点直达 · 读过的自动打勾</span>
       </section>
       <SeriesMap
-        seasons={CAFE_SEASONS}
+        seasons={visibleSeasons}
         storageKey={CAFE_SERIES_META.storageKey}
         stages={CAFE_STAGES.map((s) => ({ season: s.season, stage: s.stage }))}
       />
 
-      {CAFE_SEASONS.map((season) => ({ ...season, episodes: season.episodes.filter((episode) => episode.status === "published" && isReleasedSlug(episode.slug)) })).filter((season) => season.episodes.length > 0).map((season) => (
+      {visibleSeasons.map((season) => (
         <section key={season.season} style={{ marginTop: "2.5rem" }}>
           <div className="section-head">
             <div>

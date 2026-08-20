@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { SERIES_LIST, seriesProgress } from "@/lib/series-registry";
 import { siteUrl } from "@/lib/site-config";
 import { jsonLdSafe } from "@/lib/jsonld";
@@ -14,7 +15,10 @@ export const metadata = staticPageMetadata({
   path: "/series",
 });
 
-export default function SeriesIndexPage() {
+export default async function SeriesIndexPage() {
+  "use cache";
+  cacheLife("content");
+
   const rows = SERIES_LIST.map((series) => ({ series, progress: seriesProgress(series) }));
   const serialized = rows.filter((r) => r.progress.done > 0);
 

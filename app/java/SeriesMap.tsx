@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { readCompleted } from "@/lib/progress-client";
-import { isReleasedSlug } from "@/lib/publication";
 
 type Ep = {
   season: number;
@@ -41,12 +40,14 @@ export default function SeriesMap({
     setDone(readCompleted(storageKey));
   }, [storageKey]);
 
-  const visibleSeasons = seasons
-    .map((season) => ({
-      ...season,
-      episodes: season.episodes.filter((episode) => episode.status === "published" && isReleasedSlug(episode.slug)),
-    }))
-    .filter((season) => season.episodes.length > 0);
+  // 发布判定已由调用方在服务端完成，这里只按「季内还有没有话次」收拢空季。
+  //
+  // 收敛前本组件自己再判一遍 isReleasedSlug —— 那是把 lib/publication.ts 的发布口径
+  // 复制到浏览器：既让 publication.ts 进了客户端 bundle，又在 cacheComponents 下成为
+  // 硬错误（客户端组件读当前时间且上方无 Suspense）。
+  // 三个调用方现在都传已过滤的集合：SeriesLanding 按 published.some(...)、
+  // java/page.tsx 按 publishedEpisodes().some(...)、cafe/page.tsx 按 visibleSeasons。
+  const visibleSeasons = seasons.filter((season) => season.episodes.length > 0);
   const visibleSeasonNumbers = new Set(visibleSeasons.map((season) => season.season));
   const visibleStages = stages?.filter((stage) => visibleSeasonNumbers.has(stage.season));
 

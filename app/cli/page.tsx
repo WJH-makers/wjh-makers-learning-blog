@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
 import { CLI_SEASONS, CLI_SERIES_META, cliPublishedEpisodes } from "@/lib/series-cli";
 import { siteUrl } from "@/lib/site-config";
@@ -18,13 +19,25 @@ export const metadata = staticPageMetadata({
   robots: cliPublishedEpisodes().length === 0 ? { index: false, follow: true } : undefined,
 });
 
-export default function CliSeriesPage() {
+export default async function CliSeriesPage() {
+  "use cache";
+  cacheLife("content");
+
   const done = cliPublishedEpisodes().length;
   const progressSeasons = CLI_SEASONS.map((s) => ({
     code: s.code,
     title: s.title,
     slugs: seasonPublishedSlugs(s),
   })).filter((s) => s.slugs.length > 0);
+  // 发布过滤必须在服务端做完：SeriesMap 已不再自己判 isReleasedSlug（那会把
+  // lib/publication.ts 的发布口径复制进浏览器 bundle，且在 cacheComponents 下
+  // 成为客户端组件读当前时间的硬错误）。下面的分季列表用同一份集合，两处不能再分叉。
+  const visibleSeasons = CLI_SEASONS
+    .map((season) => ({
+      ...season,
+      episodes: season.episodes.filter((episode) => episode.status === "published" && isReleasedSlug(episode.slug)),
+    }))
+    .filter((season) => season.episodes.length > 0);
 
   if (done === 0) {
     return (
@@ -111,9 +124,9 @@ export default function CliSeriesPage() {
         </div>
         <span className="muted">点节点直达 · 读过的自动打勾</span>
       </section>
-      <SeriesMap seasons={CLI_SEASONS} storageKey={CLI_SERIES_META.storageKey} />
+      <SeriesMap seasons={visibleSeasons} storageKey={CLI_SERIES_META.storageKey} />
 
-      {CLI_SEASONS.map((season) => ({ ...season, episodes: season.episodes.filter((episode) => episode.status === "published" && isReleasedSlug(episode.slug)) })).filter((season) => season.episodes.length > 0).map((season) => (
+      {visibleSeasons.map((season) => (
         <section key={season.season} style={{ marginTop: "2.5rem" }}>
           <div className="section-head">
             <div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cacheLife } from "next/cache";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { siteUrl } from "@/lib/site-config";
@@ -33,6 +34,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function TagPage({ params }: Props) {
+  "use cache";
+  cacheLife("content");
+
   const { tag } = await params;
   const decoded = decodeURIComponent(tag);
   const posts = await getPublishedPostsByTag(decoded);

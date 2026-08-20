@@ -11,6 +11,7 @@
  */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { CHAPTER_TYPE_LABEL, STATUS_LABEL, seasonPublishedSlugs } from "@/lib/series";
 import { publishedEpisodesOf, type SeriesRef } from "@/lib/series-registry";
 import { siteUrl } from "@/lib/site-config";
@@ -32,7 +33,15 @@ export function seriesLandingMetadata(series: SeriesRef): Metadata {
   });
 }
 
-export default function SeriesLanding({ series }: { series: SeriesRef }) {
+// 改为 async + 'use cache'：publishedEpisodesOf 走 lib/publication.ts 的发布判定，
+// 那里读当前时间。cacheComponents 下 prerender 期读时间只在 Cache Component 内合法
+// （官方：时间在缓存条目创建时捕获，直到失效才重算）——语义与改造前的
+// `export const revalidate = 3600` 完全一致，只是档位改由 cacheLife('content') 表达。
+// 放在组件而非各页：25 条连载线共用本实现，改这一处即覆盖全部。
+export default async function SeriesLanding({ series }: { series: SeriesRef }) {
+  "use cache";
+  cacheLife("content");
+
   const published = publishedEpisodesOf(series);
   const done = published.length;
   const progressSeasons = series.seasons

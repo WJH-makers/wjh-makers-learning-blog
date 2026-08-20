@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cacheLife } from "next/cache";
 import type { Route } from "next";
 import Link from "next/link";
 import { siteUrl } from "@/lib/site-config";
@@ -37,6 +38,9 @@ const JAVA_SKILL_MAP: SkillMapTile[] = [
 ];
 
 export default async function HomePage() {
+  "use cache";
+  cacheLife("content");
+
   const posts = await getAllPublishedPosts();
 
   const latestPosts = posts.slice(0, 3);

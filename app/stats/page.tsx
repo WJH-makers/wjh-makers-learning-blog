@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { siteUrl } from "@/lib/site-config";
 import { getAllPublishedPosts, getAllPublishedTags, type Post } from "@/lib/posts";
 import { SERIES_LIST, seriesProgress, allSeriesProgress, findEpisodeInfo } from "@/lib/series-registry";
@@ -20,6 +21,9 @@ function charCount(post: Post): number {
 }
 
 export default async function StatsPage() {
+  "use cache";
+  cacheLife("content");
+
   const posts = await getAllPublishedPosts();
   const tags = await getAllPublishedTags();
   const total = allSeriesProgress();

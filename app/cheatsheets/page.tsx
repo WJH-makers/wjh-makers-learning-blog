@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { siteUrl } from "@/lib/site-config";
 import { getAllPublishedPosts, renderMarkdown, type Post } from "@/lib/posts";
 import { jsonLdSafe } from "@/lib/jsonld";
@@ -57,6 +58,9 @@ const GROUPS: { key: string; label: string; hint: string; match: (slug: string) 
 ];
 
 export default async function CheatsheetsPage() {
+  "use cache";
+  cacheLife("content");
+
   const posts = (await getAllPublishedPosts()).filter(isCheatsheet);
 
   // 每篇取二级标题做锚点直达:速查表的价值在于「一眼看到有没有我要的那一节」。

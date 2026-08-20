@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { UNIVERSE_DISTRICTS, availabilityOf } from "@/lib/universe";
 import { staticPageMetadata } from "@/lib/og-base";
 
@@ -9,7 +10,10 @@ export const metadata = staticPageMetadata({
   path: "/universe",
 });
 
-export default function UniversePage() {
+export default async function UniversePage() {
+  "use cache";
+  cacheLife("content");
+
   return (
     <div className="page-shell universe-page">
       <div className="page-title">

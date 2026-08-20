@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { getAllPublishedPosts, type Post } from "@/lib/posts";
 import { staticPageMetadata } from "@/lib/og-base";
 import { SERIES_LIST, findEpisodeInfo, seriesProgress } from "@/lib/series-registry";
@@ -37,6 +38,9 @@ function ListItem({ post }: { post: Post }) {
 }
 
 export default async function PostsPage() {
+  "use cache";
+  cacheLife("article");
+
   const posts = await getAllPublishedPosts();
   const cheatsheets = posts.filter((p) => !isSeriesEpisode(p) && isCheatsheet(p));
   const notes = posts.filter((p) => !isSeriesEpisode(p) && !isCheatsheet(p));

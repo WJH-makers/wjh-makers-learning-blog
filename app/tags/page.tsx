@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { getAllPublishedTags } from "@/lib/posts";
 import { staticPageMetadata } from "@/lib/og-base";
 
@@ -38,6 +39,9 @@ function tagFontSize(count: number, maxCount: number): string {
 }
 
 export default async function TagsPage() {
+  "use cache";
+  cacheLife("content");
+
   const tags = await getAllPublishedTags();
   const countByTag = new Map(tags.map((t) => [t.tag, t.count]));
   const maxCount = Math.max(...tags.map((t) => t.count), 1);

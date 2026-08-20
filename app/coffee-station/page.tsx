@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { COFFEE_PROJECT_STAGES, availabilityOf } from "@/lib/universe";
 import { staticPageMetadata } from "@/lib/og-base";
 
@@ -9,7 +10,10 @@ export const metadata = staticPageMetadata({
   path: "/coffee-station",
 });
 
-export default function CoffeeStationPage() {
+export default async function CoffeeStationPage() {
+  "use cache";
+  cacheLife("content");
+
   return (
     <div className="page-shell narrow universe-page">
       <div className="page-title">

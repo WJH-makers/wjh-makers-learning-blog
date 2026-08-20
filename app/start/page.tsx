@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { READING_PATHS, availabilityOf } from "@/lib/universe";
 import { staticPageMetadata } from "@/lib/og-base";
 
@@ -9,7 +10,10 @@ export const metadata = staticPageMetadata({
   path: "/start",
 });
 
-export default function StartPage() {
+export default async function StartPage() {
+  "use cache";
+  cacheLife("content");
+
   return (
     <div className="page-shell narrow universe-page">
       <div className="page-title">

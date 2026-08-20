@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { SITE_NAME, siteUrl } from "@/lib/site-config";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
@@ -34,7 +35,10 @@ export const metadata = staticPageMetadata({
   socialDescription: "此刻在做什么、在学什么、在读什么。",
 });
 
-export default function NowPage() {
+export default async function NowPage() {
+  "use cache";
+  cacheLife("nearStatic");
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
