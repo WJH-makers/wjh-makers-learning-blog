@@ -605,6 +605,22 @@ a:focus-visible {
   --book-ink: #302a22;
   --book-edge: #d5c7ae;
   --book-shadow: rgba(72, 57, 34, 0.2);
+  /* 纸纤维:feTurbulence 的分形噪声去饱和后按 5% 不透明度铺满。
+     纯色 + 渐变的纸永远是"塑料感"的 —— 真实纸张在任何光线下都有随机的明暗颗粒,
+     缺的就是这层高频噪声。120px 图块 + stitchTiles='stitch' 保证平铺处无缝。
+     这是一张 SVG data URI,不产生网络请求;GPU 只在首次栅格化时算一次。 */
+  --book-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='bookgrain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23bookgrain)' opacity='0.05'/%3E%3C/svg%3E");
+  /* 书页上的"轻底色面"必须由纸自己调出来,不能沿用站点中性灰 —— 后者是为站点白纸
+     (#faf9f5)调的,压到米色书页上会成为一块去饱和的补丁:实测站点 --neutral-100
+     是 #f5f4ed(R−B=8,近中性),书页纸是 #f4eddd(R−B=23,暖),同亮度不同暖度,
+     眼睛读到的是"另一种材质"而不是"同一张纸上的一块深色"。
+     纸混 7% 自身墨色 → #e6dfd0,色相轴与纸完全一致,并回到"比纸略沉"的正确层次
+     (中性灰在书页上反而比纸更亮,层次是反的)。
+
+     代码块**不在**这个范围内,是实测后的决定不是遗漏:Shiki 亮色主题的 token
+     配色按纯白校准,底色从 #ffffff 调到暖色后,低于 AA 4.5 的 token 由 1 色 43 字
+     涨到 3 色 647 字(15 倍)。纯白在那里是承重的,退让的必须是书页统一感。 */
+  --book-tint: color-mix(in srgb, var(--book-paper) 93%, var(--book-ink));
   position: relative;
   isolation: isolate;
   width: 100%;
@@ -626,9 +642,14 @@ a:focus-visible {
   width: 100%;
   max-width: 1240px;
   min-height: min(52vh, 720px);
-  padding: clamp(28px, 5vw, 58px);
+  /* 天头 < 翻口 < 地脚 —— 书页的页边距从来不是四边等宽。
+     等宽会让版心看上去"往下掉":视觉重心高于几何中心,眼睛把几何居中读成偏低。
+     印刷界的解法是把版心整体上移(光学居中),经典比例天头:地脚 ≈ 1:2。
+     这里取 50 : 58 : 92(≈1:1.84),留出的地脚同时给页脚元素当呼吸区。 */
+  padding: clamp(26px, 4.2vw, 50px) clamp(28px, 5vw, 58px) clamp(44px, 7.5vw, 92px);
   color: var(--book-ink);
   background:
+    var(--book-grain),
     linear-gradient(90deg, rgba(108, 82, 44, 0.1), transparent 7%, transparent 94%, rgba(108, 82, 44, 0.07)),
     radial-gradient(ellipse at 8% 4%, rgba(255, 255, 255, 0.72), transparent 34%),
     var(--book-paper);
@@ -642,9 +663,21 @@ a:focus-visible {
   position: absolute;
   z-index: 0;
   inset: 0 auto 0 0;
-  width: clamp(18px, 4vw, 34px);
+  width: clamp(22px, 4.8vw, 44px);
   border-radius: var(--r-sheet) 0 0 var(--r-sheet);
-  background: linear-gradient(90deg, rgba(62, 42, 22, 0.2), rgba(126, 96, 53, 0.08) 52%, transparent);
+  /* 装订侧不是"一道刷上去的阴影",是纸面卷进书脊的曲面。
+     曲面的光学特征有两个,单调渐变一个都给不出:
+     ① 衰减是非线性的 —— 贴着书脊最暗,离开书脊迅速变亮(前 18% 掉掉一半);
+     ② 纸面爬回水平面时会顶出一道高光脊(78% 处的白),这道脊才是"看起来是弯的"
+        的真正来源。去掉它,再深的阴影也只是脏了一条边。 */
+  background: linear-gradient(
+    90deg,
+    rgba(62, 42, 22, 0.27) 0%,
+    rgba(80, 57, 30, 0.17) 18%,
+    rgba(126, 96, 53, 0.07) 46%,
+    rgba(255, 255, 255, 0.17) 78%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 .article-shell::after {
@@ -765,7 +798,11 @@ a:focus-visible {
 .article-content h2,
 .article-content h3 { margin-block: 1.35em 0.5em; }
 .article-content > :first-child { margin-top: 0; }
-.article-content h2 { padding-bottom: 8px; border-bottom: 1px solid var(--border); scroll-margin-top: 124px; }
+/* 章节标题在书里是要另起一页的;滚动页面给不了"另起一页",能给的等价物是留白。
+   上边距 1.35em → 2em(按 h2 自身字号 ≈27px 解析,即 36px → 54px):
+   读者不必读字就知道这里换了一节。下框线改用书页墨色的 22%,不再用站点通用
+   --border —— 后者是为白纸调的中性灰,压在米色纸上会偏冷、显出一条"外来的线"。 */
+.article-content h2 { margin-block: 2em 0.7em; padding-bottom: 10px; border-bottom: 1px solid color-mix(in srgb, var(--book-ink) 22%, transparent); scroll-margin-top: 124px; }
 .article-content h1, .article-content h3 { scroll-margin-top: 124px; }
 /* overflow-wrap:长包名/裸 URL 在窄屏会撑出横向滚动条(anywhere 允许在任意点断行兜底)。 */
 /* justify 保留(72ch 长行上两端对齐是正确的),但 overflow-wrap 从 anywhere 收到
@@ -774,6 +811,32 @@ a:focus-visible {
 .article-content p { margin-block: 1em; text-align: justify; overflow-wrap: break-word; }
 /* 中文长文两端对齐的关键补充:允许在标点与汉字间断行,否则行尾标点会被硬挤出边界 */
 .article-content p, .article-content li { line-break: normal; word-break: normal; }
+/* ── 段落形态:首行缩进 2 字,而不是空一行 ──
+   这是整套「书页」里最本质的一处 —— 在此之前,这张纸只是底色发黄的网页。
+
+   「段间空行 + 首行不缩进」是西文 web 的默认段落形态;中文出版物一律用
+   「首行缩进 2 字」标示段落起点(W3C CLReq §3.1.1 明确列为中文段落的常规样式)。
+   两种标示同时上是校对错误,不是叠加增强:段落边界被讲了两遍。
+
+   但这里没有照搬印刷书的「缩进 2em + 段距 0」,取的是「缩进 2em + 段距 0.75em」:
+   印刷书行高约 1.5,段距归零后缩进足以独自撑起边界;本站行高 1.9,行间白已经很宽,
+   段距再归零,缩进的 2em 会被行距稀释,长文滚动时段落糊成一片。
+   0.75em(原为 1em)保留一个弱边界,主信号交给缩进 —— 两个信号一强一弱,不是两遍。
+
+   2em 按段落自身字号解析(1.06rem ≈ 17px → 约 34px),正好两个汉字宽。
+   这是 em 在中文排版里最站得住的一次用法:字号变,缩进跟着变,永远是 2 个字。
+
+   只作用于 .article-content 的直接子段落。嵌套段落(引用块、折叠答案、旁注)
+   本来就靠自身的边框/背景/缩进划边界,再首行缩进就是第三遍。 */
+.article-content > p { text-indent: 2em; margin-block: 0.75em; }
+/* 两类段落不缩进,原因不同:
+   ① .lede —— 首字下沉是 float:left,缩进会把下沉字整个推离版心左缘,
+      版心左边缘出现一个 34px 的缺口。印刷书的下沉段本来也不缩进。
+   ② 图片段 —— 渲染器把图片语法单独成段(见上面 :has(> picture) 那条注释),
+      它是"证据"不是"文字",缩进只会让图整体右移 34px、与上下证据块左缘错开。 */
+.article-content > p.lede,
+.article-content > p:has(> picture),
+.article-content > p:has(> img.post-image) { text-indent: 0; }
 /* text-wrap 两档,都是渐进增强(不支持的浏览器按 wrap 处理,版面与改动前一致):
    pretty 让引擎多看几行再决定断点,把"末行只剩一个字"往回拉。实测收益是温和的
    ——12 处孤行里改善 2 处、其余末行占比从 0.045 抬到 0.067(约 1 字 → 1.5 字);
@@ -871,6 +934,11 @@ html[data-page-turn]::after {
   position: fixed;
   z-index: 90;
   inset: var(--page-turn-top, 0) 0 0;
+  /* 绕左缘旋转 = 绕书脊旋转。书脊在版心左侧,这个原点不是随手取的:
+     transform-origin 同时也是 perspective() 的灭点,两者必须落在同一条轴上,
+     否则纸会绕着一根不存在的轴转。 */
+  transform-origin: left center;
+  backface-visibility: hidden;
   pointer-events: none;
   will-change: transform, opacity;
 }
@@ -884,19 +952,44 @@ html[data-page-turn]::after {
   z-index: 91;
   background: linear-gradient(90deg, transparent 42%, rgba(70, 49, 24, 0.14) 49.5%, rgba(255, 255, 255, 0.34) 50.5%, transparent 58%);
 }
+/* 翻页从「一张纸横着滑过去」改成「一张纸绕书脊转下来」。
+   平移只是位置在变,纸始终正对读者 —— 那是幻灯片切换,不是翻书。
+   翻书的全部信息量在**透视收缩**:纸立起来时远端窄、近端宽,落平时收缩消失。
+
+   perspective() 写在 transform 里,不写成 html 的 perspective 属性 ——
+   后者会让 <html> 成为所有 position:fixed 后代的包含块,顶栏在这 280ms 里
+   会改为相对文档定位而不是视口,滚动状态下会跳一下。写进 transform 没有这个副作用。
+   1800px ≈ 1.25 倍版心宽,相当于一个正常观看距离的相机;再小会畸变成鱼眼。
+
+   两个方向绕同一根轴(书脊),靠转向区分:
+   next 的纸从右侧向读者外侧倒下来(+74° → 0),previous 的纸从纸面下方朝读者掀起来
+   (-74° → 0)。同轴反向,读者不用看文字就知道自己是在前进还是后退。 */
 html[data-page-turn="next"]::before,
-html[data-page-turn="next"]::after { animation: chapter-sheet-next 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+html[data-page-turn="next"]::after { animation: chapter-sheet-next 280ms cubic-bezier(0.36, 0.08, 0.3, 1) both; }
 html[data-page-turn="previous"]::before,
-html[data-page-turn="previous"]::after { animation: chapter-sheet-previous 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+html[data-page-turn="previous"]::after { animation: chapter-sheet-previous 280ms cubic-bezier(0.36, 0.08, 0.3, 1) both; }
+/* 缓动与关键帧的分配都是实测倒推出来的,不是抄的手感曲线:
+   原先沿用平移时代的 cubic-bezier(0.22, 1, 0.36, 1)(强前载)+ 34% 处就落平,
+   冻帧实测 40ms 时倾角**只剩 5.3°** —— 74° 的透视收缩活不过前 20ms,等于没写。
+   平移用强前载是对的(位置变化要"一碰就到"),旋转用它是错的:
+   透视收缩本身就是这个动画要传达的全部信息,把它压缩掉就只剩一次闪烁。
+
+   两处一起改:① 缓动换成两端都收的 S 曲线,不再把行程堆在开头;
+   ② 落平点从 34% 推到 58%,把原来 34%~62% 那段 78ms 的静止让给旋转。
+   改后冻帧实测:40ms≈52.9°、95ms≈17.1°、150ms≈0.4° —— 倾角贯穿前 40% 的可见区间。 */
 @keyframes chapter-sheet-next {
-  0% { opacity: 0; transform: translateX(102%); }
-  34%, 62% { opacity: 0.98; transform: translateX(0); }
-  100% { opacity: 0; transform: translateX(-5%); }
+  0%   { opacity: 0;    transform: perspective(1800px) rotateY(62deg) translateX(5%); }
+  14%  { opacity: 0.95; transform: perspective(1800px) rotateY(53deg) translateX(4%); }
+  58%  { opacity: 0.98; transform: perspective(1800px) rotateY(0deg) translateX(0); }
+  74%  { opacity: 0.98; transform: perspective(1800px) rotateY(0deg) translateX(0); }
+  100% { opacity: 0;    transform: perspective(1800px) rotateY(-9deg) translateX(-2%); }
 }
 @keyframes chapter-sheet-previous {
-  0% { opacity: 0; transform: translateX(-102%); }
-  34%, 62% { opacity: 0.98; transform: translateX(0); }
-  100% { opacity: 0; transform: translateX(5%); }
+  0%   { opacity: 0;    transform: perspective(1800px) rotateY(-62deg) translateX(-5%); }
+  14%  { opacity: 0.95; transform: perspective(1800px) rotateY(-53deg) translateX(-4%); }
+  58%  { opacity: 0.98; transform: perspective(1800px) rotateY(0deg) translateX(0); }
+  74%  { opacity: 0.98; transform: perspective(1800px) rotateY(0deg) translateX(0); }
+  100% { opacity: 0;    transform: perspective(1800px) rotateY(9deg) translateX(2%); }
 }
 @media (prefers-reduced-motion: reduce) {
   html[data-page-turn]::before,
@@ -967,7 +1060,46 @@ html[data-page-turn="previous"]::after { animation: chapter-sheet-previous 280ms
 .article-content h4 { margin-block: 1.2em 0.4em; font-weight: 700; }
 .article-content h5,
 .article-content h6 { margin-block: 1.1em 0.35em; font-weight: 600; color: var(--accent-ink); }
-.article-content hr { margin-block: 2.2em; border: 0; border-top: 1px solid var(--border); }
+/* 分隔线在书里叫「分节饰记」(dinkus):一条通栏实线是网页的做法,书里用的是
+   两端淡出的细线 + 居中的一枚小饰记。饰记压在纸色上把线"咬断",视觉上比实线轻,
+   但语义更重 —— 通栏实线容易被读成表格或代码块的边框,饰记不会。
+   用 ◆(U+25C6)而不是 ❦/⁂ 这类花饰:几何符号在中文字体里必有字形,花饰会开天窗。 */
+.article-content hr {
+  position: relative;
+  /* 高度不能是 1px:<hr> 的 UA 样式自带 overflow:hidden,绝对定位的饰记会被裁在
+     这条 1px 的带子里 —— 8 倍放大实测只画出了菱形的上半个三角。
+     给足 1.2em 的真实高度并显式 overflow:visible,线改由 ::before 画。
+     上下 margin 从 2.8em 收到 2.2em,把新增的 20px 高度补回去,总间距不变。 */
+  height: 1.2em;
+  overflow: visible;
+  margin-block: 2.2em;
+  border: 0;
+  background: none;
+}
+.article-content hr::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--book-ink) 26%, transparent) 22%, color-mix(in srgb, var(--book-ink) 26%, transparent) 78%, transparent);
+}
+.article-content hr::after {
+  content: "◆";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  /* 0.62rem(≈10px)时 ◆ 只剩三四个像素,实测截图里退化成一根短横 —— 饰记的形状
+     信息全丢了,只剩"线中间有个缺口"。0.82rem(≈13px)是菱形还能被认出的下限。
+     padding 用 em,跟着字号走,保证纸色缺口始终比饰记宽出一圈。 */
+  padding-inline: 0.9em;
+  background: var(--book-paper);
+  color: color-mix(in srgb, var(--book-ink) 46%, var(--book-paper));
+  font-size: 0.82rem;
+  line-height: 1;
+}
 .article-content li.task-item { list-style: none; margin-left: -20px; }
 .article-content li.task-item input { margin-right: 8px; vertical-align: middle; }
 /* 原先这条挂在 .table-wrap 上,但渲染器(lib/markdown.ts renderTable)产出的是
@@ -979,23 +1111,37 @@ html[data-page-turn="previous"]::after { animation: chapter-sheet-previous 280ms
 .article-content table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
 .article-content th,
 .article-content td { padding: 8px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
-.article-content thead th { background: var(--neutral-100); font-family: var(--font-mono); font-size: var(--label-sm); font-weight: 800; letter-spacing: var(--track-tight); text-transform: uppercase; white-space: nowrap; }
+.article-content thead th { background: var(--book-tint, var(--neutral-100)); font-family: var(--font-mono); font-size: var(--label-sm); font-weight: 800; letter-spacing: var(--track-tight); text-transform: uppercase; white-space: nowrap; }
 .article-content tbody tr:nth-child(even) { background: rgba(0,0,0,0.025); }
 .article-content table code { white-space: nowrap; }
+/* 引用块在这个库里只有一种用途:话首的题记(引言 / 长期项目说明 / 本话目标)。
+   `> [!类型]` 走便利贴、`> [!文字版]` 走 <details>,都不经过 <blockquote>
+   (lib/markdown.ts:475-483 分流),所以这里不必承担"告示框"的职责。
+
+   书里的题记不是一个带底色的盒子:靠**内缩 + 一条细竖线 + 略小略淡的字**与正文
+   分开,纸面保持连续。6px 黑粗条 + 实底色是网页 callout 的语言,压在书页上会把
+   一段抒情的引言读成一条警告 —— 而且那块底色用的是站点中性灰,在米色纸上正是
+   上面 .tags a 注释里说的"色差补丁"。
+
+   内缩必须走 padding,不能走 margin:双栏宽规则给 > blockquote 设了
+   margin-inline:auto(见 @container reading 那段),写 margin-inline 会把它顶掉,
+   窄栏元素会贴到宽栏左缘 —— 本文件上面已经为这个坑改过 8 处简写。 */
 .article-content blockquote {
-  margin-block: 20px;
-  padding: 14px 18px;
-  border-left: 6px solid var(--foreground);
-  background: var(--neutral-100);
+  margin-block: 1.8em;
+  padding: 0.15em 0 0.15em 1.4em;
+  border-left: 1px solid color-mix(in srgb, var(--book-ink, var(--foreground)) 32%, transparent);
+  background: none;
+  color: color-mix(in srgb, var(--book-ink, var(--foreground)) 84%, var(--book-paper, var(--background)));
+  font-size: 0.95em;
 }
-/* 引用块内已是块级递归渲染:首尾元素去外边距,内嵌代码块恢复正体并与引用底色区分 */
+/* 引用块内已是块级递归渲染:首尾元素去外边距。
+   原先这里还给内嵌 pre 覆了一层 rgba(paper,0.85),理由是"与引用底色区分" ——
+   引用块的底色已去掉(见上面题记那段),这个前提不成立了。留着会让引用里的代码块
+   反而比纸更亮,和页面上其它代码块两个样。去掉后它就是普通 pre。 */
 .article-content blockquote > :first-child { margin-top: 0; }
 .article-content blockquote > :last-child { margin-bottom: 0; }
 .article-content blockquote p { margin: 0.5em 0; }
-.article-content blockquote pre {
-  margin: 12px 0;
-  background: rgba(var(--paper-rgb), 0.85);
-}
+.article-content blockquote pre { margin: 12px 0; }
 /* ASCII 框线图专用等宽字体。
    框线图靠空格手工对齐,要求「汉字 = 拉丁 × 2」且「框线字符按半角」。实测:
    Sarasa Term SC 0.500/1.000/0.500(比例 2.00 / 1.00)—— 唯一同时满足;
@@ -1484,12 +1630,18 @@ pre:hover .code-copy,
 .share-label { font-family: var(--font-mono); font-size: var(--label-sm); letter-spacing: var(--track-tight); text-transform: uppercase; color: var(--neutral-500); }
 .share-btn { font-family: var(--font-mono); font-size: var(--label-md); padding: 4px 12px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); cursor: pointer; text-decoration: none; }
 .share-btn:hover { border-color: var(--accent); color: var(--accent); }
-.follow-card { margin: var(--gap-block) 0 0; padding: clamp(18px, 3vw, 28px); border: var(--rule-strong); background: var(--surface-sunken); }
-.article-rights { margin: var(--gap-block) 0 0; padding: var(--sp-3) var(--sp-4); border-left: 3px solid var(--accent); background: var(--surface-sunken); }
+/* 这三块是文章末尾/开头的散文面板,与上面的表头、题记同属"书页上的轻底色面",
+   走同一个 --book-tint。它们原先用 --surface-sunken —— 而 --surface-sunken 在
+   :root 上声明为 var(--neutral-100),自定义属性在**声明处**就完成替换,所以在
+   .book-reader 上覆盖 --neutral-100 带不动它们,必须在使用处直接换。
+   普查实测:改前 #f5f4ed(H53 S29),与纸 (H42 S51) 差 ΔS=22,是仅存的几块冷补丁之一。
+   暗色下 --book-tint 显式取 var(--neutral-100),与 --surface-sunken 同值,此改动为 no-op。 */
+.follow-card { margin: var(--gap-block) 0 0; padding: clamp(18px, 3vw, 28px); border: var(--rule-strong); background: var(--book-tint, var(--surface-sunken)); }
+.article-rights { margin: var(--gap-block) 0 0; padding: var(--sp-3) var(--sp-4); border-left: 3px solid var(--accent); background: var(--book-tint, var(--surface-sunken)); }
 .article-rights .eyebrow { margin: 0 0 5px; color: var(--accent-ink); }
 .article-rights p:last-child { margin: 0; color: var(--neutral-600); font-size: .82rem; line-height: 1.65; }
 /* 示例环境声明：置于正文之前，与版权说明同一视觉语言但用中性色，不抢正文注意力 */
-.article-demo-notice { margin: 0 0 var(--gap-block); padding: var(--sp-3) var(--sp-4); border-left: 3px solid var(--neutral-400); background: var(--surface-sunken); }
+.article-demo-notice { margin: 0 0 var(--gap-block); padding: var(--sp-3) var(--sp-4); border-left: 3px solid var(--neutral-400); background: var(--book-tint, var(--surface-sunken)); }
 .article-demo-notice .eyebrow { margin: 0 0 5px; color: var(--neutral-600); }
 .article-demo-notice p:last-child { margin: 0; color: var(--neutral-600); font-size: .82rem; line-height: 1.65; }
 .follow-card .eyebrow { margin-bottom: 6px; }
@@ -1646,7 +1798,11 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   h1 { font-size: clamp(1.4rem, 8vw, 2.2rem); }
   h2 { font-size: clamp(1.15rem, 5vw, 1.6rem); }
   h3 { font-size: clamp(1rem, 3.5vw, 1.3rem); }
-  .article-content > p:first-of-type::first-letter { font-size: 2.5rem; }
+  /* 落点必须跟桌面端那条(.article-content > p.lede::first-letter)一致。
+     写成 p:first-of-type 是把首字下沉改成 .lede 之前的残留:它按位置选段落,
+     会给那 4 篇「首字不该放大」的文章(.wslconfig 的英文句点、① 圈码)套上
+     2.5rem 的巨型首字,而且这里只改字号不带 float,是个没有下沉的孤立大字。 */
+  .article-content > p.lede::first-letter { font-size: 2.5rem; }
 
   .hero > div { border-right: 0; }
   .hero-panel { border-top: 1px solid var(--border); }
@@ -1748,6 +1904,14 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     --book-ink: #e6dfce;
     --book-edge: #4e5042;
     --book-shadow: rgba(0, 0, 0, 0.42);
+    /* 同一张噪声在深色纸上要更用力才看得见:灰噪声压在 #25261f 上是「提亮」,
+       而人眼对暗部的亮度差远不如对亮部的暗度差敏感。5% → 7.5%,两边观感才等重。 */
+    --book-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='bookgrain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23bookgrain)' opacity='0.075'/%3E%3C/svg%3E");
+    /* 暖色补偿在深色下**不做**,这是实测结论不是偷懒:亮色要修是因为站点中性灰
+       (#f5f4ed,R−B=8)与书页纸(#f4eddd,R−B=23)暖度差了近三倍;
+       深色下两者是 #22211c 与 #25261f,R−B 都是 6,本来就在同一条色相轴上,
+       没有补丁可言。照抄亮色的公式反而会把面调得比纸还亮、翻转既有层次。 */
+    --book-tint: var(--neutral-100);
   }
   .article-shell {
     /* 暗色书页(#25261f)比站点底还深,站点级色值本就达标(实测 4.65~4.89)。
@@ -1756,12 +1920,24 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     --neutral-500: #90907f;
     --accent-ink: #d97757;
     background:
+      var(--book-grain),
       linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 8%, transparent 94%, rgba(255, 255, 255, 0.035)),
       radial-gradient(ellipse at 8% 4%, rgba(255, 255, 255, 0.045), transparent 34%),
       var(--book-paper);
     box-shadow: 0 2px 1px rgba(0, 0, 0, 0.35), 8px 14px 28px var(--book-shadow), 15px 20px 0 -13px #34352c, 19px 24px 0 -15px #20211b;
   }
-  .article-shell::before { background: linear-gradient(90deg, rgba(0, 0, 0, 0.38), rgba(255, 255, 255, 0.025) 52%, transparent); }
+  /* 深色下书脊的高光脊要收敛:暗环境里 17% 的白会变成一道发光带,不像纸像塑料。
+     压到 6%,同时把阴影段加深 —— 暗部的曲面靠"更暗"而不是"更亮"来表达。 */
+  .article-shell::before {
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.44) 0%,
+      rgba(0, 0, 0, 0.28) 18%,
+      rgba(0, 0, 0, 0.1) 46%,
+      rgba(255, 255, 255, 0.06) 78%,
+      transparent 100%
+    );
+  }
   .article-header p { color: color-mix(in srgb, var(--book-ink) 72%, var(--book-paper)); }
   /* 暗色书页上与 white 混合会发灰,改为向 black 提一档,保持"比纸面略深"的凹陷感 */
   .article-header .tags a { background: color-mix(in srgb, var(--book-paper) 84%, black); }
