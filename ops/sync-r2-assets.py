@@ -100,8 +100,16 @@ def s3_request(
     secret_key: str,
     body: bytes = b"",
     content_type: str | None = None,
-) -> int:
-    """Make one authenticated path-style S3 request and return its status."""
+    want_length: bool = False,
+) -> int | tuple[int, int]:
+    """Make one authenticated path-style S3 request and return its status.
+
+    With want_length the call also returns the object's Content-Length (-1 when
+    absent). A bare 200 only proves an object exists, not that it still matches
+    the local file: regenerated assets keep their key, so status-only checks
+    report "ok" while the edge keeps serving stale bytes. Size is the cheapest
+    signal that travels on the HEAD response we already make.
+    """
 
     from datetime import datetime, timezone
 
@@ -166,10 +174,14 @@ def s3_request(
         try:
             with urlopen(request, timeout=30) as response:
                 response.read(1)
+                if want_length:
+                    raw = response.headers.get("Content-Length")
+                    length = int(raw) if raw is not None and raw.isdigit() else -1
+                    return response.status, length
                 return response.status
         except HTTPError as error:
             error.read(512)
-            return error.code
+            return (error.code, -1) if want_length else error.code
         except (OSError, TimeoutError, URLError) as error:
             last_error = error
             if attempt < 3:
@@ -207,7 +219,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--env-file", type=Path)
-    parser.add_argument("--check", action="store_true", help="verify objects without uploading")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="verify objects without uploading (reports both missing and stale sizes)",
+    )
     parser.add_argument("--dry-run", action="store_true", help="list the upload plan without network calls")
     parser.add_argument("--force", action="store_true", help="overwrite objects that already exist")
     parser.add_argument("--workers", type=int, default=4)
@@ -227,14 +243,26 @@ def main() -> int:
 
     def process(item: tuple[Path, str]) -> tuple[str, str]:
         path, key = item
+        local_size = path.stat().st_size
         try:
             if args.check:
-                status = s3_request("HEAD", key, endpoint, bucket, access_key, secret_key)
-                return key, "ok" if status == 200 else f"missing({status})"
+                status, remote_size = s3_request(
+                    "HEAD", key, endpoint, bucket, access_key, secret_key, want_length=True
+                )
+                if status != 200:
+                    return key, f"missing({status})"
+                if remote_size >= 0 and remote_size != local_size:
+                    return key, f"stale(remote={remote_size} local={local_size})"
+                return key, "ok"
 
             if not args.force:
-                existing = s3_request("HEAD", key, endpoint, bucket, access_key, secret_key)
-                if existing == 200:
+                existing, remote_size = s3_request(
+                    "HEAD", key, endpoint, bucket, access_key, secret_key, want_length=True
+                )
+                # Skip only when the object exists *and* still matches the local
+                # bytes. A size-blind skip is what let regenerated comics stay
+                # stale on the edge through several deploys.
+                if existing == 200 and (remote_size < 0 or remote_size == local_size):
                     return key, "skipped"
 
             body = path.read_bytes()
@@ -254,7 +282,7 @@ def main() -> int:
         except RuntimeError as error:
             return key, f"network-failed({error})"
 
-    counts = {"ok": 0, "missing": 0, "skipped": 0, "uploaded": 0, "failed": 0}
+    counts = {"ok": 0, "missing": 0, "stale": 0, "skipped": 0, "uploaded": 0, "failed": 0}
     failures: list[str] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as pool:
         futures = [pool.submit(process, item) for item in files]
@@ -263,13 +291,16 @@ def main() -> int:
             if result.startswith("missing"):
                 counts["missing"] += 1
                 failures.append(f"{key}: {result}")
+            elif result.startswith("stale"):
+                counts["stale"] += 1
+                failures.append(f"{key}: {result}")
             elif result.startswith(("upload-failed", "network-failed")):
                 counts["failed"] += 1
                 failures.append(f"{key}: {result}")
             else:
                 counts[result] += 1
 
-    print(" ".join(f"{name}={counts[name]}" for name in ("uploaded", "skipped", "ok", "missing", "failed")))
+    print(" ".join(f"{name}={counts[name]}" for name in ("uploaded", "skipped", "ok", "missing", "stale", "failed")))
     if failures:
         for failure in failures[:20]:
             print(f"FAIL {failure}", file=sys.stderr)

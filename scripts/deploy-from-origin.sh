@@ -158,6 +158,24 @@ submit_indexnow() {
     --data "$payload" >/dev/null
 }
 
+sync_r2_assets() {
+  # 图片资产必须在容器起来之前就位:Dockerfile 在 R2_PUBLIC_URL 非空时会
+  # `rm -rf /app/public/{comics,images}`,生产镜像里没有本地副本 —— R2 少一个对象
+  # 就是永久破图,没有任何回退路径。
+  #
+  # 2026-08-20 实测过这个缺口的代价:cafe/career/cli 三个系列封面的 12 个变体
+  # 从未上传过,3 个系列首页 + 约 85 篇文章的正文顶部一直是破图;另有 13 个重新
+  # 生成过的漫画在边缘停留旧字节。原因就是同步是纯手工步骤,没有任何自动环节
+  # 会发现它没跑 —— CI 只对这个脚本做 py_compile 语法检查。
+  #
+  # 幂等:未变更的对象按 HEAD 的 Content-Length 跳过,只上传缺失与字节数不符的。
+  if ! grep -q '^R2_PUBLIC_URL=.' .env 2>/dev/null; then
+    echo "R2_PUBLIC_URL not configured; images are served from the origin image and need no sync."
+    return 0
+  fi
+  python3 ops/sync-r2-assets.py --workers 6
+}
+
 prune_old_build_artifacts() {
   # BuildKit 已占到数十 GB 时会挤压 59 GB 系统盘。只处理 7 天前且未被容器使用的缓存/悬空镜像，
   # 保留近期缓存加速回滚；限时与非致命处理确保清理故障不会把健康发布误判为失败。
@@ -192,6 +210,11 @@ if [[ "$LAST_SUCCESSFUL_COMMIT" == "$TARGET_COMMIT" ]]; then
   echo "Already deployed ${TARGET_COMMIT:0:12}."
   exit 0
 fi
+
+# 资产先于容器就位。这一步阻断发布而不是仅告警:镜像里没有图片副本,同步没跑完就
+# 起容器,读者看到的是破图 —— 那和「构建失败」一样是不该被接受的发布状态。
+# 脚本内部已有 4 次退避重试,所以走到这里的失败是持续性故障,不是抖动。
+sync_r2_assets
 
 # 先持久化再启动容器，避免 systemd 超时/连接中断恰好发生在 compose 成功之后时
 # 令牌丢失；权限由 STATE_DIR 的 0700 继承，并在接受发布后立即删除。
