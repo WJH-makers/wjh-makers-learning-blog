@@ -330,11 +330,55 @@ test("tcp-flow DSL 渲染回归", async () => {
 
 test("方言锁定:单换行 = 两个独立段落(存量文章依赖,勿改成 CommonMark 合并)", async () => {
   const html = await markdownToHtml("第一行\n第二行");
-  assert.equal((html.match(/<p>/g) ?? []).length, 2, html);
+  // 数「段落开始标签」而不是字面 <p>:正文首段会带 class="lede"(首字下沉落点,
+  // 见 isLedeParagraph)。本测试锁的是"单换行不合并段落"这个方言,与标签属性无关。
+  assert.equal((html.match(/<p(?=[\s>])/g) ?? []).length, 2, html);
 });
 
 test("XSS 基线:裸 HTML 与引号被转义", async () => {
   const html = await markdownToHtml('<script>alert(1)</script> "x" \'y\'');
   assert.ok(!html.includes("<script>"), html);
   assert.ok(html.includes("&lt;script&gt;"), html);
+});
+
+// ---------- 首字下沉落点(.lede) ----------
+// 改这几条前先读 lib/markdown.ts 的 isLedeParagraph 注释:落点按「是否适合放大」判定,
+// 不是按位置。用 `p:first-of-type` 时实测 183 篇里 43 篇落点错误。
+
+test("首字下沉落在首个中文段落上", async () => {
+  const html = await markdownToHtml("明天开业，招牌还没亮。\n第二段。");
+  const first = html.indexOf("<p");
+  assert.ok(html.slice(first, first + 40).includes('class="lede"'), html);
+  // 只标一个
+  assert.equal((html.match(/class="lede"/g) ?? []).length, 1, html);
+});
+
+test("只装漫画的段落不吃首字下沉,让给后面的正文段落", async () => {
+  const html = await markdownToHtml("![漫画](/comics/java/s01e01-first-program-speaks.png)\n正文从这里开始。");
+  const lede = html.indexOf('class="lede"');
+  assert.ok(lede > 0, `图片之后的段落应拿到 lede: ${html}`);
+  // lede 必须在 <picture> 之后 —— 落在图片段落上等于下沉消失
+  assert.ok(lede > html.indexOf("<picture>"), html);
+  assert.ok(html.slice(lede).includes("正文从这里开始"), html);
+});
+
+test("标点、圈码与数字开头的段落不放大首字符", async () => {
+  for (const lead of ["① 建 / 推", "。开头是句点", "2026 年开头是数字", "—— 破折号开头"]) {
+    const html = await markdownToHtml(`${lead}\n后面一段中文。`);
+    const lede = html.indexOf('class="lede"');
+    assert.ok(lede > 0, `应把 lede 让给后一段: ${lead} → ${html}`);
+    assert.ok(html.slice(lede).includes("后面一段中文"), `${lead} → ${html}`);
+  }
+});
+
+test("以行内代码开头的段落不吃首字下沉", async () => {
+  const html = await markdownToHtml("`.wslconfig` 在 Windows 侧生效。\n后面一段中文。");
+  const lede = html.indexOf('class="lede"');
+  assert.ok(lede > 0, html);
+  assert.ok(html.slice(lede).includes("后面一段中文"), html);
+});
+
+test("整篇没有合适段落时不硬塞首字下沉", async () => {
+  const html = await markdownToHtml("![漫画](/comics/java/s01e01-first-program-speaks.png)");
+  assert.ok(!html.includes('class="lede"'), html);
 });

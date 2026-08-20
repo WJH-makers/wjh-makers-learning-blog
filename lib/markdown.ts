@@ -400,7 +400,33 @@ const STICKY_CLASS: Record<string, string> = {
 
 export type Heading = { level: number; text: string; id: string };
 
-type RenderCtx = { headings: Heading[]; usedIds: Map<string, number> };
+type RenderCtx = { headings: Heading[]; usedIds: Map<string, number>; ledeAssigned?: boolean };
+
+/**
+ * 这一段是否适合承载首字下沉。
+ *
+ * 三条都必须成立,任一不成立就把下沉让给后面的段落:
+ *  1. 去掉标签后有实际文字 —— 只装漫画的段落没有可放大的字形;
+ *  2. 首个可见字符是汉字或拉丁字母 —— 标点、圈码(①)、数字放大到 3.4rem
+ *     既不像书籍首字母,还会从单行段落里浮出去压住下方内容;
+ *  3. 段落不以行内标签开头 —— <code>/<strong>/<a> 的第一个字符受它们自己的
+ *     字体与字重支配,::first-letter 叠上去会得到一个字体、颜色都不搭的巨型字符。
+ *
+ * 注意 inlineMarkdown 此时已把行内代码/图片/链接换成 slot 占位符,
+ * 所以第 3 条等价于「以占位符开头」,不必解析标签。
+ */
+/** inlineMarkdown 的 slot 占位符：\u0000<index>\u0000。 */
+const INLINE_SLOT_RE = /\u0000\d+\u0000/g;
+/** 可放大的首字符：汉字（含扩展 A）与拉丁字母。标点、圈码、数字一律不放大。 */
+const LEDE_FIRST_CHAR_RE = /^[\u4e00-\u9fff\u3400-\u4dbfA-Za-z]/;
+
+function isLedeParagraph(html: string): boolean {
+  // 以占位符开头 = 段落首元素是行内代码/图片/链接，让给后面的段落。
+  if (/^\u0000\d+\u0000/.test(html)) return false;
+  const text = html.replace(/<[^>]*>/g, "").replace(INLINE_SLOT_RE, "").trim();
+  if (!text) return false;
+  return LEDE_FIRST_CHAR_RE.test(text);
+}
 
 /** 引用块按前导 > 递归一层;恶意/异常内容(一行两万个 >)不能炸栈,超限降级为转义文本。 */
 const MAX_QUOTE_DEPTH = 32;
@@ -526,7 +552,19 @@ async function renderLines(lines: string[], ctx: RenderCtx, depth: number): Prom
       continue;
     }
 
-    html.push(`<p>${inlineMarkdown(line)}</p>`);
+    const paragraph = inlineMarkdown(line);
+    // 首字下沉的落点由渲染器标出,不能在 CSS 里用 `p:first-of-type` 按位置选。
+    // 实测 183 篇已发布文章:38 篇的首个 <p> 只装一张漫画(图片语法单独成段),
+    // ::first-letter 无字可作用,那个刻意设计的下沉在 21% 的文章上静默消失;
+    // 另有 4 篇首字符不适合放大 —— `.wslconfig` 的英文句点被放大成 3.4rem 的巨型句点,
+    // `① 建 / 推` 的圈码放大后从单行段落里溢出、压到下方内容上。
+    // 位置与「是否适合放大」是两件事,CSS 只能表达前者,所以判定放在这里。
+    if (depth === 0 && !ctx.ledeAssigned && isLedeParagraph(paragraph)) {
+      ctx.ledeAssigned = true;
+      html.push(`<p class="lede">${paragraph}</p>`);
+      continue;
+    }
+    html.push(`<p>${paragraph}</p>`);
   }
 
   if (inCode) html.push(await highlightCode(codeLines.join("\n"), codeLang));
