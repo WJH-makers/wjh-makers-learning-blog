@@ -148,11 +148,17 @@ function validRecordedAt(value: string): number | undefined {
  * Derives a private study dashboard from data already held in this browser.
  * A later self-declared local run resets the review cycle for that lab; there
  * is no server score, learner profile, source code, or telemetry involved.
+ *
+ * `now` 是**必填**的,不给默认值。原来写 `now = new Date()`,读起来像个便利默认值,
+ * 实际是把「读当前时间」藏进了函数签名 —— 开启 cacheComponents 后 /learning 的
+ * 预渲染直接报硬错误(Route "/learning" used `new Date()` inside a Client Component
+ * without a Suspense boundary)。时间从哪来必须由调用方显式表达:
+ * 浏览器里传 new Date(),预渲染阶段传固定时刻,测试传断言用的时刻。
  */
 export function summarizeLearning(
   labs: readonly ReviewableLab[],
   events: readonly LearningEvidence[],
-  now = new Date(),
+  now: Date,
 ): LearningDashboardSummary {
   const labsById = new Map(labs.map((lab) => [lab.id, lab]));
   const latestPassed = new Map<string, LearningEvidence>();

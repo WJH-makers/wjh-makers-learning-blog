@@ -1,5 +1,6 @@
 import "./write.css";
 import type { Route } from "next";
+import { Suspense } from "react";
 import { blogAdminSecret } from "@/lib/auth-secrets";
 import { redirect } from "next/navigation";
 import { revalidatePath, updateTag } from "next/cache";
@@ -152,41 +153,30 @@ async function checkAuth(): Promise<boolean> {
   return isBlogAuthed();
 }
 
-export default async function WritePage({ searchParams }: Props) {
+/**
+ * 编辑器本体：依赖 searchParams 与会话 cookie，都是请求数据。
+ *
+ * 拆成独立组件是 cacheComponents 的要求 —— 未缓存数据必须在 <Suspense> 里读，
+ * 否则整页要等它才能开始渲染（构建期报 "Uncached data was accessed outside of
+ * <Suspense>"，直接拒绝预渲染 /write）。拆开后静态外壳先出，编辑器随后填入。
+ *
+ * 「今天」也在这里取:写作台的默认日期必须是作者提交那天,不能是构建时刻
+ * （lib/publication.ts 的 BUILD_TIME_NOW 服务于发布边界判定，语义不同 ——
+ * 一个多日未部署的站点会让写作台默认日期停在几天前）。
+ * 这里已经读过请求数据，再读当前时间是允许的。
+ */
+async function WriteDesk({ searchParams }: Props) {
   const { error, slug } = await searchParams;
-  const today = shanghaiDate();
-  const dbReady = hasDatabaseConfig();
-  const tokenReady = Boolean(blogAdminSecret());
-  const publishingReady = dbReady && tokenReady;
-  const message = errorMessage(error);
   const isAuthenticated = await checkAuth();
+  const today = shanghaiDate(new Date());
+  const message = errorMessage(error);
 
   // Only load an existing post for editing when the visitor is admin-authed.
   const editingPost = slug && isAuthenticated ? await getPublishedPost(slug) : undefined;
 
   return (
-    <div className="page-shell editor-shell">
-      <div className="page-title">
-        <p className="eyebrow">{editingPost ? "Editing Desk" : "Editorial Desk"}</p>
-        <h1>{editingPost ? "编辑已发布文章" : "知识卡片写作台"}</h1>
-        <p>
-          {editingPost
-            ? "修改标题、正文或标签后保存，会覆盖 MongoDB 中的这篇文章，并刷新首页、文章、标签和 RSS。"
-            : "聚焦标题、证据和下一步。发布后会写入 MongoDB Atlas，并同步出现在首页、文章、标签和 RSS。"}
-        </p>
-      </div>
-
-      <section className={publishingReady ? "db-status ok" : "db-status warn"}>
-        <strong>{publishingReady ? `Publishing Desk Ready：${databaseProviderLabel()}` : "写作发布尚未就绪"}</strong>
-        <span>
-          {publishingReady
-            ? "数据库和密钥均已配置，可以提交。"
-            : `数据库：${dbReady ? "已配置" : "未配置 MONGODB_URI"}；密钥：${tokenReady ? "BLOG_ADMIN_TOKEN 已配置" : "缺少 BLOG_ADMIN_TOKEN"}。`}
-        </span>
-      </section>
-
+    <>
       {message ? <p className="form-error">E42: {message}</p> : null}
-
       <WriteEditorClient
         initialDate={editingPost ? editingPost.date : today}
         publishAction={publishPost}
@@ -198,6 +188,36 @@ export default async function WritePage({ searchParams }: Props) {
         initialTags={editingPost ? editingPost.tags.join(", ") : undefined}
         initialContent={editingPost?.content}
       />
+    </>
+  );
+}
+
+export default function WritePage({ searchParams }: Props) {
+  // 外壳只读环境变量（非请求数据），因此可以静态预渲染。
+  const dbReady = hasDatabaseConfig();
+  const tokenReady = Boolean(blogAdminSecret());
+  const publishingReady = dbReady && tokenReady;
+
+  return (
+    <div className="page-shell editor-shell">
+      <div className="page-title">
+        <p className="eyebrow">Editorial Desk</p>
+        <h1>知识卡片写作台</h1>
+        <p>聚焦标题、证据和下一步。发布后会写入 MongoDB Atlas，并同步出现在首页、文章、标签和 RSS。</p>
+      </div>
+
+      <section className={publishingReady ? "db-status ok" : "db-status warn"}>
+        <strong>{publishingReady ? `Publishing Desk Ready：${databaseProviderLabel()}` : "写作发布尚未就绪"}</strong>
+        <span>
+          {publishingReady
+            ? "数据库和密钥均已配置，可以提交。"
+            : `数据库：${dbReady ? "已配置" : "未配置 MONGODB_URI"}；密钥：${tokenReady ? "BLOG_ADMIN_TOKEN 已配置" : "缺少 BLOG_ADMIN_TOKEN"}。`}
+        </span>
+      </section>
+
+      <Suspense fallback={<p className="db-status">正在载入写作台…</p>}>
+        <WriteDesk searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }

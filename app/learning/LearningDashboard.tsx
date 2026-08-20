@@ -26,13 +26,31 @@ function dateLabel(iso: string): string {
   return new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric" }).format(new Date(iso));
 }
 
+/**
+ * 预渲染期的占位时刻。
+ *
+ * 本页数据全在 localStorage:预渲染时 events 必为空,summarizeLearning 里
+ * 「判断复习到期」的循环一次都不进,now 读不到 —— 面板上显示的也都是 loaded=false
+ * 时的破折号占位。所以这里需要的只是一个**不读当前时间**的合法 Date。
+ * 用 epoch 而不是 new Date():后者会让 cacheComponents 在预渲染阶段直接报错。
+ * 真实时刻在挂载后由 useEffect 一并写入,与 events 同一批。
+ */
+const PRERENDER_PLACEHOLDER_NOW = new Date(0);
+
 export default function LearningDashboard({ labs }: Props) {
   const [events, setEvents] = useState<LearningEvidence[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const summary = useMemo(() => summarizeLearning(labs, events), [labs, events]);
+  const [now, setNow] = useState<Date | null>(null);
+  const summary = useMemo(
+    () => summarizeLearning(labs, events, now ?? PRERENDER_PLACEHOLDER_NOW),
+    [labs, events, now],
+  );
 
   useEffect(() => {
     setEvents(readLearningEvidence());
+    // 时间与事件同一批写入:到期判定必须基于「读取这批事件的那一刻」,
+    // 分两次 setState 会让首帧用 epoch 判定已加载的事件,把全部复习标成 due。
+    setNow(new Date());
     setLoaded(true);
   }, []);
 
