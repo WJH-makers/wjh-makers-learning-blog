@@ -20,7 +20,14 @@ services:
     container_name: blog
     # 512m 时实测常驻 394MiB(77%),ISR 重渲染 179 篇正是内存尖峰期 —— 留够头寸,
     # 别让一次重建把容器推到 OOM。宿主 3.7G 尚余 1.5G,加这 256m 无压力。
-    mem_limit: 768m
+    #
+    # 2026-08-25: 768m 下仍 OOM 过两次(RestartCount=2)。但**不是** Docker 杀的 ——
+    # `docker inspect` 显示 OOMKilled=false、ExitCode=0,日志是 V8 自己的
+    # `FATAL ERROR: Reached heap limit Allocation failed`,Scavenge 到 377MB 就死。
+    # 根因:未设 NODE_OPTIONS 时 Node 按容器可见内存自算堆上限,只给到约 392MB,
+    # 远低于 768m 的容器限额 —— 容器还剩一半空间,堆先撑爆了。
+    # 故必须同时做两件事:抬高容器限额,并显式把堆上限设到限额之内(见下方 NODE_OPTIONS)。
+    mem_limit: 1g
     # 宿主 2 核。1.0 会在渲染尖峰把自己钉死在单核上,而平时负载只有 0.1;
     # cpus 是上限不是预留,给到 1.5 只在需要时多占,空闲时不影响同宿主的其他服务。
     cpus: 1.5
@@ -33,6 +40,11 @@ services:
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
+      # 2026-08-25: 显式钉住 V8 老生代上限。不设时 Node 自算出约 392MB,
+      # 在 mem_limit 之下先撑爆(见上方 mem_limit 注释)。
+      # 取 768 而非贴满 1024:堆之外还有 V8 code space、native 模块与 Buffer,
+      # 留 256MB 非堆头寸,避免堆没满而容器先被 Docker OOMKill —— 那才是真的硬杀。
+      NODE_OPTIONS: --max-old-space-size=768
       PORT: 3001
       NETDATA_URL: http://host.docker.internal:19999
       # 仅部署脚本临时注入;它是读取 /api/version 中 commit 的一次性授权,
