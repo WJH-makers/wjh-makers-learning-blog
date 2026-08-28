@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { cacheLife } from "next/cache";
 import { siteUrl } from "@/lib/site-config";
-import { getAllPublishedPosts, renderMarkdown, type Post } from "@/lib/posts";
+import { getAllPublishedPosts, type Post } from "@/lib/posts";
+import { extractHeadings } from "@/lib/markdown";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
 
@@ -57,6 +58,10 @@ const GROUPS: { key: string; label: string; hint: string; match: (slug: string) 
   },
 ];
 
+/* 本页原先内联了一份 scanHeadings(手抄 renderLines 的围栏/引用/表格三条口径)。
+   已改用 lib/markdown.ts 的 extractHeadings —— 它复用渲染器同一遍历,
+   锚点 id 不可能与正文漂移,这里不再留第二份实现。 */
+
 export default async function CheatsheetsPage() {
   "use cache";
   cacheLife("content");
@@ -64,14 +69,15 @@ export default async function CheatsheetsPage() {
   const posts = (await getAllPublishedPosts()).filter(isCheatsheet);
 
   // 每篇取二级标题做锚点直达:速查表的价值在于「一眼看到有没有我要的那一节」。
+  // 走 lib/markdown 的 extractHeadings 而不是本页手抄一份扫描器:它复用 renderLines
+  // 的同一遍历与同一 slugify,所以锚点 id 与正文里真实渲染出的 id **不可能**漂移。
+  // 手抄版只要 renderer 改了围栏/引用/表格任一条口径就会静默错位,而锚点错位是
+  // 「点了跳不到」——页面看起来完全正常,没有任何报错。
   const withSections = await Promise.all(
-    posts.map(async (post) => {
-      const { headings } = await renderMarkdown(post.content);
-      return {
-        post,
-        sections: headings.filter((h) => h.level === 2).slice(0, 12),
-      };
-    }),
+    posts.map(async (post) => ({
+      post,
+      sections: (await extractHeadings(post.content)).filter((h) => h.level === 2).slice(0, 12),
+    })),
   );
 
   const used = new Set<string>();

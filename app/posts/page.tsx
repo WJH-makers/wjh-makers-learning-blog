@@ -42,8 +42,11 @@ export default async function PostsPage() {
   cacheLife("article");
 
   const posts = await getAllPublishedPosts();
-  const cheatsheets = posts.filter((p) => !isSeriesEpisode(p) && isCheatsheet(p));
-  const notes = posts.filter((p) => !isSeriesEpisode(p) && !isCheatsheet(p));
+  // isSeriesEpisode 内部是全注册表扫描(命中一话要在 27 条线里定位再重跑发布过滤),
+  // 每篇只判一次装进 Set,下面两条分流都查表 —— 否则同一批文章被扫两遍。
+  const episodeSlugs = new Set(posts.filter(isSeriesEpisode).map((p) => p.slug));
+  const cheatsheets = posts.filter((p) => !episodeSlugs.has(p.slug) && isCheatsheet(p));
+  const notes = posts.filter((p) => !episodeSlugs.has(p.slug) && !isCheatsheet(p));
 
   return (
     <div className="page-shell narrow">

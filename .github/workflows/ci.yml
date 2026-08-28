@@ -46,10 +46,90 @@ jobs:
         # 避免新增漏洞只能等到 critical 才阻断发布。
         run: npm audit --audit-level=high
 
+  image:
+    # 在这一步存在之前,CI 从不构建镜像:.github 全目录零 docker 命中,Dockerfile 从未被
+    # 门禁验证过。而服务器侧构建失败发生在替换容器**之前** —— 旧容器没被停掉、仍然 healthy,
+    # 于是下面 Verify 的公网探测第一次轮询就拿到 healthy=true 并 exit 0。
+    # 净效果是「CI 全绿 + 生产静默停在旧提交 + 零告警」,只有 systemd 每 2 分钟失败一次。
+    # 把「镜像可构建、能起来、内容齐」搬进门禁,是唯一能在合并前拦住这类改动的位置。
+    runs-on: ubuntu-latest
+    # next build 在容器里跑一遍约 3-5 分钟;与 build job 并行,不拉长整体墙钟时间。
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prime the base image
+        run: |
+          set -euo pipefail
+          # Dockerfile 的 FROM 指向 daocloud 镜像站 —— 服务器在国内,直连 Docker Hub 不通。
+          # runner 出口在境外,这个镜像站可能慢或不可达;那是 runner 的网络环境问题,
+          # 不代表镜像有缺陷,不能因此把 CI 判红。拉不到就从上游取同一个 tag
+          # 再打上镜像站的名字,让 FROM 命中本地镜像库(同一个 upstream 镜像,不是替换)。
+          base=docker.m.daocloud.io/library/node:22-alpine
+          if ! docker pull --quiet "$base"; then
+            echo "::warning::The daocloud mirror is unreachable from this runner; pulling the same base tag from Docker Hub instead."
+            docker pull --quiet node:22-alpine
+            docker tag node:22-alpine "$base"
+          fi
+
+      - name: Build the production image
+        run: |
+          set -euo pipefail
+          # build args 与 docker-compose.yml 对齐。R2_PUBLIC_URL 必须给非空值:
+          # 空值走的是「保留本地图片副本」的回退分支,而生产走的是
+          # `rm -rf /app/public/{comics,images}` 那一支 —— 门禁要检验生产真正执行的路径。
+          # 具体域名无关紧要,构建期不会访问它(lib/assets.ts 只做 URL 解析)。
+          docker build \
+            --build-arg NEXT_PUBLIC_SITE_URL=https://wwjjhh.online \
+            --build-arg APP_GIT_SHA="$GITHUB_SHA" \
+            --build-arg R2_PUBLIC_URL=https://assets.invalid \
+            --tag blog:ci .
+
+      - name: Boot the image and read back its commit
+        run: |
+          set -euo pipefail
+          trap 'docker rm --force blog-ci >/dev/null 2>&1 || true' EXIT
+          # 构建成功还不够:runner 阶段的 COPY/chown/USER 出错要等容器真的起来才暴露。
+          # 顺带验证 APP_GIT_SHA 全链路 —— scripts/deploy-from-origin.sh 正是靠
+          # /api/version 的 commit 判定发布是否真的上线,那条链一断,服务器侧校验会
+          # 每轮都判 mismatch,而这里是唯一能在合并前发现它的地方。
+          # PORT=3001 与生产一致(镜像默认 3000,生产靠 compose 覆盖),顺手验证覆盖有效。
+          token="$(od -vAn -N32 -tx1 /dev/urandom | tr -d ' \n')"
+          docker run --detach --name blog-ci \
+            --env PORT=3001 \
+            --env DEPLOY_VERIFICATION_TOKEN="$token" \
+            --publish 127.0.0.1:3001:3001 blog:ci >/dev/null
+          deployed=""
+          for attempt in $(seq 1 30); do
+            deployed="$(curl --silent --fail --max-time 5 \
+              -H "X-Deploy-Verification-Token: $token" \
+              http://127.0.0.1:3001/api/version \
+              | sed -n 's/.*"commit":"\([0-9a-f]\{40\}\)".*/\1/p' || true)"
+            if [ -n "$deployed" ]; then break; fi
+            sleep 2
+          done
+          if [ "$deployed" != "$GITHUB_SHA" ]; then
+            echo "::error::The image never reported the commit it was built from (expected ${GITHUB_SHA:0:12}, got ${deployed:-missing})." >&2
+            docker logs blog-ci 2>&1 | tail -40 >&2
+            exit 1
+          fi
+          # content 的唯一事实源是镜像(compose 已不再挂宿主 ./content),
+          # 所以 COPY 一旦静默失效,212 篇 markdown 会整体消失而首页照样 200 ——
+          # getAllPosts 对空目录返回 [],没有任何现有检查会红。这里守住下限。
+          posts="$(docker run --rm blog:ci sh -c 'ls /app/content/posts/*.md 2>/dev/null | wc -l' | tr -d '[:space:]')"
+          if [ "${posts:-0}" -lt 150 ]; then
+            echo "::error::The image only ships ${posts:-0} markdown posts; content must be baked into the image." >&2
+            exit 1
+          fi
+          echo "Image boots, reports ${GITHUB_SHA:0:12} and ships ${posts} posts."
+
   publish-deploy-ref:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: build
+    # 镜像必须与站点契约同为发布前置条件:只跑 npm run build 的门禁对
+    # 「Dockerfile 改坏了」完全无感,而那类改动只会在服务器上炸、CI 照样绿。
+    needs: [build, image]
     permissions:
       contents: write
     timeout-minutes: 25
@@ -72,6 +152,12 @@ jobs:
           # 因此这一步只能做「生产是否已经起来并健康」的边缘探测,不能再比对 SHA;
           # 若把这里当成 SHA 门禁,就会因为拿不到字段而空转到超时假红。
           #
+          # 必须清楚它证明不了什么:healthy=true 只说明**某个**容器活着。服务器侧构建失败
+          # 发生在替换容器之前,旧容器不受影响 —— 所以这一步在「新提交从未上线」时也会通过。
+          # 镜像层面的失败已由上面的 image job 在合并前拦掉;剩下的服务器侧运行期失败
+          # (R2 同步中断、拉取超时、OOM)目前只体现为 systemd 每 2 分钟静默失败一次,
+          # ops/txcloud-blog-pull.service 没有 OnFailure=,这里也看不见。
+          #
           # Cloudflare 会对 GitHub Actions 的数据中心 IP 发人机挑战(历史 7 次全部如此),
           # 拿回来的是 "Just a moment..." 而不是 JSON —— 那是 runner 出口的网络环境问题,
           # 不代表生产异常,再等 16 分钟也不会变。所以识别到挑战页就明确告警并放行。
@@ -79,7 +165,9 @@ jobs:
             body="$(curl --silent --show-error --max-time 15 https://wwjjhh.online/api/version 2>&1 || true)"
             healthy="$(printf '%s' "$body" | jq -r '.healthy // empty' 2>/dev/null || true)"
             if [ "$healthy" = "true" ]; then
-              echo "Production edge is healthy; the server-side check already pinned ${EXPECTED_SHA:0:12}."
+              # 原文写的是「服务器侧检查已经钉住了这个 SHA」,那是句假话:旧容器活着
+              # 也满足这个条件。措辞照实说,免得排障时把这行当成「已上线」的证据。
+              echo "Production edge is healthy. This does not prove ${EXPECTED_SHA:0:12} is live -- only deploy-from-origin.sh compares the container's commit, on the server."
               exit 0
             fi
             if printf '%s' "$body" | jq -e 'has("commit")' >/dev/null 2>&1; then

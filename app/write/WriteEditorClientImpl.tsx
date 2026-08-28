@@ -324,6 +324,32 @@ export default function WriteEditorClient({
     setDraftStatus("已重置为知识卡片模板，保存后会覆盖本地草稿。");
   }
 
+  /**
+   * 按状态码分辨登录失败的原因。
+   *
+   * 原来非 2xx 一律说「密钥不正确」，但 /api/auth 对四种情况都只回裸 {ok:false}：
+   * 403(同源失败)、429(限流)、400(畸形 body)、401(密钥错)。429 比想象容易撞上 ——
+   * /api/auth 与 /api/monitor-auth 共用同一个 login 限流桶同一个 IP key，10 次/分钟，
+   * 在 /monitor 输错 6 次口令再来 /write 试 4 次就到顶，此时**粘对的密钥也回 429**，
+   * 界面却还在说「密钥不正确」，作者会去翻密码管理器找一个根本没错的密钥。
+   *
+   * 先读 message：/api/monitor-auth 那边的同款分支是带 message 的，
+   * /api/auth 将来补齐时这里不用再改(补 message 要动 app/api/auth/route.ts，不在本次范围)。
+   */
+  async function loginFailureMessage(res: Response): Promise<string> {
+    try {
+      const body = (await res.json()) as { message?: unknown };
+      if (typeof body?.message === "string" && body.message.trim()) return body.message.trim();
+    } catch {
+      // 裸 {ok:false} 之外还可能是空 body 或 HTML 错误页，按状态码兜底即可。
+    }
+    if (res.status === 429) return "尝试次数过多，请 1 分钟后重试。";
+    if (res.status === 403) return "请求来源不受信任，请从本站写作台登录。";
+    if (res.status === 400) return "登录请求格式有误，请刷新页面后重试。";
+    if (res.status === 401) return "密钥不正确，登录失败。";
+    return `登录失败（HTTP ${res.status}），请稍后重试。`;
+  }
+
   async function handleLogin() {
     if (!savedToken.trim()) {
       setValidationMessage("请先输入发布密钥。");
@@ -339,7 +365,7 @@ export default function WriteEditorClient({
       if (res.ok) {
         window.location.reload();
       } else {
-        setValidationMessage("密钥不正确，登录失败。");
+        setValidationMessage(await loginFailureMessage(res));
       }
     } catch {
       setValidationMessage("登录请求失败，请检查网络。");

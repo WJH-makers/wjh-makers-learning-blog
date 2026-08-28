@@ -22,13 +22,17 @@
  */
 const BUILD_TIME_NOW = new Date();
 
+// 格式化器构造是这里的实际开销(实测约 33µs/次),而它完全无状态、参数恒定,
+// 所以提到模块级建一次。发布判定是全站最底层的谓词,构建与每小时再生累计要跑数万次。
+const SHANGHAI_DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Shanghai",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 export function shanghaiDate(now = BUILD_TIME_NOW): string {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Shanghai",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now);
+  const parts = SHANGHAI_DATE_FORMAT.formatToParts(now);
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
 }

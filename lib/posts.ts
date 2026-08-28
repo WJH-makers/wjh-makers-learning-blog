@@ -185,14 +185,19 @@ export async function getAllPublishedTags(): Promise<{ tag: string; count: numbe
     .sort((a, b) => a.tag.localeCompare(b.tag, "zh-Hans-CN"));
 }
 
+/**
+ * 调用方传进来的 tag 已经是解码后的字面量(app/tags/[tag]/page.tsx 在 :24/:41
+ * 各自 decodeURIComponent 过一次),这里**不能再解一次**:
+ *  - 含字面 `%` 的标签会让第二次解码抛 URIError,标签页变 500;
+ *  - 形如 `%xx` 的标签会被静默改写成别的字符串,于是页面查不到文章、静默 404。
+ * 需要解码的责任留在路由层(那里才拿到原始 URL 段),lib 侧只按字面匹配。
+ */
 export function getPostsByTag(tag: string): Post[] {
-  const decoded = decodeURIComponent(tag);
-  return getAllPosts().filter((post) => post.tags.includes(decoded));
+  return getAllPosts().filter((post) => post.tags.includes(tag));
 }
 
 export async function getPublishedPostsByTag(tag: string): Promise<Post[]> {
-  const decoded = decodeURIComponent(tag);
-  return (await getAllPublishedPosts()).filter((post) => post.tags.includes(decoded));
+  return (await getAllPublishedPosts()).filter((post) => post.tags.includes(tag));
 }
 
 /** 按共享的「具体主题标签」推荐相关文章(忽略 Java/Java漫画 等泛标签,避免连载话彼此刷屏)。 */

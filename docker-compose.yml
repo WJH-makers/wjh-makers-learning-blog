@@ -34,7 +34,12 @@ services:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
       PORT: 3001
-      NETDATA_URL: http://host.docker.internal:19999
+      # 这里曾有 NETDATA_URL。它是死配置:全仓库无任何读者(env.d.ts 也未声明) ——
+      # 监控台入口用 lib/site-config.ts 的 https://monitor.${PRIMARY_HOST} 字面派生,
+      # server-stats 走 execFile 与 /proc,谁都不看这个变量。留着最坏的形态是:netdata
+      # 换端口时有人照着改这里、重启、发现毫无变化,于是把排查方向拐进 extra_hosts 与防火墙。
+      # 真要让 server-stats 拉 netdata,连同 env.d.ts 声明与读取代码一起加回来。
+
       # 仅部署脚本临时注入;它是读取 /api/version 中 commit 的一次性授权,
       # 不写入 .env,也不向公网发送。空值时端点永远只返回 healthy。
       DEPLOY_VERIFICATION_TOKEN: ${DEPLOY_VERIFICATION_TOKEN:-}
@@ -48,8 +53,14 @@ services:
       R2_API_TOKEN: ""
     env_file:
       - .env
-    volumes:
-      - ./content:/app/content:ro
+    # 这里曾挂 ./content:/app/content:ro,把宿主工作树盖在镜像自带的 content 之上
+    # (Dockerfile 的 COPY content 被完全遮蔽)。它换不来热更能力,只换来代码/内容错位:
+    # 生产下 lib/posts.ts 的 mdPostsCache 一次读取后进程内永不刷新,挂载只在**容器启动那一刻**
+    # 生效;而 deploy-from-origin.sh 先 `git reset --hard` 把宿主 ./content 换成新提交,
+    # 再 `up -d --build`。构建失败时脚本 exit 1、旧容器仍在跑 —— 此刻旧容器一旦被拉起
+    # (OOM-kill、docker 重启、宿主重启),就是用旧代码渲染新内容:新语法退化成裸文本,
+    # 改名/删除的文章让索引有链接、点进去 404,而首页 200、healthcheck healthy、CI 绿。
+    # 去掉挂载后 content 的唯一事实源是镜像,与 commit 严格同版(CI 的 image job 守住下限)。
     restart: unless-stopped
     logging:
       driver: json-file

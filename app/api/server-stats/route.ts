@@ -65,8 +65,16 @@ async function collect(): Promise<Point> {
   let memPct = 0;
   let load = 0;
 
+  // 两种 top 的空闲字段写法不同,必须都认:
+  //   procps  (Debian/Ubuntu):  "%Cpu(s): ... 96.2 id,"     数字后是空格
+  //   busybox (alpine,即本站生产镜像): "CPU: ... 100% idle"  数字后紧跟 %
+  // 原正则 /(\d+\.?\d*)\s*id/ 只能匹配前者(\s* 吃不掉 %),而运行镜像是 node:22-alpine,
+  // 于是 cpu 恒为 0 并被写进历史 —— 面板上看不出是「机器很闲」还是「采集根本没中」。
+  // 实测:真实 busybox 输出 "CPU:   0% usr ... 100% idle" 在原正则下 NO MATCH。
   const topRaw = await commandOutput("top", ["-bn1", "-d0.3"], 6000);
-  const m = topRaw.match(/(\d+\.?\d*)\s*id/);
+  // 兜底仍留 0 而不是哨兵值:cpu 会进 :115 的均值聚合与面积图 Y 轴,
+  // 负数会污染历史并画到轴下方,比「显示 0」更难看出问题。
+  const m = topRaw.match(/(\d+\.?\d*)\s*%?\s*id(?:le)?\b/);
   cpu = m ? Math.round(100 - parseFloat(m[1])) : 0;
 
   const mraw = (await commandOutput("free", ["-m"], 3000))

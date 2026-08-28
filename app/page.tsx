@@ -3,6 +3,7 @@ import { cacheLife } from "next/cache";
 import type { Route } from "next";
 import Link from "next/link";
 import { siteUrl } from "@/lib/site-config";
+import { RSS_ALTERNATE_TYPES } from "@/lib/og-base";
 import { getAllPublishedPosts } from "@/lib/posts";
 import { SERIES_META, publishedEpisodes } from "@/lib/series";
 import { seriesByRoute, seriesProgress } from "@/lib/series-registry";
@@ -11,8 +12,11 @@ import SkillMapPhysics from "@/app/_components/SkillMapPhysics";
 
 
 // title/description/OG 沿用 layout 默认;首页只需补 canonical 这一环。
+// 但 alternates 是**整体替换**不是深合并:只写 canonical 会把 layout:85 声明的
+// types 顶掉,首页的 RSS autodiscovery <link> 就没了(订阅者最先看的就是首页)。
+// 所以必须把 RSS_ALTERNATE_TYPES 一起展开进来。
 export const metadata: Metadata = {
-  alternates: { canonical: siteUrl() },
+  alternates: { canonical: siteUrl(), ...RSS_ALTERNATE_TYPES },
 };
 
 type SkillMapTile = {

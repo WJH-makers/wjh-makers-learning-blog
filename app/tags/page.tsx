@@ -25,8 +25,10 @@ const TAG_CLUSTERS: { title: string; emoji: string; tags: string[] }[] = [
   { title: "JVM & 底层", emoji: "🏛️", tags: ["JVM", "JDK", "OOM", "CPU", "反射", "注解", "动态代理", "ClassLoader", "双亲委派", "字节码", "JIT", "GC", "G1", "ZGC"] },
   { title: "Spring & 后端", emoji: "🌱", tags: ["Spring", "Spring Boot", "SpringBoot", "HTTP", "REST", "MyBatis", "JPA", "Spring Security", "鉴权", "Bean", "事务"] },
   { title: "数据库", emoji: "🗄️", tags: ["数据库", "MySQL", "Redis", "索引", "MVCC"] },
-  { title: "命令行 & 终端", emoji: "⌨️", tags: ["命令行", "终端漫画", "ssh", "shell", "阿零与特米", "PowerShell", "CMD", "WSL", "Neovim"] },
-  { title: "系统 & 运维", emoji: "🖥️", tags: ["Linux", "Windows", "Docker", "SSH", "systemctl", "Vim", "环境配置", "容器"] },
+  // ssh / vim 只收小写:getPostsByTag 走精确字面匹配,大小写各写一份会把同一概念劈成
+  // 两个互不连通的标签页(且各自 <2 篇会命中 noindex)。内容侧已统一,这里不再留大写变体。
+  { title: "命令行 & 终端", emoji: "⌨️", tags: ["命令行", "终端漫画", "ssh", "shell", "阿零与特米", "PowerShell", "CMD", "WSL", "vim", "Neovim"] },
+  { title: "系统 & 运维", emoji: "🖥️", tags: ["Linux", "Windows", "Docker", "systemctl", "环境配置", "容器"] },
   { title: "前端 & 工具链", emoji: "🎨", tags: ["前端", "HTML", "Markdown", "Vue", "Vite", "Node.js", "npm", "Python", "uv", "VSCode", "编辑器", "GitHub", "AI 工具", "工程效率"] },
   { title: "连载 & 故事", emoji: "📖", tags: ["Java漫画", "编程漫画", "阿零与豆豆", "豆豆咖啡站", "治愈", "项目实战", "控制台程序", "重构", "八股", "面试", "新特性", "安全意识", "工程习惯", "综合"] },
   { title: "方法 & 随笔", emoji: "📝", tags: ["学习方法", "复盘", "博客", "命令速查", "速查"] },

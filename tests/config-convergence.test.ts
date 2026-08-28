@@ -9,14 +9,45 @@
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import { registerHooks } from "node:module";
 import path from "node:path";
 import { test } from "node:test";
-import { IMMUTABLE_ASSET_CACHE_CONTROL, REVALIDATE_TIERS } from "../lib/cache-policy.ts";
+import { pathToFileURL } from "node:url";
+import {
+  IMMUTABLE_ASSET_CACHE_CONTROL,
+  PUBLIC_POSTS_REVALIDATE_SECONDS,
+  REVALIDATE_TIERS,
+} from "../lib/cache-policy.ts";
 import { contentSecurityPolicy, STATIC_SECURITY_HEADERS } from "../lib/security-headers.ts";
 import { ALLOWED_HOSTS, PRIMARY_HOST, SITE_NAME, SITE_URL } from "../lib/site-config.ts";
 
 const ROOT = process.cwd();
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf8");
+
+/**
+ * 让 node --test 能 import next.config.ts。
+ *
+ * 两处不兼容：next.config.ts 用无扩展名的相对路径 import（`./lib/cache-policy`，
+ * 这是 bundler 解析，Node ESM 要求写全扩展名），且 `import type { NextConfig }`
+ * 会解析到 next 包。补上扩展名即可 —— 于是下面的缓存档位断言拿到的是**真实配置对象**，
+ * 不是拿正则去扒配置文本。后者一旦格式微调就静默失配，本文件的注释里已记过三次教训。
+ */
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier.startsWith("./") || specifier.startsWith("../")) {
+      const resolved = new URL(specifier, context.parentURL);
+      if (!/\.[a-z]+$/.test(resolved.pathname)) {
+        for (const extension of [".ts", ".tsx"]) {
+          const candidate = new URL(resolved.href + extension);
+          if (fs.existsSync(candidate)) return { url: candidate.href, shortCircuit: true };
+        }
+      }
+    }
+    return nextResolve(specifier, context);
+  },
+});
+
+const nextConfig = (await import(pathToFileURL(path.join(ROOT, "next.config.ts")).href)).default;
 
 /**
  * 剥掉注释后再断言。
@@ -104,27 +135,116 @@ test("站点根地址与 Host 白名单从同一个常量派生", () => {
   assert.doesNotMatch(allowedLine, /process\.env/, "Host 白名单不得由环境变量决定");
 });
 
-test("路由段 revalidate 只用文档化的那几档", () => {
-  // 路由段配置必须是可静态分析的字面量（Next 官方约束），所以这里只能靠白名单兜。
-  // 见 lib/cache-policy.ts 顶部引用的官方原文。
-  const allowed = new Set<number>(Object.values(REVALIDATE_TIERS));
+/**
+ * 本节替换了原来那条「路由段 revalidate 只用文档化的那几档」。
+ *
+ * 那条测试在 cacheComponents 迁移后已经空转：全仓库 `^export const revalidate` 出现 0 次，
+ * matchAll 对每个文件都零命中，offenders 恒为 []，assert.deepEqual([], []) 恒真。
+ * 它保护不了任何东西，却让「缓存档位已被契约钉住」这个印象继续成立 —— 恒真断言比没有
+ * 断言更糟，因为它占着位置。
+ *
+ * 取而代之的机制是 `'use cache'` + `cacheLife('档位')`，档位定义在 next.config.ts。
+ * 新机制有两个各自独立的失效点，下面三条分别守：
+ *   1. cacheLife 的实参是字符串字面量，拼错（'nearStataic'）时 Next 回落而**不报错**，
+ *      tsc 也不管 —— 页面静默用上默认档位。
+ *   2. next.config.ts:24 的注释声称四档「与 REVALIDATE_TIERS 一一对应」。两边分叉后
+ *      文章页的刷新窗口会静默偏离文档，没有任何迹象。
+ *   3. 声明了 'use cache' 却没声明 cacheLife 的路由段，拿的是 Next 的默认档位而非本站分层。
+ */
+const CACHE_LIFE_PROFILES: Record<string, { stale: number; revalidate: number; expire: number }> =
+  nextConfig.cacheLife;
+
+test("cacheLife 的实参都是 next.config.ts 里声明过的档位", () => {
+  // 拼错档位名不报错、只静默回落，是这条断言存在的唯一理由。
+  const declared = new Set(Object.keys(CACHE_LIFE_PROFILES));
+  assert.ok(declared.size > 0, "next.config.ts 必须声明 cacheLife 档位");
+
+  const offenders: string[] = [];
+  let calls = 0;
+  for (const file of APP_SOURCES) {
+    for (const match of stripComments(read(file)).matchAll(/cacheLife\(\s*(["'])([^"']*)\1\s*\)/g)) {
+      calls += 1;
+      if (!declared.has(match[2])) offenders.push(`${file}: cacheLife("${match[2]}")`);
+    }
+  }
+  // 匹配失配时这条会先红，避免整个测试退化成又一个恒真断言。
+  assert.ok(calls >= 15, `应扫到 15+ 处 cacheLife 调用，实际 ${calls}（匹配规则可能已失效）`);
+  assert.deepEqual(
+    offenders,
+    [],
+    `档位名必须是 ${[...declared].join(" / ")} 之一（拼错不会报错，只会静默回落到默认档）：\n${offenders.join("\n")}`,
+  );
+  // 非字面量实参（变量、模板串）会让上面的扫描看不见真实档位。
+  for (const file of APP_SOURCES) {
+    const dynamic = [...stripComments(read(file)).matchAll(/cacheLife\(\s*([^"')\s][^)]*)\)/g)];
+    assert.deepEqual(
+      dynamic.map((m) => `${file}: cacheLife(${m[1]})`),
+      [],
+      "cacheLife 实参必须是字符串字面量，否则本契约扫不到",
+    );
+  }
+});
+
+test("cacheLife 三档的 revalidate 与 REVALIDATE_TIERS 逐项相等", () => {
+  // next.config.ts:24 白纸黑字写着「与 REVALIDATE_TIERS 一一对应」。这条就是那句注释的执行版。
+  // 只能比数值不能改成 import 常量：路由段配置必须可静态分析（见 lib/cache-policy.ts 顶部
+  // 引用的官方原文，连 `60 * 10` 都非法），所以两边注定是两份字面量，只能靠测试锁住。
+  for (const [tier, expected] of Object.entries(REVALIDATE_TIERS)) {
+    const profile = CACHE_LIFE_PROFILES[tier];
+    assert.ok(profile, `next.config.ts 的 cacheLife 缺少 ${tier} 档`);
+    assert.equal(
+      profile.revalidate,
+      expected,
+      `${tier} 档的 revalidate 与 REVALIDATE_TIERS.${tier} 分叉（配置 ${profile.revalidate} vs 文档 ${expected}）`,
+    );
+    // stale/expire 没有第二处定义，只要求单调：revalidate 超过 expire 的档位等于「还没到
+    // 刷新时间就已经转动态」，配上去不报错但档位形同虚设。
+    assert.ok(profile.expire >= profile.revalidate, `${tier}: expire 不得小于 revalidate`);
+  }
+  // publicPosts 不在 REVALIDATE_TIERS 里（它是数据层窗口而非路由段档位），单独对一次。
+  assert.equal(
+    CACHE_LIFE_PROFILES.publicPosts?.revalidate,
+    PUBLIC_POSTS_REVALIDATE_SECONDS,
+    "publicPosts 档必须等于 PUBLIC_POSTS_REVALIDATE_SECONDS",
+  );
+});
+
+test("声明了 'use cache' 的文件都声明了 cacheLife 档位", () => {
+  // 漏掉 cacheLife 的缓存作用域拿的是 Next 默认档，不是本站分层里的任何一档 ——
+  // 表现是「这一页的刷新窗口和同类页不一样」，肉眼看不出来。
   const offenders: string[] = [];
   for (const file of APP_SOURCES) {
-    const source = read(file);
-    for (const match of source.matchAll(/^export const revalidate\s*=\s*(\S+?);/gm)) {
-      const raw = match[1];
-      if (raw === "false" || raw === "0") continue;
-      const value = Number(raw);
-      if (!Number.isInteger(value) || !allowed.has(value)) {
-        offenders.push(`${file}: revalidate = ${raw}`);
-      }
+    const source = stripComments(read(file));
+    // 必须锚成「独占一行的指令语句」。只匹配 `use cache` 三个字会把正文数据也算进来：
+    // lib/series-web.ts:112 有个话次的 summary 与 technologies 里就写着 `'use cache'`
+    // ——它是课程标题，不是指令。剥注释挡不住这类字符串字面量。
+    const scopes = [...source.matchAll(/^\s*["']use cache["'];/gm)].length;
+    if (scopes === 0) continue;
+    const lifes = [...source.matchAll(/^\s*cacheLife\(/gm)].length;
+    if (lifes < scopes) offenders.push(`${file}: ${scopes} 个 'use cache' 作用域但只有 ${lifes} 处 cacheLife`);
+  }
+  assert.deepEqual(offenders, [], `每个缓存作用域都要显式声明档位：\n${offenders.join("\n")}`);
+});
+
+test("cacheComponents 下不得再出现路由段缓存配置", () => {
+  // 开了 cacheComponents，`export const revalidate/dynamic/fetchCache` 一律构建期报错。
+  // 这条取代了原先那句同名断言 —— 原先扫的是「取值是否在白名单里」，在 0 个命中的前提下
+  // 恒真；现在扫的是「有没有出现」，出现即红。它同时是一道迁移完整性的闸：
+  // 从别处照抄旧写法的新页面会在这里先红，而不是等到 next build 才发现。
+  const offenders: string[] = [];
+  for (const file of APP_SOURCES) {
+    for (const match of stripComments(read(file)).matchAll(
+      /^export const (revalidate|dynamic|fetchCache|dynamicParams)\s*=/gm,
+    )) {
+      offenders.push(`${file}: export const ${match[1]}`);
     }
   }
   assert.deepEqual(
     offenders,
     [],
-    `revalidate 只能取 ${[...allowed].join(" / ")}（见 lib/cache-policy.ts 的 REVALIDATE_TIERS）：\n${offenders.join("\n")}`,
+    `cacheComponents 已开启，缓存语义改由 'use cache' + cacheLife 表达：\n${offenders.join("\n")}`,
   );
+  assert.equal(nextConfig.cacheComponents, true, "本条断言的前提是 cacheComponents 开启");
 });
 
 test("安全头与缓存串不在 next.config.ts 里第二次定义", () => {

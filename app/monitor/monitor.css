@@ -1,15 +1,10 @@
 /* 从 app/globals.css 迁出：仅 /monitor 监控路由使用的样式，公开页不再下发。 */
 
-.monitor-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  grid-template-columns: unset;
-  padding: 2rem 0;
-}
-.monitor-hero h1 { font-size: clamp(2rem, 6vw, 3.5rem); }
-.monitor-hero .hero-text { text-align: center; }
 
-/* .form-error 同时被 /monitor（登录墙 MonitorLogin）与 /write 使用，不再全局下发，两个路由各带一份（见 app/write/write.css）。 */
-.form-error { padding: 12px 14px; border: 2px solid var(--accent); color: var(--accent); background: var(--paper); font-family: var(--font-mono); font-weight: 800; }
+/* .form-error 同时被 /monitor（登录墙 MonitorLogin）与 /write 使用，不再全局下发，两个路由各带一份（见 app/write/write.css）。
+   文字走 --accent-ink 而不是 --accent：这行没设 font-size，继承 body 的 16px，粗体 16px 够不上
+   WCAG 大字阈值 18.66px，所以按正文的 4.5:1 判。浅色下 --accent #d97757 压在 --paper #faf9f5 上
+   只有 2.96:1，--accent-ink #b55320 是 4.72:1。边框留 --accent 不动 —— 非文本内容只需 3:1，
+   而这道边框是这块提示唯一的形状信号，压深了反而和正文墨色糊在一起。
+   暗色下 --accent-ink 与 --accent 同值（globals.css:1883），改动对暗色是 no-op（原本 5.51:1 已达标）。 */
+.form-error { padding: 12px 14px; border: 2px solid var(--accent); color: var(--accent-ink); background: var(--paper); font-family: var(--font-mono); font-weight: 800; }

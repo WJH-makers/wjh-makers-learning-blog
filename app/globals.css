@@ -547,15 +547,6 @@ a:focus-visible {
 .tags a,
 .tag-cloud a { transition: color var(--t-fast), background-color var(--t-fast); }
 
-.review-panel {
-  margin-top: var(--gap-section);
-  padding: clamp(24px, 4vw, 42px);
-  color: var(--paper);
-  background: var(--foreground);
-}
-.review-panel h2,
-.review-panel .eyebrow { color: var(--paper); }
-.review-panel .eyebrow { color: var(--accent); }
 
 .post-list { display: grid; min-width: 0; border-left: 1px solid var(--border); }
 .empty-state {
@@ -639,8 +630,12 @@ a:focus-visible {
   --accent-ink: #a4491b;
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: 1240px;
+  /* 与 .page-shell(:140)同口径,不能写 width: 100%。
+     两条规则同特异性(各一个类)、而这条在后面,所以 100% 会赢 ——
+     于是 ≤1240px 的视口上书页通栏贴边,:659 那两层向右伸 19~24px 的纸叠阴影
+     (15px 20px 0 -13px、19px 24px 0 -15px)被视口整段裁掉,书页的立体感没了。
+     实测 1240 / 1100 / 900 / 861px 四档都是贴边零阴影。 */
+  width: min(1240px, calc(100% - 32px));
   min-height: min(52vh, 720px);
   /* 天头 < 翻口 < 地脚 —— 书页的页边距从来不是四边等宽。
      等宽会让版心看上去"往下掉":视觉重心高于几何中心,眼睛把几何居中读成偏低。
@@ -922,6 +917,20 @@ a:focus-visible {
 .book-reader:hover .book-turn,
 .book-turn:focus-visible { opacity: 1; }
 .book-turn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+/* 热区窄屏让位:.book-turn 宽 clamp(42px,8vw,86px),正文起点是书页壳偏移 +
+   clamp(28px,5vw,58px)。1296px 视口两者刚好都落在 86px,再窄热区就压进正文
+   —— opacity:0 不阻断命中测试,于是标签芯片、面包屑和正文行首行尾的点击全被它吃掉
+   (1100px 实测压入 31px)。把热区本身设为不可命中、只留把手可点:
+   点把手仍然翻页(事件冒泡到 <a>),而正文重新可选可点。
+   宽屏不进这条,那里热区落在页边距上,大靶区是有价值的。 */
+@media (max-width: 1296px) {
+  .book-turn { pointer-events: none; }
+  .book-turn-grip { pointer-events: auto; }
+  /* 热区不再接收 hover,所以 .book-turn:hover 派生的把手位移要改挂到把手自己身上,
+     否则窄屏下按上去没有任何反馈。 */
+  .book-turn-previous .book-turn-grip:hover { transform: translateX(3px); box-shadow: 0 6px 18px rgba(70, 54, 32, 0.2); }
+  .book-turn-next .book-turn-grip:hover { transform: translateX(-3px); box-shadow: 0 6px 18px rgba(70, 54, 32, 0.2); }
+}
 @media (hover: none) {
   .book-turn { width: clamp(48px, 13vw, 72px); opacity: 0.7; }
   .book-turn-grip { width: 2.2rem; padding: 0.95rem 0.5rem; }
@@ -1558,6 +1567,11 @@ html[data-page-turn="previous"]::after { animation: chapter-sheet-previous 280ms
 .article-content .quiz-answer-body { padding: 12px 16px; }
 .article-content .quiz-answer-body p { margin: 0.35em 0; }
 .article-content .quiz-answer-body p:first-child { margin-top: 0; }
+/* 滚动容器必须留在 pre 上,不能挪到 pre > code。
+   Shiki 给 pre 输出 `tabindex="0"` 正是为了让键盘用户能用方向键滚动长代码行;
+   把 overflow 挪到 code 之后 pre 不再是滚动盒,实测聚焦 pre 连按 12 次 ArrowRight
+   代码块 scrollLeft 恒为 0 —— 长命令对键盘用户变成完全读不到(WCAG 2.1.1),
+   比复制按钮漂走严重得多。按钮的定位改由 CodeCopy.tsx 按 scrollLeft 补偿。 */
 pre {
   position: relative;
   overflow-x: auto;
@@ -1568,6 +1582,18 @@ pre {
 }
 code { padding: 0.12em 0.35em; background: var(--neutral-100); font-size: 0.92em; border: 1px solid var(--border); color: #8a2424; }
 pre code { padding: 0; background: transparent; border: 0; color: inherit; }
+/* 绝对定位 + 由 CodeCopy.tsx 按 pre.scrollLeft 做 translateX 补偿。
+   为什么需要补偿:pre 是 overflow-x: auto 的滚动容器,绝对定位子元素属于它的
+   **可滚动溢出区域**,会跟着内容一起左移。实测右滑到底(maxScroll 629px)后,
+   按钮距 pre 右缘从 7px 变成 646px —— 读者看完一行长命令时按钮早已滑出视野,
+   偏偏长命令最需要复制。
+   试过两条纯 CSS 路线,都不成立(都实测过,别再走):
+    1. `position: sticky; right: 6px` —— sticky 的 right 约束只在元素**逼近**右边缘时介入,
+       而右滚是让它**远离**右边缘,约束不触发,offsetFromRight 照样变 646。
+    2. 把 overflow 挪到 pre > code —— 按钮确实不动了,但 Shiki 给 pre 的 tabindex="0"
+       失去意义:pre 不再是滚动盒,聚焦后连按 12 次 ArrowRight 代码块 scrollLeft 恒为 0,
+       键盘用户彻底读不到长命令(WCAG 2.1.1),代价远大于收益。
+   给 pre 套包裹层也不行:`.article-content > pre`(:768)靠**直接子**关系给代码块宽栏待遇。 */
 .code-copy {
   position: absolute;
   top: 6px;
@@ -1597,7 +1623,12 @@ pre:hover .code-copy,
 .related-posts li span { font-family: var(--font-mono); font-size: var(--label-sm); letter-spacing: var(--track-tight); color: var(--neutral-500); }
 .comments { margin: var(--gap-section) 0 0; padding-top: var(--sp-5); border-top: var(--rule-strong); }
 .comments-title { font-family: var(--font-serif); font-size: clamp(1.3rem, 2.6vw, 1.7rem); margin: 0 0 1.2rem; }
-.comments-title span { font-family: var(--font-mono); color: var(--accent); font-size: 0.9rem; }
+/* 文字色一律走 --accent-ink,不用 --accent:后者在站点纸上只有 2.96:1、
+   在书页纸上 2.31~2.68:1,全都低于 4.5:1。--accent-ink 在站点纸上 4.72:1,
+   而 .article-shell(:639)把它覆写成更深的 #a4491b,书页里能到 5.08:1 ——
+   同一个变量在两个作用域各自达标,所以这里不需要按场景分别写死颜色。
+   --accent 保留给边框/背景(非文字对比度是另一条判据)。全局 a:hover(:124)本来就是这个约定。 */
+.comments-title span { font-family: var(--font-mono); color: var(--accent-ink); font-size: 0.9rem; }
 .comment-list { list-style: none; padding: 0; margin: 0 0 2rem; display: grid; gap: 0.85rem; }
 .comment-item { display: flex; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); background: rgba(var(--paper-rgb), 0.6); }
 /* 头像是唯一该是圆的东西:方头像在一列方卡片里毫无辨识度,圆形能一眼定位到"人" */
@@ -1629,7 +1660,7 @@ pre:hover .code-copy,
 .share-bar { display: flex; align-items: center; gap: 10px; margin: 1.5rem 0 0; padding-top: 1rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
 .share-label { font-family: var(--font-mono); font-size: var(--label-sm); letter-spacing: var(--track-tight); text-transform: uppercase; color: var(--neutral-500); }
 .share-btn { font-family: var(--font-mono); font-size: var(--label-md); padding: 4px 12px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); cursor: pointer; text-decoration: none; }
-.share-btn:hover { border-color: var(--accent); color: var(--accent); }
+.share-btn:hover { border-color: var(--accent); color: var(--accent-ink); }
 /* 这三块是文章末尾/开头的散文面板,与上面的表头、题记同属"书页上的轻底色面",
    走同一个 --book-tint。它们原先用 --surface-sunken —— 而 --surface-sunken 在
    :root 上声明为 var(--neutral-100),自定义属性在**声明处**就完成替换,所以在
@@ -1721,7 +1752,7 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   font-size: 0.8rem;
   line-height: 1.5;
 }
-.footer-col a:hover { color: var(--accent); text-decoration: underline; }
+.footer-col a:hover { color: var(--accent-ink); text-decoration: underline; }
 .footer-bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; padding: 12px 16px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); font-size: var(--label-xs); }
 .footer .beian {
   min-height: 36px;
@@ -1789,6 +1820,11 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .nav-links a { flex: 1 1 auto; border-bottom: 0; }
 
   .page-shell { padding: 20px 0 40px; }
+  /* 上面那条是 padding **简写**,水平方向被写成 0;而文章页的元素同时挂着
+     .page-shell 与 .article-shell,两条同特异性、这条在后面,于是把书页
+     :649 的 clamp(28px,5vw,58px) 水平内距一起清掉 —— 手机上正文直接贴到纸边。
+     书页必须自己把水平内距要回来(纵向沿用上面的 20/40)。 */
+  .article-shell { padding: 20px clamp(16px, 5vw, 28px) 40px; }
   .edition-bar,
   .nav,
   .footer,
@@ -1844,12 +1880,7 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .tags a, .tag-cloud a { font-size: var(--label-xs); padding: 5px 11px; }
 }
 
-.form-label { display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 6px; color: var(--foreground); letter-spacing: 0.04em; }
-.form-input { display: block; width: 100%; padding: 10px 14px; border: 1px solid var(--border); background: var(--background); color: var(--foreground); font-size: 0.95rem; font-family: var(--font-mono, "JetBrains Mono", monospace); outline: none; box-sizing: border-box; }
-.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(204,0,0,0.15); }
 
-.pagination { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border); animation: fadeInUp 0.4s ease-out; }
-.pagination a { font-weight: 600; font-size: 0.9rem; transition: color var(--t-fast); }
 
 /* Shiki 双主题:亮色侧消费 --shiki-light(defaultColor:false 时 Shiki 不输出普通 color) */
 .article-content .shiki,
@@ -1964,8 +1995,7 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .hero-actions,
   .article-actions,
   .book-turn,
-  .nav-links,
-  .pagination { display: none !important; }
+  .nav-links { display: none !important; }
 
   body {
     font-size: 12pt;
@@ -1994,9 +2024,17 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ===== Animations ===== */
 /* 纯 transform 位移:内容始终可见,不推迟 LCP 绘制 */
+/* 用 translate 属性而不是 transform —— 这不是风格选择,是必需的解耦。
+   这个动画的三个使用者(.tag-cloud a、.card/.list-item 定时版与 view-timeline 版)
+   都带 animation-fill-mode: both,动画结束后填充值会**长期占住被动画的那个属性**,
+   而动画填充值在层叠里胜过普通声明。写 transform 就等于把 .card:hover 的
+   translate(-2px,-2px)(:509)、:active 的 translate(2px,2px)(:2278)、
+   以及触屏收回悬停态用的 transform: none(:2068)全部压死 ——
+   现象是卡片悬停只有硬阴影凭空偏移、卡片本身不动。
+   translate 与 transform 是两个独立属性,填充前者不影响后者。tileRise(:2031)本来就这么写。 */
 @keyframes fadeInUp {
-  from { transform: translateY(24px); }
-  to { transform: translateY(0); }
+  from { translate: 0 24px; }
+  to { translate: 0 0; }
 }
 @keyframes progressFill {
   from { transform: scaleX(0); }
@@ -2047,13 +2085,24 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
    悬停态在无 hover 能力的设备上收回——按压反馈(:active)仍然保留。 */
 @media (hover: none) {
   .card:hover,
-.list-item:hover,
-.skill-map-tile[href]:hover {
+  .list-item:hover {
     background: rgba(var(--paper-rgb), 0.9);
     box-shadow: none;
     transform: none;
   }
-  .java-skill-map .skill-map-tile[href]:hover { background: inherit; border-color: rgba(246, 241, 232, .25); }
+  /* 能力地图的格子**不能**并进上面那组:它们的底色来自 .is-foundation 等六个类
+     (:365-370,都是深色),套上站点纸色等于把格子刷白。
+     原先的做法是并进去之后再用 `background: inherit` 撤销,但 inherit 取的是
+     .java-skill-map-grid —— 它没有背景,于是撤成**透明**,格子一按就露出面板的
+     #1b2026 变成深色空框;那条补丁里的 `border-color` 还是四边简写,
+     顺手抹掉了 :374 标记「可进入」的 accent 左边框。
+     所以这里只收回抬起效果(box-shadow / transform),底色与边框一概不碰。 */
+  .skill-map-tile[href]:hover {
+    box-shadow: none;
+    transform: none;
+    border-color: rgba(246, 241, 232, .25);
+    border-left-color: var(--accent);
+  }
   .button:hover,
   button.button:hover { color: var(--foreground); background: transparent; transform: none; box-shadow: none; }
   .button.primary:hover { color: var(--paper); background: var(--foreground); border-color: transparent; }
@@ -2074,16 +2123,27 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 }
 
 /* ===== High contrast ===== */
-@media (prefers-contrast: high) and (prefers-color-scheme: light) {
+/* 取值是 `more`,不是 `high`。规范定义的四个值是 no-preference / more / less / custom;
+   `high` 是早期草案名,只有旧 WebKit 认。写成 high 的后果是这两段在 Chromium 与 Firefox 上
+   **永不匹配** —— 17 行高对比度覆盖一次都没应用过。
+   两个取值并列保留:`more` 管现代浏览器,`high` 兜早期 Safari;逗号分隔的是完整查询项,
+   所以每一支都要自带 prefers-color-scheme 条件。
+   `--accent-ink` 必须跟着 `--accent` 一起换:全站正文里的强调色链接用的是前者
+   (a:hover、.comments-title span、.form-error 等),只换 --accent 会让高对比度模式
+   下这些文字仍停在 #b55320,和刚调成 #1a0dab 的其余强调色对不上。 */
+@media (prefers-contrast: more) and (prefers-color-scheme: light),
+       (prefers-contrast: high) and (prefers-color-scheme: light) {
   :root {
     --border: #000;
     --accent: #1a0dab;
+    --accent-ink: #0b0685;
     --background: #fff;
     --foreground: #000;
   }
   .card, pre, .article-content blockquote { border-color: #000; }
 }
-@media (prefers-contrast: high) and (prefers-color-scheme: dark) {
+@media (prefers-contrast: more) and (prefers-color-scheme: dark),
+       (prefers-contrast: high) and (prefers-color-scheme: dark) {
   :root {
     --border: #fff;
     --background: #000;
@@ -2202,14 +2262,6 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
   z-index: 1;
 }
 
-.series-pager {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 0.75rem;
-}
-@media (max-width: 560px) {
-  .series-pager { grid-template-columns: 1fr; }
-}
 
 /* ===== 知识大陆版图 SeriesMap ===== */
 .series-map { margin: 1.5rem 0 0; }
@@ -2226,7 +2278,6 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 .map-node { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--border); background: rgba(var(--paper-rgb), 0.9); text-decoration: none; color: var(--foreground); transition: border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast); }
 .map-node:not(.planned):hover { border-color: var(--accent); transform: translate(-2px, -2px); box-shadow: var(--shadow-stamp); }
 .map-node.read { border-left: 3px solid var(--accent); background: var(--neutral-100); }
-.map-node.planned { opacity: 0.5; cursor: default; }
 .map-node-top { display: flex; align-items: center; gap: 6px; }
 .map-node-no { font-family: var(--font-mono); font-size: var(--label-sm); font-weight: 800; color: var(--neutral-500); }
 .map-node-mark { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 800; padding: 1px 5px; border: 1px solid var(--border); letter-spacing: 0.05em; }
@@ -2299,7 +2350,7 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 /* ========== 连载总台 /series ========== */
 .series-index-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 1rem; }
 .series-index-card { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; }
-.series-index-route { margin: 0; font-family: var(--font-mono); font-size: var(--label-xs); color: var(--accent); letter-spacing: var(--track-tight); }
+.series-index-route { margin: 0; font-family: var(--font-mono); font-size: var(--label-xs); color: var(--accent-ink); letter-spacing: var(--track-tight); }
 .series-index-name { margin: 0; font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
 .series-index-alias { margin: 0; font-size: var(--label-xs); color: var(--neutral-500); font-family: var(--font-mono); }
 .series-index-tagline { margin: 4px 0 0; font-size: 0.86rem; line-height: 1.6; color: var(--neutral-600); }
@@ -2336,7 +2387,8 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 /* 反色面板里的标题必须显式写回纸色:全局 `h1,h2,h3 { color: var(--foreground) }`
    是直接命中 h2 的规则,压过 .universe-callout 继承下来的 color:var(--paper) ——
    于是标题与面板底色同为 --foreground,实测 1:1,明暗两个模式下都完全看不见。
-   .review-panel 当年踩过同一个坑并显式修了,这里漏了。 */
+   任何「反色面板 + 里面放 h1/h2/h3」的组合都会踩这个坑,加新面板时记得显式写回 color。
+   (原先这里引的先例 .review-panel 已随其组件一起删除,故只留结论。) */
 .universe-callout h2 { margin: 0; color: var(--paper); font-family: var(--font-serif); font-size: 1.2rem; }
 .universe-callout .button { flex: 0 0 auto; background: var(--paper); color: var(--foreground); border-color: var(--paper); }
 /* 就近覆盖,不放进文件上方那个全局 dark 块 —— 媒体查询不加特异性,写在那里会被
@@ -2377,7 +2429,7 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 /* ========== 全量归档 /archive ========== */
 .archive-jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 1rem 0 2rem; }
 .archive-jump a { padding: 5px 12px; border: 1px solid var(--border); font-family: var(--font-mono); font-size: var(--label-xs); text-decoration: none; color: var(--neutral-600); }
-.archive-jump a:hover { border-color: var(--accent); color: var(--accent); }
+.archive-jump a:hover { border-color: var(--accent); color: var(--accent-ink); }
 .archive-year { margin: 2.4rem 0 0.6rem; font-family: var(--font-display); font-size: 2rem; border-bottom: 4px solid var(--border); padding-bottom: 4px; scroll-margin-top: 96px; }
 .archive-month { margin-bottom: 1.2rem; }
 .archive-month-head { margin: 1.2rem 0 0.4rem; font-family: var(--font-mono); font-size: var(--label-sm); letter-spacing: var(--track-wide); text-transform: uppercase; }
@@ -2385,7 +2437,7 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 .archive-list li { display: flex; align-items: baseline; gap: 12px; padding: 8px 4px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .archive-list time { flex: 0 0 3.2rem; font-family: var(--font-mono); font-size: var(--label-xs); color: var(--neutral-500); }
 .archive-list a { text-decoration: none; color: var(--foreground); flex: 1 1 60%; line-height: 1.5; }
-.archive-list a:hover { color: var(--accent); text-decoration: underline; }
+.archive-list a:hover { color: var(--accent-ink); text-decoration: underline; }
 .archive-badge { font-family: var(--font-mono); font-size: var(--label-xs); color: var(--neutral-500); border: 1px solid var(--border); padding: 1px 6px; white-space: nowrap; }
 
 /* ========== 速查总台 /cheatsheets ========== */
@@ -2394,14 +2446,14 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 .cheat-card { min-width: 0; }
 .cheat-card h3 { margin: 0 0 6px; font-size: 1.05rem; line-height: 1.35; }
 .cheat-card h3 a { text-decoration: none; color: inherit; }
-.cheat-card h3 a:hover { color: var(--accent); }
+.cheat-card h3 a:hover { color: var(--accent-ink); }
 .cheat-card h3,
 .cheat-card > .muted { overflow-wrap: anywhere; }
 .cheat-card > .muted { margin: 0 0 10px; font-size: 0.84rem; line-height: 1.55; }
 .cheat-sections { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
 .cheat-sections li { min-width: 0; }
 .cheat-sections a { display: inline-block; padding: 3px 8px; border: 1px solid var(--border); font-family: var(--font-mono); font-size: var(--label-xs); text-decoration: none; color: var(--neutral-600); }
-.cheat-sections a:hover { border-color: var(--accent); color: var(--accent); }
+.cheat-sections a:hover { border-color: var(--accent); color: var(--accent-ink); }
 
 @media (max-width: 640px) {
   .series-index-grid, .cheat-cards { grid-template-columns: minmax(0, 1fr); }
@@ -2434,7 +2486,6 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 .project-highlights { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 4px; font-size: 0.88rem; color: var(--neutral-600); }
 .project-stack { display: flex; flex-wrap: wrap; gap: 6px; }
 .project-stack span { font-family: var(--font-mono); font-size: var(--label-xs); padding: 2px 8px; border: 1px solid var(--border); color: var(--neutral-600); }
-.project-links { display: flex; gap: 14px; font-family: var(--font-mono); font-size: var(--label-sm); }
 
 /* ========== 站点数据 /stats ========== */
 .stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin-top: 1.2rem; background: var(--border); border: 1px solid var(--border); }
@@ -2445,7 +2496,7 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 .stat-bars { display: flex; flex-direction: column; gap: 7px; margin-top: 1rem; }
 .stat-bar-row { display: grid; grid-template-columns: minmax(8rem, 15rem) 1fr auto; align-items: center; gap: 12px; }
 .stat-bar-name { font-size: 0.88rem; text-decoration: none; color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stat-bar-name:hover { color: var(--accent); }
+.stat-bar-name:hover { color: var(--accent-ink); }
 .stat-bar-track { display: block; height: 10px; background: var(--neutral-100); border: 1px solid var(--border); }
 .stat-bar-fill { display: block; height: 100%; background: var(--accent); }
 .stat-bar-num { font-family: var(--font-mono); font-size: var(--label-xs); color: var(--neutral-600); white-space: nowrap; }
@@ -2455,14 +2506,14 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 .stat-month-label { font-family: var(--font-mono); font-size: 0.6rem; color: var(--neutral-500); white-space: nowrap; }
 .stat-tagcloud { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 1rem; }
 .stat-tagcloud a { padding: 4px 10px; border: 1px solid var(--border); font-size: 0.82rem; text-decoration: none; color: var(--neutral-600); }
-.stat-tagcloud a:hover { border-color: var(--accent); color: var(--accent); }
-.stat-tagcloud em { font-family: var(--font-mono); font-style: normal; font-size: var(--label-xs); color: var(--accent); }
+.stat-tagcloud a:hover { border-color: var(--accent); color: var(--accent-ink); }
+.stat-tagcloud em { font-family: var(--font-mono); font-style: normal; font-size: var(--label-xs); color: var(--accent-ink); }
 .stat-two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-5); margin-top: var(--gap-block); }
 .stat-two-col h3 { margin: 0 0 0.6rem; font-size: 1rem; font-family: var(--font-mono); letter-spacing: var(--track-tight); text-transform: uppercase; }
 .stat-rank { list-style: decimal; margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: 6px; }
 .stat-rank li { display: flex; gap: 10px; justify-content: space-between; align-items: baseline; font-size: 0.86rem; }
 .stat-rank a { text-decoration: none; color: var(--foreground); line-height: 1.45; }
-.stat-rank a:hover { color: var(--accent); text-decoration: underline; }
+.stat-rank a:hover { color: var(--accent-ink); text-decoration: underline; }
 .stat-rank span { font-family: var(--font-mono); font-size: var(--label-xs); color: var(--neutral-500); white-space: nowrap; }
 
 @media (max-width: 640px) {
@@ -2482,10 +2533,8 @@ a, button, .card, .skill-map-tile, summary { -webkit-tap-highlight-color: transp
 .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0 20px; font-family: var(--font-mono); font-size: var(--label-xs); color: var(--neutral-500); }
 .crumbs > span { display: inline-flex; align-items: center; }
 .crumbs a { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; color: var(--neutral-600); text-decoration: none; }
-.crumbs a:hover { color: var(--accent); text-decoration: underline; }
+.crumbs a:hover { color: var(--accent-ink); text-decoration: underline; }
 /* 当前页用 --neutral-500 而不是 --neutral-400:后者在书页底色上只有 2.39:1(亮)
    / 2.23:1(暗)。层级仍在 —— 可点的 .crumbs a 是更深的 --neutral-600。 */
 .crumbs [aria-current="page"] { color: var(--neutral-500); overflow: hidden; text-overflow: ellipsis; max-width: 18rem; white-space: nowrap; }
 .crumbs-sep { margin: 0 6px; color: var(--neutral-400); }
-.chrono-pager { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin: var(--gap-block) 0; }
-@media (max-width: 640px) { .chrono-pager { grid-template-columns: 1fr; } }

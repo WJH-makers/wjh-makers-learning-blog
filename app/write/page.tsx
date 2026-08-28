@@ -6,13 +6,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath, updateTag } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { BLOG_COOKIE, blogSessionToken, isBlogAuthed, isBlogSessionToken } from "@/lib/blog-auth";
-import { createDatabasePost, databaseProviderLabel, deleteDatabasePost, hasDatabaseConfig, updateDatabasePost } from "@/lib/db";
-import { getPublishedPost, PUBLIC_POSTS_CACHE_TAG } from "@/lib/posts";
+import { createDatabasePost, databaseProviderLabel, deleteDatabasePost, getDatabasePost, hasDatabaseConfig, PostValidationError, updateDatabasePost } from "@/lib/db";
+import { getPost, type Post, PUBLIC_POSTS_CACHE_TAG } from "@/lib/posts";
 import WriteEditorClient from "./WriteEditorClient";
 import { isSameOriginRequest } from "@/lib/request-origin";
 import { safeCompare } from "@/lib/safe-compare";
 import { adminSessionCookieOptions } from "@/lib/session-cookie";
-import { shanghaiDate } from "@/lib/publication";
+import { isReleasedDate, shanghaiDate } from "@/lib/publication";
 
 
 export const metadata = {
@@ -32,16 +32,29 @@ function parseTags(value: FormDataEntryValue | null): string[] {
     .filter(Boolean);
 }
 
+/**
+ * 可以原样透出给作者的校验错误(lib/db.ts 的 assertPostDate / assertPostSlug / validatePostFields)。
+ *
+ * 原来的白名单只有「标题/正文不能为空」和「找不到要更新/删除的文章」，而前两条编辑器在
+ * WriteEditorClientImpl 的 handleSubmit 里已经拦掉了 —— 也就是说白名单实际只对一条生效，
+ * 剩下**只有服务端才发现**的长度与格式错误全被脱敏成一句「请检查输入」：三个 input 都没有
+ * maxLength，粘一段 1000+ 字的摘要必现「摘要不能超过 1000 个字符。」，作者却只看到泛化文案，
+ * 原样重试必然再失败。这些消息不含拓扑信息，透出去没有泄露面，遮住它反而制造死循环。
+ *
+ * 判据是**错误类型**而不是文案前缀。前缀表能work,但它与 lib/db.ts 的措辞静默耦合:
+ * 那边改一句提示语或新增一条校验规则,这边不同步就退化成泛化文案 —— 而且不报错、
+ * 没有测试会红,只是作者从此陷入「重试一万次也不知道哪里错了」。
+ * lib/db.ts 现在用 PostValidationError 把「作者能自己改的」标出来,这里只认那个类型。
+ */
 function safeErrorForUrl(error: unknown): string {
   const raw = error instanceof Error ? error.message : "unknown-error";
   const sanitized = raw
     .replace(/mongodb(\+srv)?:\/\/[^@\s]+@/gi, "mongodb$1://<redacted>@")
     .replace(/(password=)[^&\s]+/gi, "$1<redacted>")
     .slice(0, 180);
-  // 不把数据库驱动、网络拓扑或实现异常回显到地址栏；其余明确的校验错误仍可提示作者修正输入。
-  return /^(标题不能为空|正文不能为空|找不到要(?:更新|删除)的文章)/.test(sanitized)
-    ? sanitized
-    : "保存失败，请检查输入或稍后重试。";
+  // 不把数据库驱动、网络拓扑或实现异常回显到地址栏;作者可修正的校验错误原样透出。
+  // 仍然过一遍脱敏:PostValidationError 的文案目前不含拓扑信息,但这层不该依赖那个假设。
+  return error instanceof PostValidationError ? sanitized : "保存失败，请检查输入或稍后重试。";
 }
 
 function revalidateBlog(slug?: string) {
@@ -91,6 +104,9 @@ async function publishPost(formData: FormData) {
   const editingSlug = String(formData.get("slug") ?? "").trim();
 
   let slug: string;
+  // 取库里最终落定的发布日期(而不是重新解析表单):createDatabasePost 会做
+  // 校验与兜底,以它的返回值为准才能和读者侧闸门比对同一个值。
+  let publishedDate: string;
   try {
     const fields = {
       title: String(formData.get("title") ?? ""),
@@ -101,12 +117,14 @@ async function publishPost(formData: FormData) {
     if (editingSlug) {
       const post = await updateDatabasePost(editingSlug, fields);
       slug = post.slug;
+      publishedDate = post.date;
     } else {
       const post = await createDatabasePost({
         ...fields,
         date: String(formData.get("date") ?? ""),
       });
       slug = post.slug;
+      publishedDate = post.date;
     }
   } catch (error) {
     const message = encodeURIComponent(safeErrorForUrl(error));
@@ -117,6 +135,20 @@ async function publishPost(formData: FormData) {
   }
 
   revalidateBlog(slug);
+
+  // 写作台的默认日期是**真实今天**(见 WriteDesk 的注释),而读者侧的发布闸门比的是
+  // BUILD_TIME_NOW —— 进程启动时刻,约等于上次部署。站点多日没有新提交时这两个日期
+  // 就分叉了:今天写的稿子入库成功,却过不了闸门,于是 redirect 到的文章页是 404,
+  // 首页/RSS/sitemap 里也都没有它,作者得不到任何解释。
+  //
+  // 这里用与闸门**同一个默认基准**判一次(不传 now),判否就说清它已入库、在排期中,
+  // 而不是把人丢到 404。不钳改日期:钳到真实今天照样过不了闸门,钳到构建日期等于
+  // 篡改发布日期。真正要不要让「今天发」立即可见,是发布边界的架构取舍,不在这里定。
+  if (!isReleasedDate(publishedDate)) {
+    const pending = `已保存到数据库，但这篇的发布日期 ${publishedDate} 还没到本站当前的发布边界（${shanghaiDate()}），所以暂时不对外可见。下次部署后它会自动出现。`;
+    redirect(`/write?error=${encodeURIComponent(pending)}` as Route);
+  }
+
   redirect(`/posts/${slug}` as Route);
 }
 
@@ -146,11 +178,42 @@ function errorMessage(code?: string): string | undefined {
   if (code === "bad-token") return "写入密钥不正确。";
   if (code === "bad-origin") return "请求来源不受信任，请从本站写作台提交。";
   if (code === "missing-slug") return "缺少要操作的文章标识（slug）。";
-  return decodeURIComponent(code);
+  // searchParams 已由 Next 解码过一次,这里再解一次纯属多余,而畸形百分号
+  // (例如手工粘错的 ?error=%zz)会抛 URIError,把写作台整页换成错误页。
+  try {
+    return decodeURIComponent(code);
+  } catch {
+    return code;
+  }
 }
 
 async function checkAuth(): Promise<boolean> {
   return isBlogAuthed();
+}
+
+/**
+ * 管理态取稿：**不过发布闸门**，也不吃公开读取缓存。
+ *
+ * 原来这里用的是面向读者的 getPublishedPost，于是过不了闸门的库内文章(排期在未来的稿子、
+ * 或站点多日未部署时今天刚发的稿子)一律取不回来，而页面对 undefined 又不报错 —— 编辑器
+ * 静默退化成空白新建表单：作者重写提交时没有 hidden slug 域，走 createDatabasePost 另生成
+ * 一个 slug(同标题被 uniqueSlug 加 -2 后缀)，库里出现两条近似记录；删除表单同样只在
+ * isEditing 时渲染，这篇稿子从网页端既改不了也删不掉，只能连 Mongo。
+ *
+ * 直接打 getDatabasePost 而不是 getCachedDatabasePost：编辑器要看到的是库里此刻的真值，
+ * 五分钟的公开读取缓存会让作者改完再进来看到旧内容、又原样存回去，等于静默回滚。
+ * Markdown 回落保持与读者侧一致(内置文章也能载入编辑器)；它不在库里，提交时
+ * updateDatabasePost 会诚实报「找不到要更新的文章…它是内置 Markdown 文章」。
+ * 调用方负责只在 isAuthenticated 时调用 —— 未鉴权一律不取。
+ */
+async function getPostForEditing(slug: string): Promise<Post | undefined> {
+  try {
+    const databasePost = await getDatabasePost(slug);
+    if (databasePost) return databasePost;
+  } catch (error) {
+    console.warn("[learning-blog] 管理态取稿失败，回落到 Markdown：", error);
+  }
+  return getPost(slug);
 }
 
 /**
@@ -172,11 +235,17 @@ async function WriteDesk({ searchParams }: Props) {
   const message = errorMessage(error);
 
   // Only load an existing post for editing when the visitor is admin-authed.
-  const editingPost = slug && isAuthenticated ? await getPublishedPost(slug) : undefined;
+  const editingPost = slug && isAuthenticated ? await getPostForEditing(slug) : undefined;
+  // ?slug= 指了一篇取不到的稿子时必须说出来。静默回到新建态会让作者以为自己在改这篇，
+  // 提交后却另存了一篇重复文章 —— 这正是 getPostForEditing 之前那个缺陷的后果形态。
+  const missingEditTarget = Boolean(slug) && isAuthenticated && !editingPost;
 
   return (
     <>
       {message ? <p className="form-error">E42: {message}</p> : null}
+      {missingEditTarget ? (
+        <p className="form-error">E44: 找不到 slug 为「{slug}」的文章，无法进入编辑。下面的表单是新建，提交会另存一篇。</p>
+      ) : null}
       <WriteEditorClient
         initialDate={editingPost ? editingPost.date : today}
         publishAction={publishPost}

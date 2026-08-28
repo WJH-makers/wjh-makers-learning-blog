@@ -52,8 +52,12 @@
   padding: 12px 14px;
   background: rgba(var(--paper-rgb),0.72);
 }
-/* .form-error 同时被 /write 与 /monitor（登录墙）使用，不再全局下发，两个路由各带一份（见 app/monitor/monitor.css）。 */
-.form-error { padding: 12px 14px; border: 2px solid var(--accent); color: var(--accent); background: var(--paper); font-family: var(--font-mono); font-weight: 800; }
+/* .form-error 同时被 /write 与 /monitor（登录墙）使用，不再全局下发，两个路由各带一份（见 app/monitor/monitor.css）。
+   两份必须逐字节同步：文字走 --accent-ink 而不是 --accent。这行没设 font-size，继承 body 的 16px，
+   粗体 16px 够不上 WCAG 大字阈值 18.66px，按正文的 4.5:1 判 —— 浅色下 --accent #d97757 压在
+   --paper #faf9f5 上只有 2.96:1，--accent-ink #b55320 是 4.72:1。边框留 --accent 不动（非文本只需 3:1）。
+   暗色下两个变量同值，对暗色是 no-op。 */
+.form-error { padding: 12px 14px; border: 2px solid var(--accent); color: var(--accent-ink); background: var(--paper); font-family: var(--font-mono); font-weight: 800; }
 .auth-status { padding: 10px 14px; border-left: 4px solid var(--foreground); background: rgba(239,246,233,0.8); font-size: 0.9rem; }
 .login-bar { margin-top: -8px; }
 .editor-layout {

@@ -14,6 +14,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# tsconfig.json 的 incremental 让 README 里那条 `npm run typecheck` 必然在仓库根写出
+# 234KB 的 tsconfig.tsbuildinfo。此前不显示为脏纯粹靠本机 ~/.gitignore_global 兜着,
+# 那条规则不随仓库走 —— 新克隆跑一次 typecheck 就是未跟踪文件,很容易被 `git add .` 带进提交。
+# 判断是否已忽略别看 `git status` 干净(受 core.excludesFile 污染),用 git check-ignore -v。
+*.tsbuildinfo
+# CI 的 `python3 -m py_compile ops/sync-r2-assets.py` 会写 ops/__pycache__/,同理。
+# (部署脚本以 __main__ 运行该脚本,那条路径不写缓存。)
+__pycache__/
+
 # 连载路由目录,别被通用 build/dist 忽略规则误伤
 !app/build/
 !app/dist/

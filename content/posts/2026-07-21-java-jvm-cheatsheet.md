@@ -2,7 +2,7 @@
 title: "Java JVM 排障 + Maven/Gradle 命令速查"
 date: 2026-07-21
 summary: "JVM 内存结构 · GC 日志读法 · jcmd/jstack/jmap/jstat 排查三板斧 · OOM 与 CPU 飙高套路 · JFR 飞行记录仪 · 常用启动参数,配套 Maven/Gradle 构建速查。基线 JDK 25 / Ubuntu 24.04。"
-tags: [JVM, JDK, Java, GC, OOM, JFR, jstack, jmap, Maven, Gradle, systemctl, Vim]
+tags: [JVM, JDK, Java, GC, OOM, JFR, jstack, jmap, Maven, Gradle, systemctl, vim]
 ---
 
 # Java JVM 排障 + Maven/Gradle 命令速查

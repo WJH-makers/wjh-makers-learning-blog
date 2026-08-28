@@ -186,8 +186,14 @@ function renderTcpFlowDiagram(code: string): string | null {
 
 /**
  * Shiki 细粒度按需加载:全量入口会把 ~200 种语法 + ~60 主题打进 standalone 产物。
- * 全站实测仅用到下面这些语言;未注册语言由 catch 回退纯文本(与旧行为一致)。
- * 新文章引入新语言时在此补一行 import 即可。
+ * 未注册语言由 catch 回退纯文本 —— 静默降级,构建不报错,所以漏一个只会让读者
+ * 在某篇文章里看到灰白一片,自测时极难发现。这份列表必须覆盖 content 全量围栏 token:
+ *
+ *   rg -oNI '^```(\S+)' -r '$1' content/posts | sort -u
+ *
+ * 新文章引入新语言时,先确认 node_modules/shiki/dist/langs/ 里有对应 .mjs(id 大小写敏感、
+ * 且不是所有俗称都存在),再在此补一行 import。别凭印象写 id:写错同样是静默回退。
+ * 别名(bash→shellscript、dockerfile→docker、md→markdown 等)由语法包自带,不必单列。
  */
 let highlighterPromise: Promise<HighlighterCore> | null = null;
 function getHighlighter(): Promise<HighlighterCore> {
@@ -197,6 +203,12 @@ function getHighlighter(): Promise<HighlighterCore> {
       import("shiki/langs/java.mjs"),
       import("shiki/langs/javascript.mjs"),
       import("shiki/langs/typescript.mjs"),
+      // tsx 是独立语法,不是 typescript 的别名。裸 JSX 交给 typescript 会把 `<` 当成
+      // 小于号、`input ref` 并成一个 token,标签名与属性名全不着色 —— 必须单独注册。
+      import("shiki/langs/tsx.mjs"),
+      import("shiki/langs/python.mjs"),
+      import("shiki/langs/kotlin.mjs"),
+      import("shiki/langs/markdown.mjs"), // md;讲 markdown 语法的文章会用围栏套围栏
       import("shiki/langs/shellscript.mjs"), // bash / sh / shell / zsh
       import("shiki/langs/powershell.mjs"),
       import("shiki/langs/html.mjs"),
@@ -209,7 +221,13 @@ function getHighlighter(): Promise<HighlighterCore> {
       import("shiki/langs/diff.mjs"),
       import("shiki/langs/nginx.mjs"),
       import("shiki/langs/ini.mjs"), // properties(注:conf 不是 ini 别名,未注册语言走回退)
+      import("shiki/langs/ssh-config.mjs"),
     ],
+    // 存量文章里写的 token 与 shiki 的 id 对不上,在这里兜住,不去改 200 多篇正文:
+    //  - sshconfig:shiki 的 id 带连字符(ssh-config),作者按 VS Code 习惯写了无连字符版;
+    //  - gitignore:shiki 根本没有这个语法。退给 ini —— 实测只把 `#` 注释染灰、
+    //    其余按纯文本,零误着色;换 shellscript 会把 `target/` 误染成函数名(紫色)。
+    langAlias: { sshconfig: "ssh-config", gitignore: "ini" },
     engine: createOnigurumaEngine(import("shiki/wasm")),
   });
   return highlighterPromise;
@@ -400,7 +418,13 @@ const STICKY_CLASS: Record<string, string> = {
 
 export type Heading = { level: number; text: string; id: string };
 
-type RenderCtx = { headings: Heading[]; usedIds: Map<string, number>; ledeAssigned?: boolean };
+/**
+ * skipHighlight:只要标题、不要高亮的调用方(速查表索引页)走这条路。
+ * 不另写一个轻量 markdown 扫描器 —— 锚点 id 依赖标题去重计数器,而计数器受
+ * 围栏/引用/表格的吞行顺序影响,两套遍历一旦有差异就是锚点静默失效。
+ * 所以复用同一个 renderLines,只是不往 html 里推代码块 —— 高亮器压根不会被实例化。
+ */
+type RenderCtx = { headings: Heading[]; usedIds: Map<string, number>; ledeAssigned?: boolean; skipHighlight?: boolean };
 
 /**
  * 这一段是否适合承载首字下沉。
@@ -442,7 +466,9 @@ async function renderLines(lines: string[], ctx: RenderCtx, depth: number): Prom
 
     if (line.startsWith("```")) {
       if (inCode) {
-        html.push(await highlightCode(codeLines.join("\n"), codeLang));
+        // skipHighlight 时整块丢掉(而不是塞进 highlightCache):缓存键是 lang:code,
+        // 存一份无高亮结果会让随后真正渲染这篇文章的请求命中它,代码块永久变灰白。
+        if (!ctx.skipHighlight) html.push(await highlightCode(codeLines.join("\n"), codeLang));
         codeLines = [];
         codeLang = "";
         inCode = false;
@@ -567,7 +593,8 @@ async function renderLines(lines: string[], ctx: RenderCtx, depth: number): Prom
     html.push(`<p>${paragraph}</p>`);
   }
 
-  if (inCode) html.push(await highlightCode(codeLines.join("\n"), codeLang));
+  // 未闭合围栏(文章写漏了尾部 ```)仍按代码块收尾,与闭合分支同样尊重 skipHighlight
+  if (inCode && !ctx.skipHighlight) html.push(await highlightCode(codeLines.join("\n"), codeLang));
   return html.join("\n");
 }
 
@@ -587,4 +614,15 @@ export async function renderMarkdown(markdown: string): Promise<{ html: string; 
 
 export async function markdownToHtml(markdown: string): Promise<string> {
   return (await renderMarkdown(markdown)).html;
+}
+
+/**
+ * 只取标题,不建高亮器。给「列一堆文章的锚点目录」这类页面用(如 /cheatsheets):
+ * 那里把 renderMarkdown 的 html 整个丢掉,却为每篇文章付了全文 Shiki 的代价。
+ * 返回值与 renderMarkdown().headings 逐字段一致(同一遍历、同一 slugify、同一去重计数)。
+ */
+export async function extractHeadings(markdown: string): Promise<Heading[]> {
+  const ctx: RenderCtx = { headings: [], usedIds: new Map(), skipHighlight: true };
+  await renderLines(markdown.split(/\r?\n/), ctx, 0);
+  return ctx.headings;
 }

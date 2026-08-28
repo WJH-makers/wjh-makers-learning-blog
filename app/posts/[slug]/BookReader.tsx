@@ -167,7 +167,11 @@ export default function BookReader({ children, previous, next }: Props) {
         }
       }}
     >
-      <ReadingProgress />
+      {/* ReadingProgress 刻意**不**放在这里:.book-reader 带 isolation: isolate
+          (globals.css:625),它会开一个层叠上下文,而这个 div 自身 z-index 是 auto。
+          于是进度条声明的 z-index: 60 只在这个上下文内部有效,外面 z-index: 40 的
+          站点顶栏照样把它整条盖住 —— 进度条上线以来一直看不见。
+          现在由 app/posts/[slug]/page.tsx 在 .book-reader 之外渲染它。 */}
       {children}
       {previous && (
         <Link

@@ -27,7 +27,12 @@ export default async function JavaSeriesPage() {
   "use cache";
   cacheLife("content");
 
-  const done = publishedEpisodes().length;
+  // publishedEpisodes() 每次都重跑全量 flatMap + 发布过滤,所以只取一次。
+  // 原先它出现在下面 .filter() 的谓词体内,等于每个 episode 重算一遍全站集合(O(N²));
+  // 成员测试改走 Set,单次判定从线性扫描降到常数。
+  const published = publishedEpisodes();
+  const publishedSlugs = new Set(published.map((item) => item.slug));
+  const done = published.length;
   const progressSeasons = SEASONS.map((s) => ({
     code: s.code,
     title: s.title,
@@ -35,7 +40,7 @@ export default async function JavaSeriesPage() {
   })).filter((s) => s.slugs.length > 0);
   const visibleSeasons = SEASONS.map((season) => ({
     ...season,
-    episodes: season.episodes.filter((episode) => publishedEpisodes().some((item) => item.slug === episode.slug)),
+    episodes: season.episodes.filter((episode) => publishedSlugs.has(episode.slug)),
   })).filter((season) => season.episodes.length > 0);
 
   // 系列主实体:与文章页 isPartOf 里的 CreativeWorkSeries 引用(name/url)严格一致,形成双向闭环。
@@ -48,7 +53,7 @@ export default async function JavaSeriesPage() {
     inLanguage: "zh-CN",
     // 与 layout 的 publisherNode 同一实体（见 app/posts/[slug]/page.tsx 的同款用法）。
     author: publisherRef(siteUrl()),
-    hasPart: publishedEpisodes().map((ep, i) => ({
+    hasPart: published.map((ep, i) => ({
       "@type": "BlogPosting",
       position: i + 1,
       name: ep.title,
@@ -66,7 +71,7 @@ export default async function JavaSeriesPage() {
           <p className="hero-text">{SERIES_META.tagline}</p>
           <div className="hero-actions">
             {done > 0 && (
-              <Link className="button primary" href={`/posts/${publishedEpisodes()[0].slug}`}>
+              <Link className="button primary" href={`/posts/${published[0].slug}`}>
                 从第一话开始 →
               </Link>
             )}

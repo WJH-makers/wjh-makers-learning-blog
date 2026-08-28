@@ -7,7 +7,9 @@ import type { JavaRunResult } from "@/lib/java-runner";
 type Props = { lab: LabManifest };
 type RunnerState = "checking" | "available" | "unavailable";
 type RunState = "idle" | "validating" | "compiling" | "running" | "success" | "failed" | "cancelled";
-type ResultTab = "console" | "problems" | "expected";
+// 提到模块级:方向键换 tab 要按顺序算前一个/后一个,渲染与键盘处理必须共用同一份顺序。
+const RESULT_TABS = ["console", "problems", "expected"] as const;
+type ResultTab = (typeof RESULT_TABS)[number];
 
 function downloadSource(source: string): void {
   const url = URL.createObjectURL(new Blob([source], { type: "text/x-java-source;charset=utf-8" }));
@@ -48,6 +50,7 @@ export default function JavaLab({ lab }: Props) {
   const [saved, setSaved] = useState(true);
   const abortRef = useRef<AbortController | undefined>(undefined);
   const gutterRef = useRef<HTMLDivElement>(null);
+  const tablistRef = useRef<HTMLDivElement>(null);
   const lines = useMemo(() => source.split("\n"), [source]);
   const diagnostics = result?.diagnostics.length ? result.diagnostics : localDiagnostics;
   const expected = lab.assertions[0]?.expectedOutput ?? "";
@@ -164,6 +167,29 @@ export default function JavaLab({ lab }: Props) {
     }
   }
 
+  // 声明了 role="tablist" 就得给方向键:读屏和键盘用户按 WAI-ARIA Tabs 模式必然会按左右键。
+  // 更要命的是不接这几个键会往上冒泡到 BookReader 的 window keydown —— 它的 isTypingTarget
+  // 只认 INPUT/TEXTAREA/SELECT 与 contentEditable(BUTTON 不算),于是左右键被当成翻页,
+  // 直接 router.push 到上/下一话,编辑器里没点过「保存到浏览器」的源码全丢。
+  // 所以除了 preventDefault 还要 stopPropagation:window 在冒泡链末端,拦在这里就到不了它。
+  function tabsKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+    const current = RESULT_TABS.indexOf(activeTab);
+    let nextIndex = current;
+    switch (event.key) {
+      case "ArrowRight": nextIndex = (current + 1) % RESULT_TABS.length; break;
+      case "ArrowLeft": nextIndex = (current - 1 + RESULT_TABS.length) % RESULT_TABS.length; break;
+      case "Home": nextIndex = 0; break;
+      case "End": nextIndex = RESULT_TABS.length - 1; break;
+      default: return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const nextTab = RESULT_TABS[nextIndex];
+    setActiveTab(nextTab);
+    // roving tabIndex 下焦点必须跟着走,否则再按一次方向键还是从原来那个 tab 起算。
+    tablistRef.current?.querySelector<HTMLButtonElement>(`[data-tab="${nextTab}"]`)?.focus();
+  }
+
   function editorKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
       event.preventDefault();
@@ -171,6 +197,10 @@ export default function JavaLab({ lab }: Props) {
       return;
     }
     if (event.key !== "Tab") return;
+    // Shift+Tab 必须放行:两个方向都吞掉的话,键盘用户焦点一旦进入编辑器就再也出不去
+    // (WCAG 2.1.2 无键盘陷阱)。往前缩进用 Tab,离开用 Shift+Tab —— 这也是
+    // CodeMirror / Monaco 之外最常见的轻量编辑器约定。
+    if (event.shiftKey) return;
     event.preventDefault();
     const target = event.currentTarget;
     const next = `${source.slice(0, target.selectionStart)}  ${source.slice(target.selectionEnd)}`;
@@ -248,13 +278,26 @@ export default function JavaLab({ lab }: Props) {
             />
           </section>
           <section className="lab-result">
-            <div className="lab-result-tabs" role="tablist" aria-label="运行结果">
-              {(["console", "problems", "expected"] as const).map((tab) => {
+            <div className="lab-result-tabs" role="tablist" aria-label="运行结果" ref={tablistRef} onKeyDown={tabsKeyDown}>
+              {RESULT_TABS.map((tab) => {
                 const labels = { console: "控制台", problems: `问题${diagnostics.length ? ` ${diagnostics.length}` : ""}`, expected: "预期" };
-                return <button key={tab} type="button" role="tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)}>{labels[tab]}</button>;
+                return <button
+                  key={tab}
+                  id={`lab-${lab.id}-tab-${tab}`}
+                  data-tab={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab}
+                  aria-controls={`lab-${lab.id}-tabpanel`}
+                  // tablist 整体在 Tab 序列里只占一站,进来后用方向键切换 —— APG 的 roving tabIndex。
+                  tabIndex={activeTab === tab ? 0 : -1}
+                  onClick={() => setActiveTab(tab)}
+                >{labels[tab]}</button>;
               })}
             </div>
-            <div className="lab-result-body" role="tabpanel">
+            {/* 三个 tab 复用同一个面板容器(内容按 activeTab 换),所以 id 固定、
+                aria-labelledby 跟着当前 tab 走 —— 这样每个 tab 的 aria-controls 都指得到实体。 */}
+            <div className="lab-result-body" role="tabpanel" id={`lab-${lab.id}-tabpanel`} aria-labelledby={`lab-${lab.id}-tab-${activeTab}`}>
               {activeTab === "console" && <pre className={result?.stderr && !result.stdout ? "is-error" : ""}>{consoleText}</pre>}
               {activeTab === "problems" && (
                 diagnostics.length ? <ol className="lab-problems">

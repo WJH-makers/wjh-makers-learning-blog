@@ -29,7 +29,15 @@ test("写入型与高成本端点都做同源校验", async () => {
 });
 
 test("认证与高成本端点都接了限流", async () => {
-  const guarded = ["app/api/auth/route.ts", "app/api/java/run/route.ts", "app/api/monitor-auth/route.ts"];
+  // comment-actions.ts 是全站唯一的**匿名**写入入口,也是唯一会因垃圾输入触发
+  // 对外网络请求(Turnstile siteverify)的路径,所以它比上面三个更需要前置限流:
+  // lib/comments.ts 内部那三层限流排在 Turnstile 校验**之后**,token 无效时永远走不到。
+  const guarded = [
+    "app/api/auth/route.ts",
+    "app/api/java/run/route.ts",
+    "app/api/monitor-auth/route.ts",
+    "app/posts/[slug]/comment-actions.ts",
+  ];
   const missing: string[] = [];
   for (const file of guarded) {
     const source = await read(file);

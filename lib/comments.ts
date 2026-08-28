@@ -3,6 +3,7 @@ import type { Collection } from "mongodb";
 import { getDb, hasDatabaseConfig } from "@/lib/db";
 import { getPublishedPost } from "@/lib/posts";
 import { turnstileSiteKey } from "@/lib/turnstile-config";
+import { contentRejection, isHoneypotTripped, isValidCommentSlug } from "@/lib/comment-guards";
 
 // 免登录评论:昵称 + 内容,不收集邮箱,不存原始 IP(仅存 salted hash 用于限流)。
 // 反垃圾多层防线:蜜罐 → 内容校验/敏感词 → Cloudflare Turnstile 人机验证 → 同 IP 限流。
@@ -44,20 +45,41 @@ async function ensureIndex(): Promise<void> {
   indexReady = true;
 }
 
+/** Date 与「可解析的日期字符串」都接受,其余(含 Invalid Date)返回 undefined。 */
+function toIsoString(value: unknown): string | undefined {
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? undefined : value.toISOString();
+  if (typeof value === "string") {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+  }
+  return undefined;
+}
+
 export async function getComments(slug: string, limit = MAX_COMMENTS_PER_POST): Promise<Comment[]> {
   if (!hasDatabaseConfig()) return [];
   try {
     await ensureIndex();
     const col = await commentsCollection();
     const docs = await col.find({ slug, status: "visible" }).sort({ createdAt: 1 }).limit(limit).toArray();
-    return docs.map((d) => ({
-      id: d._id.toString(),
-      slug: d.slug,
-      name: d.name,
-      body: d.body,
-      createdAt: d.createdAt.toISOString(),
-    }));
-  } catch {
+    // `CommentDoc` 把 createdAt 声明成 Date,但那只是编译期断言。库里若有一条
+    // createdAt 是字符串(手工插入、迁移脚本、早期 schema),`.toISOString()` 就抛,
+    // 而它抛在 map 里 —— 整个 map 中断,被外层 catch 接住返回 [],
+    // 于是**这篇文章的全部评论一起消失**,只因为一条记录格式不对。
+    // 逐条窄化:能用的用,不能用的只丢那一条。
+    return docs.flatMap((d) => {
+      const createdAt = toIsoString(d.createdAt);
+      if (!createdAt || typeof d.name !== "string" || typeof d.body !== "string") {
+        console.error(`[comments] 跳过形状不合法的评论 _id=${String(d._id)} slug=${slug}`);
+        return [];
+      }
+      return [{ id: d._id.toString(), slug: d.slug, name: d.name, body: d.body, createdAt }];
+    });
+  } catch (error) {
+    // 仍然返回空数组(评论区不该让整篇文章 500),但必须留痕:
+    // 唯一调用点在 "use cache" + cacheLife("article") 的文章页里,一次 Atlas 抖动
+    // 会把「零评论」烤进最长 7 天的缓存窗口。没有这行日志,现象就是「评论凭空消失
+    // 一周」且服务端查不到任何原因。
+    console.error(`[comments] 读取失败,本次按零评论渲染 slug=${slug}:`, error);
     return [];
   }
 }
@@ -120,10 +142,8 @@ async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   }
 }
 
-const BANNED_WORDS = [
-  "加微信", "加qq", "加v信", "代开", "发票", "菠菜", "博彩", "赌博", "色情",
-  "澳门", "威客", "刷单", "兼职日结", "t.me/", "vx：", "薇：",
-];
+// 敏感词表与内容层判定已移到 lib/comment-guards.ts —— 那里没有任何 import,
+// 因此可以被 node --test 直接断言(本文件经 @/lib/db 拉入 mongodb,测试进程解析不了别名)。
 
 export type SubmitInput = {
   slug: string;
@@ -139,26 +159,21 @@ export type SubmitResult = { ok: true; comment: Comment } | { ok: false; error: 
 export async function submitComment(input: SubmitInput): Promise<SubmitResult> {
   if (!isCommentingEnabled()) return { ok: false, error: "评论功能暂未开放。" };
   if (!hasDatabaseConfig()) return { ok: false, error: "评论功能暂未启用。" };
-  if (!/^[\p{Letter}\p{Number}]+(?:-[\p{Letter}\p{Number}]+)*$/u.test(input.slug) || input.slug.length > 180) {
+  if (!isValidCommentSlug(input.slug)) {
     return { ok: false, error: "非法的文章标识。" };
   }
 
   // 1) 蜜罐:机器人往往会填满所有字段,填了就静默丢弃、伪装成功
-  if (input.honeypot.trim()) {
+  if (isHoneypotTripped(input.honeypot)) {
     return { ok: true, comment: { id: "0", slug: input.slug, name: input.name.trim(), body: "", createdAt: new Date().toISOString() } };
   }
 
   const name = input.name.trim();
   const body = input.body.trim();
 
-  // 2) 内容校验 + 敏感词
-  if (name.length < 1 || name.length > 24) return { ok: false, error: "昵称需 1–24 个字符。" };
-  if (body.length < 2 || body.length > 1000) return { ok: false, error: "评论需 2–1000 个字符。" };
-  if ((body.match(/https?:\/\//gi) ?? []).length > 2) return { ok: false, error: "链接过多,疑似广告。" };
-  const haystack = `${name}\n${body}`.toLowerCase();
-  if (BANNED_WORDS.some((w) => haystack.includes(w.toLowerCase()))) {
-    return { ok: false, error: "内容包含不被允许的词汇。" };
-  }
+  // 2) 内容校验 + 敏感词(判定顺序与文案在 lib/comment-guards.ts 里,有专门测试钉住)
+  const rejection = contentRejection(name, body);
+  if (rejection) return { ok: false, error: rejection };
 
   // 3) 人机验证
   if (!(await verifyTurnstile(input.turnstileToken, input.ip))) {

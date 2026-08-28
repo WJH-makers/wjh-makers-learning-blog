@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cacheLife } from "next/cache";
 import { siteUrl } from "@/lib/site-config";
-import { getAllPublishedPosts, getAllPublishedTags, type Post } from "@/lib/posts";
+import { getAllPublishedPosts, type Post } from "@/lib/posts";
 import { SERIES_LIST, seriesProgress, allSeriesProgress, findEpisodeInfo } from "@/lib/series-registry";
 import { jsonLdSafe } from "@/lib/jsonld";
 import { staticPageMetadata } from "@/lib/og-base";
@@ -25,7 +25,18 @@ export default async function StatsPage() {
   cacheLife("content");
 
   const posts = await getAllPublishedPosts();
-  const tags = await getAllPublishedTags();
+  // 标签直接从 posts 聚合,不再调 getAllPublishedTags():那条路走的是另一个
+  // unstable_cache 键(published-database-post-index-v1),两键都按 300s 过期而本页
+  // cacheLife('content')=3600,于是每次再生都对 learning_posts 发两次全表查询、还是串行两个
+  // Atlas 往返;而投影版数据本就完整含在 posts 里(Post 自带 tags)。
+  // 排序沿用 lib/posts.ts:185 的 localeCompare('zh-Hans-CN'),保证下面 topTags 的同票次序不变。
+  const tagCounts = new Map<string, number>();
+  for (const post of posts) {
+    for (const tag of post.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+  const tags = [...tagCounts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => a.tag.localeCompare(b.tag, "zh-Hans-CN"));
   const total = allSeriesProgress();
 
   const totalChars = posts.reduce((sum, p) => sum + charCount(p), 0);

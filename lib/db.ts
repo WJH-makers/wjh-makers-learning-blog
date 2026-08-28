@@ -133,25 +133,69 @@ export async function checkDatabaseConnection(): Promise<{ ok: boolean; message:
   }
 }
 
-function docToPost(doc: WithId<MongoPostDocument>): Post {
+/**
+ * `collection<MongoPostDocument>()` 只是**编译期**断言 —— 它不校验一个字节。
+ *
+ * 库里的文档可能来自手工 mongosh、早期 schema、或迁移脚本,缺字段和错类型都真会出现。
+ * 而这三个字段一旦是坏值,故障点离源头很远:
+ *  - `tags` 缺失 → `undefined`,在 /tags 聚合、文章页 `tags.join`、sitemap 三处抛 TypeError;
+ *  - `publishedAt` 不是 YYYY-MM-DD → 过不了发布闸门的正则,文章「库里有、站上永远查不到」;
+ *  - `slug` 非法 → 页面渲染出来但编辑/删除/评论全部拒绝(那三条路走 assertPostSlug)。
+ *
+ * 所以在读出侧逐字段窄化。**坏文档丢弃 + 留日志,而不是整批失败** ——
+ * 一条脏记录不该让首页空白;日志保证它不是静默消失。
+ */
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function narrowPostIndexFields(
+  doc: unknown,
+): { slug: string; title: string; summary: string; tags: string[]; publishedAt: string } | undefined {
+  if (typeof doc !== "object" || doc === null) return undefined;
+  const d = doc as Record<string, unknown>;
+
+  if (!isNonEmptyString(d.slug) || !isNonEmptyString(d.title)) return undefined;
+  // summary 允许空串(validatePostFields 会用正文前 120 字兜底,但历史数据可能真是空的),
+  // 只要求它是字符串 —— 它会直接进 meta description。
+  if (typeof d.summary !== "string") return undefined;
+  if (!Array.isArray(d.tags) || !d.tags.every((tag) => typeof tag === "string")) return undefined;
+  if (!isNonEmptyString(d.publishedAt) || !/^\d{4}-\d{2}-\d{2}$/.test(d.publishedAt)) return undefined;
+
+  return { slug: d.slug, title: d.title, summary: d.summary, tags: d.tags as string[], publishedAt: d.publishedAt };
+}
+
+function docToPost(doc: WithId<MongoPostDocument>): Post | undefined {
+  const fields = narrowPostIndexFields(doc);
+  if (!fields || typeof doc.content !== "string") {
+    console.error(`[learning-blog] 跳过形状不合法的文章文档 _id=${String(doc?._id)}`);
+    return undefined;
+  }
   return {
-    slug: doc.slug,
-    title: doc.title,
-    date: doc.publishedAt,
-    summary: doc.summary,
-    tags: doc.tags,
+    slug: fields.slug,
+    title: fields.title,
+    date: fields.publishedAt,
+    summary: fields.summary,
+    tags: fields.tags,
     readingMinutes: estimateReadingMinutes(doc.content),
     content: doc.content,
   };
 }
 
-function docToPostIndex(doc: Pick<MongoPostDocument, "slug" | "title" | "summary" | "tags" | "publishedAt">): PostIndexEntry {
+function docToPostIndex(
+  doc: WithId<Pick<MongoPostDocument, "slug" | "title" | "summary" | "tags" | "publishedAt">>,
+): PostIndexEntry | undefined {
+  const fields = narrowPostIndexFields(doc);
+  if (!fields) {
+    console.error(`[learning-blog] 跳过形状不合法的索引文档 _id=${String(doc?._id)}`);
+    return undefined;
+  }
   return {
-    slug: doc.slug,
-    title: doc.title,
-    date: doc.publishedAt,
-    summary: doc.summary,
-    tags: doc.tags,
+    slug: fields.slug,
+    title: fields.title,
+    date: fields.publishedAt,
+    summary: fields.summary,
+    tags: fields.tags,
   };
 }
 
@@ -164,7 +208,12 @@ export async function getDatabasePosts(limit?: number): Promise<Post[]> {
     .sort({ publishedAt: -1, createdAt: -1 });
   if (limit && limit > 0) cursor = cursor.limit(limit);
   const docs = await cursor.toArray();
-  return docs.map(docToPost);
+  // flatMap 而非 map:窄化失败的文档被丢弃(已在 docToPost 里记日志),
+  // 一条脏记录不该让整个列表变成含 undefined 的数组往下游流。
+  return docs.flatMap((doc) => {
+    const post = docToPost(doc);
+    return post ? [post] : [];
+  });
 }
 
 export async function getDatabasePostIndex(): Promise<PostIndexEntry[]> {
@@ -174,7 +223,10 @@ export async function getDatabasePostIndex(): Promise<PostIndexEntry[]> {
   const docs = await collection.find({}, {
     projection: { slug: 1, title: 1, summary: 1, tags: 1, publishedAt: 1 },
   }).sort({ publishedAt: -1, createdAt: -1 }).toArray();
-  return docs.map(docToPostIndex);
+  return docs.flatMap((doc) => {
+    const entry = docToPostIndex(doc);
+    return entry ? [entry] : [];
+  });
 }
 
 export async function getDatabasePost(slug: string): Promise<Post | undefined> {
@@ -186,13 +238,16 @@ export async function getDatabasePost(slug: string): Promise<Post | undefined> {
 }
 
 function slugify(input: string): string {
+  // 先截断再剥分隔符:顺序反过来的话,slice(0,120) 的切点落在分隔符后就留下尾部 "-",
+  // 而 assertPostSlug 的正则不接受尾部连字符 —— 文章能入库并公开渲染,却永远
+  // 编辑不了、删不掉、评论不了(编辑/删除/评论三条路径都过 assertPostSlug)。
   return input
     .normalize("NFKC")
     .trim()
     .toLowerCase()
     .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 120);
+    .slice(0, 120)
+    .replace(/^-+|-+$/g, "");
 }
 
 const MAX_POST_TITLE_LENGTH = 200;
@@ -202,10 +257,46 @@ const MAX_TAGS = 20;
 const MAX_TAG_LENGTH = 64;
 const MAX_POST_SLUG_LENGTH = 180;
 
+/**
+ * 「作者自己能改」的校验失败,区别于数据库/配置/网络故障。
+ *
+ * 写作台需要区分这两类:前者的文案必须原样透给作者(否则他看到「请检查输入」
+ * 却不知道是标题太长还是日期非法,原样重试必然再失败),后者可能带连接串、
+ * 驱动异常和拓扑信息,只能泛化。
+ *
+ * 用类型而不是让调用方按文案前缀匹配:前缀表会与这里的措辞静默耦合 ——
+ * 改一句提示语或新增一条校验,写作台那边不同步就退化成泛化文案,而且没有任何报错。
+ */
+export class PostValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PostValidationError";
+  }
+}
+
+/**
+ * 发布日期必须是真实存在的 YYYY-MM-DD。
+ *
+ * 这个值同时进 publishedAt(发布闸门按字符串比较)和 slug 前缀,两处都容不下自由文本:
+ * 形状不对会造出「库里有、站上永远查不到」的记录(isReleasedDate 的正则直接判否),
+ * 含斜杠还会把 slug 拆成多级路径。round-trip 比对挡掉 2026-02-31 这类越界日期 ——
+ * 单靠正则只能证明形状,证不了这一天存在。
+ */
+function assertPostDate(date: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new PostValidationError("发布日期必须是 YYYY-MM-DD 格式。");
+  }
+  const parsed = new Date(`${date}T00:00:00+08:00`);
+  if (Number.isNaN(parsed.getTime()) || shanghaiDate(parsed) !== date) {
+    throw new PostValidationError("发布日期不是一个真实存在的日期。");
+  }
+  return date;
+}
+
 function assertPostSlug(slug: string): string {
   const normalized = slug.normalize("NFKC").trim();
   if (!/^[\p{Letter}\p{Number}]+(?:-[\p{Letter}\p{Number}]+)*$/u.test(normalized) || normalized.length > MAX_POST_SLUG_LENGTH) {
-    throw new Error("文章标识无效。");
+    throw new PostValidationError("文章标识无效。");
   }
   return normalized;
 }
@@ -221,13 +312,13 @@ function validatePostFields(input: NewDatabasePost | DatabasePostEdit): {
   const summary = input.summary.trim() || content.slice(0, 120);
   const tags = [...new Set(input.tags.map((tag) => tag.normalize("NFKC").trim()).filter(Boolean))];
 
-  if (!title) throw new Error("标题不能为空。");
-  if (!content) throw new Error("正文不能为空。");
-  if (title.length > MAX_POST_TITLE_LENGTH) throw new Error("标题不能超过 200 个字符。");
-  if (summary.length > MAX_POST_SUMMARY_LENGTH) throw new Error("摘要不能超过 1000 个字符。");
-  if (content.length > MAX_POST_CONTENT_LENGTH) throw new Error("正文不能超过 200000 个字符。");
+  if (!title) throw new PostValidationError("标题不能为空。");
+  if (!content) throw new PostValidationError("正文不能为空。");
+  if (title.length > MAX_POST_TITLE_LENGTH) throw new PostValidationError("标题不能超过 200 个字符。");
+  if (summary.length > MAX_POST_SUMMARY_LENGTH) throw new PostValidationError("摘要不能超过 1000 个字符。");
+  if (content.length > MAX_POST_CONTENT_LENGTH) throw new PostValidationError("正文不能超过 200000 个字符。");
   if (tags.length > MAX_TAGS || tags.some((tag) => tag.length > MAX_TAG_LENGTH)) {
-    throw new Error("标签数量或长度超出限制。");
+    throw new PostValidationError("标签数量或长度超出限制。");
   }
 
   return { title, content, summary, tags };
@@ -264,11 +355,15 @@ export async function createDatabasePost(input: NewDatabasePost): Promise<Post> 
   }
 
   const { title, content, summary, tags } = validatePostFields(input);
-  const date = input.date.trim() || shanghaiDate();
+  const date = assertPostDate(input.date.trim() || shanghaiDate());
 
   await ensureSchema();
   const collection = await postsCollection();
-  const base = `${date}-${slugify(title)}`;
+  // 纯标点/emoji 标题会 slugify 成空串,直接拼就得到以 "-" 结尾的 base。
+  // uniqueSlug 的 `base || "daily-note"` 兜底在这里不生效(`${date}-` 是真值),
+  // 于是坏 slug 一路落库。缺标题时退到 date 本身,保证 base 永不以分隔符收尾。
+  const titleSlug = slugify(title);
+  const base = titleSlug ? `${date}-${titleSlug}` : date;
   const now = new Date();
 
   // 并发写入下 uniqueSlug 的读-改-写仍有窗口,撞唯一索引就重算一次(最多 5 次)。
@@ -321,7 +416,7 @@ export async function updateDatabasePost(slug: string, input: DatabasePostEdit):
   );
 
   if (result.matchedCount === 0) {
-    throw new Error("找不到要更新的文章，可能已被删除，或它是内置 Markdown 文章而不在数据库中。");
+    throw new PostValidationError("找不到要更新的文章，可能已被删除，或它是内置 Markdown 文章而不在数据库中。");
   }
 
   const updated = await getDatabasePost(safeSlug);
@@ -342,6 +437,6 @@ export async function deleteDatabasePost(slug: string): Promise<void> {
   const result = await collection.deleteOne({ slug: safeSlug });
 
   if (result.deletedCount === 0) {
-    throw new Error("找不到要删除的文章，可能已被删除，或它是内置 Markdown 文章而不在数据库中。");
+    throw new PostValidationError("找不到要删除的文章，可能已被删除，或它是内置 Markdown 文章而不在数据库中。");
   }
 }

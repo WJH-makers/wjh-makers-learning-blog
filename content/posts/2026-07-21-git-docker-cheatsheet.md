@@ -2,7 +2,7 @@
 title: "Git + Docker + SSH 命令速查"
 date: 2026-07-21
 summary: "Git 分支合并回退 + Docker 容器镜像 + SSH 免密登录命令速查表"
-tags: [Docker, Git, SSH, 命令速查]
+tags: [Docker, Git, ssh, 命令速查]
 ---
 
 

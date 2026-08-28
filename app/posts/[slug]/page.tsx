@@ -4,7 +4,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { siteUrl } from "@/lib/site-config";
-import { getPublishedPost, getPublishedPostIndex, getRelatedPosts, outboundDate, renderMarkdown } from "@/lib/posts";
+import { getPublishedPost, getPublishedPostIndex, getRelatedPosts, outboundDate, renderMarkdown, type PostIndexEntry } from "@/lib/posts";
 import { CHAPTER_TYPE_LABEL } from "@/lib/series";
 import { findEpisodeInfo } from "@/lib/series-registry";
 import { findJavaLab } from "@/lib/java-labs";
@@ -15,10 +15,11 @@ import Comments from "./Comments";
 import ShareBar from "./ShareBar";
 import CodeCopy from "./CodeCopy";
 import BookReader from "./BookReader";
+import ReadingProgress from "@/app/_components/ReadingProgress";
 import JavaLab from "./JavaLab";
 import { getComments, isCommentingEnabled } from "@/lib/comments";
 import { jsonLdSafe, publisherRef } from "@/lib/jsonld";
-import { OG_BASE } from "@/lib/og-base";
+import { OG_BASE, RSS_ALTERNATE_TYPES } from "@/lib/og-base";
 import { publicAssetUrl } from "@/lib/assets";
 
 type Props = {
@@ -39,9 +40,29 @@ export async function generateStaticParams() {
 }
 
 
+/**
+ * generateMetadata 不在页面组件的 'use cache' 作用域里,直接读 getPublishedPost 是有代价的:
+ * lib/posts.ts 那层 unstable_cache 的 revalidate(300s)会按 min 语义上浮到外层 work unit
+ * store,而在预渲染期外层就是路由本身 —— 于是下面声明的 cacheLife('article')(604800s)被顶掉。
+ * 实测 184 个 /posts/<slug> 预渲染条目的 initialRevalidateSeconds 全是 300,而 expire 仍是
+ * article 档的 2592000,正说明只有 revalidate 这一半被压。
+ * 包进同档位的 'use cache' 后,那 300s 只作用于本缓存作用域(store type 'cache'),
+ * 路由拿到的是本作用域声明的 article 档。
+ * 只返回 metadata 用得上的字段:正文动辄几十 KB,没必要再复制进第二份缓存条目。
+ */
+async function getArticleMeta(slug: string): Promise<PostIndexEntry | undefined> {
+  "use cache";
+  cacheLife("article");
+
+  const post = await getPublishedPost(slug);
+  if (!post) return undefined;
+  const { title, date, summary, tags } = post;
+  return { slug: post.slug, title, date, summary, tags };
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPublishedPost(slug);
+  const post = await getArticleMeta(slug);
   if (!post) return {};
 
   const url = `${siteUrl()}/posts/${post.slug}`;
@@ -52,7 +73,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: post.title,
     description: post.summary,
-    alternates: { canonical: url },
+    // alternates 整体替换、不深合并:只写 canonical 会顶掉 layout:85 的 types,
+    // 184 个文章页的 RSS autodiscovery <link> 一起消失。
+    alternates: { canonical: url, ...RSS_ALTERNATE_TYPES },
     openGraph: {
       // Next 对 openGraph 是整体替换而非深合并:siteName/locale 需在页面级补齐,否则丢失。
       // OG_BASE 就是为此存在的（见 lib/og-base.ts 注释），这里原先内联了一份同值副本。
@@ -200,6 +223,10 @@ export default async function PostPage({ params }: Props) {
       : undefined;
 
   return (
+    <>
+    {/* 必须留在 BookReader 之外:.book-reader 的 isolation: isolate 会把
+        进度条的 z-index: 60 关进子层叠上下文,被 z-index: 40 的顶栏盖掉。 */}
+    <ReadingProgress />
     <BookReader previous={previous} next={next}>
     <article className="page-shell article-shell">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdSafe(articleJsonLd) }} />
@@ -208,10 +235,13 @@ export default async function PostPage({ params }: Props) {
         ← {info ? `返回${info.series.title}` : "返回文章列表"}
       </Link>
       <nav className="crumbs" aria-label="面包屑">
+        {/* href 取 b.path,不要从 b.item 里剥域名:「首页」那项的 item 恰好等于 siteUrl(),
+            replace 之后是空串,会渲染成空 href —— 点它原地重载本篇而不是回首页。
+            原写法的 as never 正好绕开了 typedRoutes 对空路由的拒绝,所以类型检查也没拦住。 */}
         {breadcrumbItems.map((b, i) => (
           <span key={b.item}>
             {i < breadcrumbItems.length - 1 ? (
-              <Link href={b.item.replace(siteUrl(), "") as never}>{b.name}</Link>
+              <Link href={b.path as Route}>{b.name}</Link>
             ) : (
               <span aria-current="page">{b.name}</span>
             )}
@@ -369,5 +399,6 @@ export default async function PostPage({ params }: Props) {
       <Comments slug={post.slug} initial={comments} enabled={commentsEnabled} />
     </article>
     </BookReader>
+    </>
   );
 }

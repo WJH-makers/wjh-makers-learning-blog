@@ -54,15 +54,54 @@ function fmtTime(ts: number, mode: string): string {
   return mode === "week" ? `${d.getMonth() + 1}/${d.getDate()}` : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+const POLL_MS = 30_000;
+// 15s 而不是 10s:server-stats 一次冷取样最坏是 top 6s + free 3s + df 5s 顺序串起来 = 14s
+// (见 app/api/server-stats/route.ts 的三个 timeout)。10s 会在慢机器上把「本来会成功的请求」
+// 判成过期,比不设超时更糟 —— 那是自造的假警报。路由自身有 5s 结果缓存,常态远快于此。
+const FETCH_TIMEOUT_MS = 15_000;
+// 连续两个周期(约 60s)没取到才置过期:单次抖动就变脸会让面板一直闪。
+const STALE_AFTER_FAILURES = 2;
+
 export default function ServerCards({ srv: initial }: { srv: Srv }) {
   const [d, setD] = useState(initial);
+  // null = 还没有任何一次客户端成功取数,此时展示的是 SSR 那一份。
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [failures, setFailures] = useState(0);
+  const [expired, setExpired] = useState(false);
 
   useEffect(() => {
     let ok = true;
     async function poll() {
       while (ok) {
-        try { const r = await fetch("/api/server-stats"); if (r.ok && ok) setD(await r.json()); } catch {}
-        await new Promise(r => setTimeout(r, 30000));
+        // 原来一行写完:catch {} 全空 + 非 2xx 被 if (r.ok) 静静丢掉 + 没有超时。
+        // 后果是 cookie 过 8h 期后 /api/server-stats 返回 401,setD 不执行、catch 不触发、
+        // 控制台干净、UI 一个像素不变,面板继续把几小时前的 MEM/Load 当实时值涂色。
+        // 现在三种结局分开处理,并且每种都留日志 —— 这台面板只有站长一人看,
+        // 出问题时唯一的线索就是控制台。
+        try {
+          const r = await fetch("/api/server-stats", { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+          if (r.ok) {
+            const next = (await r.json()) as Srv;
+            if (!ok) return;
+            setD(next);
+            setUpdatedAt(Date.now());
+            setFailures(0);
+          } else if (r.status === 401) {
+            // 会话过期是唯一「重试也不会好」的分支:直接停掉轮询,省下每 30s 一次的无效请求。
+            console.error("[monitor] 轮询遇 401,监控会话已过期,停止轮询");
+            setExpired(true);
+            return;
+          } else {
+            console.error(`[monitor] 轮询失败 status=${r.status},面板数据可能已过期`);
+            setFailures(n => n + 1);
+          }
+        } catch (error) {
+          // AbortSignal.timeout 到点抛的是 TimeoutError,和网络中断走同一条路:都算这一轮没取到。
+          console.error("[monitor] 轮询请求异常,面板数据可能已过期:", error);
+          if (!ok) return;
+          setFailures(n => n + 1);
+        }
+        await new Promise(r => setTimeout(r, POLL_MS));
       }
     }
     poll();
@@ -71,17 +110,45 @@ export default function ServerCards({ srv: initial }: { srv: Srv }) {
 
   if (!d) return null;
 
+  const stale = expired || failures >= STALE_AFTER_FAILURES;
+  // 过期时把阈值涂色一并中和:红/黄本身就在说「这是现在的实况」,
+  // 留着颜色等于用旧数据发实时警报。置灰不用 opacity —— 那会把对比度一起压掉。
+  const valueColor = (live: string) => (stale ? "var(--text-bright)" : live);
+
   return (
     <>
+      {/* 数据时间常驻:面板上原来没有任何一个字说明这些数字是什么时候的,
+          于是「停在旧数据上」和「一切正常」长得完全一样。 */}
+      <div className="dash-freshness">
+        {/* updatedAt 初值必须是 null 而不是 Date.now():后者在 SSR 与 hydration 两侧算出不同的
+            时钟(还会撞上时区差),React 会报 hydration 不一致。挂载后第一轮轮询立刻把它填上。 */}
+        <span>数据时间 {updatedAt ? fmtTime(updatedAt, "day") : "本页载入时"}</span>
+        {/* live region 挂在常驻的外壳上、只换内部内容:带 role 的元素必须先在 DOM 里,
+            内容后变才会被播报(和 MonitorLogin 的 role="alert" 同一条道理)。
+            不给上面那行时间挂 role:它每 30s 变一次,挂上就是每 30s 打断一次读屏。
+            徽章文案是静态的、不含失败次数,所以不会反复重播。 */}
+        <span role="status">
+          {stale ? (
+            <strong className="dash-stale">
+              {expired ? (
+                <>会话已过期 · <a href="/monitor">重新登录</a></>
+              ) : (
+                "数据已过期 · 取数失败"
+              )}
+            </strong>
+          ) : null}
+        </span>
+      </div>
+
       <div className="dash-grid">
         <div className="dash-card">
           <div className="label">CPU</div>
-          <div className="value" style={{ color: d.cpu > 80 ? "var(--accent-red)" : d.cpu > 50 ? "var(--accent-yellow)" : "var(--accent-blue)" }}>{d.cpu}%</div>
+          <div className="value" style={{ color: valueColor(d.cpu > 80 ? "var(--accent-red)" : d.cpu > 50 ? "var(--accent-yellow)" : "var(--accent-blue)") }}>{d.cpu}%</div>
           <div className="sub">Load {d.load.toFixed(1)}</div>
         </div>
         <div className="dash-card">
           <div className="label">Memory</div>
-          <div className="value" style={{ color: d.mem > 80 ? "var(--accent-red)" : d.mem > 60 ? "var(--accent-yellow)" : "var(--accent-green)" }}>{d.mem}%</div>
+          <div className="value" style={{ color: valueColor(d.mem > 80 ? "var(--accent-red)" : d.mem > 60 ? "var(--accent-yellow)" : "var(--accent-green)") }}>{d.mem}%</div>
           <div className="sub">{d.disk.split(" ")[0]} disk used</div>
         </div>
         <div className="dash-card">
