@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { LEGACY_POST_SLUG_REDIRECTS } from "./lib/legacy-slug-redirects";
 import { IMMUTABLE_ASSET_CACHE_CONTROL, NO_STORE_CACHE_CONTROL } from "./lib/cache-policy";
+import { DISCOVERY_LINK_HEADERS, DISCOVERY_LINK_PATHS } from "./lib/discovery-links";
 import { STATIC_ASSET_CORS_HEADERS, securityHeaders } from "./lib/security-headers";
 
 // 国内访问会被 Cloudflare 调度到西雅图(实测 colo=SEA，首页 1461–5166ms)，而源站在
@@ -89,6 +90,13 @@ const nextConfig: NextConfig = {
         { key: "Cache-Control", value: NO_STORE_CACHE_CONTROL },
       ],
     },
+    // 内容页的 sitemap/RSS autodiscovery。这条头原先在 proxy.ts,必须留在 headers()
+    // 这一层：proxy 设的头会进 ISR 缓存条目并每轮 append,累积到 502。
+    // 详见 lib/discovery-links.ts 的模块注释。
+    ...DISCOVERY_LINK_PATHS.map((source) => ({
+      source,
+      headers: [...DISCOVERY_LINK_HEADERS],
+    })),
   ],
 };
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { blogAdminSecret } from "@/lib/auth-secrets";
 import { blogSessionTokenEdge, safeCompareEdge } from "@/lib/blog-auth-token-edge";
-import { ALLOWED_HOSTS, SITE_URL } from "@/lib/site-config";
+import { ALLOWED_HOSTS } from "@/lib/site-config";
 
 /**
  * Host 白名单：只允许正式域名与本地/内网访问。白名单本体在 lib/site-config.ts，
@@ -44,7 +44,6 @@ export async function proxy(request: NextRequest) {
   }
 
   const pathname = request.nextUrl.pathname;
-  const isContentPage = pathname === "/" || pathname === "/posts" || /^\/posts\/[^/]+$/.test(pathname);
 
   if (pathname === "/write" && request.method === "POST") {
     const expected = blogAdminSecret();
@@ -58,16 +57,17 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.next();
-
-  if (isContentPage) {
-    const links = [
-      `<${SITE_URL}/sitemap.xml>; rel="sitemap"; type="application/xml"`,
-      `<${SITE_URL}/rss.xml>; rel="alternate"; type="application/rss+xml"`,
-    ];
-    response.headers.set("Link", links.join(", "));
-  }
-  return response;
+  /**
+   * 这里**不要**设任何响应头。
+   *
+   * 开启 cacheComponents 后，设在 NextResponse.next() 上的头会被写进 ISR 缓存条目的
+   * .meta，每次 revalidate 时「旧头 + 新头」一起 append 回去，无上限增长；累积到超过
+   * nginx 的 proxy_buffer_size 就是 502。2026-08-29 首页因此挂了一天，
+   * 详见 lib/discovery-links.ts 的模块注释与 vercel/next.js#94945。
+   *
+   * 响应头一律交给 next.config.ts 的 headers()：那层在缓存读取之后施加，不进缓存条目。
+   */
+  return NextResponse.next();
 }
 
 export const config = {
