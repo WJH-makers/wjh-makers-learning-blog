@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { blogAdminSecret } from "@/lib/auth-secrets";
-import { blogSessionTokenEdge, safeCompareEdge } from "@/lib/blog-auth-token-edge";
+import { verifyBlogSessionTokenEdge } from "@/lib/blog-auth-token-edge";
 import { ALLOWED_HOSTS } from "@/lib/site-config";
 
 /**
@@ -51,8 +51,10 @@ export async function proxy(request: NextRequest) {
       return new NextResponse("Not Found", { status: 404 });
     }
 
+    // 无 cookie 时刻意放行：首次登录走表单 token，在此拦掉登录就走不通。
+    // 真正的把关在页面侧的 requireAdminOrRedirect（含限流），这层只是纵深。
     const cookieToken = request.cookies.get("blog_admin_token")?.value?.trim();
-    if (cookieToken && !safeCompareEdge(cookieToken, await blogSessionTokenEdge(expected))) {
+    if (cookieToken && !(await verifyBlogSessionTokenEdge(cookieToken, expected))) {
       return new NextResponse("Not Found", { status: 404 });
     }
   }

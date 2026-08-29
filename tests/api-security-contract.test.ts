@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { test } from "node:test";
-import { blogSessionToken } from "../lib/blog-auth-token.ts";
+import { blogSessionToken, verifyBlogSessionToken } from "../lib/blog-auth-token.ts";
+import { ADMIN_SESSION_MAX_AGE_SECONDS } from "../lib/cache-policy.ts";
 import { safeCompare } from "../lib/safe-compare.ts";
 import { adminSessionCookieOptions, monitorSessionCookieOptions } from "../lib/session-cookie.ts";
 
@@ -79,12 +80,30 @@ test("凭据比较一律走恒时比较，不用 === 或 ==", async () => {
 
 test("会话 cookie 是 HMAC 派生值，不是原始密钥", () => {
   const secret = "test-admin-secret-value";
-  const session = blogSessionToken(secret);
+  const now = 1_700_000_000_000;
+  const session = blogSessionToken(secret, now);
   assert.ok(!session.includes(secret), "会话值不得包含原始密钥");
-  assert.match(session, /^v2\./, "应带版本前缀，便于整体轮换");
-  // 同一密钥稳定、不同密钥必变 —— 轮换密钥即失效全部旧会话。
-  assert.equal(session, blogSessionToken(secret));
-  assert.notEqual(session, blogSessionToken(`${secret}x`));
+  assert.match(session, /^v3\./, "应带版本前缀，便于整体轮换");
+  // v3 起令牌含过期时刻，所以「同密钥稳定」这条不再成立（那正是 v2 无法吊销的根因）。
+  // 稳定性改由「同一时刻签出同一值」表达；跨密钥必变仍然要钉。
+  assert.equal(session, blogSessionToken(secret, now));
+  assert.notEqual(session, blogSessionToken(`${secret}x`, now));
+  // 有效期必须真的被服务端校验 —— 详细的过期/篡改用例在 tests/blog-auth.test.ts。
+  assert.equal(verifyBlogSessionToken(session, secret, now), true);
+  assert.equal(
+    verifyBlogSessionToken(session, secret, now + (ADMIN_SESSION_MAX_AGE_SECONDS + 1) * 1000),
+    false,
+    "过期令牌必须被拒 —— 这是 v2 缺失的能力",
+  );
+});
+
+test("注销入口存在：会话必须可被主动吊销", async () => {
+  // v3 之前没有任何注销路径，唯一吊销手段是轮换 BLOG_ADMIN_TOKEN（会把管理员自己踢下线）。
+  const source = await read("app/api/auth/route.ts");
+  assert.match(source, /export async function DELETE/, "缺注销入口");
+  assert.match(source, /maxAge:\s*0/, "注销必须把 cookie 的 maxAge 置 0");
+  // 删除时必须复用同一份 cookie 属性：path 不一致时浏览器会保留原 cookie，注销静默失效。
+  assert.match(source, /\.\.\.adminSessionCookieOptions\(\)/, "删除应复用同一份 cookie 属性");
 });
 
 test("会话 cookie 带齐 HttpOnly / SameSite，且生产环境要求 Secure", () => {
