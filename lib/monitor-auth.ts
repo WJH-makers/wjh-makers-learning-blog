@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
-import { monitorCredentials } from "@/lib/auth-secrets";
+import { monitorCredentials, sessionSigningKey } from "@/lib/auth-secrets";
 import { safeCompare } from "@/lib/safe-compare";
 
 export const MONITOR_COOKIE = "monitor_token";
@@ -17,7 +17,12 @@ export const MONITOR_COOKIE = "monitor_token";
  * 登录接口与校验必须共用这一个函数 —— 两处各写一遍正是上一版 padding bug 的根源。
  */
 export function monitorToken(user: string, pass: string): string {
-  return createHmac("sha256", pass).update(`monitor:v2:${user}`).digest("base64url");
+  // 签名密钥与登录口令分离。此前直接拿 pass 作 HMAC 密钥 —— 消息 `monitor:v2:<user>`
+  // 完全可预测、单轮无盐,于是 cookie 就是一组「已知明文 + MAC」:外泄后可离线跑字典
+  // 恢复 MONITOR_PASS 原文,而那个值本身就是登录口令。上面注释里「HMAC 单向,拿到
+  // cookie 也推不回口令」只在密钥高熵时成立,不能当作口令强度的替代。
+  // 未配置 SESSION_SIGNING_KEY 时回落到 pass,行为与改动前一字不差。
+  return createHmac("sha256", sessionSigningKey(pass)).update(`monitor:v2:${user}`).digest("base64url");
 }
 
 /**

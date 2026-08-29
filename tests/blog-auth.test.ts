@@ -131,6 +131,45 @@ test("Edge 侧的过期时长字面量必须等于 cache-policy 的值", () => {
   assert.equal(EDGE_ADMIN_SESSION_MAX_AGE_SECONDS, ADMIN_SESSION_MAX_AGE_SECONDS);
 });
 
+// ── 会话签名密钥与登录凭据解耦 ──────────────────────────────────────────────
+
+test("SESSION_SIGNING_KEY 未配置时回落到登录凭据（行为与引入前一致）", async () => {
+  const { sessionSigningKey } = await import("../lib/auth-secrets.ts");
+  const original = process.env.SESSION_SIGNING_KEY;
+  try {
+    delete process.env.SESSION_SIGNING_KEY;
+    assert.equal(sessionSigningKey(SECRET), SECRET, "回落必须等于传入的登录凭据");
+    // 空串与纯空白都算未配置：`SESSION_SIGNING_KEY=` 是 .env.example 里的默认形态，
+    // 若把空串当有效密钥，全站会用同一个空密钥签名。
+    process.env.SESSION_SIGNING_KEY = "";
+    assert.equal(sessionSigningKey(SECRET), SECRET, "空串应视为未配置");
+    process.env.SESSION_SIGNING_KEY = "   ";
+    assert.equal(sessionSigningKey(SECRET), SECRET, "纯空白应视为未配置");
+  } finally {
+    if (original === undefined) delete process.env.SESSION_SIGNING_KEY;
+    else process.env.SESSION_SIGNING_KEY = original;
+  }
+});
+
+test("配置后签名不再由登录凭据决定：换登录口令不影响已签发会话", async () => {
+  const { sessionSigningKey } = await import("../lib/auth-secrets.ts");
+  const original = process.env.SESSION_SIGNING_KEY;
+  try {
+    process.env.SESSION_SIGNING_KEY = "an-independent-32-byte-random-value";
+    // 这正是解耦买到的东西：cookie 里的 MAC 与 BLOG_ADMIN_TOKEN 无关，
+    // 于是 cookie 外泄不再是「已知明文 + 登录口令做密钥」的离线爆破入口。
+    assert.notEqual(sessionSigningKey(SECRET), SECRET);
+    assert.equal(
+      sessionSigningKey(SECRET),
+      sessionSigningKey("a-completely-different-login-secret"),
+      "签名密钥应只由 SESSION_SIGNING_KEY 决定，与登录凭据无关",
+    );
+  } finally {
+    if (original === undefined) delete process.env.SESSION_SIGNING_KEY;
+    else process.env.SESSION_SIGNING_KEY = original;
+  }
+});
+
 test("safeCompareEdge 长度不同直接 false，等长内容不同也 false", () => {
   assert.equal(safeCompareEdge("abc", "abcd"), false);
   assert.equal(safeCompareEdge("abcd", "abce"), false);

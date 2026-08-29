@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { blogAdminSecret } from "@/lib/auth-secrets";
+import { blogAdminSecret, sessionSigningKey } from "@/lib/auth-secrets";
 import { verifyBlogSessionTokenEdge } from "@/lib/blog-auth-token-edge";
 import { ALLOWED_HOSTS } from "@/lib/site-config";
 
@@ -54,7 +54,10 @@ export async function proxy(request: NextRequest) {
     // 无 cookie 时刻意放行：首次登录走表单 token，在此拦掉登录就走不通。
     // 真正的把关在页面侧的 requireAdminOrRedirect（含限流），这层只是纵深。
     const cookieToken = request.cookies.get("blog_admin_token")?.value?.trim();
-    if (cookieToken && !(await verifyBlogSessionTokenEdge(cookieToken, expected))) {
+    // 必须用会话签名密钥验，不是登录凭据 —— 与 lib/blog-auth.ts 那侧同一个换算。
+    // 漏掉这层换算的症状是配了 SESSION_SIGNING_KEY 之后，合法管理员的 POST /write
+    // 在 Edge 层被静默拦成 404 而页面侧毫无报错（正是本文件历史上出过的那类事故）。
+    if (cookieToken && !(await verifyBlogSessionTokenEdge(cookieToken, sessionSigningKey(expected)))) {
       return new NextResponse("Not Found", { status: 404 });
     }
   }

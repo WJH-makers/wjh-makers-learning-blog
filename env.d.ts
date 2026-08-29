@@ -33,6 +33,15 @@ declare namespace NodeJS {
     BLOG_ADMIN_TOKEN?: string;
     MONITOR_USER?: string;
     MONITOR_PASS?: string;
+    /**
+     * 会话 cookie 的 HMAC 签名密钥，与上面两个登录凭据分离。
+     *
+     * 未配置时回落到对应的登录凭据（BLOG_ADMIN_TOKEN / MONITOR_PASS），行为与
+     * 引入本变量前完全一致 —— 但**回落状态下拿不到它的收益**：那时 cookie 是一组
+     * 「已知明文 + 单轮无盐 HMAC」，外泄后可离线跑字典恢复登录口令原文。
+     * 设一个独立的高熵随机值（32 字节足够）才真正生效。
+     */
+    SESSION_SIGNING_KEY?: string;
 
     // ── 评论（Turnstile 人机验证）──────────────────────────────────────────
     /** 必须字面为 "true" 才开启；其它值一律视为关闭。 */
