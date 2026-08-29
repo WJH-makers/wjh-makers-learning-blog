@@ -112,11 +112,17 @@ purge_cloudflare_cache() {
     return 1
   fi
   payload="$(build_purge_payload)"
+  # token 经 stdin 而非命令行传入：写成 `-H "Authorization: Bearer ${token}"` 时，
+  # 整条命令行在调用期间对同机任何本地用户可见（/proc/<pid>/cmdline、ps aux）。
+  # 单租户 VPS 上窗口只有一次 API 调用时长，属纵深防御；但改法零成本。
+  # `--header @-` 从 stdin 读 header 行，heredoc 不落磁盘。
   curl --fail --silent --show-error --max-time 20 \
     -X POST "https://api.cloudflare.com/client/v4/zones/${zone}/purge_cache" \
-    -H "Authorization: Bearer ${token}" \
+    --header @- \
     -H 'Content-Type: application/json' \
-    --data "$payload" >/dev/null
+    --data "$payload" >/dev/null <<EOF
+Authorization: Bearer ${token}
+EOF
 }
 
 submit_indexnow() {

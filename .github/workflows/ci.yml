@@ -17,11 +17,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # 钉 commit SHA 而非 v4：tag 是可变引用，上游把 v4 移到别处、或仓库被接管，
+      # 都会让 CI 直接执行新代码。本工作流的 publish-deploy-ref 持 contents: write
+      # 并强推 production 分支，所以这里的执行权等于发布权。
+      # 升级时连同注释里的版本号一起改，别只换 SHA。
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -54,8 +58,9 @@ jobs:
       contents: write
     timeout-minutes: 25
     steps:
+      # 这个 job 持 contents: write 且强推 production —— 三处 uses 里它最需要钉版。
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Publish tested production ref
         run: |
           set -euo pipefail

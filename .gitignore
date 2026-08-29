@@ -14,6 +14,33 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# 备份类兜底。缘由:`docker-compose.yml.bak-v1` 曾被 track 进公开仓库
+# (内容恰好无凭据,是运气不是设计)。「先手工备份再改配置」是本仓库的实际工作流,
+# 而 `.env*` 那族规则对 `config.bak`、`secrets.bak` 这类文件名一概不命中。
+*.bak
+*.bak-*
+*.orig
+*.old
+*.save
+
+# 密钥材料。这些扩展名一旦出现在仓库里,内容基本就是私钥或证书。
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# 凭据落点。.npmrc 存 npm token、.netrc 存明文登录。
+.npmrc
+.netrc
+
+# 数据库转储与日志:可能整表带出用户数据,也常含连接串。
+*.sql
+*.sql.gz
+*.dump
+*.log
+
 # 连载路由目录,别被通用 build/dist 忽略规则误伤
 !app/build/
 !app/dist/
