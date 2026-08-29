@@ -59,14 +59,21 @@ function inlineMarkdown(value: string): string {
       const inner = /^ .* $/.test(code) && code.trim() ? code.slice(1, -1) : code;
       return stash(`<code>${inner}</code>`);
     })
-    .replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (_m, alt: string, src: string) =>
+    // 链接/图片文本组的 {0,500} 上界是防二次回溯,不是风格选择:无上界时一整行未闭合的
+    // `[` 会让每个起始位置都扫到行尾才失配,复杂度 O(N²)。实测 200000 字符(正好是
+    // lib/db.ts 的 MAX_POST_CONTENT_LENGTH 上限)阻塞事件循环 68.6 秒,单请求打停全站。
+    // 500 字符以上的链接文本无真实用例。tests/markdown.test.ts 有耗时用例钉住。
+    .replace(/!\[([^\]]{0,500})\]\((https?:\/\/[^\s)]+)\)/g, (_m, alt: string, src: string) =>
       stash(`<img class="post-image" src="${publicAssetUrl(src)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />`))
-    .replace(/!\[([^\]]*)\]\((\/comics\/([A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\.png)\)/g, (_m, alt: string, _src: string, assetKey: string) => {
+    .replace(/!\[([^\]]{0,500})\]\((\/comics\/([A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\.png)\)/g, (_m, alt: string, _src: string, assetKey: string) => {
       // AVIF 优先、512w 移动变体、webp 兜底(png 原档不再进 serve 路径,现代覆盖率已 ~100%);
       // 尺寸取 manifest 真实值(源图有 1055x1491/887x1774/1024x1536 三种,写死会让占位比例失真)。
       // 变体与 manifest 由 scripts/build-comic-variants.mjs 生成,新增漫画后需重跑一次。
       const base = publicAssetUrl(`/comics/${assetKey}`);
-      const { w, h } = COMIC_SIZES[assetKey] ?? { w: 1024, h: 1536 };
+      // Object.hasOwn 而非直接索引:assetKey 来自正文,`constructor`/`toString` 这类键
+      // 会命中 Object.prototype,`??` 挡不住(返回值真但不是 {w,h}),结果是
+      // width="undefined" height="undefined" 与 srcset 里的 "undefinedw",占位比例塌掉。
+      const { w, h } = Object.hasOwn(COMIC_SIZES, assetKey) ? COMIC_SIZES[assetKey] : { w: 1024, h: 1536 };
       const sizes = "(max-width: 960px) 94vw, 900px";
       return stash(
         `<picture>` +
@@ -75,12 +82,12 @@ function inlineMarkdown(value: string): string {
         `<img class="post-image comic-image" src="${base}.webp" alt="${escapeHtml(alt)}" width="${w}" height="${h}" loading="lazy" decoding="async" />` +
         `</picture>`);
     })
-    .replace(/!\[([^\]]*)\]\((\/(?!\/)[A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\)/g, (_m, alt: string, src: string) =>
+    .replace(/!\[([^\]]{0,500})\]\((\/(?!\/)[A-Za-z0-9._~!$&'()*+,;=:@%/-]+)\)/g, (_m, alt: string, src: string) =>
       stash(`<img class="post-image" src="${publicAssetUrl(src)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" />`))
     // URL 支持一层平衡括号(维基/MDN 的 /Foo_(bar) 不再截断)
-    .replace(/\[([^\]]+)\]\((https?:\/\/(?:\([^\s()]*\)|[^\s()])+)\)/g, (_m, text: string, url: string) =>
+    .replace(/\[([^\]]{1,500})\]\((https?:\/\/(?:\([^\s()]*\)|[^\s()])+)\)/g, (_m, text: string, url: string) =>
       stash(`<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">${emphasize(text)}</a>`))
-    .replace(/\[([^\]]+)\]\((?!https?:)([^\s)]+)\)/g, (_m, text: string, url: string) => {
+    .replace(/\[([^\]]{1,500})\]\((?!https?:)([^\s)]+)\)/g, (_m, text: string, url: string) => {
       // 站内白名单:# / mailto: / 单斜杠绝对路径;排除 // 与 /\(协议相对 URL 会跳站外)
       const safe = /^(#|mailto:)/i.test(url) || (url.startsWith("/") && !/^\/[\\/]/.test(url));
       return safe ? stash(`<a href="${escapeHtml(url)}" rel="noreferrer">${emphasize(text)}</a>`) : text;
@@ -482,7 +489,11 @@ async function renderLines(lines: string[], ctx: RenderCtx, depth: number): Prom
           // 漫画图的文字原稿:默认折叠,读屏/慢网/搜索引擎仍可及(图片 alt 只有一句摘要)。
           html.push(`<details class="quiz-answer comic-transcript"><summary>▸ 文字版漫画(无图环境与读屏可读)</summary><div class="quiz-answer-body">${body}</div></details>`);
         } else {
-          const cls = STICKY_CLASS[type] ?? "sticky-note";
+          // Object.hasOwn 而非直接索引:type 来自正文的 `> [!xxx]`,写 `[!constructor]`
+          // 会取到 Object.prototype.constructor,`??` 判不出来(值真但是函数),
+          // 于是 class 里出现 "function Object() { [native code] }"。不是 XSS
+          // (原生函数的 toString 里没有引号或尖括号,闭不掉属性),但会污染 class 列表。
+          const cls = Object.hasOwn(STICKY_CLASS, type) ? STICKY_CLASS[type] : "sticky-note";
           html.push(`<aside class="sticky ${cls}"><span class="sticky-tag">${escapeHtml(type)}</span><div class="sticky-body">${body}</div></aside>`);
         }
       } else {

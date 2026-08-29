@@ -9,6 +9,8 @@ import { BLOG_COOKIE, blogSessionToken, isBlogAuthed, isBlogSessionToken } from 
 import { createDatabasePost, databaseProviderLabel, deleteDatabasePost, hasDatabaseConfig, updateDatabasePost } from "@/lib/db";
 import { getPublishedPost, PUBLIC_POSTS_CACHE_TAG } from "@/lib/posts";
 import WriteEditorClient from "./WriteEditorClient";
+import { clientIp } from "@/lib/client-ip";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { isSameOriginRequest } from "@/lib/request-origin";
 import { safeCompare } from "@/lib/safe-compare";
 import { adminSessionCookieOptions } from "@/lib/session-cookie";
@@ -59,8 +61,21 @@ function revalidateBlog(slug?: string) {
 // derived httpOnly session cookie. The raw BLOG_ADMIN_TOKEN is never stored in
 // the browser; on the first successful token submit the derived cookie is set.
 async function requireAdminOrRedirect(formData: FormData): Promise<void> {
-  if (!isSameOriginRequest(await headers())) {
+  const headersList = await headers();
+  if (!isSameOriginRequest(headersList)) {
     redirect("/write?error=bad-origin" as Route);
+  }
+
+  // 这道限流不是冗余的。`/api/auth` 那条登录路径有 checkRateLimit(…, "login"),
+  // 而本 Server Action 校验的是**同一个** BLOG_ADMIN_TOKEN —— 少了它,这里就是一条
+  // 平行的无限速爆破入口,重定向的 Location(bad-token vs 文章地址)就是干净的成败预言机。
+  // 共用 "login" 桶,两条入口合计受同一配额约束,换入口不重置。
+  //
+  // nginx 侧兜不住这条:`/api/auth` 有 limit_req zone=blog_auth(5r/m),但 /write 落在
+  // location / 且**没有** limit_req,Cloudflare 隧道打到的 80 server 块连 server 级限流都没有
+  // (443 块才有 general 30r/s)。2026-08-29 实测 12 次请求 283ms 全部放行。
+  if (!checkRateLimit(clientIp(headersList), "login").allowed) {
+    redirect("/write?error=too-many" as Route);
   }
 
   const expectedToken = blogAdminSecret();
@@ -146,7 +161,14 @@ function errorMessage(code?: string): string | undefined {
   if (code === "bad-token") return "写入密钥不正确。";
   if (code === "bad-origin") return "请求来源不受信任，请从本站写作台提交。";
   if (code === "missing-slug") return "缺少要操作的文章标识（slug）。";
-  return decodeURIComponent(code);
+  if (code === "too-many") return "提交过于频繁，请等一分钟后重试。";
+  // 孤立的 % 会让 decodeURIComponent 抛 URIError。这个值来自 query string，
+  // URLSearchParams 不解码也不报错，`?error=%` 原样传到这里 —— 不兜住就是未认证可达的 500。
+  try {
+    return decodeURIComponent(code);
+  } catch {
+    return code;
+  }
 }
 
 async function checkAuth(): Promise<boolean> {

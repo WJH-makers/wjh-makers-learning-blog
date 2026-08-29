@@ -19,9 +19,22 @@ export async function generateStaticParams() {
 }
 
 
+/**
+ * 路径段里的孤立 `%`（如 `/tags/%`）会让 decodeURIComponent 抛 URIError。
+ * 该异常发生在渲染期、没有 try 兜住就是 500，而这条路径未认证可达。
+ * 解不开时按原样处理 —— 后续 getPublishedPostsByTag 查不到就 notFound()，是正确的 404。
+ */
+function safeDecodeTag(tag: string): string {
+  try {
+    return decodeURIComponent(tag);
+  } catch {
+    return tag;
+  }
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { tag } = await params;
-  const decoded = decodeURIComponent(tag);
+  const decoded = safeDecodeTag(tag);
   const posts = await getPublishedPostsByTag(decoded);
   return staticPageMetadata({
     title: `标签：${decoded}`,
@@ -38,7 +51,7 @@ export default async function TagPage({ params }: Props) {
   cacheLife("content");
 
   const { tag } = await params;
-  const decoded = decodeURIComponent(tag);
+  const decoded = safeDecodeTag(tag);
   const posts = await getPublishedPostsByTag(decoded);
 
   // 替代原先的 dynamicParams = false（cacheComponents 不支持该配置）。

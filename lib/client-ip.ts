@@ -3,21 +3,31 @@ import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapte
 /**
  * 取用于限流的客户端 IP。
  *
- * 顺序有安全含义,不能调换:
- * - `cf-connecting-ip` 由 Cloudflare 在回源时写入,客户端自带的同名头会被 CF 覆盖,
- *   因此在「公网只能经 CF 进来」的部署下它不可伪造 —— 生产就是这个拓扑(见 nginx 只绑 127.0.0.1)。
- * - `x-forwarded-for` 是**客户端可任意伪造**的:直接拿它当限流 key,攻击者每次请求换一个值
- *   就能拿到全新配额,登录限流等于不存在。只在没有 CF 头时兜底,且只取第一跳。
+ * 顺序有安全含义,不能调换 —— 判据是「这个头是否被 nginx 用 proxy_set_header 覆写过」:
+ *
+ * - `x-real-ip` **可信**:站点 nginx 在每个 location 都写了
+ *   `proxy_set_header X-Real-IP $remote_addr`,客户端自带的同名头一律被丢弃。
+ *   经 Cloudflare 进来时 `set_real_ip_from`(CF 网段 + 回环)配 `real_ip_header X-Forwarded-For`
+ *   已把 `$remote_addr` 改写成真实访客 IP,所以两条路径下它都等于真实来源。
+ * - `cf-connecting-ip` **不可信**:站点配置里**没有**为它写 proxy_set_header,
+ *   客户端自带的值原样直达应用。带正确 Host 直连源站即可伪造,每次换值就是一份新配额。
+ *   2026-08-29 实测:固定伪造值第 4 次被拦,换一个立刻回到 401。
+ * - `x-forwarded-for` **不可信**:nginx 用 `$proxy_add_x_forwarded_for` 追加,
+ *   客户端提供的部分仍留在首跳,而首跳恰好就是这里会取的那一段。
+ *
+ * 两个不可信的头保留作兜底,但排在可信头之后:只有 `x-real-ip` 缺失(即请求没经过
+ * 本站 nginx,例如未来直接暴露 3001 或换用别的反代)时才会用到它们。那种拓扑下
+ * 限流本就不可靠,兜底只为不把所有人挤进同一个桶。
  *
  * 取不到时统一归到 "unknown" 这一个桶:宁可让少数无头请求共享配额,
  * 也不能给每个匿名请求发一把新钥匙。
  */
 export function clientIp(headers: ReadonlyHeaders | Headers): string {
+  const real = headers.get("x-real-ip")?.trim();
+  if (real) return real;
+
   const cf = headers.get("cf-connecting-ip")?.trim();
   if (cf) return cf;
 
-  const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  if (forwarded) return forwarded;
-
-  return headers.get("x-real-ip")?.trim() || "unknown";
+  return headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 }

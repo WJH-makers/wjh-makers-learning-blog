@@ -29,13 +29,42 @@ test("写入型与高成本端点都做同源校验", async () => {
 });
 
 test("认证与高成本端点都接了限流", async () => {
-  const guarded = ["app/api/auth/route.ts", "app/api/java/run/route.ts", "app/api/monitor-auth/route.ts"];
+  // app/write/page.tsx 必须在列:它的 Server Action 校验的是**同一个** BLOG_ADMIN_TOKEN,
+  // 少了限流就是一条与 /api/auth 平行的无限速爆破入口。2026-08-29 之前它确实缺,
+  // 而本清单当时只列 app/api/* 三个文件,所以 CI 照绿 —— 那正是这条测试要防的失效模式。
+  // nginx 也兜不住:/write 落在 location / 且无 limit_req,CF 隧道打到的 80 server 块
+  // 连 server 级限流都没有(443 块才有 general 30r/s)。
+  const guarded = [
+    "app/api/auth/route.ts",
+    "app/api/java/run/route.ts",
+    "app/api/monitor-auth/route.ts",
+    "app/write/page.tsx",
+  ];
   const missing: string[] = [];
   for (const file of guarded) {
     const source = await read(file);
     if (!source.includes("checkRateLimit")) missing.push(file);
   }
   assert.deepEqual(missing, [], `缺少限流:\n${missing.join("\n")}`);
+});
+
+test("限流分桶只用 nginx 覆写过的头，不用客户端可伪造的头", async () => {
+  const source = await read("lib/client-ip.ts");
+  // 顺序即安全属性:x-real-ip 由 nginx 的 proxy_set_header 覆写(客户端自带值被丢弃),
+  // 而 cf-connecting-ip 在本站配置里**没有** proxy_set_header,带正确 Host 直连源站
+  // 即可伪造,每换一个值就是一份新配额。x-forwarded-for 的首跳同样由客户端提供。
+  // 2026-08-29 实测确证了 cf-connecting-ip 可伪造,故必须让可信头排在最前。
+  const order = ["x-real-ip", "cf-connecting-ip", "x-forwarded-for"].map((h) => ({
+    header: h,
+    at: source.indexOf(`"${h}"`),
+  }));
+  for (const { header, at } of order) {
+    assert.ok(at >= 0, `lib/client-ip.ts 应显式处理 ${header}`);
+  }
+  assert.ok(
+    order[0].at < order[1].at && order[0].at < order[2].at,
+    "x-real-ip 必须最先取:它是唯一被 nginx 覆写、客户端伪造不了的那个",
+  );
 });
 
 test("凭据比较一律走恒时比较，不用 === 或 ==", async () => {

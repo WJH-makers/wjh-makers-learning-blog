@@ -3,6 +3,43 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { markdownToHtml, renderMarkdown, slugify } from "../lib/markdown.ts";
 
+// ---------- 二次回溯(渲染器唯一的耗时维度断言) ----------
+
+/**
+ * 链接/图片正则的文本组曾无上界（`[^\]]+`），一整行未闭合的 `[` 会让每个起始位置
+ * 都扫到行尾才失配 —— O(N²)。2026-08-29 实测：64000 字符 7.5 秒、200000 字符 68.6 秒，
+ * 而 200000 正好是 lib/db.ts 的 MAX_POST_CONTENT_LENGTH 上限，validatePostFields 全放行。
+ * renderMarkdown 在 'use cache' 未命中时按请求执行，单个请求即可独占事件循环打停全站。
+ *
+ * 这条测试守的是上界本身。阈值取 2 秒而非贴着实测值：CI 机器负载不定，
+ * 修好后的实际耗时在毫秒量级，2 秒足以区分「线性」与「退化成平方」。
+ */
+test("未闭合方括号的长输入不触发二次回溯", async () => {
+  for (const payload of ["[".repeat(200_000), "![".repeat(100_000)]) {
+    const started = process.hrtime.bigint();
+    await markdownToHtml(payload);
+    const ms = Number(process.hrtime.bigint() - started) / 1e6;
+    assert.ok(ms < 2_000, `渲染 ${payload.length} 字符耗时 ${ms.toFixed(0)}ms，疑似二次回溯回归`);
+  }
+});
+
+// ---------- 原型链取值(键来自正文,不能直接索引对象字面量) ----------
+
+test("未知提示框类型不会取到 Object.prototype 上的成员", async () => {
+  for (const type of ["constructor", "__proto__", "toString", "hasOwnProperty"]) {
+    const html = await markdownToHtml(`> [!${type}] 正文`);
+    assert.ok(html.includes('class="sticky sticky-note"'), `[!${type}] 应回落默认类:${html.slice(0, 200)}`);
+    assert.ok(!html.includes("native code"), `[!${type}] 把原生函数写进了 class:${html.slice(0, 200)}`);
+    assert.ok(!html.includes("[object Object]"), `[!${type}] 把对象写进了 class:${html.slice(0, 200)}`);
+  }
+});
+
+test("manifest 里不存在的漫画名回落默认尺寸，不产出 undefined", async () => {
+  const html = await markdownToHtml("![图](/comics/constructor.png)");
+  assert.ok(!html.includes("undefined"), `尺寸回落失败:${html.slice(0, 300)}`);
+  assert.ok(html.includes('width="1024"') && html.includes('height="1536"'), html.slice(0, 300));
+});
+
 // ---------- 行内代码隔离(诊断 #1/#4:code 内容曾被 emphasis/link 正则二次解析) ----------
 
 test("行内代码里的 ** 不再被解析成 <strong>", async () => {

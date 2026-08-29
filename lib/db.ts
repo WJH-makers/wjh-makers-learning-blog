@@ -264,11 +264,19 @@ export async function createDatabasePost(input: NewDatabasePost): Promise<Post> 
   }
 
   const { title, content, summary, tags } = validatePostFields(input);
+  // date 直接进 slug 与 publishedAt,必须校形。写入侧的校验原本不对称:
+  // update/delete 都过 assertPostSlug,create 却没有任何 slug 校验 ——
+  // 于是 date 填 `../../etc/passwd` 或 `//evil.com` 会原样进库。
+  // 不构成注入(uniqueSlug 已转义 $regex 元字符、slug 不参与 path 拼接、输出全走 JSX),
+  // 但 publishedAt 会成为无法被 isReleasedDate 正确判定的垃圾值,影响发布边界。
   const date = input.date.trim() || shanghaiDate();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error("日期必须是 YYYY-MM-DD 格式。");
+  }
 
   await ensureSchema();
   const collection = await postsCollection();
-  const base = `${date}-${slugify(title)}`;
+  const base = assertPostSlug(`${date}-${slugify(title)}`);
   const now = new Date();
 
   // 并发写入下 uniqueSlug 的读-改-写仍有窗口,撞唯一索引就重算一次(最多 5 次)。
